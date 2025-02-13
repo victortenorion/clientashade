@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,8 +56,6 @@ interface ServiceOrder {
   expected_date: string | null;
   completion_date: string | null;
   exit_date: string | null;
-  start_time: string | null;
-  end_time: string | null;
   client: {
     name: string;
   } | null;
@@ -66,12 +63,19 @@ interface ServiceOrder {
     name: string;
     color: string;
   } | null;
+  items: ServiceOrderItem[];
+}
+
+interface ServiceOrderItem {
+  id: string;
+  service_order_id: string;
+  description: string;
+  price: number;
 }
 
 interface ServiceOrderFormData {
   client_id: string;
   description: string;
-  total_price: number;
   status_id: string;
   seller_id: string;
   store_id: string;
@@ -83,14 +87,15 @@ interface ServiceOrderFormData {
   expected_date: string;
   completion_date: string;
   exit_date: string;
-  start_time: string;
-  end_time: string;
+  items: {
+    description: string;
+    price: number;
+  }[];
 }
 
 const defaultFormData: ServiceOrderFormData = {
   client_id: "",
   description: "",
-  total_price: 0,
   status_id: "",
   seller_id: "",
   store_id: "",
@@ -102,8 +107,7 @@ const defaultFormData: ServiceOrderFormData = {
   expected_date: "",
   completion_date: "",
   exit_date: "",
-  start_time: "",
-  end_time: "",
+  items: [],
 };
 
 const ServiceOrders = () => {
@@ -117,6 +121,7 @@ const ServiceOrders = () => {
   const [clients, setClients] = useState<{ id: string; name: string; }[]>([]);
   const [statuses, setStatuses] = useState<{ id: string; name: string; }[]>([]);
   const [stores, setStores] = useState<{ id: string; name: string; }[]>([]);
+  const [currentUser, setCurrentUser] = useState<{ id: string } | null>(null);
   const { toast } = useToast();
 
   const fetchOrders = async () => {
@@ -143,10 +148,9 @@ const ServiceOrders = () => {
           expected_date,
           completion_date,
           exit_date,
-          start_time,
-          end_time,
           client:clients(name),
-          status:service_order_statuses!service_orders_status_id_fkey(name, color)
+          status:service_order_statuses!service_orders_status_id_fkey(name, color),
+          items:service_order_items(id, description, price)
         `)
         .ilike("description", `%${searchTerm}%`);
 
@@ -163,6 +167,18 @@ const ServiceOrders = () => {
       setLoading(false);
     }
   };
+
+  const getCurrentUser = async () => {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (session?.user) {
+      setCurrentUser(session.user);
+      setFormData(prev => ({ ...prev, seller_id: session.user.id }));
+    }
+  };
+
+  useEffect(() => {
+    getCurrentUser();
+  }, []);
 
   const fetchStatuses = async () => {
     try {
@@ -288,15 +304,52 @@ const ServiceOrders = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!currentUser) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao criar ordem de serviço",
+        description: "Usuário não está autenticado",
+      });
+      return;
+    }
+
     try {
-      const { error } = await supabase
+      const { data: orderData, error: orderError } = await supabase
         .from("service_orders")
         .insert({
-          ...formData,
+          client_id: formData.client_id,
+          description: formData.description,
+          status_id: formData.status_id,
+          seller_id: currentUser.id,
+          store_id: formData.store_id,
+          equipment: formData.equipment,
+          equipment_serial_number: formData.equipment_serial_number,
+          problem: formData.problem,
+          reception_notes: formData.reception_notes,
+          internal_notes: formData.internal_notes,
+          expected_date: formData.expected_date,
+          completion_date: formData.completion_date,
+          exit_date: formData.exit_date,
           created_by_type: 'admin'
-        });
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (orderError) throw orderError;
+
+      if (formData.items.length > 0) {
+        const { error: itemsError } = await supabase
+          .from("service_order_items")
+          .insert(
+            formData.items.map(item => ({
+              service_order_id: orderData.id,
+              description: item.description,
+              price: item.price
+            }))
+          );
+
+        if (itemsError) throw itemsError;
+      }
 
       toast({
         title: "Ordem de serviço criada com sucesso",
@@ -321,6 +374,29 @@ const ServiceOrders = () => {
     setFormData((prev) => ({
       ...prev,
       [name]: name === "total_price" ? Number(value) : value,
+    }));
+  };
+
+  const handleAddItem = () => {
+    setFormData(prev => ({
+      ...prev,
+      items: [...prev.items, { description: "", price: 0 }]
+    }));
+  };
+
+  const handleRemoveItem = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      items: prev.items.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleItemChange = (index: number, field: 'description' | 'price', value: string | number) => {
+    setFormData(prev => ({
+      ...prev,
+      items: prev.items.map((item, i) => 
+        i === index ? { ...item, [field]: value } : item
+      )
     }));
   };
 
@@ -465,14 +541,11 @@ const ServiceOrders = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="seller_id">Vendedor *</Label>
+                    <Label>Vendedor *</Label>
                     <Input
-                      id="seller_id"
-                      name="seller_id"
-                      value={formData.seller_id}
-                      onChange={handleInputChange}
-                      required
+                      value={currentUser?.id || ''}
                       disabled
+                      className="bg-muted"
                     />
                   </div>
                   <div className="space-y-2">
@@ -552,16 +625,16 @@ const ServiceOrders = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle>Datas e Horários</CardTitle>
+                <CardTitle>Datas</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="expected_date">Data Prevista</Label>
                     <Input
                       id="expected_date"
                       name="expected_date"
-                      type="datetime-local"
+                      type="date"
                       value={formData.expected_date}
                       onChange={handleInputChange}
                     />
@@ -571,96 +644,95 @@ const ServiceOrders = () => {
                     <Input
                       id="completion_date"
                       name="completion_date"
-                      type="datetime-local"
+                      type="date"
                       value={formData.completion_date}
                       onChange={handleInputChange}
                     />
                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="start_time">Hora de Início</Label>
+                    <Label htmlFor="exit_date">Data de Saída</Label>
                     <Input
-                      id="start_time"
-                      name="start_time"
-                      type="time"
-                      value={formData.start_time}
+                      id="exit_date"
+                      name="exit_date"
+                      type="date"
+                      value={formData.exit_date}
                       onChange={handleInputChange}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="end_time">Hora de Término</Label>
-                    <Input
-                      id="end_time"
-                      name="end_time"
-                      type="time"
-                      value={formData.end_time}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="exit_date">Data de Saída</Label>
-                  <Input
-                    id="exit_date"
-                    name="exit_date"
-                    type="datetime-local"
-                    value={formData.exit_date}
-                    onChange={handleInputChange}
-                  />
                 </div>
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Detalhes da Ordem de Serviço</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Serviços</CardTitle>
+                <Button type="button" variant="outline" size="sm" onClick={handleAddItem}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar Serviço
+                </Button>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="status_id">Status *</Label>
-                    <select
-                      id="status_id"
-                      name="status_id"
-                      value={formData.status_id}
-                      onChange={handleInputChange}
-                      className="w-full border rounded-md h-10 px-3 bg-background text-foreground"
-                      required
+                {formData.items.map((item, index) => (
+                  <div key={index} className="flex gap-4 items-start">
+                    <div className="flex-1">
+                      <Label>Descrição do Serviço *</Label>
+                      <Input
+                        value={item.description}
+                        onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="w-32">
+                      <Label>Valor *</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={item.price}
+                        onChange={(e) => handleItemChange(index, 'price', parseFloat(e.target.value))}
+                        required
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="mt-6"
+                      onClick={() => handleRemoveItem(index)}
                     >
-                      <option value="">Selecione um status</option>
-                      {statuses.map((status) => (
-                        <option key={status.id} value={status.id}>
-                          {status.name}
-                        </option>
-                      ))}
-                    </select>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="total_price">Valor Total *</Label>
-                    <Input
-                      id="total_price"
-                      name="total_price"
-                      type="number"
-                      step="0.01"
-                      value={formData.total_price}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                </div>
+                ))}
+                {formData.items.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Nenhum serviço adicionado
+                  </p>
+                )}
+              </CardContent>
+            </Card>
 
+            <Card>
+              <CardHeader>
+                <CardTitle>Status</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <div className="space-y-2">
-                  <Label htmlFor="description">Descrição *</Label>
-                  <Input
-                    id="description"
-                    name="description"
-                    value={formData.description}
+                  <Label htmlFor="status_id">Status *</Label>
+                  <select
+                    id="status_id"
+                    name="status_id"
+                    value={formData.status_id}
                     onChange={handleInputChange}
+                    className="w-full border rounded-md h-10 px-3 bg-background text-foreground"
                     required
-                  />
+                  >
+                    <option value="">Selecione um status</option>
+                    {statuses.map((status) => (
+                      <option key={status.id} value={status.id}>
+                        {status.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </CardContent>
             </Card>

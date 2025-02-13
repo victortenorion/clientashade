@@ -180,6 +180,41 @@ export type Database = {
         }
         Relationships: []
       }
+      service_order_items: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          price: number
+          service_order_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          price?: number
+          service_order_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          price?: number
+          service_order_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_order_items_service_order_id_fkey"
+            columns: ["service_order_id"]
+            isOneToOne: false
+            referencedRelation: "service_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_order_statuses: {
         Row: {
           color: string | null
@@ -217,7 +252,6 @@ export type Database = {
           created_at: string
           created_by_type: string
           description: string
-          end_time: string | null
           equipment: string | null
           equipment_serial_number: string | null
           exit_date: string | null
@@ -229,7 +263,6 @@ export type Database = {
           problem: string | null
           reception_notes: string | null
           seller_id: string | null
-          start_time: string | null
           status_id: string | null
           store_id: string | null
           total_price: number
@@ -241,7 +274,6 @@ export type Database = {
           created_at?: string
           created_by_type?: string
           description: string
-          end_time?: string | null
           equipment?: string | null
           equipment_serial_number?: string | null
           exit_date?: string | null
@@ -253,7 +285,6 @@ export type Database = {
           problem?: string | null
           reception_notes?: string | null
           seller_id?: string | null
-          start_time?: string | null
           status_id?: string | null
           store_id?: string | null
           total_price?: number
@@ -265,7 +296,6 @@ export type Database = {
           created_at?: string
           created_by_type?: string
           description?: string
-          end_time?: string | null
           equipment?: string | null
           equipment_serial_number?: string | null
           exit_date?: string | null
@@ -277,7 +307,6 @@ export type Database = {
           problem?: string | null
           reception_notes?: string | null
           seller_id?: string | null
-          start_time?: string | null
           status_id?: string | null
           store_id?: string | null
           total_price?: number
