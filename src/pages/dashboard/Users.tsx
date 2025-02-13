@@ -60,7 +60,7 @@ const defaultFormData: UserFormData = {
   username: "",
   email: "",
   password: "",
-  permissions: menuOptions.map(option => option.value), // Todas as permissões pré-selecionadas
+  permissions: menuOptions.map(option => option.value),
 };
 
 const Users = () => {
@@ -187,16 +187,12 @@ const Users = () => {
   };
 
   const handleEdit = async (user: User) => {
-    const { data: permissions } = await supabase
-      .from("user_permissions")
-      .select("menu_permission")
-      .eq("user_id", user.id);
-
+    // Definindo as permissões do usuário no formData
     setFormData({
       username: user.username || "",
       email: "",
       password: "",
-      permissions: permissions?.map(p => p.menu_permission) || [],
+      permissions: user.permissions || [], // Usando as permissões atuais do usuário
     });
     setEditingId(user.id);
     setDialogOpen(true);
@@ -229,11 +225,13 @@ const Users = () => {
 
         if (profileError) throw profileError;
 
+        // Deletar todas as permissões existentes
         await supabase
           .from("user_permissions")
           .delete()
           .eq("user_id", editingId);
 
+        // Inserir as novas permissões selecionadas
         if (formData.permissions.length > 0) {
           const { error: permissionsError } = await supabase
             .from("user_permissions")
@@ -330,7 +328,7 @@ const Users = () => {
         <h2 className="text-xl font-bold">Usuários</h2>
         <Button onClick={() => {
           setEditingId(null);
-          setFormData(defaultFormData); // Agora vai setar todas as permissões por padrão
+          setFormData(defaultFormData);
           setDialogOpen(true);
         }}>
           <UserPlus className="h-4 w-4 mr-2" />
