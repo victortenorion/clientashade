@@ -42,7 +42,6 @@ export function LoginForm() {
     updatePasswordRequirements(password);
   }, [password]);
 
-  // Verifica se o usuário já está autenticado
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -72,27 +71,46 @@ export function LoginForm() {
 
     try {
       if (isSignUp) {
-        const { error: signUpError } = await supabase.auth.signUp({
+        const { error: signUpError, data } = await supabase.auth.signUp({
           email,
           password,
         });
 
         if (signUpError) throw signUpError;
 
-        toast({
-          title: "Conta criada com sucesso!",
-          description: "Agora você pode fazer login.",
-        });
-        setIsSignUp(false);
+        // Verifica se o usuário precisa confirmar o email
+        if (data?.user?.identities?.length === 0) {
+          toast({
+            variant: "destructive",
+            title: "Email já cadastrado",
+            description: "Este email já está em uso. Por favor, faça login.",
+          });
+          setIsSignUp(false);
+        } else {
+          toast({
+            title: "Conta criada com sucesso!",
+            description: "Por favor, verifique seu email para confirmar a conta.",
+          });
+          setIsSignUp(false);
+        }
       } else {
+        console.log("Tentando fazer login com:", { email });
         const { error: signInError, data } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
 
-        if (signInError) throw signInError;
+        if (signInError) {
+          console.error("Erro de login:", signInError);
+          // Mensagem mais específica baseada no erro
+          if (signInError.message.includes("Invalid login credentials")) {
+            throw new Error("Email ou senha incorretos");
+          }
+          throw signInError;
+        }
 
         if (data.session) {
+          console.log("Login bem-sucedido:", data.session.user.id);
           toast({
             title: "Login realizado com sucesso!",
             description: "Bem-vindo ao sistema.",
@@ -100,12 +118,12 @@ export function LoginForm() {
           navigate("/dashboard");
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro completo:", error);
       toast({
         variant: "destructive",
         title: "Erro ao " + (isSignUp ? "criar conta" : "fazer login"),
-        description: "Verifique suas credenciais e tente novamente.",
+        description: error.message || "Verifique suas credenciais e tente novamente.",
       });
     } finally {
       setLoading(false);
