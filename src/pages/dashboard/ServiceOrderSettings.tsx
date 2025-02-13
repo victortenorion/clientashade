@@ -34,6 +34,7 @@ const ServiceOrderSettings = () => {
   const [statuses, setStatuses] = useState<Status[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingStatus, setEditingStatus] = useState<Status | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     color: "#000000",
@@ -66,26 +67,73 @@ const ServiceOrderSettings = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const { error } = await supabase
-        .from("service_order_statuses")
-        .insert(formData);
+      if (editingStatus) {
+        const { error } = await supabase
+          .from("service_order_statuses")
+          .update(formData)
+          .eq("id", editingStatus.id);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast({
-        title: "Status criado com sucesso",
-      });
+        toast({
+          title: "Status atualizado com sucesso",
+        });
+      } else {
+        const { error } = await supabase
+          .from("service_order_statuses")
+          .insert(formData);
+
+        if (error) throw error;
+
+        toast({
+          title: "Status criado com sucesso",
+        });
+      }
 
       setDialogOpen(false);
       setFormData({ name: "", color: "#000000", description: "" });
+      setEditingStatus(null);
       fetchStatuses();
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Erro ao criar status",
+        title: editingStatus ? "Erro ao atualizar status" : "Erro ao criar status",
         description: error.message,
       });
     }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from("service_order_statuses")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Status excluído com sucesso",
+      });
+
+      fetchStatuses();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao excluir status",
+        description: error.message,
+      });
+    }
+  };
+
+  const handleEdit = (status: Status) => {
+    setEditingStatus(status);
+    setFormData({
+      name: status.name,
+      color: status.color || "#000000",
+      description: status.description || "",
+    });
+    setDialogOpen(true);
   };
 
   const handleInputChange = (
@@ -112,7 +160,11 @@ const ServiceOrderSettings = () => {
         <div>
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-semibold">Status</h3>
-            <Button onClick={() => setDialogOpen(true)}>
+            <Button onClick={() => {
+              setEditingStatus(null);
+              setFormData({ name: "", color: "#000000", description: "" });
+              setDialogOpen(true);
+            }}>
               <Plus className="h-4 w-4 mr-2" />
               Novo Status
             </Button>
@@ -126,18 +178,19 @@ const ServiceOrderSettings = () => {
                   <TableHead>Cor</TableHead>
                   <TableHead>Descrição</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center">
+                    <TableCell colSpan={5} className="text-center">
                       Carregando...
                     </TableCell>
                   </TableRow>
                 ) : statuses.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center">
+                    <TableCell colSpan={5} className="text-center">
                       Nenhum status encontrado
                     </TableCell>
                   </TableRow>
@@ -162,6 +215,24 @@ const ServiceOrderSettings = () => {
                           <span className="text-red-600">Inativo</span>
                         )}
                       </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleEdit(status)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => handleDelete(status.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -174,7 +245,9 @@ const ServiceOrderSettings = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Novo Status</DialogTitle>
+            <DialogTitle>
+              {editingStatus ? "Editar Status" : "Novo Status"}
+            </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
@@ -218,10 +291,16 @@ const ServiceOrderSettings = () => {
               />
             </div>
             <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => setDialogOpen(false)}>
+              <Button variant="outline" type="button" onClick={() => {
+                setDialogOpen(false);
+                setEditingStatus(null);
+                setFormData({ name: "", color: "#000000", description: "" });
+              }}>
                 Cancelar
               </Button>
-              <Button type="submit">Criar</Button>
+              <Button type="submit">
+                {editingStatus ? "Salvar" : "Criar"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
