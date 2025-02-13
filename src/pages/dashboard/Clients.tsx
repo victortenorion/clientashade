@@ -522,6 +522,56 @@ const Clients = () => {
     }
   };
 
+  const searchCEP = async (cep: string) => {
+    const cleanCEP = cep.replace(/\D/g, '');
+    
+    if (cleanCEP.length !== 8) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cleanCEP}/json/`);
+      const data = await response.json();
+
+      if (data.erro) {
+        toast({
+          variant: "destructive",
+          title: "CEP não encontrado",
+          description: "Verifique o CEP informado",
+        });
+        return;
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        state: data.uf,
+        city: data.localidade,
+        neighborhood: data.bairro,
+        street: data.logradouro,
+      }));
+
+      toast({
+        title: "Endereço encontrado",
+        description: "Os campos foram preenchidos automaticamente",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao buscar CEP",
+        description: "Ocorreu um erro ao buscar o endereço",
+      });
+    }
+  };
+
+  const handleCEPChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    setFormData(prev => ({ ...prev, zip_code: value }));
+    
+    if (value.replace(/\D/g, '').length === 8) {
+      searchCEP(value);
+    }
+  };
+
   useEffect(() => {
     fetchVisibleFields();
     fetchStores();
@@ -747,7 +797,8 @@ const Clients = () => {
                       className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       value={formData.zip_code}
                       mask="00000-000"
-                      onAccept={(value) => setFormData(prev => ({ ...prev, zip_code: value }))}
+                      onAccept={(value) => handleCEPChange({ target: { value } } as React.ChangeEvent<HTMLInputElement>)}
+                      placeholder="Digite o CEP"
                     />
                   </div>
                   <div className="space-y-2">
@@ -759,6 +810,7 @@ const Clients = () => {
                       onChange={handleInputChange}
                       maxLength={2}
                       className="h-9"
+                      readOnly
                     />
                   </div>
                 </div>
@@ -772,6 +824,7 @@ const Clients = () => {
                       value={formData.city}
                       onChange={handleInputChange}
                       className="h-9"
+                      readOnly
                     />
                   </div>
                   <div className="space-y-2">
@@ -782,6 +835,7 @@ const Clients = () => {
                       value={formData.neighborhood}
                       onChange={handleInputChange}
                       className="h-9"
+                      readOnly
                     />
                   </div>
                 </div>
@@ -795,6 +849,7 @@ const Clients = () => {
                       value={formData.street}
                       onChange={handleInputChange}
                       className="h-9"
+                      readOnly
                     />
                   </div>
                   <div className="space-y-2">
@@ -878,13 +933,14 @@ const Clients = () => {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <Label htmlFor="email">E-mail</Label>
+                    <Label htmlFor="email">E-mail *</Label>
                     <Input
                       id="email"
                       name="email"
                       type="email"
                       value={formData.email}
                       onChange={handleInputChange}
+                      required
                       className="h-9"
                     />
                   </div>
