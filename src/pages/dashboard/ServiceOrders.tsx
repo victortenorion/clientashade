@@ -36,17 +36,17 @@ interface ServiceOrder {
   id: string;
   client_id: string;
   description: string;
-  status_id: string;
+  status_id: string | null;
   total_price: number;
   created_at: string;
   created_by_type: 'admin' | 'client';
   client: {
     name: string;
-  };
+  } | null;
   status: {
     name: string;
     color: string;
-  };
+  } | null;
 }
 
 interface ServiceOrderFormData {
@@ -89,19 +89,13 @@ const ServiceOrders = () => {
           created_at,
           created_by_type,
           client:clients(name),
-          status:service_order_statuses!inner(name, color)
+          status:service_order_statuses(name, color)
         `)
         .ilike("description", `%${searchTerm}%`);
 
       if (error) throw error;
 
-      if (data) {
-        const formattedData = data.map(order => ({
-          ...order,
-          status: order.status || { name: 'Sem status', color: '#374151' }
-        }));
-        setOrders(formattedData as ServiceOrder[]);
-      }
+      setOrders(data as ServiceOrder[]);
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -167,7 +161,7 @@ const ServiceOrders = () => {
       client_id: order.client_id,
       description: order.description,
       total_price: order.total_price,
-      status_id: order.status_id,
+      status_id: order.status_id || "",
     });
     setDialogOpen(true);
   };
