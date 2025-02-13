@@ -69,6 +69,7 @@ const Users = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState<UserFormData>(defaultFormData);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [hasAllPermissions, setHasAllPermissions] = useState(false);
   const { toast } = useToast();
 
   const [usernameRequirements, setUsernameRequirements] = useState<Requirement[]>([
@@ -86,6 +87,23 @@ const Users = () => {
     { regex: /[a-z]/, text: "Pelo menos uma letra minúscula", met: false },
     { regex: /[0-9]/, text: "Pelo menos um número", met: false },
   ]);
+
+  const checkUserPermissions = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data, error } = await supabase.rpc('user_has_all_permissions', {
+          user_uuid: user.id
+        });
+        
+        if (error) throw error;
+        setHasAllPermissions(data);
+      }
+    } catch (error: any) {
+      console.error("Erro ao verificar permissões:", error);
+      setHasAllPermissions(false);
+    }
+  };
 
   const updateRequirements = (value: string, setRequirements: React.Dispatch<React.SetStateAction<Requirement[]>>) => {
     setRequirements(prev =>
@@ -125,6 +143,12 @@ const Users = () => {
         .ilike("username", `%${searchTerm}%`);
 
       if (profilesError) throw profilesError;
+
+      if (!hasAllPermissions) {
+        // Se não tiver todas as permissões, não carrega as permissões dos usuários
+        setUsers(profilesData || []);
+        return;
+      }
 
       const usersWithPermissions = await Promise.all(
         (profilesData || []).map(async (profile) => {
@@ -169,6 +193,15 @@ const Users = () => {
   };
 
   const handleDelete = async (id: string) => {
+    if (!hasAllPermissions) {
+      toast({
+        variant: "destructive",
+        title: "Acesso negado",
+        description: "Você não tem permissão para excluir usuários.",
+      });
+      return;
+    }
+
     try {
       const { error: authError } = await supabase.auth.admin.deleteUser(id);
 
@@ -196,12 +229,21 @@ const Users = () => {
   };
 
   const handleEdit = async (user: User) => {
+    if (!hasAllPermissions) {
+      toast({
+        variant: "destructive",
+        title: "Acesso negado",
+        description: "Você não tem permissão para editar usuários.",
+      });
+      return;
+    }
+
     console.log("Editando usuário com permissões:", user.permissions);
     setFormData({
       username: user.username || "",
       email: "",
       password: "",
-      permissions: user.permissions || [], // Garante que as permissões são sempre um array
+      permissions: user.permissions || [],
     });
     setEditingId(user.id);
     setDialogOpen(true);
@@ -209,6 +251,15 @@ const Users = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!hasAllPermissions) {
+      toast({
+        variant: "destructive",
+        title: "Acesso negado",
+        description: "Você não tem permissão para modificar usuários.",
+      });
+      return;
+    }
 
     if (!editingId) {
       const isUsernameValid = usernameRequirements.every(req => req.met);
@@ -306,6 +357,15 @@ const Users = () => {
   };
 
   const handlePermissionChange = (permission: string, checked: boolean) => {
+    if (!hasAllPermissions) {
+      toast({
+        variant: "destructive",
+        title: "Acesso negado",
+        description: "Você não tem permissão para modificar permissões.",
+      });
+      return;
+    }
+
     setFormData(prev => ({
       ...prev,
       permissions: checked
@@ -315,8 +375,12 @@ const Users = () => {
   };
 
   useEffect(() => {
+    checkUserPermissions();
+  }, []);
+
+  useEffect(() => {
     fetchUsers();
-  }, [searchTerm]);
+  }, [searchTerm, hasAllPermissions]);
 
   const RequirementsList = ({ requirements }: { requirements: Requirement[] }) => (
     <ul className="text-sm space-y-1">
@@ -337,14 +401,16 @@ const Users = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold">Usuários</h2>
-        <Button onClick={() => {
-          setEditingId(null);
-          setFormData(defaultFormData);
-          setDialogOpen(true);
-        }}>
-          <UserPlus className="h-4 w-4 mr-2" />
-          Novo Usuário
-        </Button>
+        {hasAllPermissions && (
+          <Button onClick={() => {
+            setEditingId(null);
+            setFormData(defaultFormData);
+            setDialogOpen(true);
+          }}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            Novo Usuário
+          </Button>
+        )}
       </div>
 
       <div className="flex gap-2">
@@ -361,22 +427,22 @@ const Users = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Username</TableHead>
-              <TableHead>Menus de Acesso</TableHead>
+              {hasAllPermissions && <TableHead>Menus de Acesso</TableHead>}
               <TableHead>Criado em</TableHead>
               <TableHead>Atualizado em</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
+              {hasAllPermissions && <TableHead className="text-right">Ações</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center">
+                <TableCell colSpan={hasAllPermissions ? 5 : 3} className="text-center">
                   Carregando...
                 </TableCell>
               </TableRow>
             ) : users.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center">
+                <TableCell colSpan={hasAllPermissions ? 5 : 3} className="text-center">
                   Nenhum usuário encontrado
                 </TableCell>
               </TableRow>
@@ -384,40 +450,44 @@ const Users = () => {
               users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>{user.username}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {user.permissions?.map(permission => (
-                        <span
-                          key={permission}
-                          className="bg-primary/10 text-primary text-xs px-2 py-1 rounded"
-                        >
-                          {menuOptions.find(opt => opt.value === permission)?.label || permission}
-                        </span>
-                      ))}
-                    </div>
-                  </TableCell>
+                  {hasAllPermissions && (
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {user.permissions?.map(permission => (
+                          <span
+                            key={permission}
+                            className="bg-primary/10 text-primary text-xs px-2 py-1 rounded"
+                          >
+                            {menuOptions.find(opt => opt.value === permission)?.label || permission}
+                          </span>
+                        ))}
+                      </div>
+                    </TableCell>
+                  )}
                   <TableCell>
                     {new Date(user.created_at).toLocaleString('pt-BR')}
                   </TableCell>
                   <TableCell>
                     {new Date(user.updated_at).toLocaleString('pt-BR')}
                   </TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleEdit(user)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleDelete(user.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
+                  {hasAllPermissions && (
+                    <TableCell className="text-right space-x-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleEdit(user)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleDelete(user.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             )}
@@ -474,23 +544,25 @@ const Users = () => {
               </>
             )}
 
-            <div className="space-y-2">
-              <Label>Menus de Acesso</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {menuOptions.map((option) => (
-                  <div key={option.value} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={option.value}
-                      checked={formData.permissions.includes(option.value)}
-                      onCheckedChange={(checked) => 
-                        handlePermissionChange(option.value, checked as boolean)
-                      }
-                    />
-                    <Label htmlFor={option.value}>{option.label}</Label>
-                  </div>
-                ))}
+            {hasAllPermissions && (
+              <div className="space-y-2">
+                <Label>Menus de Acesso</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {menuOptions.map((option) => (
+                    <div key={option.value} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={option.value}
+                        checked={formData.permissions.includes(option.value)}
+                        onCheckedChange={(checked) => 
+                          handlePermissionChange(option.value, checked as boolean)
+                        }
+                      />
+                      <Label htmlFor={option.value}>{option.label}</Label>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             <DialogFooter>
               <Button variant="outline" type="button" onClick={() => setDialogOpen(false)}>
