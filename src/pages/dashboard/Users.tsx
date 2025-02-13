@@ -54,6 +54,8 @@ const menuOptions = [
   { value: 'service_orders', label: 'Ordens de Serviço' },
   { value: 'service_order_settings', label: 'Configurações de O.S.' },
   { value: 'customer_area', label: 'Área do Cliente' },
+  { value: 'nfce', label: 'NFC-e' },
+  { value: 'nfse', label: 'NFS-e' },
 ];
 
 const defaultFormData: UserFormData = {

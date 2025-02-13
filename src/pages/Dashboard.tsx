@@ -1,8 +1,9 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, Outlet } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/ui/toast";
 import {
   Users,
   User,
@@ -14,6 +15,7 @@ import {
   Settings,
   Store,
   ArrowLeft,
+  Receipt,
 } from "lucide-react";
 import {
   Sidebar,
@@ -34,6 +36,7 @@ const Dashboard = () => {
   const { toast } = useToast();
   const [cadastrosOpen, setCadastrosOpen] = useState(true);
   const [ordensOpen, setOrdensOpen] = useState(true);
+  const [notasFiscaisOpen, setNotasFiscaisOpen] = useState(true);
   const [username, setUsername] = useState<string>("");
   const [userPermissions, setUserPermissions] = useState<string[]>([]);
 
@@ -234,12 +237,54 @@ const Dashboard = () => {
                 </SidebarGroupContent>
               )}
             </SidebarGroup>
+
+            {/* Novo grupo de Notas Fiscais */}
+            <SidebarGroup>
+              <SidebarGroupLabel 
+                onClick={() => setNotasFiscaisOpen(!notasFiscaisOpen)} 
+                className="cursor-pointer hover:bg-muted/50 rounded-md"
+              >
+                <div className="flex items-center gap-2">
+                  <Receipt className="h-4 w-4" />
+                  <span>Notas Fiscais</span>
+                </div>
+              </SidebarGroupLabel>
+              {notasFiscaisOpen && (
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {hasPermission('nfce') && (
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          onClick={() => navigate("/dashboard/nfce")}
+                          isActive={location.pathname === "/dashboard/nfce"}
+                        >
+                          <Receipt className="h-4 w-4" />
+                          <span>NFC-e</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    )}
+                    {hasPermission('nfse') && (
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          onClick={() => navigate("/dashboard/nfse")}
+                          isActive={location.pathname === "/dashboard/nfse"}
+                        >
+                          <Receipt className="h-4 w-4" />
+                          <span>NFS-e</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    )}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              )}
+            </SidebarGroup>
+
           </SidebarContent>
         </Sidebar>
         <SidebarInset>
           <header className="p-4 flex justify-between items-center border-b">
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" onClick={handleBack}>
+              <Button variant="outline" size="icon" onClick={() => navigate(-1)}>
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               <h1 className="text-2xl font-bold">Dashboard</h1>
@@ -248,7 +293,7 @@ const Dashboard = () => {
               <span className="text-sm text-muted-foreground">
                 Olá, {username || "Usuário"}
               </span>
-              <Button variant="outline" onClick={handleLogout}>
+              <Button variant="outline" onClick={() => handleLogout()}>
                 Sair
               </Button>
             </div>
