@@ -7,8 +7,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
 
 export function LoginForm() {
-  const [email, setEmail] = useState("backend");
-  const [password, setPassword] = useState("backend123@");
+  const [email, setEmail] = useState("admin");
+  const [password, setPassword] = useState("admin");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -17,18 +17,23 @@ export function LoginForm() {
     setLoading(true);
 
     try {
+      console.log("Tentando login com:", `${email}@example.com`, password);
       const { error } = await supabase.auth.signInWithPassword({
         email: `${email}@example.com`,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro de login:", error);
+        throw error;
+      }
 
       toast({
         title: "Login realizado com sucesso!",
         description: "Bem-vindo ao sistema.",
       });
     } catch (error) {
+      console.error("Erro completo:", error);
       toast({
         variant: "destructive",
         title: "Erro ao fazer login",
