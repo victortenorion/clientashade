@@ -56,12 +56,6 @@ const CustomerArea = () => {
         throw new Error("Cliente não identificado");
       }
 
-      // Configura o clientId como claim personalizado
-      await supabase.auth.setSession({
-        access_token: clientId,
-        refresh_token: '',
-      });
-
       const { data, error } = await supabase
         .from("service_orders")
         .select("*")
@@ -106,12 +100,6 @@ const CustomerArea = () => {
       if (!clientId) {
         throw new Error("Cliente não identificado");
       }
-
-      // Configura o clientId como claim personalizado
-      await supabase.auth.setSession({
-        access_token: clientId,
-        refresh_token: '',
-      });
 
       const { error } = await supabase
         .from("service_orders")
