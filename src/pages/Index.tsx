@@ -17,6 +17,11 @@ const Index = () => {
               Área do Cliente
             </Button>
           </Link>
+          <Link to="/auth">
+            <Button size="lg" variant="outline">
+              Área Administrativa
+            </Button>
+          </Link>
         </div>
       </main>
     </div>
