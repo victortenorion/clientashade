@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -320,33 +319,47 @@ const Clients = () => {
 
   const parseAddress = (address: string) => {
     try {
-      // Exemplo: "RUA EXEMPLO 123, BAIRRO, CIDADE - UF, 12345-678"
-      const parts = address.split(',');
+      // Exemplo: "RUA EXEMPLO, 123, BAIRRO, CIDADE - UF, 12345-678"
+      const parts = address.split(',').map(part => part.trim());
       
       // Processa rua e número
-      const streetWithNumber = parts[0].trim();
-      const streetMatch = streetWithNumber.match(/(.*?)(\d+)\s*$/);
-      const street = streetMatch ? streetMatch[1].trim() : streetWithNumber;
-      const number = streetMatch ? streetMatch[2] : '';
+      let street = parts[0] || '';
+      let number = '';
       
-      // Processa bairro
-      const neighborhood = parts[1]?.trim() || '';
+      // Extrai o número do final da rua, se existir
+      const streetParts = street.split(' ');
+      if (streetParts.length > 1 && /^\d+$/.test(streetParts[streetParts.length - 1])) {
+        number = streetParts.pop() || '';
+        street = streetParts.join(' ');
+      }
+      
+      // Processa bairro (agora sem o número)
+      const neighborhood = parts[2]?.trim() || '';
       
       // Processa cidade e estado
-      const cityState = parts[2]?.trim() || '';
-      const [city, stateWithCep] = cityState.split('-').map(s => s.trim());
+      const cityStatePart = parts[3]?.trim() || '';
+      const [city, stateAndCep] = cityStatePart.split('-').map(s => s.trim());
       
       // Processa estado e CEP
-      const [state, cep] = stateWithCep ? stateWithCep.split(',').map(s => s.trim()) : ['', ''];
+      let state = '';
+      let cep = '';
+      if (stateAndCep) {
+        const lastPart = stateAndCep.split(',');
+        state = lastPart[0]?.trim() || '';
+        cep = lastPart[1]?.trim() || '';
+      }
+
+      // Remove todos os caracteres não numéricos do CEP
+      const cleanCep = cep.replace(/\D/g, '');
 
       return {
-        street,
+        street: street.trim(),
         street_number: number,
-        complement: '',
+        complement: parts[1]?.trim() || '',
         neighborhood,
         city: city || '',
         state: state || '',
-        zip_code: cep ? cep.replace(/\D/g, '') : ''
+        zip_code: cleanCep
       };
     } catch (error) {
       console.error('Erro ao parsear endereço:', error);
