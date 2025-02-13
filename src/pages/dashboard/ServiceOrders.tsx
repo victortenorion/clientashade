@@ -34,8 +34,9 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, Pencil } from "lucide-react";
+import { Plus, Trash2, Pencil, Receipt, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 interface ServiceOrder {
   id: string;
@@ -125,6 +126,7 @@ const ServiceOrders = () => {
   const [stores, setStores] = useState<{ id: string; name: string; }[]>([]);
   const [currentUser, setCurrentUser] = useState<{ id: string; email?: string; user_metadata?: { full_name?: string; name?: string; } } | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const fetchOrders = async () => {
     try {
@@ -413,6 +415,34 @@ const ServiceOrders = () => {
     }));
   };
 
+  const handleGenerateNFCe = (order: ServiceOrder) => {
+    navigate("/dashboard/nfce", {
+      state: {
+        serviceOrder: {
+          client_id: order.client_id,
+          items: order.items.map(item => ({
+            product_id: "", // Será selecionado na tela de NFC-e
+            quantidade: 1,
+            valor_unitario: item.price,
+            descricao: item.description
+          }))
+        }
+      }
+    });
+  };
+
+  const handleGenerateNFSe = (order: ServiceOrder) => {
+    navigate("/dashboard/nfse", {
+      state: {
+        serviceOrder: {
+          client_id: order.client_id,
+          discriminacao_servicos: order.items.map(item => item.description).join("\n"),
+          valor_servicos: order.total_price
+        }
+      }
+    });
+  };
+
   useEffect(() => {
     fetchOrders();
   }, [searchTerm]);
@@ -503,6 +533,24 @@ const ServiceOrders = () => {
                         onClick={() => handleEditOrder(order)}
                       >
                         <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-amber-500 hover:text-amber-500 hover:bg-amber-50"
+                        onClick={() => handleGenerateNFCe(order)}
+                        title="Gerar NFC-e"
+                      >
+                        <Receipt className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-green-500 hover:text-green-500 hover:bg-green-50"
+                        onClick={() => handleGenerateNFSe(order)}
+                        title="Gerar NFS-e"
+                      >
+                        <FileText className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
