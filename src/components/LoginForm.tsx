@@ -7,8 +7,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
 
 export function LoginForm() {
-  const [email, setEmail] = useState("admin");
-  const [password, setPassword] = useState("admin");
+  const [email, setEmail] = useState("backend");
+  const [password, setPassword] = useState("backend123@");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
