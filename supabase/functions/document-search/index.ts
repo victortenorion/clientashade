@@ -1,7 +1,11 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const CNPJ_API_BASE = "https://publica.cnpj.ws/cnpj"
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
 const validateCPF = (cpf: string) => {
   const cleanCPF = cpf.replace(/[^\d]/g, '')
@@ -91,6 +95,11 @@ const searchCNPJ = async (cnpj: string) => {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders })
+  }
+
   try {
     const { document } = await req.json()
     const cleanDocument = document.replace(/[^\d]/g, '')
@@ -98,7 +107,13 @@ serve(async (req) => {
     if (!document) {
       return new Response(
         JSON.stringify({ error: 'Documento não fornecido' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+        { 
+          status: 400, 
+          headers: { 
+            'Content-Type': 'application/json',
+            ...corsHeaders 
+          } 
+        }
       )
     }
 
@@ -108,7 +123,13 @@ serve(async (req) => {
       if (!isValid) {
         return new Response(
           JSON.stringify({ error: 'CPF inválido' }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
+          { 
+            status: 400, 
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders 
+            } 
+          }
         )
       }
       
@@ -122,14 +143,25 @@ serve(async (req) => {
       
       return new Response(
         JSON.stringify({ results: clients }),
-        { headers: { 'Content-Type': 'application/json' } }
+        { 
+          headers: { 
+            'Content-Type': 'application/json',
+            ...corsHeaders 
+          } 
+        }
       )
     } else if (cleanDocument.length === 14) {
       const isValid = validateCNPJ(cleanDocument)
       if (!isValid) {
         return new Response(
           JSON.stringify({ error: 'CNPJ inválido' }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
+          { 
+            status: 400, 
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders 
+            } 
+          }
         )
       }
       
@@ -149,18 +181,35 @@ serve(async (req) => {
           apiData,
           results: clients 
         }),
-        { headers: { 'Content-Type': 'application/json' } }
+        { 
+          headers: { 
+            'Content-Type': 'application/json',
+            ...corsHeaders 
+          } 
+        }
       )
     } else {
       return new Response(
         JSON.stringify({ error: 'Documento inválido' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+        { 
+          status: 400, 
+          headers: { 
+            'Content-Type': 'application/json',
+            ...corsHeaders 
+          } 
+        }
       )
     }
   } catch (error) {
     return new Response(
       JSON.stringify({ error: error.message }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      { 
+        status: 500, 
+        headers: { 
+          'Content-Type': 'application/json',
+          ...corsHeaders 
+        } 
+      }
     )
   }
 })
