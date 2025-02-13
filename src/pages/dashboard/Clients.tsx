@@ -348,7 +348,7 @@ const Clients = () => {
 
     try {
       if (deleteDialog.withOrders) {
-        // Verifica a senha do administrador (isso é um exemplo, você deve implementar sua própria lógica de verificação)
+        // Verifica a senha do administrador
         if (!deleteDialog.adminPassword || deleteDialog.adminPassword !== 'admin123') {
           toast({
             variant: "destructive",
@@ -667,6 +667,7 @@ const Clients = () => {
           Novo Cliente
         </Button>
       </div>
+
       <div className="flex gap-2">
         <Input
           placeholder="Buscar clientes..."
@@ -675,6 +676,7 @@ const Clients = () => {
           onChange={handleSearch}
         />
       </div>
+
       <div className="border rounded-lg">
         <Table>
           <TableHeader>
