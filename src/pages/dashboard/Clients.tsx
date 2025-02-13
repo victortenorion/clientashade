@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Pencil, Trash2, Plus } from "lucide-react";
+import { Pencil, Trash2, Plus, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
@@ -20,7 +20,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { MagnifyingGlass } from "lucide-react";
 import { IMask, IMaskInput } from "react-imask";
 
 interface Client {
@@ -441,7 +440,7 @@ const Clients = () => {
                   disabled={searchingDocument || !formData.document}
                   onClick={() => searchDocument(formData.document)}
                 >
-                  <MagnifyingGlass className="h-4 w-4" />
+                  <Search className="h-4 w-4" />
                 </Button>
               </div>
             </div>
