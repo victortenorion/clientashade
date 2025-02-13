@@ -34,21 +34,23 @@ const App: React.FC = () => {
                 <Route path="/" element={<Index />} />
                 <Route path="/client-login" element={<ClientLogin />} />
                 <Route path="/auth" element={<LoginForm />} />
+                {/* Área administrativa */}
                 <Route path="/dashboard" element={<Dashboard />}>
                   <Route index element={<DashboardHome />} />
                   <Route path="clients" element={<Clients />} />
                   <Route path="products" element={<Products />} />
                   <Route path="users" element={<Users />} />
                   <Route path="service-orders" element={<ServiceOrders />} />
-                  <Route 
-                    path="customer-area" 
-                    element={
-                      <ClientProtectedRoute>
-                        <CustomerArea />
-                      </ClientProtectedRoute>
-                    } 
-                  />
                 </Route>
+                {/* Área do cliente separada do dashboard administrativo */}
+                <Route 
+                  path="/customer-area" 
+                  element={
+                    <ClientProtectedRoute>
+                      <CustomerArea />
+                    </ClientProtectedRoute>
+                  } 
+                />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

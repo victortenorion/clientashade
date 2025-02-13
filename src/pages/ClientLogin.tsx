@@ -33,7 +33,7 @@ export function ClientLogin() {
           title: "Login realizado com sucesso",
           description: "Bem-vindo à área do cliente.",
         });
-        navigate("/dashboard/customer-area");
+        navigate("/customer-area"); // Atualizado para a nova rota
       } else {
         toast({
           variant: "destructive",
