@@ -60,7 +60,7 @@ export const ServiceOrderNFSe = ({ serviceOrderId, onSubmit, onCancel }: Props) 
           id,
           client_id,
           total_price,
-          items (
+          service_order_items (
             description,
             price
           ),
@@ -97,7 +97,7 @@ export const ServiceOrderNFSe = ({ serviceOrderId, onSubmit, onCancel }: Props) 
       setFormData(prev => ({
         ...prev,
         client_id: serviceOrder.client_id,
-        discriminacao_servicos: serviceOrder.items?.map(item => item.description).join("\n") || "",
+        discriminacao_servicos: serviceOrder.service_order_items?.map(item => item.description).join("\n") || "",
         valor_servicos: serviceOrder.total_price
       }));
     }
