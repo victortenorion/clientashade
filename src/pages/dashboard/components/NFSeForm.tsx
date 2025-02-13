@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -61,16 +61,15 @@ export const NFSeForm = ({ onSubmit, onCancel, isLoading }: Props) => {
       if (error) throw error;
       return data;
     },
-  });
-
-  useEffect(() => {
-    if (fiscalConfig) {
-      setFormData(prev => ({
-        ...prev,
-        codigo_servico: fiscalConfig.service_code || "",
-      }));
+    onSuccess: (data) => {
+      if (data?.service_code) {
+        setFormData(prev => ({
+          ...prev,
+          codigo_servico: data.service_code
+        }));
+      }
     }
-  }, [fiscalConfig]);
+  });
 
   const handleChange = (
     field: keyof NFSeFormData,
