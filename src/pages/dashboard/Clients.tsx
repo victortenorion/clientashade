@@ -970,4 +970,125 @@ const Clients = () => {
                     <IMaskInput
                       id="phone_landline"
                       name="phone_landline"
-                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      value={formData.phone_landline}
+                      mask="(00) 0000-0000"
+                      onAccept={(value) => setFormData(prev => ({ ...prev, phone_landline: value }))}
+                      placeholder="Digite o telefone fixo"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="mobile_phone">Celular</Label>
+                    <IMaskInput
+                      id="mobile_phone"
+                      name="mobile_phone"
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      value={formData.mobile_phone}
+                      mask="(00) 00000-0000"
+                      onAccept={(value) => setFormData(prev => ({ ...prev, mobile_phone: value }))}
+                      placeholder="Digite o celular"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      className="h-9"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone_carrier">Operadora</Label>
+                    <Input
+                      id="phone_carrier"
+                      name="phone_carrier"
+                      value={formData.phone_carrier}
+                      onChange={handleInputChange}
+                      className="h-9"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="website">Website</Label>
+                    <Input
+                      id="website"
+                      name="website"
+                      value={formData.website}
+                      onChange={handleInputChange}
+                      className="h-9"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="nfe_email">Email NFe</Label>
+                    <Input
+                      id="nfe_email"
+                      name="nfe_email"
+                      type="email"
+                      value={formData.nfe_email}
+                      onChange={handleInputChange}
+                      className="h-9"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <DialogFooter>
+              <Button variant="outline" type="button" onClick={() => setDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit">
+                {editingId ? "Salvar" : "Criar"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={deleteDialog.isOpen} onOpenChange={(isOpen) => setDeleteDialog(prev => ({ ...prev, isOpen }))}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteDialog.withOrders
+                ? "Este cliente possui ordens de serviço. Digite a senha de administrador para confirmar a exclusão do cliente e todas as suas ordens de serviço."
+                : "Tem certeza que deseja excluir este cliente?"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {deleteDialog.withOrders && (
+            <div className="space-y-2 py-4">
+              <Label htmlFor="admin_password">Senha de Administrador</Label>
+              <Input
+                id="admin_password"
+                type="password"
+                value={deleteDialog.adminPassword}
+                onChange={(e) => setDeleteDialog(prev => ({ ...prev, adminPassword: e.target.value }))}
+                placeholder="Digite a senha de administrador"
+              />
+            </div>
+          )}
+
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteDialog(prev => ({ ...prev, isOpen: false }))}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+};
+
+export default Clients;
