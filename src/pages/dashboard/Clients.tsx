@@ -28,6 +28,8 @@ interface Client {
   email: string | null;
   phone: string | null;
   document: string | null;
+  client_login: string | null;
+  client_password: string | null;
 }
 
 interface ClientFormData {
@@ -35,6 +37,8 @@ interface ClientFormData {
   email: string;
   phone: string;
   document: string;
+  client_login: string;
+  client_password: string;
 }
 
 const defaultFormData: ClientFormData = {
@@ -42,6 +46,8 @@ const defaultFormData: ClientFormData = {
   email: "",
   phone: "",
   document: "",
+  client_login: "",
+  client_password: "",
 };
 
 const Clients = () => {
@@ -108,6 +114,8 @@ const Clients = () => {
       email: client.email || "",
       phone: client.phone || "",
       document: client.document || "",
+      client_login: client.client_login || "",
+      client_password: "", // Não preenchemos a senha por segurança
     });
     setEditingId(client.id);
     setDialogOpen(true);
@@ -116,10 +124,17 @@ const Clients = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const dataToSend = { ...formData };
+      
+      // Se estiver editando e a senha estiver vazia, removemos do objeto para não sobrescrever
+      if (editingId && !dataToSend.client_password) {
+        delete dataToSend.client_password;
+      }
+
       if (editingId) {
         const { error } = await supabase
           .from("clients")
-          .update(formData)
+          .update(dataToSend)
           .eq("id", editingId);
 
         if (error) throw error;
@@ -128,6 +143,24 @@ const Clients = () => {
           title: "Cliente atualizado com sucesso",
         });
       } else {
+        // Validar se o login já existe
+        const { data: existingClient, error: checkError } = await supabase
+          .from("clients")
+          .select("id")
+          .eq("client_login", formData.client_login)
+          .maybeSingle();
+
+        if (checkError) throw checkError;
+
+        if (existingClient) {
+          toast({
+            variant: "destructive",
+            title: "Login já existe",
+            description: "Por favor, escolha outro login para o cliente.",
+          });
+          return;
+        }
+
         const { error } = await supabase
           .from("clients")
           .insert(formData);
@@ -195,19 +228,20 @@ const Clients = () => {
               <TableHead>Email</TableHead>
               <TableHead>Telefone</TableHead>
               <TableHead>Documento</TableHead>
+              <TableHead>Login do Cliente</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center">
+                <TableCell colSpan={6} className="text-center">
                   Carregando...
                 </TableCell>
               </TableRow>
             ) : clients.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center">
+                <TableCell colSpan={6} className="text-center">
                   Nenhum cliente encontrado
                 </TableCell>
               </TableRow>
@@ -218,6 +252,7 @@ const Clients = () => {
                   <TableCell>{client.email}</TableCell>
                   <TableCell>{client.phone}</TableCell>
                   <TableCell>{client.document}</TableCell>
+                  <TableCell>{client.client_login}</TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button
                       variant="outline"
@@ -285,6 +320,28 @@ const Clients = () => {
                 name="document"
                 value={formData.document}
                 onChange={handleInputChange}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="client_login">Login do Cliente</Label>
+              <Input
+                id="client_login"
+                name="client_login"
+                value={formData.client_login}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="client_password">Senha do Cliente</Label>
+              <Input
+                id="client_password"
+                name="client_password"
+                type="password"
+                value={formData.client_password}
+                onChange={handleInputChange}
+                placeholder={editingId ? "(deixe em branco para manter a atual)" : ""}
+                {...(!editingId && { required: true })}
               />
             </div>
             <DialogFooter>
