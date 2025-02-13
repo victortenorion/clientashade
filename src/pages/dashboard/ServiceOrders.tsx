@@ -78,6 +78,7 @@ interface ServiceOrderFormData {
   description: string;
   status_id: string;
   seller_id: string;
+  seller_name?: string;
   store_id: string;
   equipment: string;
   equipment_serial_number: string;
@@ -98,6 +99,7 @@ const defaultFormData: ServiceOrderFormData = {
   description: "",
   status_id: "",
   seller_id: "",
+  seller_name: "",
   store_id: "",
   equipment: "",
   equipment_serial_number: "",
@@ -121,7 +123,7 @@ const ServiceOrders = () => {
   const [clients, setClients] = useState<{ id: string; name: string; }[]>([]);
   const [statuses, setStatuses] = useState<{ id: string; name: string; }[]>([]);
   const [stores, setStores] = useState<{ id: string; name: string; }[]>([]);
-  const [currentUser, setCurrentUser] = useState<{ id: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ id: string; email?: string; user_metadata?: { full_name?: string; name?: string; } } | null>(null);
   const { toast } = useToast();
 
   const fetchOrders = async () => {
@@ -171,8 +173,18 @@ const ServiceOrders = () => {
   const getCurrentUser = async () => {
     const { data: { session }, error } = await supabase.auth.getSession();
     if (session?.user) {
+      const userName = 
+        session.user.user_metadata?.full_name || 
+        session.user.user_metadata?.name || 
+        session.user.email?.split('@')[0] || 
+        'Usuário';
+
       setCurrentUser(session.user);
-      setFormData(prev => ({ ...prev, seller_id: session.user.id }));
+      setFormData(prev => ({
+        ...prev, 
+        seller_id: session.user.id,
+        seller_name: userName
+      }));
     }
   };
 
@@ -543,7 +555,7 @@ const ServiceOrders = () => {
                   <div className="space-y-2">
                     <Label>Vendedor *</Label>
                     <Input
-                      value={currentUser?.id || ''}
+                      value={formData.seller_name || ''}
                       disabled
                       className="bg-muted"
                     />
