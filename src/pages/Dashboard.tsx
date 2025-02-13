@@ -10,7 +10,6 @@ import {
   Package,
   LayoutDashboard,
   FolderOpen,
-  Menu,
 } from "lucide-react";
 import {
   Sidebar,
@@ -29,7 +28,6 @@ import {
 const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [menuPrincipalOpen, setMenuPrincipalOpen] = useState(true);
   const [cadastrosOpen, setCadastrosOpen] = useState(true);
 
   const handleLogout = async () => {
@@ -85,39 +83,6 @@ const Dashboard = () => {
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
-
-            <SidebarGroup>
-              <SidebarGroupLabel onClick={() => setMenuPrincipalOpen(!menuPrincipalOpen)} className="cursor-pointer hover:bg-muted/50 rounded-md">
-                <div className="flex items-center gap-2">
-                  <Menu className="h-4 w-4" />
-                  <span>Menu Principal</span>
-                </div>
-              </SidebarGroupLabel>
-              {menuPrincipalOpen && (
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        onClick={() => navigate("/dashboard/menu1")}
-                        isActive={location.pathname.startsWith("/dashboard/menu1")}
-                      >
-                        <Package className="h-4 w-4" />
-                        <span>Menu 1</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        onClick={() => navigate("/dashboard/menu2")}
-                        isActive={location.pathname.startsWith("/dashboard/menu2")}
-                      >
-                        <Package className="h-4 w-4" />
-                        <span>Menu 2</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              )}
-            </SidebarGroup>
 
             <SidebarGroup>
               <SidebarGroupLabel onClick={() => setCadastrosOpen(!cadastrosOpen)} className="cursor-pointer hover:bg-muted/50 rounded-md">
