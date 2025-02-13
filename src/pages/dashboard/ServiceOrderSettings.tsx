@@ -26,6 +26,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Status {
   id: string;
@@ -34,6 +35,21 @@ interface Status {
   description: string;
   is_active: boolean;
 }
+
+interface ClientField {
+  id: string;
+  label: string;
+  field: string;
+  visible: boolean;
+}
+
+const defaultClientFields: ClientField[] = [
+  { id: "1", label: "Nome", field: "name", visible: true },
+  { id: "2", label: "Email", field: "email", visible: true },
+  { id: "3", label: "Telefone", field: "phone", visible: true },
+  { id: "4", label: "Documento", field: "document", visible: true },
+  { id: "5", label: "Login do Cliente", field: "client_login", visible: true },
+];
 
 const ServiceOrderSettings = () => {
   const [statuses, setStatuses] = useState<Status[]>([]);
@@ -45,6 +61,7 @@ const ServiceOrderSettings = () => {
     color: "#000000",
     description: "",
   });
+  const [clientFields, setClientFields] = useState<ClientField[]>(defaultClientFields);
   const { toast } = useToast();
 
   const fetchStatuses = async () => {
@@ -149,6 +166,19 @@ const ServiceOrderSettings = () => {
       ...prev,
       [name]: value,
     }));
+  };
+
+  const handleFieldVisibilityChange = (field: string, checked: boolean) => {
+    setClientFields(prev => 
+      prev.map(f => 
+        f.field === field ? { ...f, visible: checked } : f
+      )
+    );
+
+    toast({
+      title: "Configuração salva",
+      description: `Campo ${field} ${checked ? 'será exibido' : 'será ocultado'} na listagem`,
+    });
   };
 
   useEffect(() => {
@@ -271,8 +301,29 @@ const ServiceOrderSettings = () => {
           </TabsContent>
 
           <TabsContent value="clients" className="mt-6">
-            <div className="flex items-center justify-center h-32 border-2 border-dashed rounded-lg">
-              <p className="text-muted-foreground">Configurações de campos do cadastro de clientes em desenvolvimento. Aqui você poderá escolher quais campos aparecerão na listagem e no cadastro de clientes.</p>
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Campos Visíveis na Listagem de Clientes</h3>
+                <div className="border rounded-lg p-4">
+                  <div className="space-y-4">
+                    {clientFields.map((field) => (
+                      <div key={field.id} className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={field.id}
+                          checked={field.visible}
+                          onCheckedChange={(checked) => 
+                            handleFieldVisibilityChange(field.field, checked as boolean)
+                          }
+                        />
+                        <Label htmlFor={field.id}>{field.label}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Selecione os campos que deseja exibir na listagem de clientes.
+                </p>
+              </div>
             </div>
           </TabsContent>
 
