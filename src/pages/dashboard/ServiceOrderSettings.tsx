@@ -211,8 +211,15 @@ const ServiceOrderSettings = () => {
   const handleFieldVisibilityChange = async (field: string, checked: boolean) => {
     try {
       const { error } = await supabase
-        .from("client_field_settings")
-        .upsert({ field_name: field, visible: checked }, { onConflict: 'field_name' });
+        .from('client_field_settings')
+        .upsert(
+          { 
+            field_name: field,
+            visible: checked,
+            updated_at: new Date().toISOString()
+          },
+          { onConflict: 'field_name' }
+        );
 
       if (error) throw error;
 

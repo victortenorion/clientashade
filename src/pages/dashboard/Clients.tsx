@@ -12,17 +12,6 @@ import {
 } from "@/components/ui/table";
 import { Pencil, Trash2, Plus, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { IMask, IMaskInput } from "react-imask";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 interface ContactPerson {
   name: string;
@@ -142,7 +131,53 @@ const Clients = () => {
   const [formData, setFormData] = useState<ClientFormData>(defaultFormData);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchingDocument, setSearchingDocument] = useState(false);
+  const [visibleFields, setVisibleFields] = useState<{ field_name: string, visible: boolean }[]>([]);
   const { toast } = useToast();
+
+  const fetchVisibleFields = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('client_field_settings')
+        .select('field_name, visible')
+        .order('field_name');
+
+      if (error) throw error;
+      setVisibleFields(data || []);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar configurações dos campos",
+        description: error.message,
+      });
+    }
+  };
+
+  const getFieldLabel = (fieldName: string) => {
+    const labels: { [key: string]: string } = {
+      name: "Nome",
+      email: "Email",
+      phone: "Telefone",
+      document: "Documento",
+      fantasy_name: "Nome Fantasia",
+      state_registration: "Inscrição Estadual",
+      municipal_registration: "Inscrição Municipal",
+      zip_code: "CEP",
+      state: "Estado",
+      city: "Cidade",
+      neighborhood: "Bairro",
+      street: "Logradouro",
+      street_number: "Número",
+      complement: "Complemento",
+      phone_landline: "Telefone Fixo",
+      fax: "Fax",
+      mobile_phone: "Celular",
+      phone_carrier: "Operadora",
+      website: "Website",
+      nfe_email: "Email NFe",
+      client_login: "Login do Cliente"
+    };
+    return labels[fieldName] || fieldName;
+  };
 
   const fetchClients = async () => {
     try {
@@ -443,6 +478,7 @@ const Clients = () => {
   };
 
   useEffect(() => {
+    fetchVisibleFields();
     fetchClients();
   }, [searchTerm]);
 
@@ -450,11 +486,7 @@ const Clients = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold">Clientes</h2>
-        <Button onClick={() => {
-          setFormData(defaultFormData);
-          setEditingId(null);
-          setDialogOpen(true);
-        }}>
+        <Button onClick={handleNewClient}>
           <Plus className="h-4 w-4 mr-2" />
           Novo Cliente
         </Button>
@@ -471,33 +503,37 @@ const Clients = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Telefone</TableHead>
-              <TableHead>Documento</TableHead>
+              {visibleFields
+                .filter(field => field.visible)
+                .map(field => (
+                  <TableHead key={field.field_name}>{getFieldLabel(field.field_name)}</TableHead>
+              ))}
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center">
+                <TableCell colSpan={visibleFields.filter(f => f.visible).length + 1} className="text-center">
                   Carregando...
                 </TableCell>
               </TableRow>
             ) : clients.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center">
+                <TableCell colSpan={visibleFields.filter(f => f.visible).length + 1} className="text-center">
                   Nenhum cliente encontrado
                 </TableCell>
               </TableRow>
             ) : (
               clients.map((client) => (
                 <TableRow key={client.id}>
-                  <TableCell>{client.name}</TableCell>
-                  <TableCell>{client.email}</TableCell>
-                  <TableCell>{client.phone}</TableCell>
-                  <TableCell>{client.document}</TableCell>
+                  {visibleFields
+                    .filter(field => field.visible)
+                    .map(field => (
+                      <TableCell key={field.field_name}>
+                        {client[field.field_name as keyof Client]?.toString() || ''}
+                      </TableCell>
+                  ))}
                   <TableCell className="text-right space-x-2">
                     <Button
                       variant="outline"
