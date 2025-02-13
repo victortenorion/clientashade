@@ -18,7 +18,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ServiceOrder {
@@ -107,6 +107,15 @@ const ServiceOrders = () => {
         description: error.message,
       });
     }
+  };
+
+  const handleEditOrder = async (order: ServiceOrder) => {
+    setFormData({
+      client_id: order.client_id,
+      description: order.description,
+      total_price: order.total_price,
+    });
+    setDialogOpen(true);
   };
 
   const fetchClients = async () => {
@@ -243,14 +252,24 @@ const ServiceOrders = () => {
                     {order.created_by_type === 'admin' ? 'Administrador' : 'Cliente'}
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => handleDeleteOrder(order.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-blue-500 hover:text-blue-500 hover:bg-blue-50"
+                        onClick={() => handleEditOrder(order)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDeleteOrder(order.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
