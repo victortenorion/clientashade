@@ -367,31 +367,69 @@ const Clients = () => {
           title: "Cliente(s) encontrado(s)",
           description: `${data.results.length} cliente(s) encontrado(s) com este documento.`,
         });
+        
+        // Atualiza a lista de clientes encontrados
+        const typedResults = data.results.map((client: any) => ({
+          ...client,
+          contact_persons: (client.contact_persons || []) as ContactPerson[]
+        }));
+        setClients(typedResults);
       }
 
       if (data.apiData) {
+        const cleanDoc = document.replace(/[^\d]/g, '');
+        const personType = cleanDoc.length === 11 ? 'PF' : 'PJ';
+
+        // Extrai o telefone limpo (apenas números)
+        const cleanPhone = data.apiData.phone ? data.apiData.phone.replace(/\D/g, '') : '';
+        
+        // Gera a senha padrão (últimos 4 dígitos do telefone ou primeiros 4 dígitos do documento)
+        const defaultPassword = cleanPhone.length >= 4 
+          ? cleanPhone.slice(-4) 
+          : cleanDoc.slice(0, 4);
+
         setFormData(prev => ({
           ...prev,
           name: data.apiData.name || prev.name,
+          fantasy_name: "", // API não retorna nome fantasia
           email: data.apiData.email || prev.email,
           phone: data.apiData.phone || prev.phone,
           document: formatDocument(document),
-          street: data.apiData.street || prev.street,
-          street_number: data.apiData.number || prev.street_number,
-          neighborhood: data.apiData.neighborhood || prev.neighborhood,
-          city: data.apiData.city || prev.city,
-          state: data.apiData.state || prev.state,
-          zip_code: data.apiData.zip_code || prev.zip_code,
           client_login: data.apiData.email || prev.client_login,
+          client_password: !editingId ? defaultPassword : prev.client_password,
+          person_type: personType,
+          state_registration: "", // Precisa ser preenchido manualmente
+          state_registration_exempt: false,
+          municipal_registration: "", // Precisa ser preenchido manualmente
+          zip_code: data.apiData.address?.match(/\d{5}-?\d{3}/)?.shift() || prev.zip_code,
+          state: data.apiData.address?.match(/[A-Z]{2}(?=\s*$)/)?.shift() || prev.state,
+          city: data.apiData.address ? 
+            data.apiData.address.split(',').slice(-2)[0].trim().replace(/^[A-Z]{2}/, '').trim() : 
+            prev.city,
+          neighborhood: data.apiData.address ? 
+            data.apiData.address.split('-').slice(-2)[0].trim() : 
+            prev.neighborhood,
+          street: data.apiData.address ? 
+            data.apiData.address.split(',')[0].split('-')[0].trim() : 
+            prev.street,
+          street_number: data.apiData.address ? 
+            data.apiData.address.match(/,\s*(\d+)/)?.[1] || "" : 
+            prev.street_number,
+          complement: "", // API não retorna complemento
+          contact_info: "", // API não retorna informações adicionais de contato
+          contact_persons: [], // API não retorna pessoas de contato
+          phone_landline: data.apiData.phone || prev.phone_landline,
+          fax: "", // API não retorna fax
+          mobile_phone: "", // API não retorna celular
+          phone_carrier: "", // API não retorna operadora
+          website: "", // API não retorna website
+          nfe_email: data.apiData.email || prev.nfe_email,
         }));
-      }
 
-      if (data.results && data.results.length > 0) {
-        const typedResults = data.results.map((client: any) => ({
-          ...client,
-          contact_persons: client.contact_persons as ContactPerson[] | null
-        }));
-        setClients(typedResults);
+        toast({
+          title: "Dados encontrados",
+          description: "Os campos foram preenchidos automaticamente.",
+        });
       }
     } catch (error: any) {
       toast({
