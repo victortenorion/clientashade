@@ -50,6 +50,11 @@ const defaultFormData: ClientFormData = {
   client_password: "",
 };
 
+const getLastFourDigits = (phone: string) => {
+  const digits = phone.replace(/\D/g, '');
+  return digits.slice(-4);
+};
+
 const Clients = () => {
   const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState<Client[]>([]);
@@ -69,7 +74,7 @@ const Clients = () => {
 
       if (error) throw error;
 
-      setClients(data || []);
+      setClients(data as Client[]);
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -114,7 +119,7 @@ const Clients = () => {
       email: client.email || "",
       phone: client.phone || "",
       document: client.document || "",
-      client_login: client.client_login || "",
+      client_login: client.client_login || client.email || "",
       client_password: "", // Não preenchemos a senha por segurança
     });
     setEditingId(client.id);
@@ -148,9 +153,9 @@ const Clients = () => {
           .from("clients")
           .select("id")
           .eq("client_login", formData.client_login)
-          .maybeSingle();
+          .single();
 
-        if (checkError) throw checkError;
+        if (checkError && checkError.code !== 'PGRST116') throw checkError;
 
         if (existingClient) {
           toast({
@@ -193,7 +198,33 @@ const Clients = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    
+    if (name === 'email') {
+      // Atualiza o client_login com o email, a menos que tenha sido personalizado
+      if (formData.client_login === '' || formData.client_login === formData.email) {
+        setFormData(prev => ({
+          ...prev,
+          [name]: value,
+          client_login: value
+        }));
+        return;
+      }
+    }
+    
+    if (name === 'phone') {
+      // Atualiza a senha com os últimos 4 dígitos do telefone se estiver criando novo cliente
+      if (!editingId && (!formData.client_password || formData.client_password === getLastFourDigits(formData.phone))) {
+        const lastFour = getLastFourDigits(value);
+        setFormData(prev => ({
+          ...prev,
+          [name]: value,
+          client_password: lastFour
+        }));
+        return;
+      }
+    }
+    
+    setFormData(prev => ({
       ...prev,
       [name]: value,
     }));
@@ -330,6 +361,7 @@ const Clients = () => {
                 value={formData.client_login}
                 onChange={handleInputChange}
                 required
+                placeholder="Preenchido automaticamente com o email"
               />
             </div>
             <div className="space-y-2">
@@ -340,7 +372,7 @@ const Clients = () => {
                 type="password"
                 value={formData.client_password}
                 onChange={handleInputChange}
-                placeholder={editingId ? "(deixe em branco para manter a atual)" : ""}
+                placeholder={editingId ? "(deixe em branco para manter a atual)" : "4 últimos dígitos do telefone"}
                 {...(!editingId && { required: true })}
               />
             </div>
