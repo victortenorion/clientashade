@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, Outlet } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -39,6 +38,10 @@ const Dashboard = () => {
   const [notasFiscaisOpen, setNotasFiscaisOpen] = useState(true);
   const [username, setUsername] = useState<string>("");
   const [userPermissions, setUserPermissions] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
+  const hasAllPermissions = userPermissions.includes("all");
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -55,6 +58,59 @@ const Dashboard = () => {
 
   const handleBack = () => {
     navigate(-1);
+  };
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from("profiles")
+        .select("*")
+        .ilike("username", `%${searchTerm}%`);
+
+      if (profilesError) throw profilesError;
+
+      if (!hasAllPermissions) {
+        setUsers(profilesData || []);
+        return;
+      }
+
+      const usersWithData = await Promise.all(
+        (profilesData || []).map(async (profile) => {
+          const [permissionsData, storeData] = await Promise.all([
+            supabase
+              .from("user_permissions")
+              .select("menu_permission")
+              .eq("user_id", profile.id),
+            supabase
+              .from("user_stores")
+              .select("store_id")
+              .eq("user_id", profile.id)
+              .maybeSingle() // Alterado de .single() para .maybeSingle()
+          ]);
+
+          const permissions = permissionsData.data?.map(p => p.menu_permission) || [];
+          const store_id = storeData.data?.store_id;
+
+          return {
+            ...profile,
+            permissions,
+            store_id
+          };
+        })
+      );
+
+      setUsers(usersWithData);
+    } catch (error: any) {
+      console.error("Erro ao carregar usuários:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar usuários",
+        description: error.message,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
