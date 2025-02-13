@@ -1,11 +1,10 @@
-
 import { Json } from "@/integrations/supabase/types";
 
 export interface ContactPerson {
   name: string;
-  role: string;
-  phone: string;
   email: string;
+  phone: string;
+  role?: string;
 }
 
 export interface Store {
@@ -52,7 +51,7 @@ export interface ClientFormData {
   document: string;
   client_login: string;
   client_password: string;
-  person_type: 'PF' | 'PJ';
+  person_type: string;
   state_registration: string;
   state_registration_exempt: boolean;
   municipal_registration: string;

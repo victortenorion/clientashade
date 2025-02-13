@@ -242,7 +242,7 @@ const Clients = () => {
   };
 
   const handleEdit = (client: Client) => {
-    setFormData({
+    const formDataToSet: ClientFormData = {
       name: client.name,
       fantasy_name: client.fantasy_name || "",
       email: client.email || "",
@@ -270,9 +270,41 @@ const Clients = () => {
       website: client.website || "",
       nfe_email: client.nfe_email || "",
       store_id: client.store_id || ""
-    });
+    };
+    
+    setFormData(formDataToSet);
     setEditingId(client.id);
     setDialogOpen(true);
+  };
+
+  const parseAddress = (address: string) => {
+    try {
+      const mainParts = address.split(',');
+      let street = '', number = '', neighborhood = '', city = '', state = '', zipCode = '';
+      
+      if (mainParts.length >= 4) {
+        street = mainParts[0]?.trim() || '';
+        number = mainParts[1]?.trim() || '';
+        neighborhood = mainParts[2]?.trim() || '';
+        const cityStatePart = mainParts[3]?.trim() || '';
+        const cityStateArr = cityStatePart.split('-');
+        city = cityStateArr[0]?.trim() || '';
+        state = cityStateArr[1]?.trim() || '';
+        zipCode = mainParts[4]?.trim() || '';
+      }
+
+      return {
+        street,
+        street_number: number,
+        neighborhood,
+        city,
+        state,
+        zip_code: zipCode.replace(/\D/g, '')
+      };
+    } catch (error) {
+      console.error('Erro ao parsear endereço:', error);
+      return {};
+    }
   };
 
   const handleSearchDocument = async (document: string) => {
@@ -296,12 +328,18 @@ const Clients = () => {
 
       if (data.apiData) {
         const { name, email, phone, address } = data.apiData;
+        const addressData = parseAddress(address);
         setFormData(prev => ({
           ...prev,
           name: name || prev.name,
           email: email || prev.email,
           phone: phone || prev.phone,
-          ...(address ? parseAddress(address) : {})
+          street: addressData.street || prev.street,
+          street_number: addressData.street_number || prev.street_number,
+          neighborhood: addressData.neighborhood || prev.neighborhood,
+          city: addressData.city || prev.city,
+          state: addressData.state || prev.state,
+          zip_code: addressData.zip_code || prev.zip_code
         }));
         toast({
           title: "Dados encontrados",
@@ -316,43 +354,6 @@ const Clients = () => {
       });
     } finally {
       setSearchingDocument(false);
-    }
-  };
-
-  const parseAddress = (address: string) => {
-    try {
-      // Exemplo formato: "RUA EXEMPLO - BAIRRO TESTE, 228 - PARQUE DOROTEIA, CIDADE - SP, 12345-678"
-      const mainParts = address.split(',');
-      
-      // Primeira parte contém rua
-      const street = mainParts[0]?.split('-')[0]?.trim() || '';
-      
-      // Segunda parte contém número e bairro
-      const secondPart = mainParts[1]?.trim() || '';
-      // Separa o número do bairro (formato: "228 - PARQUE DOROTEIA")
-      const [numberPart, ...neighborhoodParts] = secondPart.split('-');
-      const number = numberPart?.trim() || '';
-      const neighborhood = neighborhoodParts.join('-').trim() || '';
-      
-      // Terceira parte contém cidade e estado
-      const cityAndState = mainParts[2]?.split('-').map(part => part.trim()) || [];
-      const city = cityAndState[0] || '';
-      const state = cityAndState[1] || '';
-      
-      // Quarta parte é o CEP
-      const cep = mainParts[3]?.trim() || '';
-
-      return {
-        street,
-        street_number: number,
-        neighborhood,
-        city,
-        state,
-        zip_code: cep.replace(/\D/g, '')
-      };
-    } catch (error) {
-      console.error('Erro ao parsear endereço:', error);
-      return {};
     }
   };
 
@@ -534,7 +535,6 @@ const Clients = () => {
               formData={formData}
               onFormChange={handleInputChange}
               onCEPChange={(cep) => {
-                // Implementar busca por CEP
                 console.log("Buscar CEP:", cep);
               }}
             />
