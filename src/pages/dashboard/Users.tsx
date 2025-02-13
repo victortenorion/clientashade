@@ -158,8 +158,19 @@ const Users = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      const { error: authError } = await supabase.auth.admin.deleteUser(id);
-      if (authError) throw authError;
+      const { error: permissionsError } = await supabase
+        .from("user_permissions")
+        .delete()
+        .eq("user_id", id);
+
+      if (permissionsError) throw permissionsError;
+
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("id", id);
+
+      if (profileError) throw profileError;
 
       toast({
         title: "Usuário excluído com sucesso",
