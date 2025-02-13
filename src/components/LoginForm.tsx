@@ -7,8 +7,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
 
 export function LoginForm() {
-  const [email, setEmail] = useState("backend");
-  const [password, setPassword] = useState("backend123@");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const { toast } = useToast();
@@ -18,11 +18,9 @@ export function LoginForm() {
     setLoading(true);
 
     try {
-      const fullEmail = `${email}@example.com`;
-      
       if (isSignUp) {
         const { error: signUpError } = await supabase.auth.signUp({
-          email: fullEmail,
+          email,
           password,
         });
 
@@ -35,7 +33,7 @@ export function LoginForm() {
         setIsSignUp(false);
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: fullEmail,
+          email,
           password,
         });
 
@@ -66,11 +64,12 @@ export function LoginForm() {
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Usuário</label>
+            <label className="text-sm font-medium">Email</label>
             <Input
-              type="text"
+              type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              placeholder="seu@email.com"
               required
             />
           </div>
@@ -80,6 +79,7 @@ export function LoginForm() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="Sua senha"
               required
             />
           </div>
