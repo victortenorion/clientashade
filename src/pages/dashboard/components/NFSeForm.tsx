@@ -61,15 +61,16 @@ export const NFSeForm = ({ onSubmit, onCancel, isLoading }: Props) => {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => {
-      if (data?.service_code) {
-        setFormData(prev => ({
-          ...prev,
-          codigo_servico: data.service_code
-        }));
-      }
-    }
   });
+
+  // Atualiza o código de serviço quando o fiscalConfig é carregado
+  const serviceCode = fiscalConfig?.service_code || "";
+  if (formData.codigo_servico !== serviceCode) {
+    setFormData(prev => ({
+      ...prev,
+      codigo_servico: serviceCode
+    }));
+  }
 
   const handleChange = (
     field: keyof NFSeFormData,
