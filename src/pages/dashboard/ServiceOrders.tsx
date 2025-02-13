@@ -89,7 +89,7 @@ const ServiceOrders = () => {
           created_at,
           created_by_type,
           client:clients(name),
-          status:service_order_statuses(name, color)
+          status:service_order_statuses!service_orders_status_id_fkey(name, color)
         `)
         .ilike("description", `%${searchTerm}%`);
 

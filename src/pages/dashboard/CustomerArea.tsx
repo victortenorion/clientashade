@@ -77,7 +77,7 @@ const CustomerArea = () => {
           status_id,
           total_price,
           created_at,
-          status:service_order_statuses(name, color)
+          status:service_order_statuses!service_orders_status_id_fkey(name, color)
         `)
         .eq('client_id', clientId)
         .order('created_at', { ascending: false });
