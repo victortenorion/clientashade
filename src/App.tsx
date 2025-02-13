@@ -43,6 +43,7 @@ const App: React.FC = () => {
                   <Route path="users" element={<Users />} />
                   <Route path="service-orders" element={<ServiceOrders />} />
                   <Route path="service-order-settings" element={<ServiceOrderSettings />} />
+                  <Route path="customer-area" element={<CustomerArea />} />
                 </Route>
                 {/* Área do cliente separada do dashboard administrativo */}
                 <Route 
