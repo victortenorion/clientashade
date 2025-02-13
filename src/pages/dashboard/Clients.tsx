@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +11,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  CardTitle,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Pencil, Trash2, Plus, Search } from "lucide-react";
+import { IMaskInput } from "react-imask";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ContactPerson {
@@ -192,7 +209,7 @@ const Clients = () => {
       // Converter o tipo do contact_persons de Json para ContactPerson[]
       const typedData = data?.map(client => ({
         ...client,
-        contact_persons: client.contact_persons as ContactPerson[] | null
+        contact_persons: client.contact_persons as unknown as ContactPerson[] | null
       }));
 
       setClients(typedData as Client[]);
