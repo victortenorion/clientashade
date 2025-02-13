@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,12 +22,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { NFSeForm } from "./components/NFSeForm";
+import { NFSeView } from "./components/NFSeView";
 
 const NFSePage = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [isEmitindo, setIsEmitindo] = useState(false);
   const [showEmissaoDialog, setShowEmissaoDialog] = useState(false);
+  const [selectedNFSeId, setSelectedNFSeId] = useState<string | null>(null);
 
   const { data: notas, isLoading, refetch } = useQuery({
     queryKey: ["nfse", searchTerm],
@@ -199,7 +200,11 @@ const NFSePage = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedNFSeId(nota.id)}
+                      >
                         Visualizar
                       </Button>
                       {nota.status_sefaz === "autorizada" && (
@@ -228,6 +233,11 @@ const NFSePage = () => {
           />
         </DialogContent>
       </Dialog>
+
+      <NFSeView
+        nfseId={selectedNFSeId}
+        onClose={() => setSelectedNFSeId(null)}
+      />
     </div>
   );
 };
