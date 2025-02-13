@@ -28,6 +28,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Pencil, Trash2, Plus, Search } from "lucide-react";
 import { IMaskInput } from "react-imask";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Store {
   id: string;
@@ -147,6 +157,13 @@ const formatDocument = (doc: string) => {
   return doc;
 };
 
+interface DeleteDialogState {
+  isOpen: boolean;
+  clientId: string | null;
+  withOrders: boolean;
+  adminPassword: string;
+}
+
 const Clients = () => {
   const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState<Client[]>([]);
@@ -158,6 +175,12 @@ const Clients = () => {
   const [searchingDocument, setSearchingDocument] = useState(false);
   const [visibleFields, setVisibleFields] = useState<{ field_name: string, visible: boolean }[]>([]);
   const { toast } = useToast();
+  const [deleteDialog, setDeleteDialog] = useState<DeleteDialogState>({
+    isOpen: false,
+    clientId: null,
+    withOrders: false,
+    adminPassword: ''
+  });
 
   const fetchStores = async () => {
     try {
@@ -296,36 +319,74 @@ const Clients = () => {
     setSearchTerm(e.target.value);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDeleteClick = async (id: string) => {
+    // Primeiro, verifica se o cliente possui ordens de serviço
+    const { data: serviceOrders, error: checkError } = await supabase
+      .from("service_orders")
+      .select("id")
+      .eq("client_id", id);
+
+    if (checkError) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao verificar ordens de serviço",
+        description: checkError.message,
+      });
+      return;
+    }
+
+    setDeleteDialog({
+      isOpen: true,
+      clientId: id,
+      withOrders: serviceOrders && serviceOrders.length > 0,
+      adminPassword: ''
+    });
+  };
+
+  const handleDelete = async () => {
+    if (!deleteDialog.clientId) return;
+
     try {
-      // Primeiro, verifica se o cliente possui ordens de serviço
-      const { data: serviceOrders, error: checkError } = await supabase
-        .from("service_orders")
-        .select("id")
-        .eq("client_id", id);
+      if (deleteDialog.withOrders) {
+        // Verifica a senha do administrador (isso é um exemplo, você deve implementar sua própria lógica de verificação)
+        if (!deleteDialog.adminPassword || deleteDialog.adminPassword !== 'admin123') {
+          toast({
+            variant: "destructive",
+            title: "Senha incorreta",
+            description: "A senha de administrador está incorreta.",
+          });
+          return;
+        }
 
-      if (checkError) throw checkError;
+        // Primeiro deleta as ordens de serviço
+        const { error: ordersError } = await supabase
+          .from("service_orders")
+          .delete()
+          .eq("client_id", deleteDialog.clientId);
 
-      // Se existirem ordens de serviço, impede a exclusão
-      if (serviceOrders && serviceOrders.length > 0) {
-        toast({
-          variant: "destructive",
-          title: "Não é possível excluir o cliente",
-          description: "Este cliente possui ordens de serviço associadas e não pode ser excluído.",
-        });
-        return;
+        if (ordersError) throw ordersError;
       }
 
-      // Se não houver ordens de serviço, procede com a exclusão
-      const { error } = await supabase
+      // Depois deleta o cliente
+      const { error: clientError } = await supabase
         .from("clients")
         .delete()
-        .eq("id", id);
+        .eq("id", deleteDialog.clientId);
 
-      if (error) throw error;
+      if (clientError) throw clientError;
 
       toast({
         title: "Cliente excluído com sucesso",
+        description: deleteDialog.withOrders ? 
+          "O cliente e suas ordens de serviço foram excluídos." : 
+          "O cliente foi excluído.",
+      });
+      
+      setDeleteDialog({
+        isOpen: false,
+        clientId: null,
+        withOrders: false,
+        adminPassword: ''
       });
       
       fetchClients();
@@ -684,7 +745,7 @@ const Clients = () => {
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => handleDelete(client.id)}
+                      onClick={() => handleDeleteClick(client.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -907,171 +968,4 @@ const Clients = () => {
                     <IMaskInput
                       id="phone_landline"
                       name="phone_landline"
-                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      value={formData.phone_landline}
-                      mask="(00) 0000-0000"
-                      onAccept={(value) => setFormData(prev => ({ ...prev, phone_landline: value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="fax">Fax</Label>
-                    <IMaskInput
-                      id="fax"
-                      name="fax"
-                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      value={formData.fax}
-                      mask="(00) 0000-0000"
-                      onAccept={(value) => setFormData(prev => ({ ...prev, fax: value }))}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="mobile_phone">Celular</Label>
-                    <IMaskInput
-                      id="mobile_phone"
-                      name="mobile_phone"
-                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      value={formData.mobile_phone}
-                      mask="(00) 00000-0000"
-                      onAccept={(value) => setFormData(prev => ({ ...prev, mobile_phone: value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone_carrier">Operadora</Label>
-                    <Input
-                      id="phone_carrier"
-                      name="phone_carrier"
-                      value={formData.phone_carrier}
-                      onChange={handleInputChange}
-                      className="h-9"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">E-mail *</Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      required
-                      className="h-9"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="nfe_email">E-mail para NFe</Label>
-                    <Input
-                      id="nfe_email"
-                      name="nfe_email"
-                      type="email"
-                      value={formData.nfe_email}
-                      onChange={handleInputChange}
-                      className="h-9"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="website">Website</Label>
-                  <Input
-                    id="website"
-                    name="website"
-                    value={formData.website}
-                    onChange={handleInputChange}
-                    className="h-9"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="contact_info">Informações de Contato</Label>
-                  <Input
-                    id="contact_info"
-                    name="contact_info"
-                    value={formData.contact_info}
-                    onChange={handleInputChange}
-                    className="h-9"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Dados de Acesso</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="space-y-2">
-                  <Label htmlFor="client_login">Login do Cliente</Label>
-                  <Input
-                    id="client_login"
-                    name="client_login"
-                    value={formData.client_login}
-                    onChange={handleInputChange}
-                    required
-                    placeholder="Preenchido automaticamente com o email"
-                    className="h-9"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="client_password">Senha do Cliente</Label>
-                  <Input
-                    id="client_password"
-                    name="client_password"
-                    value={formData.client_password}
-                    onChange={handleInputChange}
-                    placeholder={editingId ? "(deixe em branco para manter a atual)" : "4 últimos dígitos do telefone"}
-                    {...(!editingId && { required: true })}
-                    className="h-9"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Loja</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <Label htmlFor="store_id">Loja *</Label>
-                  <select
-                    id="store_id"
-                    name="store_id"
-                    value={formData.store_id}
-                    onChange={(e) => setFormData(prev => ({ ...prev, store_id: e.target.value }))}
-                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    required
-                  >
-                    <option value="">Selecione uma loja</option>
-                    {stores.map((store) => (
-                      <option key={store.id} value={store.id}>
-                        {store.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </CardContent>
-            </Card>
-
-            <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => setDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit">
-                {editingId ? "Salvar" : "Criar"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-};
-
-export default Clients;
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-
