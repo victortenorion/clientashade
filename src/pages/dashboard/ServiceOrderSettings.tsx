@@ -522,9 +522,9 @@ const ServiceOrderSettings = () => {
               <Receipt className="h-4 w-4 mr-2" />
               Notas Fiscais
             </TabsTrigger>
-            <TabsTrigger value="listings" className="data-[state=active]:bg-background rounded-none h-12 px-6">
+            <TabsTrigger value="sefaz" className="data-[state=active]:bg-background rounded-none h-12 px-6">
               <ListFilter className="h-4 w-4 mr-2" />
-              Listagens
+              SEFAZ
             </TabsTrigger>
           </TabsList>
 
@@ -645,54 +645,6 @@ const ServiceOrderSettings = () => {
 
           <TabsContent value="fiscal" className="mt-6">
             <div className="space-y-8">
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Códigos e Tributos</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Código do Serviço</Label>
-                    <Input
-                      value={fiscalConfig.service_code}
-                      onChange={(e) => setFiscalConfig(prev => ({
-                        ...prev,
-                        service_code: e.target.value
-                      }))}
-                      placeholder="Digite o código do serviço"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>CNAE</Label>
-                    <Input
-                      value={fiscalConfig?.cnae || ""}
-                      onChange={(e) => setFiscalConfig(prev => ({
-                        ...prev,
-                        cnae: e.target.value
-                      }))}
-                      placeholder="Ex: 9512-6/00"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Regime Tributário</Label>
-                    <Select
-                      value={fiscalConfig?.tax_regime || "simples"}
-                      onValueChange={(value) => setFiscalConfig(prev => ({
-                        ...prev,
-                        tax_regime: value
-                      }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="simples">Simples Nacional</SelectItem>
-                        <SelectItem value="presumido">Lucro Presumido</SelectItem>
-                        <SelectItem value="real">Lucro Real</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <Button onClick={handleFiscalConfigSave}>Salvar Configurações Fiscais</Button>
-              </div>
-
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Configurações NFC-e</h3>
                 <div className="grid grid-cols-2 gap-4">
@@ -862,9 +814,54 @@ const ServiceOrderSettings = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="listings" className="mt-6">
-            <div className="flex items-center justify-center h-32 border-2 border-dashed rounded-lg">
-              <p className="text-muted-foreground">Configurações de listagens em desenvolvimento</p>
+          <TabsContent value="sefaz" className="mt-6">
+            <div className="space-y-8">
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Códigos e Tributos</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Código do Serviço</Label>
+                    <Input
+                      value={fiscalConfig.service_code}
+                      onChange={(e) => setFiscalConfig(prev => ({
+                        ...prev,
+                        service_code: e.target.value
+                      }))}
+                      placeholder="Digite o código do serviço"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>CNAE</Label>
+                    <Input
+                      value={fiscalConfig.cnae}
+                      onChange={(e) => setFiscalConfig(prev => ({
+                        ...prev,
+                        cnae: e.target.value
+                      }))}
+                      placeholder="Ex: 9512-6/00"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Regime Tributário</Label>
+                    <Select
+                      value={fiscalConfig.tax_regime}
+                      onValueChange={(value) => setFiscalConfig(prev => ({
+                        ...prev,
+                        tax_regime: value
+                      }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="simples">Simples Nacional</SelectItem>
+                        <SelectItem value="presumido">Lucro Presumido</SelectItem>
+                        <SelectItem value="real">Lucro Real</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
             </div>
           </TabsContent>
         </Tabs>
