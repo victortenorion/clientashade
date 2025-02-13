@@ -56,6 +56,12 @@ const CustomerArea = () => {
         throw new Error("Cliente não identificado");
       }
 
+      // Configura o clientId como claim personalizado
+      await supabase.auth.setSession({
+        access_token: clientId,
+        refresh_token: '',
+      });
+
       const { data, error } = await supabase
         .from("service_orders")
         .select("*")
@@ -66,6 +72,7 @@ const CustomerArea = () => {
 
       setOrders(data || []);
     } catch (error: any) {
+      console.error("Erro completo:", error);
       toast({
         variant: "destructive",
         title: "Erro ao carregar ordens de serviço",
@@ -100,6 +107,12 @@ const CustomerArea = () => {
         throw new Error("Cliente não identificado");
       }
 
+      // Configura o clientId como claim personalizado
+      await supabase.auth.setSession({
+        access_token: clientId,
+        refresh_token: '',
+      });
+
       const { error } = await supabase
         .from("service_orders")
         .insert({
@@ -117,6 +130,7 @@ const CustomerArea = () => {
       setFormData(defaultFormData);
       fetchOrders();
     } catch (error: any) {
+      console.error("Erro completo:", error);
       toast({
         variant: "destructive",
         title: "Erro ao criar ordem de serviço",
