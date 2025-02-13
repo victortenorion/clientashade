@@ -225,7 +225,7 @@ const ServiceOrders = () => {
                 name="client_id"
                 value={formData.client_id}
                 onChange={handleInputChange}
-                className="w-full border rounded-md h-10 px-3"
+                className="w-full border rounded-md h-10 px-3 bg-background text-foreground"
                 required
               >
                 <option value="">Selecione um cliente</option>
