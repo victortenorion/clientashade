@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,14 +30,6 @@ interface User {
   permissions?: string[];
 }
 
-interface UserPermission {
-  id: string;
-  user_id: string;
-  menu_permission: string;
-  created_at: string;
-  updated_at: string;
-}
-
 interface UserFormData {
   username: string;
   email: string;
@@ -46,7 +37,7 @@ interface UserFormData {
   permissions: string[];
 }
 
-interface PasswordRequirement {
+interface Requirement {
   regex: RegExp;
   text: string;
   met: boolean;
@@ -79,17 +70,49 @@ const Users = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const [passwordRequirements, setPasswordRequirements] = useState<PasswordRequirement[]>([
-    { regex: /.{6,}/, text: "Mínimo de 6 caracteres", met: false },
+  const [usernameRequirements, setUsernameRequirements] = useState<Requirement[]>([
+    { regex: /.{3,}/, text: "Mínimo de 3 caracteres", met: false },
+    { regex: /^[a-zA-Z0-9._-]+$/, text: "Apenas letras, números, ponto, traço e underscore", met: false },
   ]);
 
-  const updatePasswordRequirements = (password: string) => {
-    setPasswordRequirements(prev =>
+  const [emailRequirements, setEmailRequirements] = useState<Requirement[]>([
+    { regex: /.+@.+\..+/, text: "Deve ser um email válido", met: false },
+  ]);
+
+  const [passwordRequirements, setPasswordRequirements] = useState<Requirement[]>([
+    { regex: /.{6,}/, text: "Mínimo de 6 caracteres", met: false },
+    { regex: /[A-Z]/, text: "Pelo menos uma letra maiúscula", met: false },
+    { regex: /[a-z]/, text: "Pelo menos uma letra minúscula", met: false },
+    { regex: /[0-9]/, text: "Pelo menos um número", met: false },
+  ]);
+
+  const updateRequirements = (value: string, setRequirements: React.Dispatch<React.SetStateAction<Requirement[]>>) => {
+    setRequirements(prev =>
       prev.map(req => ({
         ...req,
-        met: req.regex.test(password)
+        met: req.regex.test(value)
       }))
     );
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    switch (name) {
+      case 'username':
+        updateRequirements(value, setUsernameRequirements);
+        break;
+      case 'email':
+        updateRequirements(value, setEmailRequirements);
+        break;
+      case 'password':
+        updateRequirements(value, setPasswordRequirements);
+        break;
+    }
   };
 
   const fetchUsers = async () => {
@@ -187,14 +210,19 @@ const Users = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const isPasswordValid = passwordRequirements.every(req => req.met);
-    if (!editingId && !isPasswordValid) {
-      toast({
-        variant: "destructive",
-        title: "Senha inválida",
-        description: "Por favor, atenda a todos os requisitos de senha.",
-      });
-      return;
+    if (!editingId) {
+      const isUsernameValid = usernameRequirements.every(req => req.met);
+      const isEmailValid = emailRequirements.every(req => req.met);
+      const isPasswordValid = passwordRequirements.every(req => req.met);
+
+      if (!isUsernameValid || !isEmailValid || !isPasswordValid) {
+        toast({
+          variant: "destructive",
+          title: "Campos inválidos",
+          description: "Por favor, verifique os requisitos de todos os campos.",
+        });
+        return;
+      }
     }
 
     try {
@@ -264,27 +292,11 @@ const Users = () => {
       setEditingId(null);
       fetchUsers();
     } catch (error: any) {
-      const errorMessage = error.message === "weak_password" 
-        ? "A senha deve ter pelo menos 6 caracteres."
-        : error.message;
-
       toast({
         variant: "destructive",
         title: editingId ? "Erro ao atualizar usuário" : "Erro ao criar usuário",
-        description: errorMessage,
+        description: error.message,
       });
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    if (name === 'password') {
-      updatePasswordRequirements(value);
     }
   };
 
@@ -301,15 +313,35 @@ const Users = () => {
     fetchUsers();
   }, [searchTerm]);
 
+  const RequirementsList = ({ requirements }: { requirements: Requirement[] }) => (
+    <ul className="text-sm space-y-1">
+      {requirements.map((req, index) => (
+        <li 
+          key={index}
+          className={`flex items-center gap-2 ${
+            req.met ? 'text-green-600' : 'text-gray-500'
+          }`}
+        >
+          {req.met ? '✓' : '○'} {req.text}
+        </li>
+      ))}
+    </ul>
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold">Usuários</h2>
-        <Button onClick={handleNewUser}>
+        <Button onClick={() => {
+          setEditingId(null);
+          setFormData(defaultFormData);
+          setDialogOpen(true);
+        }}>
           <UserPlus className="h-4 w-4 mr-2" />
           Novo Usuário
         </Button>
       </div>
+
       <div className="flex gap-2">
         <Input
           placeholder="Buscar usuários..."
@@ -318,6 +350,7 @@ const Users = () => {
           onChange={handleSearch}
         />
       </div>
+
       <div className="border rounded-lg">
         <Table>
           <TableHeader>
@@ -404,6 +437,7 @@ const Users = () => {
                 onChange={handleInputChange}
                 required
               />
+              {!editingId && <RequirementsList requirements={usernameRequirements} />}
             </div>
             
             {!editingId && (
@@ -418,6 +452,7 @@ const Users = () => {
                     onChange={handleInputChange}
                     required
                   />
+                  <RequirementsList requirements={emailRequirements} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">Senha</Label>
@@ -429,21 +464,7 @@ const Users = () => {
                     onChange={handleInputChange}
                     required
                   />
-                  <div className="mt-2 space-y-2">
-                    <p className="text-sm font-medium text-gray-700">Requisitos da senha:</p>
-                    <ul className="text-sm space-y-1">
-                      {passwordRequirements.map((req, index) => (
-                        <li 
-                          key={index}
-                          className={`flex items-center gap-2 ${
-                            req.met ? 'text-green-600' : 'text-gray-500'
-                          }`}
-                        >
-                          {req.met ? '✓' : '○'} {req.text}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  <RequirementsList requirements={passwordRequirements} />
                 </div>
               </>
             )}
