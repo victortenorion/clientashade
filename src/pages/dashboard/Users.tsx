@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +29,14 @@ interface User {
   created_at: string;
   updated_at: string;
   permissions?: string[];
+}
+
+interface UserPermission {
+  id: string;
+  user_id: string;
+  menu_permission: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface UserFormData {
@@ -179,7 +188,7 @@ const Users = () => {
     e.preventDefault();
 
     const isPasswordValid = passwordRequirements.every(req => req.met);
-    if (!isPasswordValid) {
+    if (!editingId && !isPasswordValid) {
       toast({
         variant: "destructive",
         title: "Senha inválida",
