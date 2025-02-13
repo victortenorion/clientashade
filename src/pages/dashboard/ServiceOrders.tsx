@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,12 +36,16 @@ interface ServiceOrder {
   id: string;
   client_id: string;
   description: string;
-  status: string;
+  status_id: string;
   total_price: number;
   created_at: string;
   created_by_type: 'admin' | 'client';
   client: {
     name: string;
+  };
+  status: {
+    name: string;
+    color: string;
   };
 }
 
@@ -48,12 +53,14 @@ interface ServiceOrderFormData {
   client_id: string;
   description: string;
   total_price: number;
+  status_id: string;
 }
 
 const defaultFormData: ServiceOrderFormData = {
   client_id: "",
   description: "",
   total_price: 0,
+  status_id: "",
 };
 
 const ServiceOrders = () => {
@@ -65,6 +72,7 @@ const ServiceOrders = () => {
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
   const [formData, setFormData] = useState<ServiceOrderFormData>(defaultFormData);
   const [clients, setClients] = useState<{ id: string; name: string; }[]>([]);
+  const [statuses, setStatuses] = useState<{ id: string; name: string; }[]>([]);
   const { toast } = useToast();
 
   const fetchOrders = async () => {
@@ -76,11 +84,12 @@ const ServiceOrders = () => {
           id,
           client_id,
           description,
-          status,
+          status_id,
           total_price,
           created_at,
           created_by_type,
-          client:clients(name)
+          client:clients(name),
+          status:service_order_statuses(name, color)
         `)
         .ilike("description", `%${searchTerm}%`);
 
@@ -95,6 +104,25 @@ const ServiceOrders = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchStatuses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("service_order_statuses")
+        .select("id, name")
+        .eq("is_active", true);
+
+      if (error) throw error;
+
+      setStatuses(data);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar status",
+        description: error.message,
+      });
     }
   };
 
@@ -133,6 +161,7 @@ const ServiceOrders = () => {
       client_id: order.client_id,
       description: order.description,
       total_price: order.total_price,
+      status_id: order.status_id,
     });
     setDialogOpen(true);
   };
@@ -207,6 +236,7 @@ const ServiceOrders = () => {
 
   useEffect(() => {
     fetchClients();
+    fetchStatuses();
   }, []);
 
   return (
@@ -257,7 +287,17 @@ const ServiceOrders = () => {
                 <TableRow key={order.id}>
                   <TableCell>{order.client?.name}</TableCell>
                   <TableCell>{order.description}</TableCell>
-                  <TableCell>{order.status}</TableCell>
+                  <TableCell>
+                    <span 
+                      className="px-2 py-1 rounded-full text-xs font-semibold"
+                      style={{ 
+                        backgroundColor: order.status?.color ? `${order.status.color}20` : '#f3f4f6',
+                        color: order.status?.color || '#374151'
+                      }}
+                    >
+                      {order.status?.name || "Sem status"}
+                    </span>
+                  </TableCell>
                   <TableCell>
                     {order.total_price.toLocaleString('pt-BR', {
                       style: 'currency',
@@ -330,6 +370,24 @@ const ServiceOrders = () => {
                 onChange={handleInputChange}
                 required
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="status_id">Status</Label>
+              <select
+                id="status_id"
+                name="status_id"
+                value={formData.status_id}
+                onChange={handleInputChange}
+                className="w-full border rounded-md h-10 px-3 bg-background text-foreground"
+                required
+              >
+                <option value="">Selecione um status</option>
+                {statuses.map((status) => (
+                  <option key={status.id} value={status.id}>
+                    {status.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="total_price">Valor Total</Label>
