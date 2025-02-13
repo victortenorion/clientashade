@@ -9,6 +9,7 @@ import {
   User,
   Package,
   LayoutDashboard,
+  FolderOpen,
 } from "lucide-react";
 import {
   Sidebar,
@@ -19,6 +20,9 @@ import {
   SidebarMenuButton,
   SidebarProvider,
   SidebarInset,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
 } from "@/components/ui/sidebar";
 
 const Dashboard = () => {
@@ -77,34 +81,47 @@ const Dashboard = () => {
                   <span>Dashboard</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => navigate("/dashboard/clients")}
-                  isActive={location.pathname.startsWith("/dashboard/clients")}
-                >
-                  <Users className="h-4 w-4" />
-                  <span>Clientes</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => navigate("/dashboard/users")}
-                  isActive={location.pathname.startsWith("/dashboard/users")}
-                >
-                  <User className="h-4 w-4" />
-                  <span>Usuários</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => navigate("/dashboard/products")}
-                  isActive={location.pathname.startsWith("/dashboard/products")}
-                >
-                  <Package className="h-4 w-4" />
-                  <span>Produtos</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
             </SidebarMenu>
+
+            <SidebarGroup>
+              <SidebarGroupLabel>
+                <div className="flex items-center gap-2">
+                  <FolderOpen className="h-4 w-4" />
+                  <span>Cadastros</span>
+                </div>
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      onClick={() => navigate("/dashboard/clients")}
+                      isActive={location.pathname.startsWith("/dashboard/clients")}
+                    >
+                      <Users className="h-4 w-4" />
+                      <span>Clientes</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      onClick={() => navigate("/dashboard/users")}
+                      isActive={location.pathname.startsWith("/dashboard/users")}
+                    >
+                      <User className="h-4 w-4" />
+                      <span>Usuários</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      onClick={() => navigate("/dashboard/products")}
+                      isActive={location.pathname.startsWith("/dashboard/products")}
+                    >
+                      <Package className="h-4 w-4" />
+                      <span>Produtos</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
           </SidebarContent>
         </Sidebar>
         <SidebarInset>
