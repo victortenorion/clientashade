@@ -60,6 +60,8 @@ export const ServiceOrderNFSe = ({ serviceOrderId, onSubmit, onCancel }: Props) 
           id,
           client_id,
           total_price,
+          equipment,
+          equipment_serial_number,
           service_order_items (
             description,
             price
@@ -67,7 +69,19 @@ export const ServiceOrderNFSe = ({ serviceOrderId, onSubmit, onCancel }: Props) 
           client:clients (
             id,
             name,
-            document
+            document,
+            state_registration,
+            municipal_registration,
+            zip_code,
+            state,
+            city,
+            neighborhood,
+            street,
+            street_number,
+            complement,
+            phone,
+            mobile_phone,
+            email
           )
         `)
         .eq("id", serviceOrderId)
@@ -94,10 +108,20 @@ export const ServiceOrderNFSe = ({ serviceOrderId, onSubmit, onCancel }: Props) 
   // Atualiza o formulário quando os dados da ordem de serviço são carregados
   useEffect(() => {
     if (serviceOrder) {
+      const itensFormatados = serviceOrder.service_order_items?.map(item => 
+        `${item.description} - R$ ${item.price.toFixed(2)}`
+      ).join("\n") || "";
+
+      const discriminacaoServicos = `Equipamento: ${serviceOrder.equipment || 'N/A'}
+Número de Série do Equipamento: ${serviceOrder.equipment_serial_number || 'N/A'}
+Descrição dos Serviços:
+${itensFormatados}
+Valor Total dos Serviços: R$ ${serviceOrder.total_price.toFixed(2)}`;
+
       setFormData(prev => ({
         ...prev,
         client_id: serviceOrder.client_id,
-        discriminacao_servicos: serviceOrder.service_order_items?.map(item => item.description).join("\n") || "",
+        discriminacao_servicos: discriminacaoServicos,
         valor_servicos: serviceOrder.total_price
       }));
     }
@@ -137,7 +161,7 @@ export const ServiceOrderNFSe = ({ serviceOrderId, onSubmit, onCancel }: Props) 
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Cliente</Label>
+            <Label>Razão Social</Label>
             <Input 
               value={serviceOrder?.client?.name || ""} 
               disabled 
@@ -146,12 +170,115 @@ export const ServiceOrderNFSe = ({ serviceOrderId, onSubmit, onCancel }: Props) 
           </div>
 
           <div className="space-y-2">
-            <Label>Documento</Label>
+            <Label>CNPJ</Label>
             <Input 
               value={serviceOrder?.client?.document || ""} 
               disabled 
               className="bg-muted"
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Inscrição Estadual</Label>
+              <Input 
+                value={serviceOrder?.client?.state_registration || ""} 
+                disabled 
+                className="bg-muted"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Inscrição Municipal</Label>
+              <Input 
+                value={serviceOrder?.client?.municipal_registration || ""} 
+                disabled 
+                className="bg-muted"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>CEP</Label>
+              <Input 
+                value={serviceOrder?.client?.zip_code || ""} 
+                disabled 
+                className="bg-muted"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>UF</Label>
+              <Input 
+                value={serviceOrder?.client?.state || ""} 
+                disabled 
+                className="bg-muted"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Município</Label>
+              <Input 
+                value={serviceOrder?.client?.city || ""} 
+                disabled 
+                className="bg-muted"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Bairro</Label>
+              <Input 
+                value={serviceOrder?.client?.neighborhood || ""} 
+                disabled 
+                className="bg-muted"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Logradouro</Label>
+              <Input 
+                value={serviceOrder?.client?.street || ""} 
+                disabled 
+                className="bg-muted"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Número</Label>
+              <Input 
+                value={serviceOrder?.client?.street_number || ""} 
+                disabled 
+                className="bg-muted"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Complemento</Label>
+              <Input 
+                value={serviceOrder?.client?.complement || ""} 
+                disabled 
+                className="bg-muted"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Telefone</Label>
+              <Input 
+                value={serviceOrder?.client?.phone || serviceOrder?.client?.mobile_phone || ""} 
+                disabled 
+                className="bg-muted"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>E-mail</Label>
+              <Input 
+                value={serviceOrder?.client?.email || ""} 
+                disabled 
+                className="bg-muted"
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -186,7 +313,7 @@ export const ServiceOrderNFSe = ({ serviceOrderId, onSubmit, onCancel }: Props) 
                   discriminacao_servicos: e.target.value 
                 }))
               }
-              className="min-h-[100px]"
+              className="min-h-[200px]"
             />
           </div>
 
