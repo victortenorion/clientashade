@@ -487,6 +487,31 @@ const ServiceOrderSettings = () => {
           <TabsContent value="fiscal" className="mt-6">
             <div className="space-y-8">
               <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Códigos e Tributos</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Código do Serviço (LC 116)</Label>
+                    <Input
+                      value="07498"
+                      onChange={(e) => {
+                        // Será implementado quando conectarmos com a tabela de configuração
+                      }}
+                      placeholder="Ex: 07498"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>CNAE</Label>
+                    <Input
+                      onChange={(e) => {
+                        // Será implementado quando conectarmos com a tabela de configuração
+                      }}
+                      placeholder="Ex: 9512-6/00"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Configurações NFC-e</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
