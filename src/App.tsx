@@ -13,6 +13,7 @@ import Clients from "./pages/dashboard/Clients";
 import Products from "./pages/dashboard/Products";
 import Users from "./pages/dashboard/Users";
 import ServiceOrders from "./pages/dashboard/ServiceOrders";
+import ServiceOrderSettings from "./pages/dashboard/ServiceOrderSettings";
 import CustomerArea from "./pages/dashboard/CustomerArea";
 import NotFound from "./pages/NotFound";
 import ClientLogin from "./pages/ClientLogin";
@@ -41,6 +42,7 @@ const App: React.FC = () => {
                   <Route path="products" element={<Products />} />
                   <Route path="users" element={<Users />} />
                   <Route path="service-orders" element={<ServiceOrders />} />
+                  <Route path="service-order-settings" element={<ServiceOrderSettings />} />
                 </Route>
                 {/* Área do cliente separada do dashboard administrativo */}
                 <Route 
