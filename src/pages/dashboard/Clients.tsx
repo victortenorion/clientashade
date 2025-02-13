@@ -29,6 +29,11 @@ import { Pencil, Trash2, Plus, Search } from "lucide-react";
 import { IMaskInput } from "react-imask";
 import { supabase } from "@/integrations/supabase/client";
 
+interface Store {
+  id: string;
+  name: string;
+}
+
 interface ContactPerson {
   name: string;
   role: string;
@@ -64,6 +69,7 @@ interface Client {
   phone_carrier: string | null;
   website: string | null;
   nfe_email: string | null;
+  store_id: string | null;
 }
 
 interface ClientFormData {
@@ -93,6 +99,7 @@ interface ClientFormData {
   phone_carrier: string;
   website: string;
   nfe_email: string;
+  store_id: string;
 }
 
 const defaultFormData: ClientFormData = {
@@ -122,6 +129,7 @@ const defaultFormData: ClientFormData = {
   phone_carrier: "",
   website: "",
   nfe_email: "",
+  store_id: "",
 };
 
 const getLastFourDigits = (phone: string) => {
@@ -142,6 +150,7 @@ const formatDocument = (doc: string) => {
 const Clients = () => {
   const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState<Client[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState<ClientFormData>(defaultFormData);
@@ -149,6 +158,24 @@ const Clients = () => {
   const [searchingDocument, setSearchingDocument] = useState(false);
   const [visibleFields, setVisibleFields] = useState<{ field_name: string, visible: boolean }[]>([]);
   const { toast } = useToast();
+
+  const fetchStores = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("stores")
+        .select("*")
+        .order("name");
+
+      if (error) throw error;
+      setStores(data || []);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar lojas",
+        description: error.message,
+      });
+    }
+  };
 
   const fetchVisibleFields = async () => {
     try {
@@ -319,6 +346,7 @@ const Clients = () => {
       phone_carrier: client.phone_carrier || "",
       website: client.website || "",
       nfe_email: client.nfe_email || "",
+      store_id: client.store_id || "",
     });
     setEditingId(client.id);
     setDialogOpen(true);
@@ -924,6 +952,32 @@ const Clients = () => {
                     {...(!editingId && { required: true })}
                     className="h-9"
                   />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Loja</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Label htmlFor="store_id">Loja *</Label>
+                  <select
+                    id="store_id"
+                    name="store_id"
+                    value={formData.store_id}
+                    onChange={(e) => setFormData(prev => ({ ...prev, store_id: e.target.value }))}
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    required
+                  >
+                    <option value="">Selecione uma loja</option>
+                    {stores.map((store) => (
+                      <option key={store.id} value={store.id}>
+                        {store.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </CardContent>
             </Card>
