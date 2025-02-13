@@ -20,6 +20,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { MagnifyingGlass } from "lucide-react";
+import { IMask, IMaskInput } from "react-imask";
 
 interface Client {
   id: string;
@@ -29,6 +31,7 @@ interface Client {
   document: string | null;
   client_login: string | null;
   client_password: string | null;
+  address: string | null;
 }
 
 interface ClientFormData {
@@ -38,6 +41,7 @@ interface ClientFormData {
   document: string;
   client_login: string;
   client_password: string;
+  address: string;
 }
 
 const defaultFormData: ClientFormData = {
@@ -47,11 +51,22 @@ const defaultFormData: ClientFormData = {
   document: "",
   client_login: "",
   client_password: "",
+  address: "",
 };
 
 const getLastFourDigits = (phone: string) => {
   const digits = phone.replace(/\D/g, '');
   return digits.slice(-4);
+};
+
+const formatDocument = (doc: string) => {
+  const cleanDoc = doc.replace(/\D/g, '');
+  if (cleanDoc.length === 11) {
+    return cleanDoc.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  } else if (cleanDoc.length === 14) {
+    return cleanDoc.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+  }
+  return doc;
 };
 
 const Clients = () => {
@@ -67,7 +82,9 @@ const Clients = () => {
     phone: true,
     document: true,
     client_login: true,
+    address: true,
   });
+  const [searchingDocument, setSearchingDocument] = useState(false);
   const { toast } = useToast();
 
   const fetchVisibleFields = async () => {
@@ -148,6 +165,7 @@ const Clients = () => {
       document: client.document || "",
       client_login: client.client_login || client.email || "",
       client_password: "", // Não preenchemos a senha por segurança
+      address: client.address || "",
     });
     setEditingId(client.id);
     setDialogOpen(true);
@@ -257,6 +275,62 @@ const Clients = () => {
     }));
   };
 
+  const searchDocument = async (document: string) => {
+    try {
+      setSearchingDocument(true);
+      const response = await fetch('/api/document-search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ document }),
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        toast({
+          variant: "destructive",
+          title: "Erro na busca",
+          description: data.error,
+        });
+        return;
+      }
+
+      if (data.results && data.results.length > 0) {
+        toast({
+          title: "Cliente(s) encontrado(s)",
+          description: `${data.results.length} cliente(s) encontrado(s) com este documento.`,
+        });
+      }
+
+      if (data.apiData) {
+        setFormData({
+          ...formData,
+          name: data.apiData.name,
+          email: data.apiData.email,
+          phone: data.apiData.phone,
+          document: formatDocument(document),
+          address: data.apiData.address,
+          client_login: data.apiData.email || '',
+          client_password: '',
+        });
+      }
+
+      if (data.results && data.results.length > 0) {
+        setClients(data.results);
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro na busca",
+        description: error.message,
+      });
+    } finally {
+      setSearchingDocument(false);
+    }
+  };
+
   useEffect(() => {
     fetchClients();
     fetchVisibleFields();
@@ -288,6 +362,7 @@ const Clients = () => {
               {visibleFields.phone && <TableHead>Telefone</TableHead>}
               {visibleFields.document && <TableHead>Documento</TableHead>}
               {visibleFields.client_login && <TableHead>Login do Cliente</TableHead>}
+              {visibleFields.address && <TableHead>Endereço</TableHead>}
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -312,6 +387,7 @@ const Clients = () => {
                   {visibleFields.phone && <TableCell>{client.phone}</TableCell>}
                   {visibleFields.document && <TableCell>{client.document}</TableCell>}
                   {visibleFields.client_login && <TableCell>{client.client_login}</TableCell>}
+                  {visibleFields.address && <TableCell>{client.address}</TableCell>}
                   <TableCell className="text-right space-x-2">
                     <Button
                       variant="outline"
@@ -344,6 +420,33 @@ const Clients = () => {
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
+              <Label htmlFor="document">CPF/CNPJ</Label>
+              <div className="flex gap-2">
+                <IMaskInput
+                  id="document"
+                  name="document"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={formData.document}
+                  mask={[
+                    { mask: '000.000.000-00', maxLength: 14 },
+                    { mask: '00.000.000/0000-00', maxLength: 18 }
+                  ]}
+                  onAccept={(value) => setFormData(prev => ({ ...prev, document: value }))}
+                  placeholder="Digite o CPF ou CNPJ"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  disabled={searchingDocument || !formData.document}
+                  onClick={() => searchDocument(formData.document)}
+                >
+                  <MagnifyingGlass className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
               <Label htmlFor="name">Nome</Label>
               <Input
                 id="name"
@@ -353,6 +456,7 @@ const Clients = () => {
                 required
               />
             </div>
+            
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -363,24 +467,29 @@ const Clients = () => {
                 onChange={handleInputChange}
               />
             </div>
+            
             <div className="space-y-2">
               <Label htmlFor="phone">Telefone</Label>
-              <Input
+              <IMaskInput
                 id="phone"
                 name="phone"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 value={formData.phone}
-                onChange={handleInputChange}
+                mask="(00) 00000-0000"
+                onAccept={(value) => setFormData(prev => ({ ...prev, phone: value }))}
               />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="document">Documento</Label>
+              <Label htmlFor="address">Endereço</Label>
               <Input
-                id="document"
-                name="document"
-                value={formData.document}
+                id="address"
+                name="address"
+                value={formData.address}
                 onChange={handleInputChange}
               />
             </div>
+            
             <div className="space-y-2">
               <Label htmlFor="client_login">Login do Cliente</Label>
               <Input
@@ -392,6 +501,7 @@ const Clients = () => {
                 placeholder="Preenchido automaticamente com o email"
               />
             </div>
+            
             <div className="space-y-2">
               <Label htmlFor="client_password">Senha do Cliente</Label>
               <Input
@@ -403,6 +513,7 @@ const Clients = () => {
                 {...(!editingId && { required: true })}
               />
             </div>
+            
             <DialogFooter>
               <Button variant="outline" type="button" onClick={() => setDialogOpen(false)}>
                 Cancelar
