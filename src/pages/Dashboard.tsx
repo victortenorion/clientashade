@@ -10,6 +10,7 @@ import {
   Package,
   LayoutDashboard,
   FolderOpen,
+  Menu,
 } from "lucide-react";
 import {
   Sidebar,
@@ -82,6 +83,37 @@ const Dashboard = () => {
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
+
+            <SidebarGroup>
+              <SidebarGroupLabel>
+                <div className="flex items-center gap-2">
+                  <Menu className="h-4 w-4" />
+                  <span>Menu Principal</span>
+                </div>
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      onClick={() => navigate("/dashboard/menu1")}
+                      isActive={location.pathname.startsWith("/dashboard/menu1")}
+                    >
+                      <Package className="h-4 w-4" />
+                      <span>Menu 1</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      onClick={() => navigate("/dashboard/menu2")}
+                      isActive={location.pathname.startsWith("/dashboard/menu2")}
+                    >
+                      <Package className="h-4 w-4" />
+                      <span>Menu 2</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
 
             <SidebarGroup>
               <SidebarGroupLabel>
