@@ -108,7 +108,7 @@ const ServiceOrderSettings = () => {
     incentivo_fiscal: false
   });
   const [fiscalConfig, setFiscalConfig] = useState({
-    service_code: "07498",
+    service_code: "",
     cnae: "",
     tax_regime: "simples"
   });
@@ -536,12 +536,12 @@ const ServiceOrderSettings = () => {
                   <div className="space-y-2">
                     <Label>Código do Serviço (LC 116)</Label>
                     <Input
-                      value={fiscalConfig?.service_code || "07498"}
+                      value={fiscalConfig?.service_code || ""}
                       onChange={(e) => setFiscalConfig(prev => ({
                         ...prev,
                         service_code: e.target.value
                       }))}
-                      placeholder="Ex: 07498"
+                      placeholder="Código do serviço"
                     />
                   </div>
                   <div className="space-y-2">
