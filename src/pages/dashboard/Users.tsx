@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -158,12 +159,16 @@ const Users = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("id", id);
+      const { error: authError } = await supabase.auth.admin.deleteUser(id);
 
-      if (profileError) throw profileError;
+      if (authError) {
+        // Se falhar com erro de permissão, tenta deletar via API
+        const { error: apiError } = await supabase.functions.invoke('delete-user', {
+          body: { userId: id }
+        });
+        
+        if (apiError) throw apiError;
+      }
 
       toast({
         title: "Usuário excluído com sucesso",
