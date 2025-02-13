@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -91,13 +92,13 @@ export const ServiceOrderNFSe = ({ serviceOrderId, onSubmit, onCancel }: Props) 
     },
   });
 
-  const { data: servicos } = useQuery({
-    queryKey: ["nfse-servicos"],
+  const { data: fiscalConfig } = useQuery({
+    queryKey: ["fiscal_config"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("nfse_servicos")
+        .from("fiscal_config")
         .select("*")
-        .order("codigo");
+        .single();
 
       if (error) throw error;
       return data;
@@ -105,20 +106,18 @@ export const ServiceOrderNFSe = ({ serviceOrderId, onSubmit, onCancel }: Props) 
   });
 
   // Atualiza o formulário quando os dados da ordem de serviço são carregados
-  useEffect(() => {
-    if (serviceOrder) {
-      const itensFormatados = serviceOrder.service_order_items?.map(item => item.description).join(" - ") || "";
+  if (serviceOrder && formData.client_id !== serviceOrder.client_id) {
+    const itensFormatados = serviceOrder.service_order_items?.map(item => item.description).join(" - ") || "";
+    const discriminacaoServicos = `Equipamento: ${serviceOrder.equipment || 'N/A'} NS: ${serviceOrder.equipment_serial_number || 'N/A'} - ${itensFormatados} - Valor Total dos Serviços: R$ ${serviceOrder.total_price.toFixed(2)}`;
 
-      const discriminacaoServicos = `Equipamento: ${serviceOrder.equipment || 'N/A'} NS: ${serviceOrder.equipment_serial_number || 'N/A'} - ${itensFormatados} - Valor Total dos Serviços: R$ ${serviceOrder.total_price.toFixed(2)}`;
-
-      setFormData(prev => ({
-        ...prev,
-        client_id: serviceOrder.client_id,
-        discriminacao_servicos: discriminacaoServicos,
-        valor_servicos: serviceOrder.total_price
-      }));
-    }
-  }, [serviceOrder]);
+    setFormData(prev => ({
+      ...prev,
+      client_id: serviceOrder.client_id,
+      discriminacao_servicos: discriminacaoServicos,
+      valor_servicos: serviceOrder.total_price,
+      codigo_servico: fiscalConfig?.service_code || "",
+    }));
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -274,25 +273,23 @@ export const ServiceOrderNFSe = ({ serviceOrderId, onSubmit, onCancel }: Props) 
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="codigo_servico">Serviço</Label>
-            <Select
-              value={formData.codigo_servico}
-              onValueChange={(value) => 
-                setFormData(prev => ({ ...prev, codigo_servico: value }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o serviço" />
-              </SelectTrigger>
-              <SelectContent>
-                {servicos?.map((servico) => (
-                  <SelectItem key={servico.id} value={servico.codigo}>
-                    {servico.codigo} - {servico.descricao}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Código do Serviço</Label>
+              <Input
+                value={formData.codigo_servico}
+                disabled
+                className="bg-muted"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>CNAE</Label>
+              <Input
+                value={fiscalConfig?.cnae || ""}
+                disabled
+                className="bg-muted"
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
