@@ -10,6 +10,8 @@ import {
   Package,
   LayoutDashboard,
   FolderOpen,
+  ClipboardList,
+  UserCircle,
 } from "lucide-react";
 import {
   Sidebar,
@@ -21,14 +23,15 @@ import {
   SidebarProvider,
   SidebarInset,
   SidebarGroup,
-  SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarGroupContent,
 } from "@/components/ui/sidebar";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [cadastrosOpen, setCadastrosOpen] = useState(true);
+  const [ordensOpen, setOrdensOpen] = useState(true);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -119,6 +122,39 @@ const Dashboard = () => {
                       >
                         <Package className="h-4 w-4" />
                         <span>Produtos</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              )}
+            </SidebarGroup>
+
+            <SidebarGroup>
+              <SidebarGroupLabel onClick={() => setOrdensOpen(!ordensOpen)} className="cursor-pointer hover:bg-muted/50 rounded-md">
+                <div className="flex items-center gap-2">
+                  <ClipboardList className="h-4 w-4" />
+                  <span>Ordem de Serviço</span>
+                </div>
+              </SidebarGroupLabel>
+              {ordensOpen && (
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        onClick={() => navigate("/dashboard/service-orders")}
+                        isActive={location.pathname.startsWith("/dashboard/service-orders")}
+                      >
+                        <ClipboardList className="h-4 w-4" />
+                        <span>Listar Ordens</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        onClick={() => navigate("/dashboard/customer-area")}
+                        isActive={location.pathname.startsWith("/dashboard/customer-area")}
+                      >
+                        <UserCircle className="h-4 w-4" />
+                        <span>Área do Cliente</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   </SidebarMenu>

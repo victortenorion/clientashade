@@ -12,6 +12,8 @@ import DashboardHome from "./pages/dashboard/Home";
 import Clients from "./pages/dashboard/Clients";
 import Products from "./pages/dashboard/Products";
 import Users from "./pages/dashboard/Users";
+import ServiceOrders from "./pages/dashboard/ServiceOrders";
+import CustomerArea from "./pages/dashboard/CustomerArea";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +34,8 @@ const App: React.FC = () => {
                   <Route path="clients" element={<Clients />} />
                   <Route path="products" element={<Products />} />
                   <Route path="users" element={<Users />} />
+                  <Route path="service-orders" element={<ServiceOrders />} />
+                  <Route path="customer-area" element={<CustomerArea />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
