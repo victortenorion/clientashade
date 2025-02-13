@@ -1,3 +1,4 @@
+<lov-code>
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -880,7 +881,7 @@ const ServiceOrderSettings = () => {
                     <Label>Regime Tributário</Label>
                     <Select
                       value={nfceConfig.regime_tributario}
-                      onValueChange={(value) => setNfceConfig(prev => ({ ...prev, regime_tributario: value }))}
+                      onChange={(e) => setNfceConfig(prev => ({ ...prev, regime_tributario: value }))}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -926,4 +927,4 @@ const ServiceOrderSettings = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="homologacao">Homologação</SelectItem>
-                        <SelectItem value="producao">Produção</SelectItem>
+                        <SelectItem value="producao">Produção</SelectItem
