@@ -1,5 +1,5 @@
-
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -11,7 +11,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, LogOut } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -41,11 +41,20 @@ const defaultFormData: ServiceOrderFormData = {
 };
 
 const CustomerArea = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState<ServiceOrderFormData>(defaultFormData);
   const { toast } = useToast();
+
+  const handleLogout = () => {
+    localStorage.removeItem('clientId');
+    navigate('/');
+    toast({
+      title: "Logout realizado com sucesso",
+    });
+  };
 
   const fetchOrders = async () => {
     try {
@@ -135,10 +144,16 @@ const CustomerArea = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold">Minhas Ordens de Serviço</h2>
-        <Button variant="destructive" onClick={handleNewOrder}>
-          <PlusCircle className="mr-2" />
-          Nova Ordem de Serviço
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleLogout}>
+            <LogOut className="mr-2 h-4 w-4" />
+            Sair
+          </Button>
+          <Button variant="destructive" onClick={handleNewOrder}>
+            <PlusCircle className="mr-2" />
+            Nova Ordem de Serviço
+          </Button>
+        </div>
       </div>
       <div className="border rounded-lg">
         <Table>
