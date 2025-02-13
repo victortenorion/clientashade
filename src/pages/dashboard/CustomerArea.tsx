@@ -12,6 +12,15 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 interface ServiceOrder {
   id: string;
@@ -21,9 +30,21 @@ interface ServiceOrder {
   created_at: string;
 }
 
+interface ServiceOrderFormData {
+  description: string;
+  total_price: number;
+}
+
+const defaultFormData: ServiceOrderFormData = {
+  description: "",
+  total_price: 0,
+};
+
 const CustomerArea = () => {
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [formData, setFormData] = useState<ServiceOrderFormData>(defaultFormData);
   const { toast } = useToast();
 
   const fetchOrders = async () => {
@@ -55,6 +76,55 @@ const CustomerArea = () => {
     }
   };
 
+  const handleNewOrder = () => {
+    setFormData(defaultFormData);
+    setDialogOpen(true);
+  };
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === "total_price" ? Number(value) : value,
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const clientId = localStorage.getItem('clientId');
+      
+      if (!clientId) {
+        throw new Error("Cliente não identificado");
+      }
+
+      const { error } = await supabase
+        .from("service_orders")
+        .insert({
+          ...formData,
+          client_id: clientId,
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Ordem de serviço criada com sucesso",
+      });
+
+      setDialogOpen(false);
+      setFormData(defaultFormData);
+      fetchOrders();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao criar ordem de serviço",
+        description: error.message,
+      });
+    }
+  };
+
   useEffect(() => {
     fetchOrders();
   }, []);
@@ -63,7 +133,7 @@ const CustomerArea = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold">Minhas Ordens de Serviço</h2>
-        <Button variant="destructive">
+        <Button variant="destructive" onClick={handleNewOrder}>
           <PlusCircle className="mr-2" />
           Nova Ordem de Serviço
         </Button>
@@ -111,6 +181,44 @@ const CustomerArea = () => {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nova Ordem de Serviço</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="description">Descrição</Label>
+              <Input
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="total_price">Valor Total</Label>
+              <Input
+                id="total_price"
+                name="total_price"
+                type="number"
+                step="0.01"
+                value={formData.total_price}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" type="button" onClick={() => setDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit">Criar</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
