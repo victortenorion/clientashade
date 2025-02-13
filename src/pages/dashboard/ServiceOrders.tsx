@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -838,7 +839,7 @@ const ServiceOrders = () => {
             <NFCeForm
               onSubmit={handleNFCeSubmit}
               onCancel={() => setShowNFCeDialog(false)}
-              initialData={{
+              defaultValues={{
                 client_id: selectedOrder.client_id,
                 items: selectedOrder.items.map(item => ({
                   product_id: "",
@@ -861,11 +862,11 @@ const ServiceOrders = () => {
             <NFSeForm
               onSubmit={handleNFSeSubmit}
               onCancel={() => setShowNFSeDialog(false)}
-              initialData={{
+              defaultValues={{
                 client_id: selectedOrder.client_id,
                 discriminacao_servicos: selectedOrder.items.map(item => item.description).join("\n"),
                 valor_servicos: selectedOrder.total_price,
-                data_competencia: format(new Date(), "yyyy-MM-dd"),
+                data_competencia: new Date().toISOString().split('T')[0],
                 deducoes: 0,
                 observacoes: "",
                 codigo_servico: ""
