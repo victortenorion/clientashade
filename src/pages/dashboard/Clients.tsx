@@ -152,9 +152,9 @@ const Clients = () => {
           .from("clients")
           .select("id")
           .eq("client_login", formData.client_login)
-          .single();
+          .maybeSingle();
 
-        if (checkError && checkError.code !== 'PGRST116') throw checkError;
+        if (checkError) throw checkError;
 
         if (existingClient) {
           toast({
