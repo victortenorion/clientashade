@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { UserPlus, Pencil, Trash2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import {
   Dialog,
   DialogContent,
@@ -59,7 +59,7 @@ const defaultFormData: UserFormData = {
   username: "",
   email: "",
   password: "",
-  permissions: menuOptions.map(option => option.value),
+  permissions: [],
 };
 
 const Users = () => {
@@ -128,7 +128,6 @@ const Users = () => {
 
       const usersWithPermissions = await Promise.all(
         (profilesData || []).map(async (profile) => {
-          // Modifiquei aqui para garantir que todas as permissões sejam carregadas
           const { data: permissionsData, error: permissionsError } = await supabase
             .from("user_permissions")
             .select("menu_permission")
@@ -142,7 +141,6 @@ const Users = () => {
             };
           }
 
-          // Garantindo que as permissões sejam um array mesmo que vazio
           const permissions = permissionsData?.map(p => p.menu_permission) || [];
           console.log(`Permissões do usuário ${profile.username}:`, permissions);
 
@@ -175,7 +173,6 @@ const Users = () => {
       const { error: authError } = await supabase.auth.admin.deleteUser(id);
 
       if (authError) {
-        // Se falhar com erro de permissão, tenta deletar via API
         const { error: apiError } = await supabase.functions.invoke('delete-user', {
           body: { userId: id }
         });
@@ -204,7 +201,7 @@ const Users = () => {
       username: user.username || "",
       email: "",
       password: "",
-      permissions: Array.isArray(user.permissions) ? user.permissions : [],
+      permissions: user.permissions || [], // Garante que as permissões são sempre um array
     });
     setEditingId(user.id);
     setDialogOpen(true);
@@ -480,22 +477,18 @@ const Users = () => {
             <div className="space-y-2">
               <Label>Menus de Acesso</Label>
               <div className="grid grid-cols-2 gap-2">
-                {menuOptions.map((option) => {
-                  const isChecked = formData.permissions.includes(option.value);
-                  console.log(`Checkbox ${option.label}:`, isChecked);
-                  return (
-                    <div key={option.value} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={option.value}
-                        checked={isChecked}
-                        onCheckedChange={(checked) => 
-                          handlePermissionChange(option.value, checked as boolean)
-                        }
-                      />
-                      <Label htmlFor={option.value}>{option.label}</Label>
-                    </div>
-                  );
-                })}
+                {menuOptions.map((option) => (
+                  <div key={option.value} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={option.value}
+                      checked={formData.permissions.includes(option.value)}
+                      onCheckedChange={(checked) => 
+                        handlePermissionChange(option.value, checked as boolean)
+                      }
+                    />
+                    <Label htmlFor={option.value}>{option.label}</Label>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -515,3 +508,4 @@ const Users = () => {
 };
 
 export default Users;
+
