@@ -22,12 +22,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { IMask, IMaskInput } from "react-imask";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 interface ContactPerson {
   name: string;
@@ -146,37 +141,8 @@ const Clients = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState<ClientFormData>(defaultFormData);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [visibleFields, setVisibleFields] = useState<Record<string, boolean>>({
-    name: true,
-    email: true,
-    phone: true,
-    document: true,
-    client_login: true,
-    address: true,
-  });
   const [searchingDocument, setSearchingDocument] = useState(false);
   const { toast } = useToast();
-
-  const fetchVisibleFields = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("client_field_settings")
-        .select("*");
-
-      if (error) throw error;
-
-      if (data) {
-        const fields = data.reduce((acc, curr) => ({
-          ...acc,
-          [curr.field_name]: curr.visible
-        }), visibleFields);
-        
-        setVisibleFields(fields);
-      }
-    } catch (error: any) {
-      console.error("Erro ao carregar configurações dos campos:", error);
-    }
-  };
 
   const fetchClients = async () => {
     try {
@@ -275,7 +241,7 @@ const Clients = () => {
       if (editingId) {
         const { error } = await supabase
           .from("clients")
-          .update(dataToSend)
+          .update(dataToSend as any)
           .eq("id", editingId);
 
         if (error) throw error;
@@ -303,7 +269,7 @@ const Clients = () => {
 
         const { error } = await supabase
           .from("clients")
-          .insert(dataToSend);
+          .insert(dataToSend as any);
 
         if (error) throw error;
 
@@ -426,14 +392,17 @@ const Clients = () => {
 
   useEffect(() => {
     fetchClients();
-    fetchVisibleFields();
   }, [searchTerm]);
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold">Clientes</h2>
-        <Button onClick={handleNewClient}>
+        <Button onClick={() => {
+          setFormData(defaultFormData);
+          setEditingId(null);
+          setDialogOpen(true);
+        }}>
           <Plus className="h-4 w-4 mr-2" />
           Novo Cliente
         </Button>
@@ -450,37 +419,33 @@ const Clients = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              {visibleFields.name && <TableHead>Nome</TableHead>}
-              {visibleFields.email && <TableHead>Email</TableHead>}
-              {visibleFields.phone && <TableHead>Telefone</TableHead>}
-              {visibleFields.document && <TableHead>Documento</TableHead>}
-              {visibleFields.client_login && <TableHead>Login do Cliente</TableHead>}
-              {visibleFields.address && <TableHead>Endereço</TableHead>}
+              <TableHead>Nome</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Telefone</TableHead>
+              <TableHead>Documento</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">
+                <TableCell colSpan={5} className="text-center">
                   Carregando...
                 </TableCell>
               </TableRow>
             ) : clients.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">
+                <TableCell colSpan={5} className="text-center">
                   Nenhum cliente encontrado
                 </TableCell>
               </TableRow>
             ) : (
               clients.map((client) => (
                 <TableRow key={client.id}>
-                  {visibleFields.name && <TableCell>{client.name}</TableCell>}
-                  {visibleFields.email && <TableCell>{client.email}</TableCell>}
-                  {visibleFields.phone && <TableCell>{client.phone}</TableCell>}
-                  {visibleFields.document && <TableCell>{client.document}</TableCell>}
-                  {visibleFields.client_login && <TableCell>{client.client_login}</TableCell>}
-                  {visibleFields.address && <TableCell>{client.address}</TableCell>}
+                  <TableCell>{client.name}</TableCell>
+                  <TableCell>{client.email}</TableCell>
+                  <TableCell>{client.phone}</TableCell>
+                  <TableCell>{client.document}</TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button
                       variant="outline"
@@ -511,16 +476,12 @@ const Clients = () => {
               {editingId ? "Editar Cliente" : "Novo Cliente"}
             </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Tabs defaultValue="basic" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="basic">Dados Básicos</TabsTrigger>
-                <TabsTrigger value="address">Endereço</TabsTrigger>
-                <TabsTrigger value="contact">Contato</TabsTrigger>
-                <TabsTrigger value="additional">Dados Adicionais</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="basic" className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Dados Básicos</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="document">CPF/CNPJ</Label>
                   <div className="flex gap-2">
@@ -605,9 +566,14 @@ const Clients = () => {
                     onChange={handleInputChange}
                   />
                 </div>
-              </TabsContent>
+              </CardContent>
+            </Card>
 
-              <TabsContent value="address" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Endereço</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="zip_code">CEP</Label>
@@ -682,9 +648,14 @@ const Clients = () => {
                     onChange={handleInputChange}
                   />
                 </div>
-              </TabsContent>
+              </CardContent>
+            </Card>
 
-              <TabsContent value="contact" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Contato</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="phone_landline">Telefone Fixo</Label>
@@ -774,9 +745,14 @@ const Clients = () => {
                     onChange={handleInputChange}
                   />
                 </div>
-              </TabsContent>
+              </CardContent>
+            </Card>
 
-              <TabsContent value="additional" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Dados de Acesso</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="client_login">Login do Cliente</Label>
                   <Input
@@ -800,8 +776,8 @@ const Clients = () => {
                     {...(!editingId && { required: true })}
                   />
                 </div>
-              </TabsContent>
-            </Tabs>
+              </CardContent>
+            </Card>
 
             <DialogFooter>
               <Button variant="outline" type="button" onClick={() => setDialogOpen(false)}>
