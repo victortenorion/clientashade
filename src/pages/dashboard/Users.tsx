@@ -21,25 +21,40 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface User {
   id: string;
   username: string | null;
   created_at: string;
   updated_at: string;
+  permissions?: string[];
 }
 
 interface UserFormData {
   username: string;
   email: string;
   password: string;
+  permissions: string[];
 }
 
 const defaultFormData: UserFormData = {
   username: "",
   email: "",
   password: "",
+  permissions: [],
 };
+
+const menuOptions = [
+  { value: 'dashboard', label: 'Dashboard' },
+  { value: 'clients', label: 'Clientes' },
+  { value: 'users', label: 'Usuários' },
+  { value: 'products', label: 'Produtos' },
+  { value: 'stores', label: 'Lojas' },
+  { value: 'service_orders', label: 'Ordens de Serviço' },
+  { value: 'service_order_settings', label: 'Configurações de O.S.' },
+  { value: 'customer_area', label: 'Área do Cliente' },
+];
 
 const Users = () => {
   const [loading, setLoading] = useState(true);
@@ -53,14 +68,29 @@ const Users = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
         .select("*")
         .ilike("username", `%${searchTerm}%`);
 
-      if (error) throw error;
+      if (profilesError) throw profilesError;
 
-      setUsers(data || []);
+      // Buscar permissões para cada usuário
+      const usersWithPermissions = await Promise.all(
+        (profilesData || []).map(async (profile) => {
+          const { data: permissionsData } = await supabase
+            .from("user_permissions")
+            .select("menu_permission")
+            .eq("user_id", profile.id);
+
+          return {
+            ...profile,
+            permissions: permissionsData?.map(p => p.menu_permission) || [],
+          };
+        })
+      );
+
+      setUsers(usersWithPermissions);
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -78,12 +108,21 @@ const Users = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase
+      // Primeiro deletar as permissões
+      const { error: permissionsError } = await supabase
+        .from("user_permissions")
+        .delete()
+        .eq("user_id", id);
+
+      if (permissionsError) throw permissionsError;
+
+      // Depois deletar o perfil
+      const { error: profileError } = await supabase
         .from("profiles")
         .delete()
         .eq("id", id);
 
-      if (error) throw error;
+      if (profileError) throw profileError;
 
       toast({
         title: "Usuário excluído com sucesso",
@@ -99,11 +138,17 @@ const Users = () => {
     }
   };
 
-  const handleEdit = (user: User) => {
+  const handleEdit = async (user: User) => {
+    const { data: permissions } = await supabase
+      .from("user_permissions")
+      .select("menu_permission")
+      .eq("user_id", user.id);
+
     setFormData({
       username: user.username || "",
       email: "",
       password: "",
+      permissions: permissions?.map(p => p.menu_permission) || [],
     });
     setEditingId(user.id);
     setDialogOpen(true);
@@ -120,19 +165,40 @@ const Users = () => {
     try {
       if (editingId) {
         // Atualizar usuário existente
-        const { error } = await supabase
+        const { error: profileError } = await supabase
           .from("profiles")
           .update({ username: formData.username })
           .eq("id", editingId);
 
-        if (error) throw error;
+        if (profileError) throw profileError;
+
+        // Atualizar permissões
+        // Primeiro deletar todas as permissões existentes
+        await supabase
+          .from("user_permissions")
+          .delete()
+          .eq("user_id", editingId);
+
+        // Depois inserir as novas permissões
+        if (formData.permissions.length > 0) {
+          const { error: permissionsError } = await supabase
+            .from("user_permissions")
+            .insert(
+              formData.permissions.map(permission => ({
+                user_id: editingId,
+                menu_permission: permission,
+              }))
+            );
+
+          if (permissionsError) throw permissionsError;
+        }
 
         toast({
           title: "Usuário atualizado com sucesso",
         });
       } else {
         // Criar novo usuário
-        const { error: signUpError } = await supabase.auth.signUp({
+        const { data: authData, error: signUpError } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
           options: {
@@ -143,6 +209,20 @@ const Users = () => {
         });
 
         if (signUpError) throw signUpError;
+
+        if (authData.user && formData.permissions.length > 0) {
+          // Inserir permissões para o novo usuário
+          const { error: permissionsError } = await supabase
+            .from("user_permissions")
+            .insert(
+              formData.permissions.map(permission => ({
+                user_id: authData.user!.id,
+                menu_permission: permission,
+              }))
+            );
+
+          if (permissionsError) throw permissionsError;
+        }
 
         toast({
           title: "Usuário criado com sucesso",
@@ -168,6 +248,15 @@ const Users = () => {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
+    }));
+  };
+
+  const handlePermissionChange = (permission: string, checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      permissions: checked
+        ? [...prev.permissions, permission]
+        : prev.permissions.filter(p => p !== permission),
     }));
   };
 
@@ -197,6 +286,7 @@ const Users = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Username</TableHead>
+              <TableHead>Menus de Acesso</TableHead>
               <TableHead>Criado em</TableHead>
               <TableHead>Atualizado em</TableHead>
               <TableHead className="text-right">Ações</TableHead>
@@ -205,13 +295,13 @@ const Users = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center">
+                <TableCell colSpan={5} className="text-center">
                   Carregando...
                 </TableCell>
               </TableRow>
             ) : users.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center">
+                <TableCell colSpan={5} className="text-center">
                   Nenhum usuário encontrado
                 </TableCell>
               </TableRow>
@@ -219,6 +309,18 @@ const Users = () => {
               users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>{user.username}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {user.permissions?.map(permission => (
+                        <span
+                          key={permission}
+                          className="bg-primary/10 text-primary text-xs px-2 py-1 rounded"
+                        >
+                          {menuOptions.find(opt => opt.value === permission)?.label || permission}
+                        </span>
+                      ))}
+                    </div>
+                  </TableCell>
                   <TableCell>
                     {new Date(user.created_at).toLocaleString('pt-BR')}
                   </TableCell>
@@ -293,6 +395,24 @@ const Users = () => {
                 </div>
               </>
             )}
+
+            <div className="space-y-2">
+              <Label>Menus de Acesso</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {menuOptions.map((option) => (
+                  <div key={option.value} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={option.value}
+                      checked={formData.permissions.includes(option.value)}
+                      onCheckedChange={(checked) => 
+                        handlePermissionChange(option.value, checked as boolean)
+                      }
+                    />
+                    <Label htmlFor={option.value}>{option.label}</Label>
+                  </div>
+                ))}
+              </div>
+            </div>
 
             <DialogFooter>
               <Button variant="outline" type="button" onClick={() => setDialogOpen(false)}>
