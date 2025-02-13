@@ -40,6 +40,7 @@ import { useNavigate } from "react-router-dom";
 import { NFCeForm } from "./components/NFCeForm";
 import { NFSeForm } from "./components/NFSeForm";
 import { NFCeFormData } from "./types/nfce.types";
+import { NFSeFormData } from "./types/nfse.types";
 
 interface ServiceOrder {
   id: string;
@@ -447,7 +448,7 @@ const ServiceOrders = () => {
     }
   };
 
-  const handleNFSeSubmit = async (data: any) => {
+  const handleNFSeSubmit = async (data: NFSeFormData) => {
     try {
       toast({
         title: "NFS-e emitida com sucesso",
@@ -840,6 +841,15 @@ const ServiceOrders = () => {
               onSubmit={handleNFCeSubmit}
               onCancel={() => setShowNFCeDialog(false)}
               isLoading={false}
+              initialData={{
+                client_id: selectedOrder.client_id,
+                items: selectedOrder.items.map(item => ({
+                  product_id: "",
+                  quantidade: 1,
+                  valor_unitario: item.price,
+                  descricao: item.description
+                }))
+              }}
             />
           )}
         </DialogContent>
@@ -855,6 +865,15 @@ const ServiceOrders = () => {
               onSubmit={handleNFSeSubmit}
               onCancel={() => setShowNFSeDialog(false)}
               isLoading={false}
+              initialData={{
+                client_id: selectedOrder.client_id,
+                discriminacao_servicos: selectedOrder.items.map(item => item.description).join("\n"),
+                valor_servicos: selectedOrder.total_price,
+                data_competencia: new Date().toISOString().split('T')[0],
+                deducoes: 0,
+                observacoes: "",
+                codigo_servico: ""
+              }}
             />
           )}
         </DialogContent>
