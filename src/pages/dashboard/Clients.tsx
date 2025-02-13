@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -369,7 +368,6 @@ const Clients = () => {
               <Input
                 id="client_password"
                 name="client_password"
-                type="password"
                 value={formData.client_password}
                 onChange={handleInputChange}
                 placeholder={editingId ? "(deixe em branco para manter a atual)" : "4 últimos dígitos do telefone"}
