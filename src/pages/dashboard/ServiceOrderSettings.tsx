@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
@@ -420,6 +420,18 @@ const ServiceOrderSettings = () => {
     fetchServiceCodes();
   }, []);
 
+  const filteredServiceCodes = useMemo(() => {
+    return serviceCodeSearch === "" 
+      ? serviceCodes 
+      : serviceCodes.filter((item) => {
+          const search = serviceCodeSearch.toLowerCase();
+          return (
+            item.code.toLowerCase().includes(search) ||
+            item.description.toLowerCase().includes(search)
+          );
+        });
+  }, [serviceCodes, serviceCodeSearch]);
+
   return (
     <div className="space-y-4">
       <div className="border-b pb-4">
@@ -583,7 +595,7 @@ const ServiceOrderSettings = () => {
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-[400px] p-0">
-                        <Command>
+                        <Command shouldFilter={false}>
                           <CommandInput
                             placeholder="Buscar código de serviço..."
                             value={serviceCodeSearch}
@@ -591,7 +603,7 @@ const ServiceOrderSettings = () => {
                           />
                           <CommandEmpty>Nenhum código encontrado.</CommandEmpty>
                           <CommandGroup className="max-h-[300px] overflow-auto">
-                            {(serviceCodes || []).map((item) => (
+                            {filteredServiceCodes.map((item) => (
                               <CommandItem
                                 key={item.code}
                                 value={item.code}
