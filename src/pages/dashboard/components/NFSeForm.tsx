@@ -1,9 +1,9 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import { NFSeFormData, NFSeServico } from "../types/nfse.types";
+import { NFSeFormData } from "../types/nfse.types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,18 +50,27 @@ export const NFSeForm = ({ onSubmit, onCancel, isLoading }: Props) => {
     },
   });
 
-  const { data: servicos } = useQuery({
-    queryKey: ["nfse_servicos"],
+  const { data: fiscalConfig } = useQuery({
+    queryKey: ["fiscal_config"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("nfse_servicos")
+        .from("fiscal_config")
         .select("*")
-        .order("codigo");
+        .single();
 
       if (error) throw error;
-      return data as NFSeServico[];
+      return data;
     },
   });
+
+  useEffect(() => {
+    if (fiscalConfig) {
+      setFormData(prev => ({
+        ...prev,
+        codigo_servico: fiscalConfig.service_code || "",
+      }));
+    }
+  }, [fiscalConfig]);
 
   const handleChange = (
     field: keyof NFSeFormData,
@@ -103,23 +112,24 @@ export const NFSeForm = ({ onSubmit, onCancel, isLoading }: Props) => {
         </Select>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="codigo_servico">Serviço</Label>
-        <Select
-          value={formData.codigo_servico}
-          onValueChange={(value) => handleChange("codigo_servico", value)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Selecione o serviço" />
-          </SelectTrigger>
-          <SelectContent>
-            {servicos?.map((servico) => (
-              <SelectItem key={servico.id} value={servico.codigo}>
-                {servico.codigo} - {servico.descricao}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Código do Serviço</Label>
+          <Input
+            value={formData.codigo_servico}
+            disabled
+            className="bg-muted"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>CNAE</Label>
+          <Input
+            value={fiscalConfig?.cnae || ""}
+            disabled
+            className="bg-muted"
+          />
+        </div>
       </div>
 
       <div className="space-y-2">
