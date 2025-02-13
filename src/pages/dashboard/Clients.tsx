@@ -21,36 +21,107 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { IMask, IMaskInput } from "react-imask";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+
+interface ContactPerson {
+  name: string;
+  role: string;
+  phone: string;
+  email: string;
+}
 
 interface Client {
   id: string;
   name: string;
+  fantasy_name: string | null;
   email: string | null;
   phone: string | null;
   document: string | null;
   client_login: string | null;
   client_password: string | null;
-  address: string | null;
+  person_type: 'PF' | 'PJ' | null;
+  state_registration: string | null;
+  state_registration_exempt: boolean;
+  municipal_registration: string | null;
+  zip_code: string | null;
+  state: string | null;
+  city: string | null;
+  neighborhood: string | null;
+  street: string | null;
+  street_number: string | null;
+  complement: string | null;
+  contact_info: string | null;
+  contact_persons: ContactPerson[] | null;
+  phone_landline: string | null;
+  fax: string | null;
+  mobile_phone: string | null;
+  phone_carrier: string | null;
+  website: string | null;
+  nfe_email: string | null;
 }
 
 interface ClientFormData {
   name: string;
+  fantasy_name: string;
   email: string;
   phone: string;
   document: string;
   client_login: string;
   client_password: string;
-  address: string;
+  person_type: 'PF' | 'PJ';
+  state_registration: string;
+  state_registration_exempt: boolean;
+  municipal_registration: string;
+  zip_code: string;
+  state: string;
+  city: string;
+  neighborhood: string;
+  street: string;
+  street_number: string;
+  complement: string;
+  contact_info: string;
+  contact_persons: ContactPerson[];
+  phone_landline: string;
+  fax: string;
+  mobile_phone: string;
+  phone_carrier: string;
+  website: string;
+  nfe_email: string;
 }
 
 const defaultFormData: ClientFormData = {
   name: "",
+  fantasy_name: "",
   email: "",
   phone: "",
   document: "",
   client_login: "",
   client_password: "",
-  address: "",
+  person_type: 'PF',
+  state_registration: "",
+  state_registration_exempt: false,
+  municipal_registration: "",
+  zip_code: "",
+  state: "",
+  city: "",
+  neighborhood: "",
+  street: "",
+  street_number: "",
+  complement: "",
+  contact_info: "",
+  contact_persons: [],
+  phone_landline: "",
+  fax: "",
+  mobile_phone: "",
+  phone_carrier: "",
+  website: "",
+  nfe_email: "",
 };
 
 const getLastFourDigits = (phone: string) => {
@@ -159,12 +230,31 @@ const Clients = () => {
   const handleEdit = (client: Client) => {
     setFormData({
       name: client.name,
+      fantasy_name: client.fantasy_name || "",
       email: client.email || "",
       phone: client.phone || "",
       document: client.document || "",
       client_login: client.client_login || client.email || "",
       client_password: "", // Não preenchemos a senha por segurança
-      address: client.address || "",
+      person_type: client.person_type || 'PF',
+      state_registration: client.state_registration || "",
+      state_registration_exempt: client.state_registration_exempt || false,
+      municipal_registration: client.municipal_registration || "",
+      zip_code: client.zip_code || "",
+      state: client.state || "",
+      city: client.city || "",
+      neighborhood: client.neighborhood || "",
+      street: client.street || "",
+      street_number: client.street_number || "",
+      complement: client.complement || "",
+      contact_info: client.contact_info || "",
+      contact_persons: client.contact_persons || [],
+      phone_landline: client.phone_landline || "",
+      fax: client.fax || "",
+      mobile_phone: client.mobile_phone || "",
+      phone_carrier: client.phone_carrier || "",
+      website: client.website || "",
+      nfe_email: client.nfe_email || "",
     });
     setEditingId(client.id);
     setDialogOpen(true);
@@ -173,9 +263,11 @@ const Clients = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const dataToSend = { ...formData };
+      const dataToSend = { 
+        ...formData,
+        person_type: formData.document.replace(/\D/g, '').length === 11 ? 'PF' : 'PJ'
+      };
       
-      // Se estiver editando e a senha estiver vazia, removemos do objeto para não sobrescrever
       if (editingId && !dataToSend.client_password) {
         delete dataToSend.client_password;
       }
@@ -192,7 +284,6 @@ const Clients = () => {
           title: "Cliente atualizado com sucesso",
         });
       } else {
-        // Validar se o login já existe
         const { data: existingClient, error: checkError } = await supabase
           .from("clients")
           .select("id")
@@ -212,7 +303,7 @@ const Clients = () => {
 
         const { error } = await supabase
           .from("clients")
-          .insert(formData);
+          .insert(dataToSend);
 
         if (error) throw error;
 
@@ -414,108 +505,304 @@ const Clients = () => {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingId ? "Editar Cliente" : "Novo Cliente"}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="document">CPF/CNPJ</Label>
-              <div className="flex gap-2">
-                <IMaskInput
-                  id="document"
-                  name="document"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  value={formData.document}
-                  mask={[
-                    { mask: '000.000.000-00', maxLength: 14 },
-                    { mask: '00.000.000/0000-00', maxLength: 18 }
-                  ]}
-                  onAccept={(value) => setFormData(prev => ({ ...prev, document: value }))}
-                  placeholder="Digite o CPF ou CNPJ"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  disabled={searchingDocument || !formData.document}
-                  onClick={() => searchDocument(formData.document)}
-                >
-                  <Search className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="name">Nome</Label>
-              <Input
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleInputChange}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="phone">Telefone</Label>
-              <IMaskInput
-                id="phone"
-                name="phone"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                value={formData.phone}
-                mask="(00) 00000-0000"
-                onAccept={(value) => setFormData(prev => ({ ...prev, phone: value }))}
-              />
-            </div>
+            <Tabs defaultValue="basic" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="basic">Dados Básicos</TabsTrigger>
+                <TabsTrigger value="address">Endereço</TabsTrigger>
+                <TabsTrigger value="contact">Contato</TabsTrigger>
+                <TabsTrigger value="additional">Dados Adicionais</TabsTrigger>
+              </TabsList>
 
-            <div className="space-y-2">
-              <Label htmlFor="address">Endereço</Label>
-              <Input
-                id="address"
-                name="address"
-                value={formData.address}
-                onChange={handleInputChange}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="client_login">Login do Cliente</Label>
-              <Input
-                id="client_login"
-                name="client_login"
-                value={formData.client_login}
-                onChange={handleInputChange}
-                required
-                placeholder="Preenchido automaticamente com o email"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="client_password">Senha do Cliente</Label>
-              <Input
-                id="client_password"
-                name="client_password"
-                value={formData.client_password}
-                onChange={handleInputChange}
-                placeholder={editingId ? "(deixe em branco para manter a atual)" : "4 últimos dígitos do telefone"}
-                {...(!editingId && { required: true })}
-              />
-            </div>
-            
+              <TabsContent value="basic" className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="document">CPF/CNPJ</Label>
+                  <div className="flex gap-2">
+                    <IMaskInput
+                      id="document"
+                      name="document"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      value={formData.document}
+                      mask={[
+                        { mask: '000.000.000-00', maxLength: 14 },
+                        { mask: '00.000.000/0000-00', maxLength: 18 }
+                      ]}
+                      onAccept={(value) => setFormData(prev => ({ ...prev, document: value }))}
+                      placeholder="Digite o CPF ou CNPJ"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      disabled={searchingDocument || !formData.document}
+                      onClick={() => searchDocument(formData.document)}
+                    >
+                      <Search className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nome/Razão Social</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="fantasy_name">Nome Fantasia</Label>
+                  <Input
+                    id="fantasy_name"
+                    name="fantasy_name"
+                    value={formData.fantasy_name}
+                    onChange={handleInputChange}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="state_registration">Inscrição Estadual</Label>
+                    <Input
+                      id="state_registration"
+                      name="state_registration"
+                      value={formData.state_registration}
+                      onChange={handleInputChange}
+                      disabled={formData.state_registration_exempt}
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2 pt-8">
+                    <Checkbox
+                      id="state_registration_exempt"
+                      checked={formData.state_registration_exempt}
+                      onCheckedChange={(checked) => 
+                        setFormData(prev => ({
+                          ...prev,
+                          state_registration_exempt: checked as boolean,
+                          state_registration: checked ? "" : prev.state_registration
+                        }))
+                      }
+                    />
+                    <Label htmlFor="state_registration_exempt">IE Isento</Label>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="municipal_registration">Inscrição Municipal</Label>
+                  <Input
+                    id="municipal_registration"
+                    name="municipal_registration"
+                    value={formData.municipal_registration}
+                    onChange={handleInputChange}
+                  />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="address" className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="zip_code">CEP</Label>
+                    <IMaskInput
+                      id="zip_code"
+                      name="zip_code"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      value={formData.zip_code}
+                      mask="00000-000"
+                      onAccept={(value) => setFormData(prev => ({ ...prev, zip_code: value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="state">UF</Label>
+                    <Input
+                      id="state"
+                      name="state"
+                      value={formData.state}
+                      onChange={handleInputChange}
+                      maxLength={2}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="city">Cidade</Label>
+                  <Input
+                    id="city"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleInputChange}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="neighborhood">Bairro</Label>
+                  <Input
+                    id="neighborhood"
+                    name="neighborhood"
+                    value={formData.neighborhood}
+                    onChange={handleInputChange}
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="col-span-2 space-y-2">
+                    <Label htmlFor="street">Logradouro</Label>
+                    <Input
+                      id="street"
+                      name="street"
+                      value={formData.street}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="street_number">Número</Label>
+                    <Input
+                      id="street_number"
+                      name="street_number"
+                      value={formData.street_number}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="complement">Complemento</Label>
+                  <Input
+                    id="complement"
+                    name="complement"
+                    value={formData.complement}
+                    onChange={handleInputChange}
+                  />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="contact" className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="phone_landline">Telefone Fixo</Label>
+                    <IMaskInput
+                      id="phone_landline"
+                      name="phone_landline"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      value={formData.phone_landline}
+                      mask="(00) 0000-0000"
+                      onAccept={(value) => setFormData(prev => ({ ...prev, phone_landline: value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="fax">Fax</Label>
+                    <IMaskInput
+                      id="fax"
+                      name="fax"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      value={formData.fax}
+                      mask="(00) 0000-0000"
+                      onAccept={(value) => setFormData(prev => ({ ...prev, fax: value }))}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="mobile_phone">Celular</Label>
+                    <IMaskInput
+                      id="mobile_phone"
+                      name="mobile_phone"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      value={formData.mobile_phone}
+                      mask="(00) 00000-0000"
+                      onAccept={(value) => setFormData(prev => ({ ...prev, mobile_phone: value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone_carrier">Operadora</Label>
+                    <Input
+                      id="phone_carrier"
+                      name="phone_carrier"
+                      value={formData.phone_carrier}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">E-mail</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="nfe_email">E-mail para NFe</Label>
+                  <Input
+                    id="nfe_email"
+                    name="nfe_email"
+                    type="email"
+                    value={formData.nfe_email}
+                    onChange={handleInputChange}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="website">Website</Label>
+                  <Input
+                    id="website"
+                    name="website"
+                    value={formData.website}
+                    onChange={handleInputChange}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="contact_info">Informações de Contato</Label>
+                  <Input
+                    id="contact_info"
+                    name="contact_info"
+                    value={formData.contact_info}
+                    onChange={handleInputChange}
+                  />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="additional" className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="client_login">Login do Cliente</Label>
+                  <Input
+                    id="client_login"
+                    name="client_login"
+                    value={formData.client_login}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="Preenchido automaticamente com o email"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="client_password">Senha do Cliente</Label>
+                  <Input
+                    id="client_password"
+                    name="client_password"
+                    value={formData.client_password}
+                    onChange={handleInputChange}
+                    placeholder={editingId ? "(deixe em branco para manter a atual)" : "4 últimos dígitos do telefone"}
+                    {...(!editingId && { required: true })}
+                  />
+                </div>
+              </TabsContent>
+            </Tabs>
+
             <DialogFooter>
               <Button variant="outline" type="button" onClick={() => setDialogOpen(false)}>
                 Cancelar

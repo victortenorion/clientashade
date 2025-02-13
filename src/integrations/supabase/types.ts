@@ -35,40 +35,97 @@ export type Database = {
       }
       clients: {
         Row: {
-          address: string | null
+          city: string | null
           client_login: string | null
           client_password: string | null
+          complement: string | null
+          contact_info: string | null
+          contact_persons: Json | null
           created_at: string
           document: string | null
           email: string | null
+          fantasy_name: string | null
+          fax: string | null
           id: string
+          mobile_phone: string | null
+          municipal_registration: string | null
           name: string
+          neighborhood: string | null
+          nfe_email: string | null
+          person_type: string | null
           phone: string | null
+          phone_carrier: string | null
+          phone_landline: string | null
+          state: string | null
+          state_registration: string | null
+          state_registration_exempt: boolean | null
+          street: string | null
+          street_number: string | null
           updated_at: string
+          website: string | null
+          zip_code: string | null
         }
         Insert: {
-          address?: string | null
+          city?: string | null
           client_login?: string | null
           client_password?: string | null
+          complement?: string | null
+          contact_info?: string | null
+          contact_persons?: Json | null
           created_at?: string
           document?: string | null
           email?: string | null
+          fantasy_name?: string | null
+          fax?: string | null
           id?: string
+          mobile_phone?: string | null
+          municipal_registration?: string | null
           name: string
+          neighborhood?: string | null
+          nfe_email?: string | null
+          person_type?: string | null
           phone?: string | null
+          phone_carrier?: string | null
+          phone_landline?: string | null
+          state?: string | null
+          state_registration?: string | null
+          state_registration_exempt?: boolean | null
+          street?: string | null
+          street_number?: string | null
           updated_at?: string
+          website?: string | null
+          zip_code?: string | null
         }
         Update: {
-          address?: string | null
+          city?: string | null
           client_login?: string | null
           client_password?: string | null
+          complement?: string | null
+          contact_info?: string | null
+          contact_persons?: Json | null
           created_at?: string
           document?: string | null
           email?: string | null
+          fantasy_name?: string | null
+          fax?: string | null
           id?: string
+          mobile_phone?: string | null
+          municipal_registration?: string | null
           name?: string
+          neighborhood?: string | null
+          nfe_email?: string | null
+          person_type?: string | null
           phone?: string | null
+          phone_carrier?: string | null
+          phone_landline?: string | null
+          state?: string | null
+          state_registration?: string | null
+          state_registration_exempt?: boolean | null
+          street?: string | null
+          street_number?: string | null
           updated_at?: string
+          website?: string | null
+          zip_code?: string | null
         }
         Relationships: []
       }
