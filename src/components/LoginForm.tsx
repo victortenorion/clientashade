@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
@@ -18,6 +19,7 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const [passwordRequirements, setPasswordRequirements] = useState<PasswordRequirement[]>([
     { regex: /.{8,}/, text: "Mínimo de 8 caracteres", met: false },
@@ -39,6 +41,18 @@ export function LoginForm() {
   useEffect(() => {
     updatePasswordRequirements(password);
   }, [password]);
+
+  // Verifica se o usuário já está autenticado
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate("/dashboard");
+      }
+    };
+    
+    checkUser();
+  }, [navigate]);
 
   const isPasswordValid = passwordRequirements.every(req => req.met);
 
@@ -71,17 +85,20 @@ export function LoginForm() {
         });
         setIsSignUp(false);
       } else {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
+        const { error: signInError, data } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
 
         if (signInError) throw signInError;
 
-        toast({
-          title: "Login realizado com sucesso!",
-          description: "Bem-vindo ao sistema.",
-        });
+        if (data.session) {
+          toast({
+            title: "Login realizado com sucesso!",
+            description: "Bem-vindo ao sistema.",
+          });
+          navigate("/dashboard");
+        }
       }
     } catch (error) {
       console.error("Erro completo:", error);
