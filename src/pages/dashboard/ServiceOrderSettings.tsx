@@ -48,7 +48,23 @@ const defaultClientFields: ClientField[] = [
   { id: "2", label: "Email", field: "email", visible: true },
   { id: "3", label: "Telefone", field: "phone", visible: true },
   { id: "4", label: "Documento", field: "document", visible: true },
-  { id: "5", label: "Login do Cliente", field: "client_login", visible: true },
+  { id: "5", label: "Nome Fantasia", field: "fantasy_name", visible: true },
+  { id: "6", label: "Inscrição Estadual", field: "state_registration", visible: true },
+  { id: "7", label: "Inscrição Municipal", field: "municipal_registration", visible: true },
+  { id: "8", label: "CEP", field: "zip_code", visible: true },
+  { id: "9", label: "Estado", field: "state", visible: true },
+  { id: "10", label: "Cidade", field: "city", visible: true },
+  { id: "11", label: "Bairro", field: "neighborhood", visible: true },
+  { id: "12", label: "Logradouro", field: "street", visible: true },
+  { id: "13", label: "Número", field: "street_number", visible: true },
+  { id: "14", label: "Complemento", field: "complement", visible: true },
+  { id: "15", label: "Telefone Fixo", field: "phone_landline", visible: true },
+  { id: "16", label: "Fax", field: "fax", visible: true },
+  { id: "17", label: "Celular", field: "mobile_phone", visible: true },
+  { id: "18", label: "Operadora", field: "phone_carrier", visible: true },
+  { id: "19", label: "Website", field: "website", visible: true },
+  { id: "20", label: "Email NFe", field: "nfe_email", visible: true },
+  { id: "21", label: "Login do Cliente", field: "client_login", visible: true },
 ];
 
 const ServiceOrderSettings = () => {
@@ -344,12 +360,12 @@ const ServiceOrderSettings = () => {
               <div>
                 <h3 className="text-lg font-semibold mb-4">Campos Visíveis na Listagem de Clientes</h3>
                 <div className="border rounded-lg p-4">
-                  <div className="space-y-4">
-                    {clientFields.map((field) => (
+                  <div className="grid grid-cols-3 gap-4">
+                    {defaultClientFields.map((field) => (
                       <div key={field.id} className="flex items-center space-x-2">
                         <Checkbox 
                           id={field.id}
-                          checked={field.visible}
+                          checked={clientFields.find(f => f.field === field.field)?.visible ?? field.visible}
                           onCheckedChange={(checked) => 
                             handleFieldVisibilityChange(field.field, checked as boolean)
                           }
@@ -360,7 +376,7 @@ const ServiceOrderSettings = () => {
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Selecione os campos que deseja exibir na listagem de clientes.
+                  Selecione os campos que deseja exibir na listagem de clientes. As alterações serão salvas automaticamente.
                 </p>
               </div>
             </div>
