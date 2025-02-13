@@ -35,6 +35,7 @@ const Dashboard = () => {
   const [cadastrosOpen, setCadastrosOpen] = useState(true);
   const [ordensOpen, setOrdensOpen] = useState(true);
   const [username, setUsername] = useState<string>("");
+  const [userPermissions, setUserPermissions] = useState<string[]>([]);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -65,6 +66,18 @@ const Dashboard = () => {
         if (!profileError && profileData) {
           setUsername(profileData.username);
         }
+
+        // Buscar as permissões do usuário
+        const { data: permissionsData, error: permissionsError } = await supabase
+          .from("user_permissions")
+          .select("menu_permission")
+          .eq("user_id", session.user.id);
+
+        if (!permissionsError && permissionsData) {
+          const permissions = permissionsData.map(p => p.menu_permission);
+          console.log("Permissões do usuário:", permissions);
+          setUserPermissions(permissions);
+        }
       }
     };
     
@@ -81,6 +94,11 @@ const Dashboard = () => {
     };
   }, [navigate]);
 
+  // Função para verificar se o usuário tem permissão para acessar um menu
+  const hasPermission = (permission: string) => {
+    return userPermissions.includes(permission);
+  };
+
   return (
     <SidebarProvider defaultOpen>
       <div className="min-h-screen bg-background flex">
@@ -89,20 +107,25 @@ const Dashboard = () => {
             <h2 className="text-xl font-bold p-4">Sistema</h2>
           </SidebarHeader>
           <SidebarContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => navigate("/dashboard")}
-                  isActive={location.pathname === "/dashboard"}
-                >
-                  <LayoutDashboard className="h-4 w-4" />
-                  <span>Dashboard</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
+            {hasPermission('dashboard') && (
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => navigate("/dashboard")}
+                    isActive={location.pathname === "/dashboard"}
+                  >
+                    <LayoutDashboard className="h-4 w-4" />
+                    <span>Dashboard</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            )}
 
             <SidebarGroup>
-              <SidebarGroupLabel onClick={() => setCadastrosOpen(!cadastrosOpen)} className="cursor-pointer hover:bg-muted/50 rounded-md">
+              <SidebarGroupLabel 
+                onClick={() => setCadastrosOpen(!cadastrosOpen)} 
+                className="cursor-pointer hover:bg-muted/50 rounded-md"
+              >
                 <div className="flex items-center gap-2">
                   <FolderOpen className="h-4 w-4" />
                   <span>Cadastros</span>
@@ -111,49 +134,60 @@ const Dashboard = () => {
               {cadastrosOpen && (
                 <SidebarGroupContent>
                   <SidebarMenu>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        onClick={() => navigate("/dashboard/clients")}
-                        isActive={location.pathname.startsWith("/dashboard/clients")}
-                      >
-                        <Users className="h-4 w-4" />
-                        <span>Clientes</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        onClick={() => navigate("/dashboard/users")}
-                        isActive={location.pathname.startsWith("/dashboard/users")}
-                      >
-                        <User className="h-4 w-4" />
-                        <span>Usuários</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        onClick={() => navigate("/dashboard/products")}
-                        isActive={location.pathname.startsWith("/dashboard/products")}
-                      >
-                        <Package className="h-4 w-4" />
-                        <span>Produtos</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        onClick={() => navigate("/dashboard/stores")}
-                        isActive={location.pathname.startsWith("/dashboard/stores")}
-                      >
-                        <Store className="h-4 w-4" />
-                        <span>Lojas</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
+                    {hasPermission('clients') && (
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          onClick={() => navigate("/dashboard/clients")}
+                          isActive={location.pathname.startsWith("/dashboard/clients")}
+                        >
+                          <Users className="h-4 w-4" />
+                          <span>Clientes</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    )}
+                    {hasPermission('users') && (
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          onClick={() => navigate("/dashboard/users")}
+                          isActive={location.pathname.startsWith("/dashboard/users")}
+                        >
+                          <User className="h-4 w-4" />
+                          <span>Usuários</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    )}
+                    {hasPermission('products') && (
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          onClick={() => navigate("/dashboard/products")}
+                          isActive={location.pathname.startsWith("/dashboard/products")}
+                        >
+                          <Package className="h-4 w-4" />
+                          <span>Produtos</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    )}
+                    {hasPermission('stores') && (
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          onClick={() => navigate("/dashboard/stores")}
+                          isActive={location.pathname.startsWith("/dashboard/stores")}
+                        >
+                          <Store className="h-4 w-4" />
+                          <span>Lojas</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    )}
                   </SidebarMenu>
                 </SidebarGroupContent>
               )}
             </SidebarGroup>
 
             <SidebarGroup>
-              <SidebarGroupLabel onClick={() => setOrdensOpen(!ordensOpen)} className="cursor-pointer hover:bg-muted/50 rounded-md">
+              <SidebarGroupLabel 
+                onClick={() => setOrdensOpen(!ordensOpen)} 
+                className="cursor-pointer hover:bg-muted/50 rounded-md"
+              >
                 <div className="flex items-center gap-2">
                   <ClipboardList className="h-4 w-4" />
                   <span>Ordem de Serviço</span>
@@ -162,33 +196,39 @@ const Dashboard = () => {
               {ordensOpen && (
                 <SidebarGroupContent>
                   <SidebarMenu>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        onClick={() => navigate("/dashboard/service-orders")}
-                        isActive={location.pathname === "/dashboard/service-orders"}
-                      >
-                        <ClipboardList className="h-4 w-4" />
-                        <span>Listar Ordens</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        onClick={() => navigate("/dashboard/service-order-settings")}
-                        isActive={location.pathname === "/dashboard/service-order-settings"}
-                      >
-                        <Settings className="h-4 w-4" />
-                        <span>Configurações</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        onClick={() => navigate("/dashboard/customer-area")}
-                        isActive={location.pathname === "/dashboard/customer-area"}
-                      >
-                        <UserCircle className="h-4 w-4" />
-                        <span>Área do Cliente</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
+                    {hasPermission('service_orders') && (
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          onClick={() => navigate("/dashboard/service-orders")}
+                          isActive={location.pathname === "/dashboard/service-orders"}
+                        >
+                          <ClipboardList className="h-4 w-4" />
+                          <span>Listar Ordens</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    )}
+                    {hasPermission('service_order_settings') && (
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          onClick={() => navigate("/dashboard/service-order-settings")}
+                          isActive={location.pathname === "/dashboard/service-order-settings"}
+                        >
+                          <Settings className="h-4 w-4" />
+                          <span>Configurações</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    )}
+                    {hasPermission('customer_area') && (
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          onClick={() => navigate("/dashboard/customer-area")}
+                          isActive={location.pathname === "/dashboard/customer-area"}
+                        >
+                          <UserCircle className="h-4 w-4" />
+                          <span>Área do Cliente</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    )}
                   </SidebarMenu>
                 </SidebarGroupContent>
               )}
