@@ -345,7 +345,6 @@ const Clients = () => {
       return {
         street,
         street_number: number,
-        complement: '',
         neighborhood,
         city,
         state,
