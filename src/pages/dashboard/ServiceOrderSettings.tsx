@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +18,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, Pencil, Settings2, ListFilter, Columns, Filter } from "lucide-react";
+import { Plus, Trash2, Pencil, Settings2, ListFilter, Users, Filter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Tabs,
@@ -169,9 +168,9 @@ const ServiceOrderSettings = () => {
               <Settings2 className="h-4 w-4 mr-2" />
               Status
             </TabsTrigger>
-            <TabsTrigger value="fields" className="data-[state=active]:bg-background rounded-none h-12 px-6">
-              <Columns className="h-4 w-4 mr-2" />
-              Campos
+            <TabsTrigger value="clients" className="data-[state=active]:bg-background rounded-none h-12 px-6">
+              <Users className="h-4 w-4 mr-2" />
+              Clientes
             </TabsTrigger>
             <TabsTrigger value="filters" className="data-[state=active]:bg-background rounded-none h-12 px-6">
               <Filter className="h-4 w-4 mr-2" />
@@ -271,9 +270,9 @@ const ServiceOrderSettings = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="fields" className="mt-6">
+          <TabsContent value="clients" className="mt-6">
             <div className="flex items-center justify-center h-32 border-2 border-dashed rounded-lg">
-              <p className="text-muted-foreground">Configurações de campos em desenvolvimento</p>
+              <p className="text-muted-foreground">Configurações de campos do cadastro de clientes em desenvolvimento. Aqui você poderá escolher quais campos aparecerão na listagem e no cadastro de clientes.</p>
             </div>
           </TabsContent>
 
