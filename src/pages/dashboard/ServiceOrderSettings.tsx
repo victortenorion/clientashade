@@ -591,7 +591,7 @@ const ServiceOrderSettings = () => {
                           />
                           <CommandEmpty>Nenhum código encontrado.</CommandEmpty>
                           <CommandGroup className="max-h-[300px] overflow-auto">
-                            {serviceCodes.map((item) => (
+                            {(serviceCodes || []).map((item) => (
                               <CommandItem
                                 key={item.code}
                                 value={item.code}
@@ -613,7 +613,7 @@ const ServiceOrderSettings = () => {
                         </Command>
                       </PopoverContent>
                     </Popover>
-                    {fiscalConfig.service_code && (
+                    {fiscalConfig.service_code && serviceCodes.length > 0 && (
                       <p className="text-sm text-muted-foreground">
                         {serviceCodes.find((item) => item.code === fiscalConfig.service_code)?.description}
                       </p>
