@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { UserPlus, Pencil, Trash2 } from "lucide-react";
+import { UserPlus, Pencil, Trash2, Key } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import {
   Dialog,
@@ -70,6 +69,11 @@ const Users = () => {
   const [formData, setFormData] = useState<UserFormData>(defaultFormData);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [hasAllPermissions, setHasAllPermissions] = useState(false);
+  const [changePasswordDialogOpen, setChangePasswordDialogOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const [usernameRequirements, setUsernameRequirements] = useState<Requirement[]>([
@@ -145,7 +149,6 @@ const Users = () => {
       if (profilesError) throw profilesError;
 
       if (!hasAllPermissions) {
-        // Se não tiver todas as permissões, não carrega as permissões dos usuários
         setUsers(profilesData || []);
         return;
       }
@@ -285,7 +288,6 @@ const Users = () => {
 
         if (profileError) throw profileError;
 
-        // Deletar todas as permissões existentes
         const { error: deleteError } = await supabase
           .from("user_permissions")
           .delete()
@@ -293,7 +295,6 @@ const Users = () => {
 
         if (deleteError) throw deleteError;
 
-        // Inserir as novas permissões selecionadas
         if (formData.permissions.length > 0) {
           const { error: permissionsError } = await supabase
             .from("user_permissions")
@@ -374,6 +375,50 @@ const Users = () => {
     }));
   };
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (newPassword !== confirmPassword) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "As senhas não coincidem",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Senha alterada com sucesso",
+      });
+
+      setChangePasswordDialogOpen(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error: any) {
+      console.error("Erro ao alterar senha:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao alterar senha",
+        description: error.message,
+      });
+    }
+  };
+
+  const getCurrentUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      setCurrentUserId(user.id);
+    }
+  };
+
   useEffect(() => {
     checkUserPermissions();
   }, []);
@@ -381,6 +426,10 @@ const Users = () => {
   useEffect(() => {
     fetchUsers();
   }, [searchTerm, hasAllPermissions]);
+
+  useEffect(() => {
+    getCurrentUser();
+  }, []);
 
   const RequirementsList = ({ requirements }: { requirements: Requirement[] }) => (
     <ul className="text-sm space-y-1">
@@ -436,13 +485,13 @@ const Users = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={hasAllPermissions ? 5 : 3} className="text-center">
+                <TableCell colSpan={hasAllPermissions ? 5 : 4} className="text-center">
                   Carregando...
                 </TableCell>
               </TableRow>
             ) : users.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={hasAllPermissions ? 5 : 3} className="text-center">
+                <TableCell colSpan={hasAllPermissions ? 5 : 4} className="text-center">
                   Nenhum usuário encontrado
                 </TableCell>
               </TableRow>
@@ -470,24 +519,36 @@ const Users = () => {
                   <TableCell>
                     {new Date(user.updated_at).toLocaleString('pt-BR')}
                   </TableCell>
-                  {hasAllPermissions && (
-                    <TableCell className="text-right space-x-2">
+                  <TableCell className="text-right space-x-2">
+                    {currentUserId === user.id && (
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => handleEdit(user)}
+                        onClick={() => setChangePasswordDialogOpen(true)}
+                        title="Alterar senha"
                       >
-                        <Pencil className="h-4 w-4" />
+                        <Key className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleDelete(user.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  )}
+                    )}
+                    {hasAllPermissions && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleEdit(user)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleDelete(user.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -575,9 +636,51 @@ const Users = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={changePasswordDialogOpen} onOpenChange={setChangePasswordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Alterar Senha</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleChangePassword} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">Nova Senha</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" type="button" onClick={() => {
+                setChangePasswordDialogOpen(false);
+                setNewPassword("");
+                setConfirmPassword("");
+              }}>
+                Cancelar
+              </Button>
+              <Button type="submit">
+                Alterar Senha
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
 
 export default Users;
-
