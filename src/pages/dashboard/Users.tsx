@@ -158,13 +158,6 @@ const Users = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      const { error: permissionsError } = await supabase
-        .from("user_permissions")
-        .delete()
-        .eq("user_id", id);
-
-      if (permissionsError) throw permissionsError;
-
       const { error: profileError } = await supabase
         .from("profiles")
         .delete()
