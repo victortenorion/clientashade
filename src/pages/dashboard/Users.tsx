@@ -128,14 +128,27 @@ const Users = () => {
 
       const usersWithPermissions = await Promise.all(
         (profilesData || []).map(async (profile) => {
-          const { data: permissionsData } = await supabase
+          // Modifiquei aqui para garantir que todas as permissões sejam carregadas
+          const { data: permissionsData, error: permissionsError } = await supabase
             .from("user_permissions")
             .select("menu_permission")
             .eq("user_id", profile.id);
 
+          if (permissionsError) {
+            console.error("Erro ao carregar permissões:", permissionsError);
+            return {
+              ...profile,
+              permissions: [],
+            };
+          }
+
+          // Garantindo que as permissões sejam um array mesmo que vazio
+          const permissions = permissionsData?.map(p => p.menu_permission) || [];
+          console.log(`Permissões do usuário ${profile.username}:`, permissions);
+
           return {
             ...profile,
-            permissions: permissionsData?.map(p => p.menu_permission) || [],
+            permissions,
           };
         })
       );
@@ -186,11 +199,12 @@ const Users = () => {
   };
 
   const handleEdit = async (user: User) => {
+    console.log("Editando usuário com permissões:", user.permissions);
     setFormData({
       username: user.username || "",
       email: "",
       password: "",
-      permissions: user.permissions || [],
+      permissions: Array.isArray(user.permissions) ? user.permissions : [],
     });
     setEditingId(user.id);
     setDialogOpen(true);
@@ -466,18 +480,22 @@ const Users = () => {
             <div className="space-y-2">
               <Label>Menus de Acesso</Label>
               <div className="grid grid-cols-2 gap-2">
-                {menuOptions.map((option) => (
-                  <div key={option.value} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={option.value}
-                      checked={formData.permissions.includes(option.value)}
-                      onCheckedChange={(checked) => 
-                        handlePermissionChange(option.value, checked as boolean)
-                      }
-                    />
-                    <Label htmlFor={option.value}>{option.label}</Label>
-                  </div>
-                ))}
+                {menuOptions.map((option) => {
+                  const isChecked = formData.permissions.includes(option.value);
+                  console.log(`Checkbox ${option.label}:`, isChecked);
+                  return (
+                    <div key={option.value} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={option.value}
+                        checked={isChecked}
+                        onCheckedChange={(checked) => 
+                          handlePermissionChange(option.value, checked as boolean)
+                        }
+                      />
+                      <Label htmlFor={option.value}>{option.label}</Label>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
