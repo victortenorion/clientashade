@@ -320,22 +320,33 @@ const Clients = () => {
 
   const parseAddress = (address: string) => {
     try {
-      // Exemplo formato de entrada: "TIPO LOGRADOURO NOME LOGRADOURO, NUMERO, COMPLEMENTO, BAIRRO, CIDADE - UF, CEP"
+      // Exemplo formato: "LOGRADOURO, NUMERO, BAIRRO, CIDADE - UF, CEP"
       const parts = address.split(',').map(part => part.trim());
       
-      // Processa rua
-      const streetPart = parts[0] || '';
-      const streetWords = streetPart.split(' ');
+      // Extrai logradouro
+      const street = parts[0] || '';
+      
+      // Extrai número
       const number = parts[1] || '';
       
+      // Extrai bairro
+      const neighborhood = parts[2] || '';
+      
+      // Extrai cidade e estado do formato "CIDADE - UF"
+      const cityStatePart = parts[3] || '';
+      const [city, stateWithCep] = cityStatePart.split('-').map(s => s.trim());
+      
+      // Extrai estado e CEP do formato "UF, CEP"
+      const [state, cep] = (stateWithCep || '').split(',').map(s => s.trim());
+
       return {
-        street: streetPart,
+        street,
         street_number: number,
-        complement: parts[2] || '',
-        neighborhood: parts[3] || '',
-        city: parts[4]?.split('-')[0]?.trim() || '',
-        state: parts[4]?.split('-')[1]?.split(',')[0]?.trim() || '',
-        zip_code: parts[5]?.replace(/\D/g, '') || parts[4]?.split('-')[1]?.split(',')[1]?.replace(/\D/g, '') || ''
+        complement: '',
+        neighborhood,
+        city,
+        state,
+        zip_code: cep ? cep.replace(/\D/g, '') : ''
       };
     } catch (error) {
       console.error('Erro ao parsear endereço:', error);

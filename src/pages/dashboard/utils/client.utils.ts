@@ -41,6 +41,36 @@ export const getFieldLabel = (fieldName: string) => {
   return labels[fieldName] || fieldName;
 };
 
+export interface ClientFormData {
+  name: string;
+  fantasy_name: string;
+  email: string;
+  phone: string;
+  document: string;
+  client_login: string;
+  client_password: string;
+  person_type: 'PF' | 'PJ';
+  state_registration: string;
+  state_registration_exempt: boolean;
+  municipal_registration: string;
+  zip_code: string;
+  state: string;
+  city: string;
+  neighborhood: string;
+  street: string;
+  street_number: string;
+  complement: string;
+  contact_info: string;
+  contact_persons: { name: string; role: string; phone: string; email: string; }[];
+  phone_landline: string;
+  fax: string;
+  mobile_phone: string;
+  phone_carrier: string;
+  website: string;
+  nfe_email: string;
+  store_id: string;
+}
+
 export const defaultFormData: ClientFormData = {
   name: "",
   fantasy_name: "",
