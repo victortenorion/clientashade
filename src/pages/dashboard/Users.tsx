@@ -31,10 +31,14 @@ interface User {
 
 interface UserFormData {
   username: string;
+  email: string;
+  password: string;
 }
 
 const defaultFormData: UserFormData = {
   username: "",
+  email: "",
+  password: "",
 };
 
 const Users = () => {
@@ -98,28 +102,51 @@ const Users = () => {
   const handleEdit = (user: User) => {
     setFormData({
       username: user.username || "",
+      email: "",
+      password: "",
     });
     setEditingId(user.id);
     setDialogOpen(true);
   };
 
   const handleNewUser = () => {
-    window.open('https://supabase.com/dashboard/project/eroqgxpjiqmftkgqyunj/auth/users', '_blank');
+    setEditingId(null);
+    setFormData(defaultFormData);
+    setDialogOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       if (editingId) {
+        // Atualizar usuário existente
         const { error } = await supabase
           .from("profiles")
-          .update(formData)
+          .update({ username: formData.username })
           .eq("id", editingId);
 
         if (error) throw error;
 
         toast({
           title: "Usuário atualizado com sucesso",
+        });
+      } else {
+        // Criar novo usuário
+        const { error: signUpError } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              username: formData.username,
+            },
+          },
+        });
+
+        if (signUpError) throw signUpError;
+
+        toast({
+          title: "Usuário criado com sucesso",
+          description: "Um email de confirmação foi enviado.",
         });
       }
 
@@ -130,7 +157,7 @@ const Users = () => {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Erro ao atualizar usuário",
+        title: editingId ? "Erro ao atualizar usuário" : "Erro ao criar usuário",
         description: error.message,
       });
     }
@@ -224,7 +251,9 @@ const Users = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Editar Usuário</DialogTitle>
+            <DialogTitle>
+              {editingId ? "Editar Usuário" : "Novo Usuário"}
+            </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
@@ -237,11 +266,41 @@ const Users = () => {
                 required
               />
             </div>
+            
+            {!editingId && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Senha</Label>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+              </>
+            )}
+
             <DialogFooter>
               <Button variant="outline" type="button" onClick={() => setDialogOpen(false)}>
                 Cancelar
               </Button>
-              <Button type="submit">Salvar</Button>
+              <Button type="submit">
+                {editingId ? "Salvar" : "Criar"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
