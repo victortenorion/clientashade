@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -265,4 +264,20 @@ const Clients = () => {
       phone_landline: client.phone_landline || "",
       fax: client.fax || "",
       mobile_phone: client.mobile_phone || "",
-      phone_carrier: client
+      phone_carrier: client.phone_carrier || "",
+      website: client.website || "",
+      nfe_email: client.nfe_email || "",
+      store_id: client.store_id || ""
+    });
+    setEditingId(client.id);
+    setDialogOpen(true);
+  };
+
+  return (
+    <div>
+      {/* Component content */}
+    </div>
+  );
+};
+
+export default Clients;
