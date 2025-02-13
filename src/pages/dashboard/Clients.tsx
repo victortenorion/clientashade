@@ -367,38 +367,44 @@ const Clients = () => {
         return;
       }
 
+      const clientData = {
+        name: formData.name,
+        fantasy_name: formData.fantasy_name || null,
+        email: formData.email || null,
+        phone: formData.phone || null,
+        document: formData.document || null,
+        client_login: formData.client_login || null,
+        person_type: formData.person_type || null,
+        state_registration: formData.state_registration || null,
+        state_registration_exempt: formData.state_registration_exempt,
+        municipal_registration: formData.municipal_registration || null,
+        zip_code: formData.zip_code || null,
+        state: formData.state || null,
+        city: formData.city || null,
+        neighborhood: formData.neighborhood || null,
+        street: formData.street || null,
+        street_number: formData.street_number || null,
+        complement: formData.complement || null,
+        contact_info: formData.contact_info || null,
+        contact_persons: formData.contact_persons as unknown as Json,
+        phone_landline: formData.phone_landline || null,
+        fax: formData.fax || null,
+        mobile_phone: formData.mobile_phone || null,
+        phone_carrier: formData.phone_carrier || null,
+        website: formData.website || null,
+        nfe_email: formData.nfe_email || null,
+        store_id: formData.store_id
+      };
+
+      // Adiciona client_password apenas se foi fornecido
+      if (formData.client_password) {
+        clientData.client_password = formData.client_password;
+      }
+
       if (editingId) {
         const { error } = await supabase
           .from("clients")
-          .update({
-            name: formData.name,
-            fantasy_name: formData.fantasy_name || null,
-            email: formData.email || null,
-            phone: formData.phone || null,
-            document: formData.document || null,
-            client_login: formData.client_login || null,
-            client_password: formData.client_password || null,
-            person_type: formData.person_type || null,
-            state_registration: formData.state_registration || null,
-            state_registration_exempt: formData.state_registration_exempt,
-            municipal_registration: formData.municipal_registration || null,
-            zip_code: formData.zip_code || null,
-            state: formData.state || null,
-            city: formData.city || null,
-            neighborhood: formData.neighborhood || null,
-            street: formData.street || null,
-            street_number: formData.street_number || null,
-            complement: formData.complement || null,
-            contact_info: formData.contact_info || null,
-            contact_persons: formData.contact_persons || null,
-            phone_landline: formData.phone_landline || null,
-            fax: formData.fax || null,
-            mobile_phone: formData.mobile_phone || null,
-            phone_carrier: formData.phone_carrier || null,
-            website: formData.website || null,
-            nfe_email: formData.nfe_email || null,
-            store_id: formData.store_id
-          })
+          .update(clientData)
           .eq("id", editingId);
 
         if (error) throw error;
@@ -409,35 +415,7 @@ const Clients = () => {
       } else {
         const { error } = await supabase
           .from("clients")
-          .insert([{
-            name: formData.name,
-            fantasy_name: formData.fantasy_name || null,
-            email: formData.email || null,
-            phone: formData.phone || null,
-            document: formData.document || null,
-            client_login: formData.client_login || null,
-            client_password: formData.client_password || null,
-            person_type: formData.person_type || null,
-            state_registration: formData.state_registration || null,
-            state_registration_exempt: formData.state_registration_exempt,
-            municipal_registration: formData.municipal_registration || null,
-            zip_code: formData.zip_code || null,
-            state: formData.state || null,
-            city: formData.city || null,
-            neighborhood: formData.neighborhood || null,
-            street: formData.street || null,
-            street_number: formData.street_number || null,
-            complement: formData.complement || null,
-            contact_info: formData.contact_info || null,
-            contact_persons: formData.contact_persons || null,
-            phone_landline: formData.phone_landline || null,
-            fax: formData.fax || null,
-            mobile_phone: formData.mobile_phone || null,
-            phone_carrier: formData.phone_carrier || null,
-            website: formData.website || null,
-            nfe_email: formData.nfe_email || null,
-            store_id: formData.store_id
-          }]);
+          .insert([clientData]);
 
         if (error) throw error;
 

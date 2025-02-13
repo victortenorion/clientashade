@@ -32,19 +32,18 @@ export const ClientAccess = ({
               className="h-9"
             />
           </div>
-          {!editingId && (
-            <div className="space-y-2">
-              <Label htmlFor="client_password">Senha</Label>
-              <Input
-                id="client_password"
-                name="client_password"
-                type="password"
-                value={formData.client_password}
-                onChange={(e) => onFormChange('client_password', e.target.value)}
-                className="h-9"
-              />
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="client_password">Senha</Label>
+            <Input
+              id="client_password"
+              name="client_password"
+              type="password"
+              value={formData.client_password}
+              onChange={(e) => onFormChange('client_password', e.target.value)}
+              className="h-9"
+              placeholder={editingId ? "Digite para alterar a senha" : ""}
+            />
+          </div>
         </div>
       </CardContent>
     </Card>
