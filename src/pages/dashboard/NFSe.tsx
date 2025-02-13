@@ -12,16 +12,25 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { NFSe } from "./types/nfse.types";
+import { NFSe, NFSeFormData } from "./types/nfse.types";
 import { format } from "date-fns";
 import { Plus } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { NFSeForm } from "./components/NFSeForm";
 
 const NFSePage = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  const [isEmitindo, setIsEmitindo] = useState(false);
+  const [showEmissaoDialog, setShowEmissaoDialog] = useState(false);
 
-  const { data: notas, isLoading } = useQuery({
+  const { data: notas, isLoading, refetch } = useQuery({
     queryKey: ["nfse", searchTerm],
     queryFn: async () => {
       const query = supabase
@@ -49,6 +58,74 @@ const NFSePage = () => {
     },
   });
 
+  const handleEmitirNFSe = async (formData: NFSeFormData) => {
+    try {
+      setIsEmitindo(true);
+
+      // Verificar configurações do SEFAZ
+      const { data: config, error: configError } = await supabase
+        .from("nfse_config")
+        .select("*")
+        .maybeSingle();
+
+      if (configError) throw configError;
+
+      if (!config || !config.certificado_digital) {
+        toast({
+          title: "Erro ao emitir NFS-e",
+          description: "Configure o certificado digital antes de emitir notas fiscais.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Buscar informações do serviço
+      const { data: servico, error: servicoError } = await supabase
+        .from("nfse_servicos")
+        .select("*")
+        .eq("codigo", formData.codigo_servico)
+        .maybeSingle();
+
+      if (servicoError) throw servicoError;
+
+      // Inserir NFS-e
+      const { data: nfse, error: nfseError } = await supabase
+        .from("nfse")
+        .insert({
+          client_id: formData.client_id,
+          codigo_servico: formData.codigo_servico,
+          discriminacao_servicos: formData.discriminacao_servicos,
+          valor_servicos: formData.valor_servicos,
+          data_competencia: formData.data_competencia,
+          observacoes: formData.observacoes,
+          deducoes: formData.deducoes || 0,
+          aliquota_iss: servico?.aliquota_iss,
+          ambiente: config.ambiente,
+          status_sefaz: "pendente",
+        })
+        .select()
+        .maybeSingle();
+
+      if (nfseError) throw nfseError;
+
+      toast({
+        title: "NFS-e gerada com sucesso",
+        description: `NFS-e número ${nfse.numero_nfse} foi gerada e está aguardando processamento.`,
+      });
+
+      setShowEmissaoDialog(false);
+      refetch();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao emitir NFS-e",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsEmitindo(false);
+    }
+  };
+
   const formatMoney = (value: number | null) => {
     if (value === null) return "R$ 0,00";
     return new Intl.NumberFormat("pt-BR", {
@@ -67,7 +144,7 @@ const NFSePage = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button>
+        <Button onClick={() => setShowEmissaoDialog(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Nova NFS-e
         </Button>
@@ -138,6 +215,19 @@ const NFSePage = () => {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={showEmissaoDialog} onOpenChange={setShowEmissaoDialog}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Emitir Nova NFS-e</DialogTitle>
+          </DialogHeader>
+          <NFSeForm
+            onSubmit={handleEmitirNFSe}
+            onCancel={() => setShowEmissaoDialog(false)}
+            isLoading={isEmitindo}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
