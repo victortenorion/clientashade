@@ -154,7 +154,13 @@ const Clients = () => {
 
       if (error) throw error;
 
-      setClients(data as Client[]);
+      // Converter o tipo do contact_persons de Json para ContactPerson[]
+      const typedData = data?.map(client => ({
+        ...client,
+        contact_persons: client.contact_persons as ContactPerson[] | null
+      }));
+
+      setClients(typedData as Client[]);
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -163,6 +169,47 @@ const Clients = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    
+    if (name === 'email') {
+      // Atualiza o client_login com o email, a menos que tenha sido personalizado
+      if (formData.client_login === '' || formData.client_login === formData.email) {
+        setFormData(prev => ({
+          ...prev,
+          [name]: value,
+          client_login: value
+        }));
+        return;
+      }
+    }
+    
+    if (name === 'phone') {
+      // Atualiza a senha com os últimos 4 dígitos do telefone se estiver criando novo cliente
+      if (!editingId && (!formData.client_password || formData.client_password === getLastFourDigits(formData.phone))) {
+        const lastFour = getLastFourDigits(value);
+        setFormData(prev => ({
+          ...prev,
+          [name]: value,
+          client_password: lastFour
+        }));
+        return;
+      }
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleDocumentKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && formData.document) {
+      e.preventDefault();
+      searchDocument(formData.document);
     }
   };
 
@@ -297,40 +344,6 @@ const Clients = () => {
     setDialogOpen(true);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    
-    if (name === 'email') {
-      // Atualiza o client_login com o email, a menos que tenha sido personalizado
-      if (formData.client_login === '' || formData.client_login === formData.email) {
-        setFormData(prev => ({
-          ...prev,
-          [name]: value,
-          client_login: value
-        }));
-        return;
-      }
-    }
-    
-    if (name === 'phone') {
-      // Atualiza a senha com os últimos 4 dígitos do telefone se estiver criando novo cliente
-      if (!editingId && (!formData.client_password || formData.client_password === getLastFourDigits(formData.phone))) {
-        const lastFour = getLastFourDigits(value);
-        setFormData(prev => ({
-          ...prev,
-          [name]: value,
-          client_password: lastFour
-        }));
-        return;
-      }
-    }
-    
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
   const searchDocument = async (document: string) => {
     try {
       setSearchingDocument(true);
@@ -338,14 +351,7 @@ const Clients = () => {
         body: { document }
       });
 
-      if (error) {
-        toast({
-          variant: "destructive",
-          title: "Erro na busca",
-          description: error.message,
-        });
-        return;
-      }
+      if (error) throw error;
 
       if (data.error) {
         toast({
@@ -364,20 +370,28 @@ const Clients = () => {
       }
 
       if (data.apiData) {
-        setFormData({
-          ...formData,
-          name: data.apiData.name,
-          email: data.apiData.email,
-          phone: data.apiData.phone,
+        setFormData(prev => ({
+          ...prev,
+          name: data.apiData.name || prev.name,
+          email: data.apiData.email || prev.email,
+          phone: data.apiData.phone || prev.phone,
           document: formatDocument(document),
-          address: data.apiData.address,
-          client_login: data.apiData.email || '',
-          client_password: '',
-        });
+          street: data.apiData.street || prev.street,
+          street_number: data.apiData.number || prev.street_number,
+          neighborhood: data.apiData.neighborhood || prev.neighborhood,
+          city: data.apiData.city || prev.city,
+          state: data.apiData.state || prev.state,
+          zip_code: data.apiData.zip_code || prev.zip_code,
+          client_login: data.apiData.email || prev.client_login,
+        }));
       }
 
       if (data.results && data.results.length > 0) {
-        setClients(data.results);
+        const typedResults = data.results.map((client: any) => ({
+          ...client,
+          contact_persons: client.contact_persons as ContactPerson[] | null
+        }));
+        setClients(typedResults);
       }
     } catch (error: any) {
       toast({
@@ -470,31 +484,32 @@ const Clients = () => {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingId ? "Editar Cliente" : "Novo Cliente"}
             </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Dados Básicos</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3">
                 <div className="space-y-2">
                   <Label htmlFor="document">CPF/CNPJ</Label>
                   <div className="flex gap-2">
                     <IMaskInput
                       id="document"
                       name="document"
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       value={formData.document}
                       mask={[
                         { mask: '000.000.000-00', maxLength: 14 },
                         { mask: '00.000.000/0000-00', maxLength: 18 }
                       ]}
                       onAccept={(value) => setFormData(prev => ({ ...prev, document: value }))}
+                      onKeyPress={handleDocumentKeyPress}
                       placeholder="Digite o CPF ou CNPJ"
                     />
                     <Button
@@ -509,28 +524,31 @@ const Clients = () => {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nome/Razão Social</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    required
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nome/Razão Social</Label>
+                    <Input
+                      id="name"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      required
+                      className="h-9"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="fantasy_name">Nome Fantasia</Label>
+                    <Input
+                      id="fantasy_name"
+                      name="fantasy_name"
+                      value={formData.fantasy_name}
+                      onChange={handleInputChange}
+                      className="h-9"
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="fantasy_name">Nome Fantasia</Label>
-                  <Input
-                    id="fantasy_name"
-                    name="fantasy_name"
-                    value={formData.fantasy_name}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label htmlFor="state_registration">Inscrição Estadual</Label>
                     <Input
@@ -539,6 +557,7 @@ const Clients = () => {
                       value={formData.state_registration}
                       onChange={handleInputChange}
                       disabled={formData.state_registration_exempt}
+                      className="h-9"
                     />
                   </div>
                   <div className="flex items-center space-x-2 pt-8">
@@ -564,6 +583,7 @@ const Clients = () => {
                     name="municipal_registration"
                     value={formData.municipal_registration}
                     onChange={handleInputChange}
+                    className="h-9"
                   />
                 </div>
               </CardContent>
@@ -573,14 +593,14 @@ const Clients = () => {
               <CardHeader>
                 <CardTitle>Endereço</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label htmlFor="zip_code">CEP</Label>
                     <IMaskInput
                       id="zip_code"
                       name="zip_code"
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       value={formData.zip_code}
                       mask="00000-000"
                       onAccept={(value) => setFormData(prev => ({ ...prev, zip_code: value }))}
@@ -594,38 +614,43 @@ const Clients = () => {
                       value={formData.state}
                       onChange={handleInputChange}
                       maxLength={2}
+                      className="h-9"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="city">Cidade</Label>
-                  <Input
-                    id="city"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleInputChange}
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="city">Cidade</Label>
+                    <Input
+                      id="city"
+                      name="city"
+                      value={formData.city}
+                      onChange={handleInputChange}
+                      className="h-9"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="neighborhood">Bairro</Label>
+                    <Input
+                      id="neighborhood"
+                      name="neighborhood"
+                      value={formData.neighborhood}
+                      onChange={handleInputChange}
+                      className="h-9"
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="neighborhood">Bairro</Label>
-                  <Input
-                    id="neighborhood"
-                    name="neighborhood"
-                    value={formData.neighborhood}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="col-span-2 space-y-2">
+                <div className="grid grid-cols-4 gap-3">
+                  <div className="col-span-3 space-y-2">
                     <Label htmlFor="street">Logradouro</Label>
                     <Input
                       id="street"
                       name="street"
                       value={formData.street}
                       onChange={handleInputChange}
+                      className="h-9"
                     />
                   </div>
                   <div className="space-y-2">
@@ -635,6 +660,7 @@ const Clients = () => {
                       name="street_number"
                       value={formData.street_number}
                       onChange={handleInputChange}
+                      className="h-9"
                     />
                   </div>
                 </div>
@@ -646,6 +672,7 @@ const Clients = () => {
                     name="complement"
                     value={formData.complement}
                     onChange={handleInputChange}
+                    className="h-9"
                   />
                 </div>
               </CardContent>
@@ -655,14 +682,14 @@ const Clients = () => {
               <CardHeader>
                 <CardTitle>Contato</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label htmlFor="phone_landline">Telefone Fixo</Label>
                     <IMaskInput
                       id="phone_landline"
                       name="phone_landline"
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       value={formData.phone_landline}
                       mask="(00) 0000-0000"
                       onAccept={(value) => setFormData(prev => ({ ...prev, phone_landline: value }))}
@@ -673,7 +700,7 @@ const Clients = () => {
                     <IMaskInput
                       id="fax"
                       name="fax"
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       value={formData.fax}
                       mask="(00) 0000-0000"
                       onAccept={(value) => setFormData(prev => ({ ...prev, fax: value }))}
@@ -681,13 +708,13 @@ const Clients = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label htmlFor="mobile_phone">Celular</Label>
                     <IMaskInput
                       id="mobile_phone"
                       name="mobile_phone"
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       value={formData.mobile_phone}
                       mask="(00) 00000-0000"
                       onAccept={(value) => setFormData(prev => ({ ...prev, mobile_phone: value }))}
@@ -700,30 +727,34 @@ const Clients = () => {
                       name="phone_carrier"
                       value={formData.phone_carrier}
                       onChange={handleInputChange}
+                      className="h-9"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email">E-mail</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="nfe_email">E-mail para NFe</Label>
-                  <Input
-                    id="nfe_email"
-                    name="nfe_email"
-                    type="email"
-                    value={formData.nfe_email}
-                    onChange={handleInputChange}
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">E-mail</Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      className="h-9"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="nfe_email">E-mail para NFe</Label>
+                    <Input
+                      id="nfe_email"
+                      name="nfe_email"
+                      type="email"
+                      value={formData.nfe_email}
+                      onChange={handleInputChange}
+                      className="h-9"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -733,6 +764,7 @@ const Clients = () => {
                     name="website"
                     value={formData.website}
                     onChange={handleInputChange}
+                    className="h-9"
                   />
                 </div>
 
@@ -743,6 +775,7 @@ const Clients = () => {
                     name="contact_info"
                     value={formData.contact_info}
                     onChange={handleInputChange}
+                    className="h-9"
                   />
                 </div>
               </CardContent>
@@ -752,7 +785,7 @@ const Clients = () => {
               <CardHeader>
                 <CardTitle>Dados de Acesso</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3">
                 <div className="space-y-2">
                   <Label htmlFor="client_login">Login do Cliente</Label>
                   <Input
@@ -762,6 +795,7 @@ const Clients = () => {
                     onChange={handleInputChange}
                     required
                     placeholder="Preenchido automaticamente com o email"
+                    className="h-9"
                   />
                 </div>
 
@@ -774,6 +808,7 @@ const Clients = () => {
                     onChange={handleInputChange}
                     placeholder={editingId ? "(deixe em branco para manter a atual)" : "4 últimos dígitos do telefone"}
                     {...(!editingId && { required: true })}
+                    className="h-9"
                   />
                 </div>
               </CardContent>
