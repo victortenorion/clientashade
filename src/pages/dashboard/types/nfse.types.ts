@@ -71,3 +71,8 @@ export interface NFSeFormData {
   observacoes?: string;
   deducoes?: number;
 }
+
+export interface NFSeCancelamento {
+  motivo: string;
+  senha_certificado?: string;
+}
