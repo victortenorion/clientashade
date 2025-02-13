@@ -99,6 +99,36 @@ export type Database = {
         }
         Relationships: []
       }
+      service_order_statuses: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       service_orders: {
         Row: {
           client_id: string
@@ -106,7 +136,9 @@ export type Database = {
           created_by_type: string
           description: string
           id: string
+          priority: string | null
           status: string
+          status_id: string | null
           total_price: number
           updated_at: string
         }
@@ -116,7 +148,9 @@ export type Database = {
           created_by_type?: string
           description: string
           id?: string
+          priority?: string | null
           status?: string
+          status_id?: string | null
           total_price?: number
           updated_at?: string
         }
@@ -126,7 +160,9 @@ export type Database = {
           created_by_type?: string
           description?: string
           id?: string
+          priority?: string | null
           status?: string
+          status_id?: string | null
           total_price?: number
           updated_at?: string
         }
@@ -136,6 +172,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_orders_status_id_fkey"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "service_order_statuses"
             referencedColumns: ["id"]
           },
         ]

@@ -12,6 +12,7 @@ import {
   FolderOpen,
   ClipboardList,
   UserCircle,
+  Settings,
 } from "lucide-react";
 import {
   Sidebar,
@@ -142,7 +143,7 @@ const Dashboard = () => {
                     <SidebarMenuItem>
                       <SidebarMenuButton
                         onClick={() => navigate("/dashboard/service-orders")}
-                        isActive={location.pathname.startsWith("/dashboard/service-orders")}
+                        isActive={location.pathname === "/dashboard/service-orders"}
                       >
                         <ClipboardList className="h-4 w-4" />
                         <span>Listar Ordens</span>
@@ -150,8 +151,17 @@ const Dashboard = () => {
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                       <SidebarMenuButton
+                        onClick={() => navigate("/dashboard/service-order-settings")}
+                        isActive={location.pathname === "/dashboard/service-order-settings"}
+                      >
+                        <Settings className="h-4 w-4" />
+                        <span>Configurações</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
                         onClick={() => navigate("/dashboard/customer-area")}
-                        isActive={location.pathname.startsWith("/dashboard/customer-area")}
+                        isActive={location.pathname === "/dashboard/customer-area"}
                       >
                         <UserCircle className="h-4 w-4" />
                         <span>Área do Cliente</span>
