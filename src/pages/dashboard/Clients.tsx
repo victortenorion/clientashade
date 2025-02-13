@@ -273,6 +273,79 @@ const Clients = () => {
     setDialogOpen(true);
   };
 
+  const handleSearchDocument = async (document: string) => {
+    try {
+      setSearchingDocument(true);
+      const { data, error } = await supabase.functions.invoke('document-search', {
+        body: { document }
+      });
+
+      if (error) throw error;
+
+      if (data.results && data.results.length > 0) {
+        const existingClient = data.results[0];
+        handleEdit(existingClient);
+        toast({
+          title: "Cliente encontrado",
+          description: "Os dados foram carregados para edição.",
+        });
+        return;
+      }
+
+      if (data.apiData) {
+        const { name, email, phone, address } = data.apiData;
+        setFormData(prev => ({
+          ...prev,
+          name: name || prev.name,
+          email: email || prev.email,
+          phone: phone || prev.phone,
+          ...(address ? parseAddress(address) : {})
+        }));
+        toast({
+          title: "Dados encontrados",
+          description: "Os campos foram preenchidos automaticamente.",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro na busca",
+        description: error.message,
+      });
+    } finally {
+      setSearchingDocument(false);
+    }
+  };
+
+  const parseAddress = (address: string) => {
+    try {
+      const parts = address.split(',');
+      const streetParts = parts[0].trim().split(' ');
+      const number = parts[1]?.trim();
+      const complementParts = parts[2]?.split('-');
+      const complement = complementParts?.[0]?.trim();
+      const neighborhood = complementParts?.[1]?.trim();
+      const cityStateParts = parts[3]?.split('-');
+      const city = cityStateParts?.[0]?.trim();
+      const stateZipParts = cityStateParts?.[1]?.split(',');
+      const state = stateZipParts?.[0]?.trim();
+      const zipCode = stateZipParts?.[1]?.trim();
+
+      return {
+        street: streetParts.slice(0, -1).join(' '),
+        street_number: number,
+        complement: complement,
+        neighborhood: neighborhood,
+        city: city,
+        state: state,
+        zip_code: zipCode?.replace(/\D/g, '')
+      };
+    } catch (error) {
+      console.error('Erro ao parsear endereço:', error);
+      return {};
+    }
+  };
+
   useEffect(() => {
     fetchClients();
     fetchStores();
@@ -366,10 +439,7 @@ const Clients = () => {
             <ClientBasicInfo
               formData={formData}
               onFormChange={handleInputChange}
-              onSearchDocument={(doc) => {
-                // Implementar busca por documento
-                console.log("Buscar documento:", doc);
-              }}
+              onSearchDocument={handleSearchDocument}
               searchingDocument={searchingDocument}
               editingId={editingId}
             />
