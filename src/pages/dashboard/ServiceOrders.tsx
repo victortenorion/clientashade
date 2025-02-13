@@ -29,6 +29,7 @@ interface ServiceOrder {
   status: string;
   total_price: number;
   created_at: string;
+  created_by_type: 'admin' | 'client';
   client: {
     name: string;
   };
@@ -61,7 +62,13 @@ const ServiceOrders = () => {
       const { data, error } = await supabase
         .from("service_orders")
         .select(`
-          *,
+          id,
+          client_id,
+          description,
+          status,
+          total_price,
+          created_at,
+          created_by_type,
           client:clients(name)
         `)
         .ilike("description", `%${searchTerm}%`);
@@ -178,18 +185,19 @@ const ServiceOrders = () => {
               <TableHead>Status</TableHead>
               <TableHead>Valor Total</TableHead>
               <TableHead>Data de Criação</TableHead>
+              <TableHead>Criado por</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center">
+                <TableCell colSpan={6} className="text-center">
                   Carregando...
                 </TableCell>
               </TableRow>
             ) : orders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center">
+                <TableCell colSpan={6} className="text-center">
                   Nenhuma ordem encontrada
                 </TableCell>
               </TableRow>
@@ -207,6 +215,9 @@ const ServiceOrders = () => {
                   </TableCell>
                   <TableCell>
                     {new Date(order.created_at).toLocaleString('pt-BR')}
+                  </TableCell>
+                  <TableCell>
+                    {order.created_by_type === 'admin' ? 'Administrador' : 'Cliente'}
                   </TableCell>
                 </TableRow>
               ))
