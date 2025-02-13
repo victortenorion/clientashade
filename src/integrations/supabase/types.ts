@@ -140,6 +140,247 @@ export type Database = {
           },
         ]
       }
+      nfce: {
+        Row: {
+          ambiente: string | null
+          cancelada: boolean | null
+          chave_acesso: string | null
+          client_id: string | null
+          created_at: string | null
+          danfe_url: string | null
+          data_cancelamento: string | null
+          data_emissao: string | null
+          data_saida: string | null
+          forma_pagamento: string | null
+          id: string
+          motivo_cancelamento: string | null
+          numero_nfce: number
+          protocolo_autorizacao: string | null
+          serie: number | null
+          status_sefaz: string | null
+          updated_at: string | null
+          valor_desconto: number | null
+          valor_frete: number | null
+          valor_outras_despesas: number | null
+          valor_produtos: number
+          valor_seguro: number | null
+          valor_total: number | null
+          xml_envio: string | null
+          xml_retorno: string | null
+        }
+        Insert: {
+          ambiente?: string | null
+          cancelada?: boolean | null
+          chave_acesso?: string | null
+          client_id?: string | null
+          created_at?: string | null
+          danfe_url?: string | null
+          data_cancelamento?: string | null
+          data_emissao?: string | null
+          data_saida?: string | null
+          forma_pagamento?: string | null
+          id?: string
+          motivo_cancelamento?: string | null
+          numero_nfce?: number
+          protocolo_autorizacao?: string | null
+          serie?: number | null
+          status_sefaz?: string | null
+          updated_at?: string | null
+          valor_desconto?: number | null
+          valor_frete?: number | null
+          valor_outras_despesas?: number | null
+          valor_produtos?: number
+          valor_seguro?: number | null
+          valor_total?: number | null
+          xml_envio?: string | null
+          xml_retorno?: string | null
+        }
+        Update: {
+          ambiente?: string | null
+          cancelada?: boolean | null
+          chave_acesso?: string | null
+          client_id?: string | null
+          created_at?: string | null
+          danfe_url?: string | null
+          data_cancelamento?: string | null
+          data_emissao?: string | null
+          data_saida?: string | null
+          forma_pagamento?: string | null
+          id?: string
+          motivo_cancelamento?: string | null
+          numero_nfce?: number
+          protocolo_autorizacao?: string | null
+          serie?: number | null
+          status_sefaz?: string | null
+          updated_at?: string | null
+          valor_desconto?: number | null
+          valor_frete?: number | null
+          valor_outras_despesas?: number | null
+          valor_produtos?: number
+          valor_seguro?: number | null
+          valor_total?: number | null
+          xml_envio?: string | null
+          xml_retorno?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nfce_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nfce_config: {
+        Row: {
+          ambiente: string | null
+          certificado_digital: string | null
+          created_at: string | null
+          csc_id: string | null
+          csc_token: string | null
+          id: string
+          inscricao_estadual: string | null
+          regime_tributario: string | null
+          senha_certificado: string | null
+          token_ibpt: string | null
+          ultima_nfce_numero: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          ambiente?: string | null
+          certificado_digital?: string | null
+          created_at?: string | null
+          csc_id?: string | null
+          csc_token?: string | null
+          id?: string
+          inscricao_estadual?: string | null
+          regime_tributario?: string | null
+          senha_certificado?: string | null
+          token_ibpt?: string | null
+          ultima_nfce_numero?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          ambiente?: string | null
+          certificado_digital?: string | null
+          created_at?: string | null
+          csc_id?: string | null
+          csc_token?: string | null
+          id?: string
+          inscricao_estadual?: string | null
+          regime_tributario?: string | null
+          senha_certificado?: string | null
+          token_ibpt?: string | null
+          ultima_nfce_numero?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      nfce_eventos: {
+        Row: {
+          created_at: string | null
+          data_evento: string | null
+          descricao: string | null
+          id: string
+          mensagem_sefaz: string | null
+          nfce_id: string | null
+          status: string | null
+          tipo_evento: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_evento?: string | null
+          descricao?: string | null
+          id?: string
+          mensagem_sefaz?: string | null
+          nfce_id?: string | null
+          status?: string | null
+          tipo_evento: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data_evento?: string | null
+          descricao?: string | null
+          id?: string
+          mensagem_sefaz?: string | null
+          nfce_id?: string | null
+          status?: string | null
+          tipo_evento?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nfce_eventos_nfce_id_fkey"
+            columns: ["nfce_id"]
+            isOneToOne: false
+            referencedRelation: "nfce"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nfce_items: {
+        Row: {
+          cfop: string | null
+          created_at: string | null
+          id: string
+          ncm: string | null
+          nfce_id: string | null
+          product_id: string | null
+          quantidade: number
+          unidade: string | null
+          updated_at: string | null
+          valor_desconto: number | null
+          valor_total: number
+          valor_unitario: number
+        }
+        Insert: {
+          cfop?: string | null
+          created_at?: string | null
+          id?: string
+          ncm?: string | null
+          nfce_id?: string | null
+          product_id?: string | null
+          quantidade: number
+          unidade?: string | null
+          updated_at?: string | null
+          valor_desconto?: number | null
+          valor_total: number
+          valor_unitario: number
+        }
+        Update: {
+          cfop?: string | null
+          created_at?: string | null
+          id?: string
+          ncm?: string | null
+          nfce_id?: string | null
+          product_id?: string | null
+          quantidade?: number
+          unidade?: string | null
+          updated_at?: string | null
+          valor_desconto?: number | null
+          valor_total?: number
+          valor_unitario?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nfce_items_nfce_id_fkey"
+            columns: ["nfce_id"]
+            isOneToOne: false
+            referencedRelation: "nfce"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nfce_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nfse: {
         Row: {
           aliquota_iss: number | null

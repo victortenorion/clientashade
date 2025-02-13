@@ -17,6 +17,7 @@ import ServiceOrders from "./pages/dashboard/ServiceOrders";
 import ServiceOrderSettings from "./pages/dashboard/ServiceOrderSettings";
 import CustomerArea from "./pages/dashboard/CustomerArea";
 import NFSe from "./pages/dashboard/NFSe";
+import NFCe from "./pages/dashboard/NFCe";
 import NotFound from "./pages/NotFound";
 import ClientLogin from "./pages/ClientLogin";
 import { LoginForm } from "./components/LoginForm";
@@ -48,6 +49,7 @@ const App: React.FC = () => {
                   <Route path="service-order-settings" element={<ServiceOrderSettings />} />
                   <Route path="customer-area" element={<CustomerArea />} />
                   <Route path="nfse" element={<NFSe />} />
+                  <Route path="nfce" element={<NFCe />} />
                 </Route>
                 {/* Área do cliente separada do dashboard administrativo */}
                 <Route 
