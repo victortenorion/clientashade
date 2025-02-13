@@ -109,7 +109,7 @@ const defaultFormData: ServiceOrderFormData = {
   expected_date: "",
   completion_date: "",
   exit_date: "",
-  items: [],
+  items: []
 };
 
 const ServiceOrders = () => {
@@ -270,7 +270,6 @@ const ServiceOrders = () => {
     setFormData({
       client_id: order.client_id,
       description: order.description,
-      total_price: order.total_price,
       status_id: order.status_id || "",
       seller_id: order.seller_id || "",
       store_id: order.store_id || "",
@@ -282,8 +281,10 @@ const ServiceOrders = () => {
       expected_date: order.expected_date || "",
       completion_date: order.completion_date || "",
       exit_date: order.exit_date || "",
-      start_time: order.start_time || "",
-      end_time: order.end_time || "",
+      items: order.items.map(item => ({
+        description: item.description,
+        price: item.price
+      }))
     });
     setDialogOpen(true);
   };
@@ -339,9 +340,9 @@ const ServiceOrders = () => {
           problem: formData.problem,
           reception_notes: formData.reception_notes,
           internal_notes: formData.internal_notes,
-          expected_date: formData.expected_date,
-          completion_date: formData.completion_date,
-          exit_date: formData.exit_date,
+          expected_date: formData.expected_date || null,
+          completion_date: formData.completion_date || null,
+          exit_date: formData.exit_date || null,
           created_by_type: 'admin'
         })
         .select()
