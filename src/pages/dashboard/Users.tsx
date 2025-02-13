@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import {
   Table,
   TableBody,
@@ -44,7 +44,6 @@ interface Requirement {
   met: boolean;
 }
 
-// Atualizando o defaultFormData para incluir todas as permissões por padrão
 const menuOptions = [
   { value: 'dashboard', label: 'Dashboard' },
   { value: 'clients', label: 'Clientes' },
@@ -187,12 +186,11 @@ const Users = () => {
   };
 
   const handleEdit = async (user: User) => {
-    // Definindo as permissões do usuário no formData
     setFormData({
       username: user.username || "",
       email: "",
       password: "",
-      permissions: user.permissions || [], // Usando as permissões atuais do usuário
+      permissions: user.permissions || [],
     });
     setEditingId(user.id);
     setDialogOpen(true);
@@ -226,10 +224,12 @@ const Users = () => {
         if (profileError) throw profileError;
 
         // Deletar todas as permissões existentes
-        await supabase
+        const { error: deleteError } = await supabase
           .from("user_permissions")
           .delete()
           .eq("user_id", editingId);
+
+        if (deleteError) throw deleteError;
 
         // Inserir as novas permissões selecionadas
         if (formData.permissions.length > 0) {
