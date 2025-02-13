@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -319,26 +320,33 @@ const Clients = () => {
 
   const parseAddress = (address: string) => {
     try {
+      // Exemplo: "RUA EXEMPLO 123, BAIRRO, CIDADE - UF, 12345-678"
       const parts = address.split(',');
-      const streetParts = parts[0].trim().split(' ');
-      const number = parts[1]?.trim();
-      const complementParts = parts[2]?.split('-');
-      const complement = complementParts?.[0]?.trim();
-      const neighborhood = complementParts?.[1]?.trim();
-      const cityStateParts = parts[3]?.split('-');
-      const city = cityStateParts?.[0]?.trim();
-      const stateZipParts = cityStateParts?.[1]?.split(',');
-      const state = stateZipParts?.[0]?.trim();
-      const zipCode = stateZipParts?.[1]?.trim();
+      
+      // Processa rua e número
+      const streetWithNumber = parts[0].trim();
+      const streetMatch = streetWithNumber.match(/(.*?)(\d+)\s*$/);
+      const street = streetMatch ? streetMatch[1].trim() : streetWithNumber;
+      const number = streetMatch ? streetMatch[2] : '';
+      
+      // Processa bairro
+      const neighborhood = parts[1]?.trim() || '';
+      
+      // Processa cidade e estado
+      const cityState = parts[2]?.trim() || '';
+      const [city, stateWithCep] = cityState.split('-').map(s => s.trim());
+      
+      // Processa estado e CEP
+      const [state, cep] = stateWithCep ? stateWithCep.split(',').map(s => s.trim()) : ['', ''];
 
       return {
-        street: streetParts.slice(0, -1).join(' '),
+        street,
         street_number: number,
-        complement: complement,
-        neighborhood: neighborhood,
-        city: city,
-        state: state,
-        zip_code: zipCode?.replace(/\D/g, '')
+        complement: '',
+        neighborhood,
+        city: city || '',
+        state: state || '',
+        zip_code: cep ? cep.replace(/\D/g, '') : ''
       };
     } catch (error) {
       console.error('Erro ao parsear endereço:', error);
