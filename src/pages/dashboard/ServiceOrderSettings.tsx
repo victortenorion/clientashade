@@ -107,6 +107,11 @@ const ServiceOrderSettings = () => {
     regime_especial: "",
     incentivo_fiscal: false
   });
+  const [fiscalConfig, setFiscalConfig] = useState({
+    service_code: "07498",
+    cnae: "",
+    tax_regime: "simples"
+  });
 
   const fetchStatuses = async () => {
     try {
@@ -171,6 +176,24 @@ const ServiceOrderSettings = () => {
 
       if (nfseError) throw nfseError;
       if (nfseData) setNfseConfig(nfseData);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar configurações fiscais",
+        description: error.message,
+      });
+    }
+  };
+
+  const fetchFiscalConfig = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("fiscal_config")
+        .select("*")
+        .maybeSingle();
+
+      if (error) throw error;
+      if (data) setFiscalConfig(data);
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -336,10 +359,31 @@ const ServiceOrderSettings = () => {
     }
   };
 
+  const handleFiscalConfigSave = async () => {
+    try {
+      const { error } = await supabase
+        .from("fiscal_config")
+        .upsert(fiscalConfig);
+
+      if (error) throw error;
+
+      toast({
+        title: "Configurações fiscais salvas com sucesso",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar configurações fiscais",
+        description: error.message,
+      });
+    }
+  };
+
   useEffect(() => {
     fetchStatuses();
     fetchFieldSettings();
     fetchNFConfigs();
+    fetchFiscalConfig();
   }, []);
 
   return (
@@ -492,23 +536,46 @@ const ServiceOrderSettings = () => {
                   <div className="space-y-2">
                     <Label>Código do Serviço (LC 116)</Label>
                     <Input
-                      value="07498"
-                      onChange={(e) => {
-                        // Será implementado quando conectarmos com a tabela de configuração
-                      }}
+                      value={fiscalConfig?.service_code || "07498"}
+                      onChange={(e) => setFiscalConfig(prev => ({
+                        ...prev,
+                        service_code: e.target.value
+                      }))}
                       placeholder="Ex: 07498"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>CNAE</Label>
                     <Input
-                      onChange={(e) => {
-                        // Será implementado quando conectarmos com a tabela de configuração
-                      }}
+                      value={fiscalConfig?.cnae || ""}
+                      onChange={(e) => setFiscalConfig(prev => ({
+                        ...prev,
+                        cnae: e.target.value
+                      }))}
                       placeholder="Ex: 9512-6/00"
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label>Regime Tributário</Label>
+                    <Select
+                      value={fiscalConfig?.tax_regime || "simples"}
+                      onValueChange={(value) => setFiscalConfig(prev => ({
+                        ...prev,
+                        tax_regime: value
+                      }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="simples">Simples Nacional</SelectItem>
+                        <SelectItem value="presumido">Lucro Presumido</SelectItem>
+                        <SelectItem value="real">Lucro Real</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
+                <Button onClick={handleFiscalConfigSave}>Salvar Configurações Fiscais</Button>
               </div>
 
               <div className="space-y-4">

@@ -140,6 +140,33 @@ export type Database = {
           },
         ]
       }
+      fiscal_config: {
+        Row: {
+          cnae: string | null
+          created_at: string
+          id: string
+          service_code: string | null
+          tax_regime: string | null
+          updated_at: string
+        }
+        Insert: {
+          cnae?: string | null
+          created_at?: string
+          id?: string
+          service_code?: string | null
+          tax_regime?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cnae?: string | null
+          created_at?: string
+          id?: string
+          service_code?: string | null
+          tax_regime?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       nfce: {
         Row: {
           ambiente: string | null
