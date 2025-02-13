@@ -104,7 +104,7 @@ const Users = () => {
   };
 
   const handleNewUser = () => {
-    window.open('https://eroqgxpjiqmftkgqyunj.supabase.co/dashboard/project/auth/users', '_blank');
+    window.open('https://supabase.com/dashboard/project/eroqgxpjiqmftkgqyunj/auth/users', '_blank');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
