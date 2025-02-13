@@ -86,6 +86,30 @@ const ServiceOrderSettings = () => {
     }
   };
 
+  const fetchFieldSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("client_field_settings")
+        .select("*");
+
+      if (error) throw error;
+
+      if (data) {
+        const updatedFields = clientFields.map(field => ({
+          ...field,
+          visible: data.find(setting => setting.field_name === field.field)?.visible ?? field.visible
+        }));
+        setClientFields(updatedFields);
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar configurações dos campos",
+        description: error.message,
+      });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -168,21 +192,36 @@ const ServiceOrderSettings = () => {
     }));
   };
 
-  const handleFieldVisibilityChange = (field: string, checked: boolean) => {
-    setClientFields(prev => 
-      prev.map(f => 
-        f.field === field ? { ...f, visible: checked } : f
-      )
-    );
+  const handleFieldVisibilityChange = async (field: string, checked: boolean) => {
+    try {
+      const { error } = await supabase
+        .from("client_field_settings")
+        .upsert({ field_name: field, visible: checked }, { onConflict: 'field_name' });
 
-    toast({
-      title: "Configuração salva",
-      description: `Campo ${field} ${checked ? 'será exibido' : 'será ocultado'} na listagem`,
-    });
+      if (error) throw error;
+
+      setClientFields(prev => 
+        prev.map(f => 
+          f.field === field ? { ...f, visible: checked } : f
+        )
+      );
+
+      toast({
+        title: "Configuração salva",
+        description: `Campo ${field} ${checked ? 'será exibido' : 'será ocultado'} na listagem`,
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar configuração",
+        description: error.message,
+      });
+    }
   };
 
   useEffect(() => {
     fetchStatuses();
+    fetchFieldSettings();
   }, []);
 
   return (

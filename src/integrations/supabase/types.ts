@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      client_field_settings: {
+        Row: {
+          created_at: string
+          field_name: string
+          id: string
+          updated_at: string
+          visible: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          field_name: string
+          id?: string
+          updated_at?: string
+          visible?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          field_name?: string
+          id?: string
+          updated_at?: string
+          visible?: boolean | null
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           address: string | null

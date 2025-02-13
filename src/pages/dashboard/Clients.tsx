@@ -61,7 +61,35 @@ const Clients = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState<ClientFormData>(defaultFormData);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [visibleFields, setVisibleFields] = useState<Record<string, boolean>>({
+    name: true,
+    email: true,
+    phone: true,
+    document: true,
+    client_login: true,
+  });
   const { toast } = useToast();
+
+  const fetchVisibleFields = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("client_field_settings")
+        .select("*");
+
+      if (error) throw error;
+
+      if (data) {
+        const fields = data.reduce((acc, curr) => ({
+          ...acc,
+          [curr.field_name]: curr.visible
+        }), visibleFields);
+        
+        setVisibleFields(fields);
+      }
+    } catch (error: any) {
+      console.error("Erro ao carregar configurações dos campos:", error);
+    }
+  };
 
   const fetchClients = async () => {
     try {
@@ -231,6 +259,7 @@ const Clients = () => {
 
   useEffect(() => {
     fetchClients();
+    fetchVisibleFields();
   }, [searchTerm]);
 
   return (
@@ -254,11 +283,11 @@ const Clients = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Telefone</TableHead>
-              <TableHead>Documento</TableHead>
-              <TableHead>Login do Cliente</TableHead>
+              {visibleFields.name && <TableHead>Nome</TableHead>}
+              {visibleFields.email && <TableHead>Email</TableHead>}
+              {visibleFields.phone && <TableHead>Telefone</TableHead>}
+              {visibleFields.document && <TableHead>Documento</TableHead>}
+              {visibleFields.client_login && <TableHead>Login do Cliente</TableHead>}
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -278,11 +307,11 @@ const Clients = () => {
             ) : (
               clients.map((client) => (
                 <TableRow key={client.id}>
-                  <TableCell>{client.name}</TableCell>
-                  <TableCell>{client.email}</TableCell>
-                  <TableCell>{client.phone}</TableCell>
-                  <TableCell>{client.document}</TableCell>
-                  <TableCell>{client.client_login}</TableCell>
+                  {visibleFields.name && <TableCell>{client.name}</TableCell>}
+                  {visibleFields.email && <TableCell>{client.email}</TableCell>}
+                  {visibleFields.phone && <TableCell>{client.phone}</TableCell>}
+                  {visibleFields.document && <TableCell>{client.document}</TableCell>}
+                  {visibleFields.client_login && <TableCell>{client.client_login}</TableCell>}
                   <TableCell className="text-right space-x-2">
                     <Button
                       variant="outline"
