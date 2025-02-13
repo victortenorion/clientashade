@@ -298,6 +298,25 @@ const Clients = () => {
 
   const handleDelete = async (id: string) => {
     try {
+      // Primeiro, verifica se o cliente possui ordens de serviço
+      const { data: serviceOrders, error: checkError } = await supabase
+        .from("service_orders")
+        .select("id")
+        .eq("client_id", id);
+
+      if (checkError) throw checkError;
+
+      // Se existirem ordens de serviço, impede a exclusão
+      if (serviceOrders && serviceOrders.length > 0) {
+        toast({
+          variant: "destructive",
+          title: "Não é possível excluir o cliente",
+          description: "Este cliente possui ordens de serviço associadas e não pode ser excluído.",
+        });
+        return;
+      }
+
+      // Se não houver ordens de serviço, procede com a exclusão
       const { error } = await supabase
         .from("clients")
         .delete()
