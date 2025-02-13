@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +37,12 @@ interface UserFormData {
   permissions: string[];
 }
 
+interface PasswordRequirement {
+  regex: RegExp;
+  text: string;
+  met: boolean;
+}
+
 const defaultFormData: UserFormData = {
   username: "",
   email: "",
@@ -65,6 +70,19 @@ const Users = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const { toast } = useToast();
 
+  const [passwordRequirements, setPasswordRequirements] = useState<PasswordRequirement[]>([
+    { regex: /.{6,}/, text: "Mínimo de 6 caracteres", met: false },
+  ]);
+
+  const updatePasswordRequirements = (password: string) => {
+    setPasswordRequirements(prev =>
+      prev.map(req => ({
+        ...req,
+        met: req.regex.test(password)
+      }))
+    );
+  };
+
   const fetchUsers = async () => {
     try {
       setLoading(true);
@@ -75,7 +93,6 @@ const Users = () => {
 
       if (profilesError) throw profilesError;
 
-      // Buscar permissões para cada usuário
       const usersWithPermissions = await Promise.all(
         (profilesData || []).map(async (profile) => {
           const { data: permissionsData } = await supabase
@@ -108,7 +125,6 @@ const Users = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      // Primeiro deletar as permissões
       const { error: permissionsError } = await supabase
         .from("user_permissions")
         .delete()
@@ -116,7 +132,6 @@ const Users = () => {
 
       if (permissionsError) throw permissionsError;
 
-      // Depois deletar o perfil
       const { error: profileError } = await supabase
         .from("profiles")
         .delete()
@@ -162,9 +177,19 @@ const Users = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const isPasswordValid = passwordRequirements.every(req => req.met);
+    if (!isPasswordValid) {
+      toast({
+        variant: "destructive",
+        title: "Senha inválida",
+        description: "Por favor, atenda a todos os requisitos de senha.",
+      });
+      return;
+    }
+
     try {
       if (editingId) {
-        // Atualizar usuário existente
         const { error: profileError } = await supabase
           .from("profiles")
           .update({ username: formData.username })
@@ -172,14 +197,11 @@ const Users = () => {
 
         if (profileError) throw profileError;
 
-        // Atualizar permissões
-        // Primeiro deletar todas as permissões existentes
         await supabase
           .from("user_permissions")
           .delete()
           .eq("user_id", editingId);
 
-        // Depois inserir as novas permissões
         if (formData.permissions.length > 0) {
           const { error: permissionsError } = await supabase
             .from("user_permissions")
@@ -197,7 +219,6 @@ const Users = () => {
           title: "Usuário atualizado com sucesso",
         });
       } else {
-        // Criar novo usuário
         const { data: authData, error: signUpError } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
@@ -211,7 +232,6 @@ const Users = () => {
         if (signUpError) throw signUpError;
 
         if (authData.user && formData.permissions.length > 0) {
-          // Inserir permissões para o novo usuário
           const { error: permissionsError } = await supabase
             .from("user_permissions")
             .insert(
@@ -235,10 +255,14 @@ const Users = () => {
       setEditingId(null);
       fetchUsers();
     } catch (error: any) {
+      const errorMessage = error.message === "weak_password" 
+        ? "A senha deve ter pelo menos 6 caracteres."
+        : error.message;
+
       toast({
         variant: "destructive",
         title: editingId ? "Erro ao atualizar usuário" : "Erro ao criar usuário",
-        description: error.message,
+        description: errorMessage,
       });
     }
   };
@@ -249,6 +273,10 @@ const Users = () => {
       ...prev,
       [name]: value,
     }));
+
+    if (name === 'password') {
+      updatePasswordRequirements(value);
+    }
   };
 
   const handlePermissionChange = (permission: string, checked: boolean) => {
@@ -392,6 +420,21 @@ const Users = () => {
                     onChange={handleInputChange}
                     required
                   />
+                  <div className="mt-2 space-y-2">
+                    <p className="text-sm font-medium text-gray-700">Requisitos da senha:</p>
+                    <ul className="text-sm space-y-1">
+                      {passwordRequirements.map((req, index) => (
+                        <li 
+                          key={index}
+                          className={`flex items-center gap-2 ${
+                            req.met ? 'text-green-600' : 'text-gray-500'
+                          }`}
+                        >
+                          {req.met ? '✓' : '○'} {req.text}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               </>
             )}
