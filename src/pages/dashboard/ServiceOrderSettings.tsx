@@ -1,3 +1,4 @@
+<lov-code>
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -183,32 +184,64 @@ const ServiceOrderSettings = () => {
 
   const fetchNFConfigs = async () => {
     try {
+      setLoading(true);
+      // Buscar configurações NFCe
       const { data: nfceData, error: nfceError } = await supabase
         .from("nfce_config")
         .select("*")
         .maybeSingle();
 
       if (nfceError) throw nfceError;
-      if (nfceData) setNfceConfig(nfceData);
+      
+      // Se encontrou dados da NFCe, atualiza o estado
+      if (nfceData) {
+        setNfceConfig({
+          certificado_digital: nfceData.certificado_digital || "",
+          senha_certificado: nfceData.senha_certificado || "",
+          ambiente: nfceData.ambiente || "homologacao",
+          token_ibpt: nfceData.token_ibpt || "",
+          csc_id: nfceData.csc_id || "",
+          csc_token: nfceData.csc_token || "",
+          inscricao_estadual: nfceData.inscricao_estadual || "",
+          regime_tributario: nfceData.regime_tributario || "simples"
+        });
+      }
 
+      // Buscar configurações NFSe
       const { data: nfseData, error: nfseError } = await supabase
         .from("nfse_config")
         .select("*")
         .maybeSingle();
 
       if (nfseError) throw nfseError;
-      if (nfseData) setNfseConfig(nfseData);
+      
+      // Se encontrou dados da NFSe, atualiza o estado
+      if (nfseData) {
+        setNfseConfig({
+          certificado_digital: nfseData.certificado_digital || "",
+          senha_certificado: nfseData.senha_certificado || "",
+          ambiente: nfseData.ambiente || "homologacao",
+          inscricao_municipal: nfseData.inscricao_municipal || "",
+          codigo_municipio: nfseData.codigo_municipio || "",
+          regime_tributario: nfseData.regime_tributario || "simples",
+          regime_especial: nfseData.regime_especial || "",
+          incentivo_fiscal: nfseData.incentivo_fiscal || false
+        });
+      }
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Erro ao carregar configurações fiscais",
         description: error.message,
       });
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchFiscalConfig = async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from("fiscal_config")
         .select("*")
@@ -231,6 +264,8 @@ const ServiceOrderSettings = () => {
         title: "Erro ao carregar configurações fiscais",
         description: error.message,
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -468,9 +503,11 @@ const ServiceOrderSettings = () => {
         title: "Configurações salvas com sucesso",
       });
 
-      // Recarrega todas as configurações
-      fetchFiscalConfig();
-      fetchNFConfigs();
+      // Recarrega todas as configurações após salvar
+      await Promise.all([
+        fetchFiscalConfig(),
+        fetchNFConfigs()
+      ]);
     } catch (error: any) {
       console.error("Erro ao salvar configurações:", error);
       toast({
@@ -481,12 +518,15 @@ const ServiceOrderSettings = () => {
     }
   };
 
+  // Carregar todas as configurações ao montar o componente
   useEffect(() => {
-    fetchStatuses();
-    fetchFieldSettings();
-    fetchNFConfigs();
-    fetchFiscalConfig();
-    fetchServiceCodes();
+    Promise.all([
+      fetchStatuses(),
+      fetchFieldSettings(),
+      fetchNFConfigs(),
+      fetchFiscalConfig(),
+      fetchServiceCodes()
+    ]);
   }, []);
 
   const filteredServiceCodes = useMemo(() => {
@@ -907,40 +947,4 @@ const ServiceOrderSettings = () => {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Descrição</Label>
-              <Input
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-              />
-            </div>
-            <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => {
-                setDialogOpen(false);
-                setEditingStatus(null);
-                setFormData({ name: "", color: "#000000", description: "" });
-              }}>
-                Cancelar
-              </Button>
-              <Button type="submit">
-                {editingStatus ? "Salvar" : "Criar"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      <div className="mt-8 flex justify-end">
-        <Button 
-          size="lg"
-          onClick={handleSaveAllConfigs}
-        >
-          Salvar Todas as Configurações
-        </Button>
-      </div>
-    </div>
-  );
-};
-
-export default ServiceOrderSettings;
+              <Label htmlFor="description">
