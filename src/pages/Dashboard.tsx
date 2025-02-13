@@ -13,6 +13,7 @@ import {
   ClipboardList,
   UserCircle,
   Settings,
+  Store,
 } from "lucide-react";
 import {
   Sidebar,
@@ -123,6 +124,15 @@ const Dashboard = () => {
                       >
                         <Package className="h-4 w-4" />
                         <span>Produtos</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        onClick={() => navigate("/dashboard/stores")}
+                        isActive={location.pathname.startsWith("/dashboard/stores")}
+                      >
+                        <Store className="h-4 w-4" />
+                        <span>Lojas</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   </SidebarMenu>
