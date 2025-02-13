@@ -1,12 +1,16 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { LoginForm } from "@/components/LoginForm";
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-background flex flex-col">
+      <header className="p-4 flex justify-end">
+        <ThemeToggle />
+      </header>
+      <main className="flex-1 flex items-center justify-center">
+        <LoginForm />
+      </main>
     </div>
   );
 };
