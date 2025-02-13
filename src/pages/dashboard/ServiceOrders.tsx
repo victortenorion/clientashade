@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +18,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ServiceOrder {
@@ -75,7 +74,7 @@ const ServiceOrders = () => {
 
       if (error) throw error;
 
-      setOrders(data || []);
+      setOrders(data as ServiceOrder[]);
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -84,6 +83,29 @@ const ServiceOrders = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteOrder = async (orderId: string) => {
+    try {
+      const { error } = await supabase
+        .from("service_orders")
+        .delete()
+        .eq("id", orderId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Ordem de serviço excluída com sucesso",
+      });
+
+      fetchOrders();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao excluir ordem de serviço",
+        description: error.message,
+      });
     }
   };
 
@@ -120,7 +142,7 @@ const ServiceOrders = () => {
         .from("service_orders")
         .insert({
           ...formData,
-          created_by_type: 'admin' // Garantindo que o created_by_type seja enviado
+          created_by_type: 'admin'
         });
 
       if (error) throw error;
@@ -186,18 +208,19 @@ const ServiceOrders = () => {
               <TableHead>Valor Total</TableHead>
               <TableHead>Data de Criação</TableHead>
               <TableHead>Criado por</TableHead>
+              <TableHead>Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">
+                <TableCell colSpan={7} className="text-center">
                   Carregando...
                 </TableCell>
               </TableRow>
             ) : orders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">
+                <TableCell colSpan={7} className="text-center">
                   Nenhuma ordem encontrada
                 </TableCell>
               </TableRow>
@@ -218,6 +241,16 @@ const ServiceOrders = () => {
                   </TableCell>
                   <TableCell>
                     {order.created_by_type === 'admin' ? 'Administrador' : 'Cliente'}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => handleDeleteOrder(order.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
