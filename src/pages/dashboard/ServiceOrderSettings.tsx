@@ -225,6 +225,7 @@ const ServiceOrderSettings = () => {
         });
       }
     } catch (error: any) {
+      console.error("Erro ao carregar configurações fiscais:", error);
       toast({
         variant: "destructive",
         title: "Erro ao carregar configurações fiscais",
@@ -428,6 +429,53 @@ const ServiceOrderSettings = () => {
       toast({
         variant: "destructive",
         title: "Erro ao salvar configurações fiscais",
+        description: error.message,
+      });
+    }
+  };
+
+  const handleSaveAllConfigs = async () => {
+    try {
+      // Salva configurações fiscais
+      const { error: fiscalError } = await supabase
+        .from("fiscal_config")
+        .upsert({
+          service_code: fiscalConfig.service_code,
+          cnae: fiscalConfig.cnae,
+          tax_regime: fiscalConfig.tax_regime,
+          id: fiscalConfig?.id
+        }, { 
+          onConflict: 'id'
+        });
+
+      if (fiscalError) throw fiscalError;
+
+      // Salva configurações NFCe
+      const { error: nfceError } = await supabase
+        .from("nfce_config")
+        .upsert(nfceConfig);
+
+      if (nfceError) throw nfceError;
+
+      // Salva configurações NFSe
+      const { error: nfseError } = await supabase
+        .from("nfse_config")
+        .upsert(nfseConfig);
+
+      if (nfseError) throw nfseError;
+
+      toast({
+        title: "Configurações salvas com sucesso",
+      });
+
+      // Recarrega todas as configurações
+      fetchFiscalConfig();
+      fetchNFConfigs();
+    } catch (error: any) {
+      console.error("Erro ao salvar configurações:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar configurações",
         description: error.message,
       });
     }
@@ -885,6 +933,15 @@ const ServiceOrderSettings = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      <div className="mt-8 flex justify-end">
+        <Button 
+          size="lg"
+          onClick={handleSaveAllConfigs}
+        >
+          Salvar Todas as Configurações
+        </Button>
+      </div>
     </div>
   );
 };
