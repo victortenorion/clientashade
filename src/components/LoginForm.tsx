@@ -1,10 +1,16 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
+
+interface PasswordRequirement {
+  regex: RegExp;
+  text: string;
+  met: boolean;
+}
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -13,8 +19,41 @@ export function LoginForm() {
   const [isSignUp, setIsSignUp] = useState(false);
   const { toast } = useToast();
 
+  const [passwordRequirements, setPasswordRequirements] = useState<PasswordRequirement[]>([
+    { regex: /.{8,}/, text: "Mínimo de 8 caracteres", met: false },
+    { regex: /[A-Z]/, text: "Uma letra maiúscula", met: false },
+    { regex: /[a-z]/, text: "Uma letra minúscula", met: false },
+    { regex: /[0-9]/, text: "Um número", met: false },
+    { regex: /[!@#$%^&*(),.?":{}|<>]/, text: "Um caractere especial", met: false },
+  ]);
+
+  const updatePasswordRequirements = (password: string) => {
+    setPasswordRequirements(prev =>
+      prev.map(req => ({
+        ...req,
+        met: req.regex.test(password)
+      }))
+    );
+  };
+
+  useEffect(() => {
+    updatePasswordRequirements(password);
+  }, [password]);
+
+  const isPasswordValid = passwordRequirements.every(req => req.met);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isSignUp && !isPasswordValid) {
+      toast({
+        variant: "destructive",
+        title: "Senha inválida",
+        description: "Por favor, atenda a todos os requisitos de senha.",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -82,10 +121,31 @@ export function LoginForm() {
               placeholder="Sua senha"
               required
             />
+            {isSignUp && (
+              <div className="mt-2 space-y-2">
+                <p className="text-sm font-medium text-gray-700">Requisitos da senha:</p>
+                <ul className="text-sm space-y-1">
+                  {passwordRequirements.map((req, index) => (
+                    <li 
+                      key={index}
+                      className={`flex items-center gap-2 ${
+                        req.met ? 'text-green-600' : 'text-gray-500'
+                      }`}
+                    >
+                      {req.met ? '✓' : '○'} {req.text}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-2">
-          <Button className="w-full" type="submit" disabled={loading}>
+          <Button 
+            className="w-full" 
+            type="submit" 
+            disabled={loading || (isSignUp && !isPasswordValid)}
+          >
             {loading ? "Processando..." : (isSignUp ? "Criar Conta" : "Entrar")}
           </Button>
           <Button 
