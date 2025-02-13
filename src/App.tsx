@@ -16,6 +16,7 @@ import ServiceOrders from "./pages/dashboard/ServiceOrders";
 import CustomerArea from "./pages/dashboard/CustomerArea";
 import NotFound from "./pages/NotFound";
 import ClientLogin from "./pages/ClientLogin";
+import { LoginForm } from "./components/LoginForm";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App: React.FC = () => {
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/client-login" element={<ClientLogin />} />
+                <Route path="/auth" element={<LoginForm />} />
                 <Route path="/dashboard" element={<Dashboard />}>
                   <Route index element={<DashboardHome />} />
                   <Route path="clients" element={<Clients />} />
