@@ -9,9 +9,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, LogOut } from "lucide-react";
+import { PlusCircle, LogOut, ArrowLeft } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -58,6 +58,10 @@ const CustomerArea = () => {
     toast({
       title: "Logout realizado com sucesso",
     });
+  };
+
+  const handleBack = () => {
+    navigate(-1);
   };
 
   const fetchOrders = async () => {
@@ -155,7 +159,12 @@ const CustomerArea = () => {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold">Minhas Ordens de Serviço</h2>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" onClick={handleBack}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h2 className="text-xl font-bold">Minhas Ordens de Serviço</h2>
+        </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" />

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, Outlet } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -14,6 +13,7 @@ import {
   UserCircle,
   Settings,
   Store,
+  ArrowLeft,
 } from "lucide-react";
 import {
   Sidebar,
@@ -50,13 +50,16 @@ const Dashboard = () => {
     }
   };
 
+  const handleBack = () => {
+    navigate(-1);
+  };
+
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         navigate("/");
       } else {
-        // Buscar o username do usuário logado
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("username")
@@ -67,7 +70,6 @@ const Dashboard = () => {
           setUsername(profileData.username);
         }
 
-        // Buscar as permissões do usuário
         const { data: permissionsData, error: permissionsError } = await supabase
           .from("user_permissions")
           .select("menu_permission")
@@ -94,7 +96,6 @@ const Dashboard = () => {
     };
   }, [navigate]);
 
-  // Função para verificar se o usuário tem permissão para acessar um menu
   const hasPermission = (permission: string) => {
     return userPermissions.includes(permission);
   };
@@ -237,7 +238,12 @@ const Dashboard = () => {
         </Sidebar>
         <SidebarInset>
           <header className="p-4 flex justify-between items-center border-b">
-            <h1 className="text-2xl font-bold">Dashboard</h1>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="icon" onClick={handleBack}>
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <h1 className="text-2xl font-bold">Dashboard</h1>
+            </div>
             <div className="flex items-center gap-4">
               <span className="text-sm text-muted-foreground">
                 Olá, {username || "Usuário"}
