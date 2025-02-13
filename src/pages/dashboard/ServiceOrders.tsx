@@ -111,7 +111,10 @@ const ServiceOrders = () => {
     try {
       const { error } = await supabase
         .from("service_orders")
-        .insert(formData);
+        .insert({
+          ...formData,
+          created_by_type: 'admin' // Garantindo que o created_by_type seja enviado
+        });
 
       if (error) throw error;
 
