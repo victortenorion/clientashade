@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -92,12 +92,12 @@ export const ServiceOrderNFSe = ({ serviceOrderId, onSubmit, onCancel }: Props) 
   });
 
   // Atualiza o formulário quando os dados da ordem de serviço são carregados
-  useState(() => {
+  useEffect(() => {
     if (serviceOrder) {
       setFormData(prev => ({
         ...prev,
         client_id: serviceOrder.client_id,
-        discriminacao_servicos: serviceOrder.items.map(item => item.description).join("\n"),
+        discriminacao_servicos: serviceOrder.items?.map(item => item.description).join("\n") || "",
         valor_servicos: serviceOrder.total_price
       }));
     }
