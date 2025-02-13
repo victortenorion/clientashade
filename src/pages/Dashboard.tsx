@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, Outlet } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -34,7 +35,7 @@ interface User {
   id: string;
   username: string;
   permissions?: string[];
-  store_id?: string;
+  store_id?: string | null;
 }
 
 const Dashboard = () => {
@@ -93,11 +94,11 @@ const Dashboard = () => {
               .from("user_stores")
               .select("store_id")
               .eq("user_id", profile.id)
-              .maybeSingle() // Alterado de .single() para .maybeSingle()
+              .maybeSingle()
           ]);
 
           const permissions = permissionsData.data?.map(p => p.menu_permission) || [];
-          const store_id = storeData.data?.store_id;
+          const store_id = storeData.data?.store_id || null;
 
           return {
             ...profile,
