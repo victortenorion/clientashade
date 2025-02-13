@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { IMaskInput } from "react-imask";
 import { ClientFormData } from "../types/client.types";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Props {
   formData: ClientFormData;
@@ -16,6 +17,39 @@ export const ClientAddress = ({
   onFormChange,
   onCEPChange
 }: Props) => {
+  const { toast } = useToast();
+
+  const fetchAddressData = async (cep: string) => {
+    try {
+      const cleanCep = cep.replace(/\D/g, '');
+      if (cleanCep.length !== 8) return;
+
+      const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data = await response.json();
+
+      if (data.erro) {
+        toast({
+          variant: "destructive",
+          title: "CEP não encontrado",
+          description: "Verifique o CEP informado e tente novamente."
+        });
+        return;
+      }
+
+      onFormChange('street', data.logradouro);
+      onFormChange('neighborhood', data.bairro);
+      onFormChange('city', data.localidade);
+      onFormChange('state', data.uf);
+    } catch (error) {
+      console.error('Erro ao buscar CEP:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao buscar CEP",
+        description: "Não foi possível buscar os dados do CEP. Tente novamente."
+      });
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -31,7 +65,10 @@ export const ClientAddress = ({
               className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               value={formData.zip_code}
               mask="00000-000"
-              onAccept={(value) => onCEPChange(value)}
+              onAccept={(value) => {
+                onCEPChange(value);
+                fetchAddressData(value);
+              }}
               placeholder="Digite o CEP"
             />
           </div>
@@ -44,7 +81,6 @@ export const ClientAddress = ({
               onChange={(e) => onFormChange('state', e.target.value)}
               maxLength={2}
               className="h-9"
-              readOnly
             />
           </div>
         </div>
@@ -58,7 +94,6 @@ export const ClientAddress = ({
               value={formData.city}
               onChange={(e) => onFormChange('city', e.target.value)}
               className="h-9"
-              readOnly
             />
           </div>
           <div className="space-y-2">
@@ -69,7 +104,6 @@ export const ClientAddress = ({
               value={formData.neighborhood}
               onChange={(e) => onFormChange('neighborhood', e.target.value)}
               className="h-9"
-              readOnly
             />
           </div>
         </div>
@@ -83,7 +117,6 @@ export const ClientAddress = ({
               value={formData.street}
               onChange={(e) => onFormChange('street', e.target.value)}
               className="h-9"
-              readOnly
             />
           </div>
           <div className="space-y-2">
