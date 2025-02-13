@@ -18,7 +18,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, Pencil, Settings2, ListFilter, Users, Filter } from "lucide-react";
+import { Plus, Trash2, Pencil, Settings2, Users, Receipt, ListFilter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Tabs,
@@ -27,6 +27,14 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Status {
   id: string;
@@ -79,6 +87,26 @@ const ServiceOrderSettings = () => {
   });
   const [clientFields, setClientFields] = useState<ClientField[]>(defaultClientFields);
   const { toast } = useToast();
+  const [nfceConfig, setNfceConfig] = useState({
+    certificado_digital: "",
+    senha_certificado: "",
+    ambiente: "homologacao",
+    token_ibpt: "",
+    csc_id: "",
+    csc_token: "",
+    inscricao_estadual: "",
+    regime_tributario: "simples"
+  });
+  const [nfseConfig, setNfseConfig] = useState({
+    certificado_digital: "",
+    senha_certificado: "",
+    ambiente: "homologacao",
+    inscricao_municipal: "",
+    codigo_municipio: "",
+    regime_tributario: "simples",
+    regime_especial: "",
+    incentivo_fiscal: false
+  });
 
   const fetchStatuses = async () => {
     try {
@@ -121,6 +149,32 @@ const ServiceOrderSettings = () => {
       toast({
         variant: "destructive",
         title: "Erro ao carregar configurações dos campos",
+        description: error.message,
+      });
+    }
+  };
+
+  const fetchNFConfigs = async () => {
+    try {
+      const { data: nfceData, error: nfceError } = await supabase
+        .from("nfce_config")
+        .select("*")
+        .maybeSingle();
+
+      if (nfceError) throw nfceError;
+      if (nfceData) setNfceConfig(nfceData);
+
+      const { data: nfseData, error: nfseError } = await supabase
+        .from("nfse_config")
+        .select("*")
+        .maybeSingle();
+
+      if (nfseError) throw nfseError;
+      if (nfseData) setNfseConfig(nfseData);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar configurações fiscais",
         description: error.message,
       });
     }
@@ -242,9 +296,50 @@ const ServiceOrderSettings = () => {
     }
   };
 
+  const handleNFCeConfigSave = async () => {
+    try {
+      const { error } = await supabase
+        .from("nfce_config")
+        .upsert(nfceConfig);
+
+      if (error) throw error;
+
+      toast({
+        title: "Configurações da NFC-e salvas com sucesso",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar configurações da NFC-e",
+        description: error.message,
+      });
+    }
+  };
+
+  const handleNFSeConfigSave = async () => {
+    try {
+      const { error } = await supabase
+        .from("nfse_config")
+        .upsert(nfseConfig);
+
+      if (error) throw error;
+
+      toast({
+        title: "Configurações da NFS-e salvas com sucesso",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar configurações da NFS-e",
+        description: error.message,
+      });
+    }
+  };
+
   useEffect(() => {
     fetchStatuses();
     fetchFieldSettings();
+    fetchNFConfigs();
   }, []);
 
   return (
@@ -264,9 +359,9 @@ const ServiceOrderSettings = () => {
               <Users className="h-4 w-4 mr-2" />
               Clientes
             </TabsTrigger>
-            <TabsTrigger value="filters" className="data-[state=active]:bg-background rounded-none h-12 px-6">
-              <Filter className="h-4 w-4 mr-2" />
-              Filtros
+            <TabsTrigger value="fiscal" className="data-[state=active]:bg-background rounded-none h-12 px-6">
+              <Receipt className="h-4 w-4 mr-2" />
+              Notas Fiscais
             </TabsTrigger>
             <TabsTrigger value="listings" className="data-[state=active]:bg-background rounded-none h-12 px-6">
               <ListFilter className="h-4 w-4 mr-2" />
@@ -389,9 +484,174 @@ const ServiceOrderSettings = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="filters" className="mt-6">
-            <div className="flex items-center justify-center h-32 border-2 border-dashed rounded-lg">
-              <p className="text-muted-foreground">Configurações de filtros em desenvolvimento</p>
+          <TabsContent value="fiscal" className="mt-6">
+            <div className="space-y-8">
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Configurações NFC-e</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Certificado Digital (Base64)</Label>
+                    <Textarea
+                      value={nfceConfig.certificado_digital}
+                      onChange={(e) => setNfceConfig(prev => ({ ...prev, certificado_digital: e.target.value }))}
+                      placeholder="Cole aqui o certificado em base64"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Senha do Certificado</Label>
+                    <Input
+                      type="password"
+                      value={nfceConfig.senha_certificado}
+                      onChange={(e) => setNfceConfig(prev => ({ ...prev, senha_certificado: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Ambiente</Label>
+                    <Select
+                      value={nfceConfig.ambiente}
+                      onValueChange={(value) => setNfceConfig(prev => ({ ...prev, ambiente: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="homologacao">Homologação</SelectItem>
+                        <SelectItem value="producao">Produção</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Token IBPT</Label>
+                    <Input
+                      value={nfceConfig.token_ibpt}
+                      onChange={(e) => setNfceConfig(prev => ({ ...prev, token_ibpt: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>CSC ID</Label>
+                    <Input
+                      value={nfceConfig.csc_id}
+                      onChange={(e) => setNfceConfig(prev => ({ ...prev, csc_id: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Token CSC</Label>
+                    <Input
+                      value={nfceConfig.csc_token}
+                      onChange={(e) => setNfceConfig(prev => ({ ...prev, csc_token: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Inscrição Estadual</Label>
+                    <Input
+                      value={nfceConfig.inscricao_estadual}
+                      onChange={(e) => setNfceConfig(prev => ({ ...prev, inscricao_estadual: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Regime Tributário</Label>
+                    <Select
+                      value={nfceConfig.regime_tributario}
+                      onValueChange={(value) => setNfceConfig(prev => ({ ...prev, regime_tributario: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="simples">Simples Nacional</SelectItem>
+                        <SelectItem value="presumido">Lucro Presumido</SelectItem>
+                        <SelectItem value="real">Lucro Real</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <Button onClick={handleNFCeConfigSave}>Salvar Configurações NFC-e</Button>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Configurações NFS-e</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Certificado Digital (Base64)</Label>
+                    <Textarea
+                      value={nfseConfig.certificado_digital}
+                      onChange={(e) => setNfseConfig(prev => ({ ...prev, certificado_digital: e.target.value }))}
+                      placeholder="Cole aqui o certificado em base64"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Senha do Certificado</Label>
+                    <Input
+                      type="password"
+                      value={nfseConfig.senha_certificado}
+                      onChange={(e) => setNfseConfig(prev => ({ ...prev, senha_certificado: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Ambiente</Label>
+                    <Select
+                      value={nfseConfig.ambiente}
+                      onValueChange={(value) => setNfseConfig(prev => ({ ...prev, ambiente: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="homologacao">Homologação</SelectItem>
+                        <SelectItem value="producao">Produção</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Inscrição Municipal</Label>
+                    <Input
+                      value={nfseConfig.inscricao_municipal}
+                      onChange={(e) => setNfseConfig(prev => ({ ...prev, inscricao_municipal: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Código do Município</Label>
+                    <Input
+                      value={nfseConfig.codigo_municipio}
+                      onChange={(e) => setNfseConfig(prev => ({ ...prev, codigo_municipio: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Regime Tributário</Label>
+                    <Select
+                      value={nfseConfig.regime_tributario}
+                      onValueChange={(value) => setNfseConfig(prev => ({ ...prev, regime_tributario: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="simples">Simples Nacional</SelectItem>
+                        <SelectItem value="presumido">Lucro Presumido</SelectItem>
+                        <SelectItem value="real">Lucro Real</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Regime Especial</Label>
+                    <Input
+                      value={nfseConfig.regime_especial}
+                      onChange={(e) => setNfseConfig(prev => ({ ...prev, regime_especial: e.target.value }))}
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="incentivo_fiscal"
+                      checked={nfseConfig.incentivo_fiscal}
+                      onCheckedChange={(checked) => 
+                        setNfseConfig(prev => ({ ...prev, incentivo_fiscal: checked as boolean }))
+                      }
+                    />
+                    <Label htmlFor="incentivo_fiscal">Possui Incentivo Fiscal</Label>
+                  </div>
+                </div>
+                <Button onClick={handleNFSeConfigSave}>Salvar Configurações NFS-e</Button>
+              </div>
             </div>
           </TabsContent>
 
