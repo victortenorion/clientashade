@@ -881,7 +881,7 @@ const ServiceOrderSettings = () => {
                     <Label>Regime Tributário</Label>
                     <Select
                       value={nfceConfig.regime_tributario}
-                      onChange={(e) => setNfceConfig(prev => ({ ...prev, regime_tributario: value }))}
+                      onValueChange={(value) => setNfceConfig(prev => ({ ...prev, regime_tributario: value }))}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -927,4 +927,4 @@ const ServiceOrderSettings = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="homologacao">Homologação</SelectItem>
-                        <SelectItem value="producao">Produção</SelectItem
+                        <SelectItem value="producao">Produção
