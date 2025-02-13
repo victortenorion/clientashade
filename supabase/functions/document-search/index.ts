@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const CNPJ_API_BASE = "https://publica.cnpj.ws/cnpj"
 
@@ -94,6 +95,12 @@ const searchCNPJ = async (cnpj: string) => {
   }
 }
 
+// Initialize Supabase client
+const supabaseClient = createClient(
+  Deno.env.get('SUPABASE_URL') ?? '',
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+)
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -133,8 +140,8 @@ serve(async (req) => {
         )
       }
       
-      // Busca no banco local
-      const { data: clients, error } = await (req.auth.supabaseClient as any)
+      // Busca no banco local usando o cliente Supabase inicializado
+      const { data: clients, error } = await supabaseClient
         .from('clients')
         .select('*')
         .eq('document', cleanDocument)
@@ -168,7 +175,7 @@ serve(async (req) => {
       // Busca na API pública e no banco local
       const [apiData, { data: clients, error }] = await Promise.all([
         searchCNPJ(cleanDocument),
-        (req.auth.supabaseClient as any)
+        supabaseClient
           .from('clients')
           .select('*')
           .eq('document', cleanDocument)
