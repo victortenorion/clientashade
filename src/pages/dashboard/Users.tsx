@@ -28,6 +28,7 @@ interface User {
   created_at: string;
   updated_at: string;
   permissions?: string[];
+  store_id?: string;
 }
 
 interface UserFormData {
@@ -35,6 +36,7 @@ interface UserFormData {
   email: string;
   password: string;
   permissions: string[];
+  store_id: string;
 }
 
 interface Requirement {
@@ -59,6 +61,7 @@ const defaultFormData: UserFormData = {
   email: "",
   password: "",
   permissions: [],
+  store_id: "",
 };
 
 const Users = () => {
@@ -74,6 +77,7 @@ const Users = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [stores, setStores] = useState<{ id: string; name: string; }[]>([]);
   const { toast } = useToast();
 
   const [usernameRequirements, setUsernameRequirements] = useState<Requirement[]>([
@@ -138,6 +142,24 @@ const Users = () => {
     }
   };
 
+  const fetchStores = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("stores")
+        .select("id, name");
+
+      if (error) throw error;
+      setStores(data || []);
+    } catch (error: any) {
+      console.error("Erro ao carregar lojas:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar lojas",
+        description: error.message,
+      });
+    }
+  };
+
   const fetchUsers = async () => {
     try {
       setLoading(true);
@@ -153,32 +175,32 @@ const Users = () => {
         return;
       }
 
-      const usersWithPermissions = await Promise.all(
+      const usersWithData = await Promise.all(
         (profilesData || []).map(async (profile) => {
-          const { data: permissionsData, error: permissionsError } = await supabase
-            .from("user_permissions")
-            .select("menu_permission")
-            .eq("user_id", profile.id);
+          const [permissionsData, storeData] = await Promise.all([
+            supabase
+              .from("user_permissions")
+              .select("menu_permission")
+              .eq("user_id", profile.id),
+            supabase
+              .from("user_stores")
+              .select("store_id")
+              .eq("user_id", profile.id)
+              .single()
+          ]);
 
-          if (permissionsError) {
-            console.error("Erro ao carregar permissões:", permissionsError);
-            return {
-              ...profile,
-              permissions: [],
-            };
-          }
-
-          const permissions = permissionsData?.map(p => p.menu_permission) || [];
-          console.log(`Permissões do usuário ${profile.username}:`, permissions);
+          const permissions = permissionsData.data?.map(p => p.menu_permission) || [];
+          const store_id = storeData.data?.store_id;
 
           return {
             ...profile,
             permissions,
+            store_id
           };
         })
       );
 
-      setUsers(usersWithPermissions);
+      setUsers(usersWithData);
     } catch (error: any) {
       console.error("Erro ao carregar usuários:", error);
       toast({
@@ -247,6 +269,7 @@ const Users = () => {
       email: "",
       password: "",
       permissions: user.permissions || [],
+      store_id: user.store_id || "",
     });
     setEditingId(user.id);
     setDialogOpen(true);
@@ -260,6 +283,15 @@ const Users = () => {
         variant: "destructive",
         title: "Acesso negado",
         description: "Você não tem permissão para modificar usuários.",
+      });
+      return;
+    }
+
+    if (!formData.store_id) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar usuário",
+        description: "Por favor, selecione uma loja.",
       });
       return;
     }
@@ -288,12 +320,12 @@ const Users = () => {
 
         if (profileError) throw profileError;
 
-        const { error: deleteError } = await supabase
+        const { error: deletePermissionsError } = await supabase
           .from("user_permissions")
           .delete()
           .eq("user_id", editingId);
 
-        if (deleteError) throw deleteError;
+        if (deletePermissionsError) throw deletePermissionsError;
 
         if (formData.permissions.length > 0) {
           const { error: permissionsError } = await supabase
@@ -307,6 +339,22 @@ const Users = () => {
 
           if (permissionsError) throw permissionsError;
         }
+
+        const { error: deleteStoreError } = await supabase
+          .from("user_stores")
+          .delete()
+          .eq("user_id", editingId);
+
+        if (deleteStoreError) throw deleteStoreError;
+
+        const { error: storeError } = await supabase
+          .from("user_stores")
+          .insert({
+            user_id: editingId,
+            store_id: formData.store_id,
+          });
+
+        if (storeError) throw storeError;
 
         toast({
           title: "Usuário atualizado com sucesso",
@@ -324,17 +372,28 @@ const Users = () => {
 
         if (signUpError) throw signUpError;
 
-        if (authData.user && formData.permissions.length > 0) {
-          const { error: permissionsError } = await supabase
-            .from("user_permissions")
-            .insert(
-              formData.permissions.map(permission => ({
-                user_id: authData.user!.id,
-                menu_permission: permission,
-              }))
-            );
+        if (authData.user) {
+          if (formData.permissions.length > 0) {
+            const { error: permissionsError } = await supabase
+              .from("user_permissions")
+              .insert(
+                formData.permissions.map(permission => ({
+                  user_id: authData.user!.id,
+                  menu_permission: permission,
+                }))
+              );
 
-          if (permissionsError) throw permissionsError;
+            if (permissionsError) throw permissionsError;
+          }
+
+          const { error: storeError } = await supabase
+            .from("user_stores")
+            .insert({
+              user_id: authData.user.id,
+              store_id: formData.store_id,
+            });
+
+          if (storeError) throw storeError;
         }
 
         toast({
@@ -421,6 +480,7 @@ const Users = () => {
 
   useEffect(() => {
     checkUserPermissions();
+    fetchStores();
   }, []);
 
   useEffect(() => {
@@ -604,6 +664,25 @@ const Users = () => {
                 </div>
               </>
             )}
+
+            <div className="space-y-2">
+              <Label htmlFor="store_id">Loja *</Label>
+              <select
+                id="store_id"
+                name="store_id"
+                value={formData.store_id}
+                onChange={(e) => handleInputChange(e)}
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                required
+              >
+                <option value="">Selecione uma loja</option>
+                {stores.map((store) => (
+                  <option key={store.id} value={store.id}>
+                    {store.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {hasAllPermissions && (
               <div className="space-y-2">
