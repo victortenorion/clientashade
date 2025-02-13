@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Outlet } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ import {
 const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [menuPrincipalOpen, setMenuPrincipalOpen] = useState(true);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -85,34 +86,36 @@ const Dashboard = () => {
             </SidebarMenu>
 
             <SidebarGroup>
-              <SidebarGroupLabel>
+              <SidebarGroupLabel onClick={() => setMenuPrincipalOpen(!menuPrincipalOpen)} className="cursor-pointer hover:bg-muted/50 rounded-md">
                 <div className="flex items-center gap-2">
                   <Menu className="h-4 w-4" />
                   <span>Menu Principal</span>
                 </div>
               </SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      onClick={() => navigate("/dashboard/menu1")}
-                      isActive={location.pathname.startsWith("/dashboard/menu1")}
-                    >
-                      <Package className="h-4 w-4" />
-                      <span>Menu 1</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      onClick={() => navigate("/dashboard/menu2")}
-                      isActive={location.pathname.startsWith("/dashboard/menu2")}
-                    >
-                      <Package className="h-4 w-4" />
-                      <span>Menu 2</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
+              {menuPrincipalOpen && (
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        onClick={() => navigate("/dashboard/menu1")}
+                        isActive={location.pathname.startsWith("/dashboard/menu1")}
+                      >
+                        <Package className="h-4 w-4" />
+                        <span>Menu 1</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        onClick={() => navigate("/dashboard/menu2")}
+                        isActive={location.pathname.startsWith("/dashboard/menu2")}
+                      >
+                        <Package className="h-4 w-4" />
+                        <span>Menu 2</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              )}
             </SidebarGroup>
 
             <SidebarGroup>
