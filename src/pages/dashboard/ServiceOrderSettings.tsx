@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,6 +70,13 @@ interface FiscalConfig {
   tax_regime: string;
 }
 
+interface CustomerAreaField {
+  id: string;
+  label: string;
+  field: string;
+  visible: boolean;
+}
+
 const defaultClientFields: ClientField[] = [
   { id: "1", label: "Nome", field: "name", visible: true },
   { id: "2", label: "Email", field: "email", visible: true },
@@ -93,6 +99,21 @@ const defaultClientFields: ClientField[] = [
   { id: "19", label: "Website", field: "website", visible: true },
   { id: "20", label: "Email NFe", field: "nfe_email", visible: true },
   { id: "21", label: "Login do Cliente", field: "client_login", visible: true },
+];
+
+const defaultCustomerAreaFields: CustomerAreaField[] = [
+  { id: "1", label: "Número da OS", field: "order_number", visible: true },
+  { id: "2", label: "Data de Criação", field: "created_at", visible: true },
+  { id: "3", label: "Status", field: "status", visible: true },
+  { id: "4", label: "Prioridade", field: "priority", visible: true },
+  { id: "5", label: "Equipamento", field: "equipment", visible: true },
+  { id: "6", label: "Número de Série", field: "equipment_serial_number", visible: true },
+  { id: "7", label: "Problema Relatado", field: "problem", visible: true },
+  { id: "8", label: "Descrição do Serviço", field: "description", visible: true },
+  { id: "9", label: "Previsão de Conclusão", field: "expected_date", visible: true },
+  { id: "10", label: "Data de Conclusão", field: "completion_date", visible: true },
+  { id: "11", label: "Data de Saída", field: "exit_date", visible: true },
+  { id: "12", label: "Valor Total", field: "total_price", visible: true },
 ];
 
 const ServiceOrderSettings = () => {
@@ -135,6 +156,7 @@ const ServiceOrderSettings = () => {
   const [serviceCodeSearch, setServiceCodeSearch] = useState("");
   const [serviceCodes, setServiceCodes] = useState<Array<{ code: string; description: string }>>([]);
   const [serviceCodePopoverOpen, setServiceCodePopoverOpen] = useState(false);
+  const [customerAreaFields, setCustomerAreaFields] = useState<CustomerAreaField[]>(defaultCustomerAreaFields);
 
   const fetchStatuses = async () => {
     try {
@@ -535,6 +557,64 @@ const ServiceOrderSettings = () => {
     }
   };
 
+  const fetchCustomerAreaSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("customer_area_field_settings")
+        .select("*");
+
+      if (error) throw error;
+
+      if (data) {
+        const updatedFields = customerAreaFields.map(field => ({
+          ...field,
+          visible: data.find(setting => setting.field_name === field.field)?.visible ?? field.visible
+        }));
+        setCustomerAreaFields(updatedFields);
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar configurações da área do cliente",
+        description: error.message,
+      });
+    }
+  };
+
+  const handleCustomerAreaFieldVisibilityChange = async (field: string, checked: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('customer_area_field_settings')
+        .upsert(
+          { 
+            field_name: field,
+            visible: checked,
+            updated_at: new Date().toISOString()
+          },
+          { onConflict: 'field_name' }
+        );
+
+      if (error) throw error;
+
+      setCustomerAreaFields(prev => 
+        prev.map(f => 
+          f.field === field ? { ...f, visible: checked } : f
+        )
+      );
+
+      toast({
+        title: "Configuração salva",
+        description: `Campo ${field} ${checked ? 'será exibido' : 'será ocultado'} na área do cliente`,
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar configuração",
+        description: error.message,
+      });
+    }
+  };
+
   // Carregar todas as configurações ao montar o componente
   useEffect(() => {
     Promise.all([
@@ -542,7 +622,8 @@ const ServiceOrderSettings = () => {
       fetchFieldSettings(),
       fetchNFConfigs(),
       fetchFiscalConfig(),
-      fetchServiceCodes()
+      fetchServiceCodes(),
+      fetchCustomerAreaSettings()
     ]);
   }, []);
 
@@ -574,6 +655,10 @@ const ServiceOrderSettings = () => {
             <TabsTrigger value="clients" className="data-[state=active]:bg-background rounded-none h-12 px-6">
               <Users className="h-4 w-4 mr-2" />
               Clientes
+            </TabsTrigger>
+            <TabsTrigger value="customer_area" className="data-[state=active]:bg-background rounded-none h-12 px-6">
+              <Users className="h-4 w-4 mr-2" />
+              Área do Cliente
             </TabsTrigger>
             <TabsTrigger value="fiscal" className="data-[state=active]:bg-background rounded-none h-12 px-6">
               <Receipt className="h-4 w-4 mr-2" />
@@ -700,6 +785,33 @@ const ServiceOrderSettings = () => {
             </div>
           </TabsContent>
 
+          <TabsContent value="customer_area" className="mt-6">
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Campos Visíveis na Área do Cliente</h3>
+                <div className="border rounded-lg p-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    {customerAreaFields.map((field) => (
+                      <div key={field.id} className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={field.id}
+                          checked={customerAreaFields.find(f => f.field === field.field)?.visible ?? field.visible}
+                          onCheckedChange={(checked) => 
+                            handleCustomerAreaFieldVisibilityChange(field.field, checked as boolean)
+                          }
+                        />
+                        <Label htmlFor={field.id}>{field.label}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Selecione os campos que deseja exibir na área do cliente. As alterações serão salvas automaticamente.
+                </p>
+              </div>
+            </div>
+          </TabsContent>
+
           <TabsContent value="fiscal" className="mt-6">
             <div className="space-y-8">
               <div className="space-y-4">
@@ -815,189 +927,3 @@ const ServiceOrderSettings = () => {
                       <SelectContent>
                         <SelectItem value="homologacao">Homologação</SelectItem>
                         <SelectItem value="producao">Produção</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Inscrição Municipal</Label>
-                    <Input
-                      value={nfseConfig.inscricao_municipal}
-                      onChange={(e) => setNfseConfig(prev => ({ ...prev, inscricao_municipal: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Código do Município</Label>
-                    <Input
-                      value={nfseConfig.codigo_municipio}
-                      onChange={(e) => setNfseConfig(prev => ({ ...prev, codigo_municipio: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Regime Tributário</Label>
-                    <Select
-                      value={nfseConfig.regime_tributario}
-                      onValueChange={(value) => setNfseConfig(prev => ({ ...prev, regime_tributario: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="simples">Simples Nacional</SelectItem>
-                        <SelectItem value="presumido">Lucro Presumido</SelectItem>
-                        <SelectItem value="real">Lucro Real</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Regime Especial</Label>
-                    <Input
-                      value={nfseConfig.regime_especial}
-                      onChange={(e) => setNfseConfig(prev => ({ ...prev, regime_especial: e.target.value }))}
-                    />
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="incentivo_fiscal"
-                      checked={nfseConfig.incentivo_fiscal}
-                      onCheckedChange={(checked) => 
-                        setNfseConfig(prev => ({ ...prev, incentivo_fiscal: checked as boolean }))
-                      }
-                    />
-                    <Label htmlFor="incentivo_fiscal">Possui Incentivo Fiscal</Label>
-                  </div>
-                </div>
-                <Button onClick={handleNFSeConfigSave}>Salvar Configurações NFS-e</Button>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="sefaz" className="mt-6">
-            <div className="space-y-8">
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Códigos e Tributos</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Código do Serviço</Label>
-                    <Input
-                      value={fiscalConfig.service_code}
-                      onChange={(e) => setFiscalConfig(prev => ({
-                        ...prev,
-                        service_code: e.target.value
-                      }))}
-                      placeholder="Digite o código do serviço"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>CNAE</Label>
-                    <Input
-                      value={fiscalConfig.cnae}
-                      onChange={(e) => setFiscalConfig(prev => ({
-                        ...prev,
-                        cnae: e.target.value
-                      }))}
-                      placeholder="Ex: 9512-6/00"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Regime Tributário</Label>
-                    <Select
-                      value={fiscalConfig.tax_regime}
-                      onValueChange={(value) => setFiscalConfig(prev => ({
-                        ...prev,
-                        tax_regime: value
-                      }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="simples">Simples Nacional</SelectItem>
-                        <SelectItem value="presumido">Lucro Presumido</SelectItem>
-                        <SelectItem value="real">Lucro Real</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
-
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {editingStatus ? "Editar Status" : "Novo Status"}
-            </DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Nome</Label>
-              <Input
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="color">Cor</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="color"
-                  name="color"
-                  type="color"
-                  value={formData.color}
-                  onChange={handleInputChange}
-                  className="w-20"
-                  required
-                />
-                <Input
-                  value={formData.color}
-                  onChange={handleInputChange}
-                  name="color"
-                  className="font-mono"
-                  required
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição</Label>
-              <Input
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-              />
-            </div>
-            <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => {
-                setDialogOpen(false);
-                setEditingStatus(null);
-                setFormData({ name: "", color: "#000000", description: "" });
-              }}>
-                Cancelar
-              </Button>
-              <Button type="submit">
-                {editingStatus ? "Salvar" : "Criar"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      <div className="mt-8 flex justify-end">
-        <Button 
-          size="lg"
-          onClick={handleSaveAllConfigs}
-        >
-          Salvar Todas as Configurações
-        </Button>
-      </div>
-    </div>
-  );
-};
-
-export default ServiceOrderSettings;

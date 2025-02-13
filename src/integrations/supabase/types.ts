@@ -140,6 +140,30 @@ export type Database = {
           },
         ]
       }
+      customer_area_field_settings: {
+        Row: {
+          created_at: string
+          field_name: string
+          id: string
+          updated_at: string
+          visible: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          field_name: string
+          id?: string
+          updated_at?: string
+          visible?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          field_name?: string
+          id?: string
+          updated_at?: string
+          visible?: boolean | null
+        }
+        Relationships: []
+      }
       fiscal_config: {
         Row: {
           cnae: string | null
