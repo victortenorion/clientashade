@@ -1,11 +1,12 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, Outlet } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/toast";
+import { useToast } from "@/hooks/use-toast";
 import {
   Users,
-  User,
+  User as UserIcon,
   Package,
   LayoutDashboard,
   FolderOpen,
@@ -29,6 +30,13 @@ import {
   SidebarGroupLabel,
   SidebarGroupContent,
 } from "@/components/ui/sidebar";
+
+interface User {
+  id: string;
+  username: string;
+  permissions?: string[];
+  store_id?: string;
+}
 
 const Dashboard = () => {
   const navigate = useNavigate();
