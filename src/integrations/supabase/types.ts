@@ -229,6 +229,51 @@ export type Database = {
           },
         ]
       }
+      nfse_config: {
+        Row: {
+          ambiente: string | null
+          certificado_digital: string | null
+          codigo_municipio: string | null
+          created_at: string | null
+          id: string
+          incentivo_fiscal: boolean | null
+          inscricao_municipal: string | null
+          regime_especial: string | null
+          regime_tributario: string | null
+          senha_certificado: string | null
+          ultima_nfse_numero: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          ambiente?: string | null
+          certificado_digital?: string | null
+          codigo_municipio?: string | null
+          created_at?: string | null
+          id?: string
+          incentivo_fiscal?: boolean | null
+          inscricao_municipal?: string | null
+          regime_especial?: string | null
+          regime_tributario?: string | null
+          senha_certificado?: string | null
+          ultima_nfse_numero?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          ambiente?: string | null
+          certificado_digital?: string | null
+          codigo_municipio?: string | null
+          created_at?: string | null
+          id?: string
+          incentivo_fiscal?: boolean | null
+          inscricao_municipal?: string | null
+          regime_especial?: string | null
+          regime_tributario?: string | null
+          senha_certificado?: string | null
+          ultima_nfse_numero?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       nfse_eventos: {
         Row: {
           created_at: string | null
@@ -272,6 +317,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      nfse_servicos: {
+        Row: {
+          aliquota_iss: number | null
+          codigo: string
+          created_at: string | null
+          descricao: string
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          aliquota_iss?: number | null
+          codigo: string
+          created_at?: string | null
+          descricao: string
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          aliquota_iss?: number | null
+          codigo?: string
+          created_at?: string | null
+          descricao?: string
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       products: {
         Row: {
