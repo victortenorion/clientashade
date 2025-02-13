@@ -320,16 +320,18 @@ const Clients = () => {
 
   const parseAddress = (address: string) => {
     try {
-      // Exemplo formato: "RUA EXEMPLO - BAIRRO TESTE, 123 BAIRRO TESTE, CIDADE - SP, 12345-678"
+      // Exemplo formato: "RUA EXEMPLO - BAIRRO TESTE, 228 - PARQUE DOROTEIA, CIDADE - SP, 12345-678"
       const mainParts = address.split(',');
       
       // Primeira parte contém rua
       const street = mainParts[0]?.split('-')[0]?.trim() || '';
       
       // Segunda parte contém número e bairro
-      const numberAndNeighborhood = mainParts[1]?.split(' ');
-      const number = numberAndNeighborhood?.[0]?.trim() || '';
-      const neighborhood = numberAndNeighborhood?.slice(1)?.join(' ')?.trim() || '';
+      const secondPart = mainParts[1]?.trim() || '';
+      // Separa o número do bairro (formato: "228 - PARQUE DOROTEIA")
+      const [numberPart, ...neighborhoodParts] = secondPart.split('-');
+      const number = numberPart?.trim() || '';
+      const neighborhood = neighborhoodParts.join('-').trim() || '';
       
       // Terceira parte contém cidade e estado
       const cityAndState = mainParts[2]?.split('-').map(part => part.trim()) || [];
