@@ -15,6 +15,7 @@ import Users from "./pages/dashboard/Users";
 import ServiceOrders from "./pages/dashboard/ServiceOrders";
 import CustomerArea from "./pages/dashboard/CustomerArea";
 import NotFound from "./pages/NotFound";
+import ClientLogin from "./pages/ClientLogin";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App: React.FC = () => {
             <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Index />} />
+                <Route path="/client-login" element={<ClientLogin />} />
                 <Route path="/dashboard" element={<Dashboard />}>
                   <Route index element={<DashboardHome />} />
                   <Route path="clients" element={<Clients />} />
