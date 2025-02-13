@@ -396,7 +396,12 @@ const ServiceOrderSettings = () => {
     try {
       const { error } = await supabase
         .from("fiscal_config")
-        .upsert(fiscalConfig);
+        .upsert({
+          service_code: fiscalConfig.service_code,
+          cnae: fiscalConfig.cnae,
+          tax_regime: fiscalConfig.tax_regime,
+          id: fiscalConfig?.id,
+        }, { onConflict: 'id' });
 
       if (error) throw error;
 
@@ -404,6 +409,7 @@ const ServiceOrderSettings = () => {
         title: "Configurações fiscais salvas com sucesso",
       });
     } catch (error: any) {
+      console.error("Erro ao salvar configurações:", error);
       toast({
         variant: "destructive",
         title: "Erro ao salvar configurações fiscais",
