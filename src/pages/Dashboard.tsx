@@ -219,7 +219,7 @@ const Dashboard = () => {
                           onClick={() => navigate("/dashboard/users")}
                           isActive={location.pathname.startsWith("/dashboard/users")}
                         >
-                          <User className="h-4 w-4" />
+                          <UserIcon className="h-4 w-4" />
                           <span>Usuários</span>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
