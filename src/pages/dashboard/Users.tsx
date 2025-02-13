@@ -103,6 +103,10 @@ const Users = () => {
     setDialogOpen(true);
   };
 
+  const handleNewUser = () => {
+    window.open('https://eroqgxpjiqmftkgqyunj.supabase.co/dashboard/project/auth/users', '_blank');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -148,7 +152,7 @@ const Users = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold">Usuários</h2>
-        <Button onClick={() => window.open('https://eroqgxpjiqmftkgqyunj.supabase.co/dashboard/project/auth/users', '_blank')}>
+        <Button onClick={handleNewUser}>
           <UserPlus className="h-4 w-4 mr-2" />
           Novo Usuário
         </Button>
