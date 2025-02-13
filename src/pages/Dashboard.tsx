@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, Outlet } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -302,7 +301,6 @@ const Dashboard = () => {
               )}
             </SidebarGroup>
 
-            {/* Novo grupo de Notas Fiscais */}
             <SidebarGroup>
               <SidebarGroupLabel 
                 onClick={() => setNotasFiscaisOpen(!notasFiscaisOpen)} 
@@ -342,7 +340,6 @@ const Dashboard = () => {
                 </SidebarGroupContent>
               )}
             </SidebarGroup>
-
           </SidebarContent>
         </Sidebar>
         <SidebarInset>
