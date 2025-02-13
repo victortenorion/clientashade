@@ -27,16 +27,17 @@ const CustomerArea = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
+      const clientId = localStorage.getItem('clientId');
       
-      if (!user) {
-        throw new Error("Usuário não autenticado");
+      if (!clientId) {
+        throw new Error("Cliente não identificado");
       }
 
       const { data, error } = await supabase
         .from("service_orders")
         .select("*")
-        .order("created_at", { ascending: false });
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 

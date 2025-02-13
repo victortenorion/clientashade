@@ -17,6 +17,7 @@ import CustomerArea from "./pages/dashboard/CustomerArea";
 import NotFound from "./pages/NotFound";
 import ClientLogin from "./pages/ClientLogin";
 import { LoginForm } from "./components/LoginForm";
+import { ClientProtectedRoute } from "./components/ClientProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -39,7 +40,14 @@ const App: React.FC = () => {
                   <Route path="products" element={<Products />} />
                   <Route path="users" element={<Users />} />
                   <Route path="service-orders" element={<ServiceOrders />} />
-                  <Route path="customer-area" element={<CustomerArea />} />
+                  <Route 
+                    path="customer-area" 
+                    element={
+                      <ClientProtectedRoute>
+                        <CustomerArea />
+                      </ClientProtectedRoute>
+                    } 
+                  />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
