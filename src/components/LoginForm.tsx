@@ -10,33 +10,47 @@ export function LoginForm() {
   const [email, setEmail] = useState("backend");
   const [password, setPassword] = useState("backend123@");
   const [loading, setLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
   const { toast } = useToast();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      console.log("Tentando login com:", `${email}@example.com`, password);
-      const { error } = await supabase.auth.signInWithPassword({
-        email: `${email}@example.com`,
-        password,
-      });
+      const fullEmail = `${email}@example.com`;
+      
+      if (isSignUp) {
+        const { error: signUpError } = await supabase.auth.signUp({
+          email: fullEmail,
+          password,
+        });
 
-      if (error) {
-        console.error("Erro de login:", error);
-        throw error;
+        if (signUpError) throw signUpError;
+
+        toast({
+          title: "Conta criada com sucesso!",
+          description: "Agora você pode fazer login.",
+        });
+        setIsSignUp(false);
+      } else {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: fullEmail,
+          password,
+        });
+
+        if (signInError) throw signInError;
+
+        toast({
+          title: "Login realizado com sucesso!",
+          description: "Bem-vindo ao sistema.",
+        });
       }
-
-      toast({
-        title: "Login realizado com sucesso!",
-        description: "Bem-vindo ao sistema.",
-      });
     } catch (error) {
       console.error("Erro completo:", error);
       toast({
         variant: "destructive",
-        title: "Erro ao fazer login",
+        title: "Erro ao " + (isSignUp ? "criar conta" : "fazer login"),
         description: "Verifique suas credenciais e tente novamente.",
       });
     } finally {
@@ -47,9 +61,9 @@ export function LoginForm() {
   return (
     <Card className="w-[350px]">
       <CardHeader className="text-center">
-        <h2 className="text-2xl font-bold">Login</h2>
+        <h2 className="text-2xl font-bold">{isSignUp ? "Criar Conta" : "Login"}</h2>
       </CardHeader>
-      <form onSubmit={handleLogin}>
+      <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">Usuário</label>
@@ -70,9 +84,17 @@ export function LoginForm() {
             />
           </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex flex-col gap-2">
           <Button className="w-full" type="submit" disabled={loading}>
-            {loading ? "Entrando..." : "Entrar"}
+            {loading ? "Processando..." : (isSignUp ? "Criar Conta" : "Entrar")}
+          </Button>
+          <Button 
+            type="button" 
+            variant="ghost" 
+            className="w-full"
+            onClick={() => setIsSignUp(!isSignUp)}
+          >
+            {isSignUp ? "Já tem uma conta? Faça login" : "Não tem uma conta? Cadastre-se"}
           </Button>
         </CardFooter>
       </form>
