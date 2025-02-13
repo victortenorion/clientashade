@@ -235,10 +235,11 @@ const Clients = () => {
       // Converter o tipo do contact_persons de Json para ContactPerson[]
       const typedData = data?.map(client => ({
         ...client,
-        contact_persons: client.contact_persons as unknown as ContactPerson[] | null
-      }));
+        contact_persons: client.contact_persons as unknown as ContactPerson[] | null,
+        store_id: client.store_id || null
+      })) as Client[];
 
-      setClients(typedData as Client[]);
+      setClients(typedData);
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -523,6 +524,7 @@ const Clients = () => {
 
   useEffect(() => {
     fetchVisibleFields();
+    fetchStores();
     fetchClients();
   }, [searchTerm]);
 
