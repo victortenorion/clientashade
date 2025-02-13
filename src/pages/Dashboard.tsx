@@ -1,9 +1,25 @@
 
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Outlet } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  Users,
+  User,
+  Package,
+  LayoutDashboard,
+} from "lucide-react";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarProvider,
+  SidebarInset,
+} from "@/components/ui/sidebar";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -23,7 +39,6 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    // Verifica se o usuário está autenticado
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -33,7 +48,6 @@ const Dashboard = () => {
     
     checkUser();
 
-    // Escuta mudanças na autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!session) {
         navigate("/");
@@ -46,20 +60,66 @@ const Dashboard = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="p-4 flex justify-between items-center border-b">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <Button variant="outline" onClick={handleLogout}>
-          Sair
-        </Button>
-      </header>
-      <main className="p-4">
-        <h2 className="text-xl">Bem-vindo ao Dashboard!</h2>
-        <p className="mt-2 text-gray-600">
-          Este é o seu painel de controle. Aqui você poderá acessar todas as funcionalidades do sistema.
-        </p>
-      </main>
-    </div>
+    <SidebarProvider defaultOpen>
+      <div className="min-h-screen bg-background flex">
+        <Sidebar>
+          <SidebarHeader>
+            <h2 className="text-xl font-bold p-4">Sistema</h2>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => navigate("/dashboard")}
+                  isActive={location.pathname === "/dashboard"}
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  <span>Dashboard</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => navigate("/dashboard/clients")}
+                  isActive={location.pathname.startsWith("/dashboard/clients")}
+                >
+                  <Users className="h-4 w-4" />
+                  <span>Clientes</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => navigate("/dashboard/users")}
+                  isActive={location.pathname.startsWith("/dashboard/users")}
+                >
+                  <User className="h-4 w-4" />
+                  <span>Usuários</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => navigate("/dashboard/products")}
+                  isActive={location.pathname.startsWith("/dashboard/products")}
+                >
+                  <Package className="h-4 w-4" />
+                  <span>Produtos</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+        </Sidebar>
+        <SidebarInset>
+          <header className="p-4 flex justify-between items-center border-b">
+            <h1 className="text-2xl font-bold">Dashboard</h1>
+            <Button variant="outline" onClick={handleLogout}>
+              Sair
+            </Button>
+          </header>
+          <main className="p-4">
+            <Outlet />
+          </main>
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
   );
 };
 
