@@ -34,6 +34,7 @@ const Dashboard = () => {
   const { toast } = useToast();
   const [cadastrosOpen, setCadastrosOpen] = useState(true);
   const [ordensOpen, setOrdensOpen] = useState(true);
+  const [username, setUsername] = useState<string>("");
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -53,6 +54,17 @@ const Dashboard = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         navigate("/");
+      } else {
+        // Buscar o username do usuário logado
+        const { data: profileData, error: profileError } = await supabase
+          .from("profiles")
+          .select("username")
+          .eq("id", session.user.id)
+          .single();
+
+        if (!profileError && profileData) {
+          setUsername(profileData.username);
+        }
       }
     };
     
@@ -186,9 +198,14 @@ const Dashboard = () => {
         <SidebarInset>
           <header className="p-4 flex justify-between items-center border-b">
             <h1 className="text-2xl font-bold">Dashboard</h1>
-            <Button variant="outline" onClick={handleLogout}>
-              Sair
-            </Button>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-muted-foreground">
+                Olá, {username || "Usuário"}
+              </span>
+              <Button variant="outline" onClick={handleLogout}>
+                Sair
+              </Button>
+            </div>
           </header>
           <main className="p-4">
             <Outlet />
