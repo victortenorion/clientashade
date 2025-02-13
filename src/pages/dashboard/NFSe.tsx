@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,9 +21,14 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { NFSeForm } from "./components/NFSeForm";
 import { NFSeView } from "./components/NFSeView";
+import { Alert } from "@/components/ui/alert";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 const NFSePage = () => {
   const { toast } = useToast();
@@ -30,6 +36,9 @@ const NFSePage = () => {
   const [isEmitindo, setIsEmitindo] = useState(false);
   const [showEmissaoDialog, setShowEmissaoDialog] = useState(false);
   const [selectedNFSeId, setSelectedNFSeId] = useState<string | null>(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [motivoCancelamento, setMotivoCancelamento] = useState("");
+  const [nfseCancelamento, setNfseCancelamento] = useState<string | null>(null);
 
   const { data: notas, isLoading, refetch } = useQuery({
     queryKey: ["nfse", searchTerm],
@@ -127,6 +136,54 @@ const NFSePage = () => {
     }
   };
 
+  const handleCancelarNFSe = async () => {
+    if (!nfseCancelamento || !motivoCancelamento) return;
+
+    try {
+      const { error } = await supabase
+        .from("nfse")
+        .update({
+          cancelada: true,
+          motivo_cancelamento: motivoCancelamento,
+          data_cancelamento: new Date().toISOString(),
+          status_sefaz: "cancelada"
+        })
+        .eq("id", nfseCancelamento);
+
+      if (error) throw error;
+
+      await supabase.from("nfse_eventos").insert({
+        nfse_id: nfseCancelamento,
+        tipo_evento: "cancelamento",
+        descricao: motivoCancelamento,
+        status: "concluido"
+      });
+
+      toast({
+        title: "NFS-e cancelada com sucesso",
+      });
+
+      setShowCancelDialog(false);
+      setMotivoCancelamento("");
+      setNfseCancelamento(null);
+      refetch();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao cancelar NFS-e",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleImprimirNFSe = async (nfseId: string) => {
+    // Esta função será implementada posteriormente quando tivermos a API de impressão
+    toast({
+      title: "Impressão",
+      description: "Funcionalidade de impressão será implementada em breve.",
+    });
+  };
+
   const formatMoney = (value: number | null) => {
     if (value === null) return "R$ 0,00";
     return new Intl.NumberFormat("pt-BR", {
@@ -207,10 +264,26 @@ const NFSePage = () => {
                       >
                         Visualizar
                       </Button>
-                      {nota.status_sefaz === "autorizada" && (
-                        <Button variant="outline" size="sm">
-                          Imprimir
-                        </Button>
+                      {nota.status_sefaz === "autorizada" && !nota.cancelada && (
+                        <>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleImprimirNFSe(nota.id)}
+                          >
+                            Imprimir
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setNfseCancelamento(nota.id);
+                              setShowCancelDialog(true);
+                            }}
+                          >
+                            Cancelar
+                          </Button>
+                        </>
                       )}
                     </div>
                   </TableCell>
@@ -231,6 +304,46 @@ const NFSePage = () => {
             onCancel={() => setShowEmissaoDialog(false)}
             isLoading={isEmitindo}
           />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cancelar NFS-e</DialogTitle>
+            <DialogDescription>
+              Informe o motivo do cancelamento da nota fiscal
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="motivo">Motivo do Cancelamento</Label>
+              <Textarea
+                id="motivo"
+                value={motivoCancelamento}
+                onChange={(e) => setMotivoCancelamento(e.target.value)}
+                placeholder="Descreva o motivo do cancelamento..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowCancelDialog(false);
+                setMotivoCancelamento("");
+                setNfseCancelamento(null);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleCancelarNFSe}
+              disabled={!motivoCancelamento}
+            >
+              Confirmar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

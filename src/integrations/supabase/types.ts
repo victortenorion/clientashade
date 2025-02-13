@@ -149,6 +149,7 @@ export type Database = {
           client_id: string
           codigo_servico: string
           created_at: string | null
+          data_cancelamento: string | null
           data_competencia: string
           data_emissao: string | null
           deducoes: number | null
@@ -175,6 +176,7 @@ export type Database = {
           client_id: string
           codigo_servico: string
           created_at?: string | null
+          data_cancelamento?: string | null
           data_competencia: string
           data_emissao?: string | null
           deducoes?: number | null
@@ -201,6 +203,7 @@ export type Database = {
           client_id?: string
           codigo_servico?: string
           created_at?: string | null
+          data_cancelamento?: string | null
           data_competencia?: string
           data_emissao?: string | null
           deducoes?: number | null
