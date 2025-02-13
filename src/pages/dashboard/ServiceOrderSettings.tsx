@@ -63,6 +63,13 @@ interface ClientField {
   visible: boolean;
 }
 
+interface FiscalConfig {
+  id?: string;
+  service_code: string;
+  cnae: string;
+  tax_regime: string;
+}
+
 const defaultClientFields: ClientField[] = [
   { id: "1", label: "Nome", field: "name", visible: true },
   { id: "2", label: "Email", field: "email", visible: true },
@@ -119,7 +126,7 @@ const ServiceOrderSettings = () => {
     regime_especial: "",
     incentivo_fiscal: false
   });
-  const [fiscalConfig, setFiscalConfig] = useState({
+  const [fiscalConfig, setFiscalConfig] = useState<FiscalConfig>({
     service_code: "",
     cnae: "",
     tax_regime: "simples"
@@ -208,7 +215,15 @@ const ServiceOrderSettings = () => {
         .maybeSingle();
 
       if (error) throw error;
-      if (data) setFiscalConfig(data);
+      
+      if (data) {
+        setFiscalConfig({
+          id: data.id,
+          service_code: data.service_code || "",
+          cnae: data.cnae || "",
+          tax_regime: data.tax_regime || "simples"
+        });
+      }
     } catch (error: any) {
       toast({
         variant: "destructive",
