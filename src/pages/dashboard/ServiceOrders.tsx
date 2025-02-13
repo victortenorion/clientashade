@@ -17,6 +17,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Plus, Trash2, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,6 +61,8 @@ const ServiceOrders = () => {
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
   const [formData, setFormData] = useState<ServiceOrderFormData>(defaultFormData);
   const [clients, setClients] = useState<{ id: string; name: string; }[]>([]);
   const { toast } = useToast();
@@ -99,6 +111,8 @@ const ServiceOrders = () => {
         title: "Ordem de serviço excluída com sucesso",
       });
 
+      setDeleteDialogOpen(false);
+      setOrderToDelete(null);
       fetchOrders();
     } catch (error: any) {
       toast({
@@ -107,6 +121,11 @@ const ServiceOrders = () => {
         description: error.message,
       });
     }
+  };
+
+  const handleConfirmDelete = (orderId: string) => {
+    setOrderToDelete(orderId);
+    setDeleteDialogOpen(true);
   };
 
   const handleEditOrder = async (order: ServiceOrder) => {
@@ -265,7 +284,7 @@ const ServiceOrders = () => {
                         variant="ghost"
                         size="icon"
                         className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDeleteOrder(order.id)}
+                        onClick={() => handleConfirmDelete(order.id)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -333,6 +352,28 @@ const ServiceOrders = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta ordem de serviço? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteDialogOpen(false)}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => orderToDelete && handleDeleteOrder(orderToDelete)}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
