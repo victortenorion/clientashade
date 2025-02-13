@@ -580,56 +580,15 @@ const ServiceOrderSettings = () => {
                 <h3 className="text-lg font-semibold">Códigos e Tributos</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Código do Serviço (LC 116)</Label>
-                    <Popover open={serviceCodePopoverOpen} onOpenChange={setServiceCodePopoverOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={serviceCodePopoverOpen}
-                          className="w-full justify-between"
-                        >
-                          {fiscalConfig.service_code
-                            ? serviceCodes.find((item) => item.code === fiscalConfig.service_code)?.code || fiscalConfig.service_code
-                            : "Selecione o código do serviço..."}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[400px] p-0">
-                        <Command shouldFilter={false}>
-                          <CommandInput
-                            placeholder="Buscar código de serviço..."
-                            value={serviceCodeSearch}
-                            onValueChange={setServiceCodeSearch}
-                          />
-                          <CommandEmpty>Nenhum código encontrado.</CommandEmpty>
-                          <CommandGroup className="max-h-[300px] overflow-auto">
-                            {filteredServiceCodes.map((item) => (
-                              <CommandItem
-                                key={item.code}
-                                value={item.code}
-                                onSelect={(value) => {
-                                  setFiscalConfig(prev => ({
-                                    ...prev,
-                                    service_code: value
-                                  }));
-                                  setServiceCodePopoverOpen(false);
-                                }}
-                              >
-                                <span className="font-medium">{item.code}</span>
-                                <span className="ml-2 text-sm text-muted-foreground">
-                                  {item.description}
-                                </span>
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                    {fiscalConfig.service_code && serviceCodes.length > 0 && (
-                      <p className="text-sm text-muted-foreground">
-                        {serviceCodes.find((item) => item.code === fiscalConfig.service_code)?.description}
-                      </p>
-                    )}
+                    <Label>Código do Serviço</Label>
+                    <Input
+                      value={fiscalConfig.service_code}
+                      onChange={(e) => setFiscalConfig(prev => ({
+                        ...prev,
+                        service_code: e.target.value
+                      }))}
+                      placeholder="Digite o código do serviço"
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>CNAE</Label>
