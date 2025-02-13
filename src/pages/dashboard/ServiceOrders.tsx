@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -495,6 +496,7 @@ const ServiceOrders = () => {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[100px]">Nº OS</TableHead>
               <TableHead>Cliente</TableHead>
               <TableHead>Descrição</TableHead>
               <TableHead>Status</TableHead>
@@ -507,19 +509,22 @@ const ServiceOrders = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center">
+                <TableCell colSpan={8} className="text-center">
                   Carregando...
                 </TableCell>
               </TableRow>
             ) : orders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center">
+                <TableCell colSpan={8} className="text-center">
                   Nenhuma ordem encontrada
                 </TableCell>
               </TableRow>
             ) : (
               orders.map((order) => (
                 <TableRow key={order.id}>
+                  <TableCell className="font-medium">
+                    {String(order.order_number).padStart(6, '0')}
+                  </TableCell>
                   <TableCell>{order.client?.name}</TableCell>
                   <TableCell>{order.description}</TableCell>
                   <TableCell>
