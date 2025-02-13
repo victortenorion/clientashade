@@ -37,6 +37,8 @@ import { Label } from "@/components/ui/label";
 import { Plus, Trash2, Pencil, Receipt, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { NFCeForm } from "./components/NFCeForm";
+import { NFSeForm } from "./components/NFSeForm";
 
 interface ServiceOrder {
   id: string;
@@ -125,6 +127,9 @@ const ServiceOrders = () => {
   const [statuses, setStatuses] = useState<{ id: string; name: string; }[]>([]);
   const [stores, setStores] = useState<{ id: string; name: string; }[]>([]);
   const [currentUser, setCurrentUser] = useState<{ id: string; email?: string; user_metadata?: { full_name?: string; name?: string; } } | null>(null);
+  const [showNFCeDialog, setShowNFCeDialog] = useState(false);
+  const [showNFSeDialog, setShowNFSeDialog] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<ServiceOrder | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -416,31 +421,45 @@ const ServiceOrders = () => {
   };
 
   const handleGenerateNFCe = (order: ServiceOrder) => {
-    navigate("/dashboard/nfce", {
-      state: {
-        serviceOrder: {
-          client_id: order.client_id,
-          items: order.items.map(item => ({
-            product_id: "", // Será selecionado na tela de NFC-e
-            quantidade: 1,
-            valor_unitario: item.price,
-            descricao: item.description
-          }))
-        }
-      }
-    });
+    setSelectedOrder(order);
+    setShowNFCeDialog(true);
   };
 
   const handleGenerateNFSe = (order: ServiceOrder) => {
-    navigate("/dashboard/nfse", {
-      state: {
-        serviceOrder: {
-          client_id: order.client_id,
-          discriminacao_servicos: order.items.map(item => item.description).join("\n"),
-          valor_servicos: order.total_price
-        }
-      }
-    });
+    setSelectedOrder(order);
+    setShowNFSeDialog(true);
+  };
+
+  const handleNFCeSubmit = async (data: any) => {
+    try {
+      toast({
+        title: "NFC-e emitida com sucesso",
+      });
+      setShowNFCeDialog(false);
+      setSelectedOrder(null);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao emitir NFC-e",
+        description: error.message,
+      });
+    }
+  };
+
+  const handleNFSeSubmit = async (data: any) => {
+    try {
+      toast({
+        title: "NFS-e emitida com sucesso",
+      });
+      setShowNFSeDialog(false);
+      setSelectedOrder(null);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao emitir NFS-e",
+        description: error.message,
+      });
+    }
   };
 
   useEffect(() => {
@@ -807,6 +826,52 @@ const ServiceOrders = () => {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showNFCeDialog} onOpenChange={setShowNFCeDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Emitir NFC-e</DialogTitle>
+          </DialogHeader>
+          {selectedOrder && (
+            <NFCeForm
+              onSubmit={handleNFCeSubmit}
+              onCancel={() => setShowNFCeDialog(false)}
+              initialData={{
+                client_id: selectedOrder.client_id,
+                items: selectedOrder.items.map(item => ({
+                  product_id: "",
+                  quantidade: 1,
+                  valor_unitario: item.price,
+                  descricao: item.description
+                }))
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showNFSeDialog} onOpenChange={setShowNFSeDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Emitir NFS-e</DialogTitle>
+          </DialogHeader>
+          {selectedOrder && (
+            <NFSeForm
+              onSubmit={handleNFSeSubmit}
+              onCancel={() => setShowNFSeDialog(false)}
+              initialData={{
+                client_id: selectedOrder.client_id,
+                discriminacao_servicos: selectedOrder.items.map(item => item.description).join("\n"),
+                valor_servicos: selectedOrder.total_price,
+                data_competencia: format(new Date(), "yyyy-MM-dd"),
+                deducoes: 0,
+                observacoes: "",
+                codigo_servico: ""
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
 
