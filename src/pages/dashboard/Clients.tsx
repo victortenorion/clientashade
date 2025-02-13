@@ -1043,6 +1043,39 @@ const Clients = () => {
 
             <Card>
               <CardHeader>
+                <CardTitle>Acesso à Área do Cliente</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="client_login">Login</Label>
+                    <Input
+                      id="client_login"
+                      name="client_login"
+                      value={formData.client_login}
+                      onChange={handleInputChange}
+                      className="h-9"
+                    />
+                  </div>
+                  {!editingId && (
+                    <div className="space-y-2">
+                      <Label htmlFor="client_password">Senha</Label>
+                      <Input
+                        id="client_password"
+                        name="client_password"
+                        type="password"
+                        value={formData.client_password}
+                        onChange={handleInputChange}
+                        className="h-9"
+                      />
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
                 <CardTitle>Loja</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
