@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -108,15 +107,9 @@ export const ServiceOrderNFSe = ({ serviceOrderId, onSubmit, onCancel }: Props) 
   // Atualiza o formulário quando os dados da ordem de serviço são carregados
   useEffect(() => {
     if (serviceOrder) {
-      const itensFormatados = serviceOrder.service_order_items?.map(item => 
-        `${item.description} - R$ ${item.price.toFixed(2)}`
-      ).join("\n") || "";
+      const itensFormatados = serviceOrder.service_order_items?.map(item => item.description).join(" - ") || "";
 
-      const discriminacaoServicos = `Equipamento: ${serviceOrder.equipment || 'N/A'}
-Número de Série do Equipamento: ${serviceOrder.equipment_serial_number || 'N/A'}
-Descrição dos Serviços:
-${itensFormatados}
-Valor Total dos Serviços: R$ ${serviceOrder.total_price.toFixed(2)}`;
+      const discriminacaoServicos = `Equipamento: ${serviceOrder.equipment || 'N/A'} NS: ${serviceOrder.equipment_serial_number || 'N/A'} - ${itensFormatados} - Valor Total dos Serviços: R$ ${serviceOrder.total_price.toFixed(2)}`;
 
       setFormData(prev => ({
         ...prev,
