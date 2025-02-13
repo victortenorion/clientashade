@@ -242,12 +242,29 @@ const ServiceOrderSettings = () => {
   const fetchFiscalConfig = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from("fiscal_config")
         .select("*")
-        .maybeSingle();
+        .limit(1)
+        .single();
 
-      if (error) throw error;
+      if (error && error.code === 'PGRST116') {
+        // If no record exists, create a default one
+        const { data: newData, error: insertError } = await supabase
+          .from("fiscal_config")
+          .insert({
+            service_code: "",
+            cnae: "",
+            tax_regime: "simples"
+          })
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        data = newData;
+      } else if (error) {
+        throw error;
+      }
       
       if (data) {
         setFiscalConfig({
