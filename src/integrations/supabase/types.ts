@@ -140,6 +140,139 @@ export type Database = {
           },
         ]
       }
+      nfse: {
+        Row: {
+          aliquota_iss: number | null
+          ambiente: string | null
+          base_calculo: number | null
+          cancelada: boolean | null
+          client_id: string
+          codigo_servico: string
+          created_at: string | null
+          data_competencia: string
+          data_emissao: string | null
+          deducoes: number | null
+          discriminacao_servicos: string
+          id: string
+          motivo_cancelamento: string | null
+          numero_nfse: number
+          numero_rps: string | null
+          observacoes: string | null
+          serie_rps: string | null
+          status_sefaz: string | null
+          updated_at: string | null
+          valor_iss: number | null
+          valor_servicos: number
+          valor_total: number | null
+          xml_envio: string | null
+          xml_retorno: string | null
+        }
+        Insert: {
+          aliquota_iss?: number | null
+          ambiente?: string | null
+          base_calculo?: number | null
+          cancelada?: boolean | null
+          client_id: string
+          codigo_servico: string
+          created_at?: string | null
+          data_competencia: string
+          data_emissao?: string | null
+          deducoes?: number | null
+          discriminacao_servicos: string
+          id?: string
+          motivo_cancelamento?: string | null
+          numero_nfse?: number
+          numero_rps?: string | null
+          observacoes?: string | null
+          serie_rps?: string | null
+          status_sefaz?: string | null
+          updated_at?: string | null
+          valor_iss?: number | null
+          valor_servicos: number
+          valor_total?: number | null
+          xml_envio?: string | null
+          xml_retorno?: string | null
+        }
+        Update: {
+          aliquota_iss?: number | null
+          ambiente?: string | null
+          base_calculo?: number | null
+          cancelada?: boolean | null
+          client_id?: string
+          codigo_servico?: string
+          created_at?: string | null
+          data_competencia?: string
+          data_emissao?: string | null
+          deducoes?: number | null
+          discriminacao_servicos?: string
+          id?: string
+          motivo_cancelamento?: string | null
+          numero_nfse?: number
+          numero_rps?: string | null
+          observacoes?: string | null
+          serie_rps?: string | null
+          status_sefaz?: string | null
+          updated_at?: string | null
+          valor_iss?: number | null
+          valor_servicos?: number
+          valor_total?: number | null
+          xml_envio?: string | null
+          xml_retorno?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nfse_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nfse_eventos: {
+        Row: {
+          created_at: string | null
+          data_evento: string | null
+          descricao: string | null
+          id: string
+          mensagem_sefaz: string | null
+          nfse_id: string
+          status: string | null
+          tipo_evento: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_evento?: string | null
+          descricao?: string | null
+          id?: string
+          mensagem_sefaz?: string | null
+          nfse_id: string
+          status?: string | null
+          tipo_evento: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data_evento?: string | null
+          descricao?: string | null
+          id?: string
+          mensagem_sefaz?: string | null
+          nfse_id?: string
+          status?: string | null
+          tipo_evento?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nfse_eventos_nfse_id_fkey"
+            columns: ["nfse_id"]
+            isOneToOne: false
+            referencedRelation: "nfse"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           created_at: string
