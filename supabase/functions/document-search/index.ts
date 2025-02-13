@@ -158,9 +158,21 @@ serve(async (req) => {
         .eq('document', formatDocument(cleanDocument))
       
       if (error) throw error
+
+      // Formatamos a resposta similar ao CNPJ para manter consistência
+      const formattedDocument = formatDocument(cleanDocument)
       
       return new Response(
-        JSON.stringify({ results: clients }),
+        JSON.stringify({ 
+          apiData: clients && clients.length > 0 ? null : {
+            name: '',
+            document: formattedDocument,
+            email: '',
+            phone: '',
+            address: ''
+          },
+          results: clients 
+        }),
         { 
           headers: { 
             'Content-Type': 'application/json',
