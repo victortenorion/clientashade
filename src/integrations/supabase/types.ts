@@ -432,6 +432,12 @@ export type Database = {
         }
         Returns: string
       }
+      user_has_all_permissions: {
+        Args: {
+          user_uuid: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
