@@ -213,34 +213,73 @@ export type Database = {
       service_orders: {
         Row: {
           client_id: string
+          completion_date: string | null
           created_at: string
           created_by_type: string
           description: string
+          end_time: string | null
+          equipment: string | null
+          equipment_serial_number: string | null
+          exit_date: string | null
+          expected_date: string | null
           id: string
+          internal_notes: string | null
+          order_number: number
           priority: string | null
+          problem: string | null
+          reception_notes: string | null
+          seller_id: string | null
+          start_time: string | null
           status_id: string | null
+          store_id: string | null
           total_price: number
           updated_at: string
         }
         Insert: {
           client_id: string
+          completion_date?: string | null
           created_at?: string
           created_by_type?: string
           description: string
+          end_time?: string | null
+          equipment?: string | null
+          equipment_serial_number?: string | null
+          exit_date?: string | null
+          expected_date?: string | null
           id?: string
+          internal_notes?: string | null
+          order_number?: number
           priority?: string | null
+          problem?: string | null
+          reception_notes?: string | null
+          seller_id?: string | null
+          start_time?: string | null
           status_id?: string | null
+          store_id?: string | null
           total_price?: number
           updated_at?: string
         }
         Update: {
           client_id?: string
+          completion_date?: string | null
           created_at?: string
           created_by_type?: string
           description?: string
+          end_time?: string | null
+          equipment?: string | null
+          equipment_serial_number?: string | null
+          exit_date?: string | null
+          expected_date?: string | null
           id?: string
+          internal_notes?: string | null
+          order_number?: number
           priority?: string | null
+          problem?: string | null
+          reception_notes?: string | null
+          seller_id?: string | null
+          start_time?: string | null
           status_id?: string | null
+          store_id?: string | null
           total_price?: number
           updated_at?: string
         }
@@ -264,6 +303,66 @@ export type Database = {
             columns: ["status_id"]
             isOneToOne: false
             referencedRelation: "service_order_statuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_orders_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stores: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_stores: {
+        Row: {
+          created_at: string
+          id: string
+          store_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          store_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          store_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_stores_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
             referencedColumns: ["id"]
           },
         ]

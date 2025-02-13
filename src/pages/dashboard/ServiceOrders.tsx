@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +39,19 @@ interface ServiceOrder {
   total_price: number;
   created_at: string;
   created_by_type: 'admin' | 'client';
+  seller_id: string | null;
+  store_id: string | null;
+  equipment: string | null;
+  equipment_serial_number: string | null;
+  problem: string | null;
+  reception_notes: string | null;
+  internal_notes: string | null;
+  order_number: number;
+  expected_date: string | null;
+  completion_date: string | null;
+  exit_date: string | null;
+  start_time: string | null;
+  end_time: string | null;
   client: {
     name: string;
   } | null;
@@ -54,6 +66,18 @@ interface ServiceOrderFormData {
   description: string;
   total_price: number;
   status_id: string;
+  seller_id: string;
+  store_id: string;
+  equipment: string;
+  equipment_serial_number: string;
+  problem: string;
+  reception_notes: string;
+  internal_notes: string;
+  expected_date: string;
+  completion_date: string;
+  exit_date: string;
+  start_time: string;
+  end_time: string;
 }
 
 const defaultFormData: ServiceOrderFormData = {
@@ -61,6 +85,18 @@ const defaultFormData: ServiceOrderFormData = {
   description: "",
   total_price: 0,
   status_id: "",
+  seller_id: "",
+  store_id: "",
+  equipment: "",
+  equipment_serial_number: "",
+  problem: "",
+  reception_notes: "",
+  internal_notes: "",
+  expected_date: "",
+  completion_date: "",
+  exit_date: "",
+  start_time: "",
+  end_time: "",
 };
 
 const ServiceOrders = () => {
@@ -73,6 +109,7 @@ const ServiceOrders = () => {
   const [formData, setFormData] = useState<ServiceOrderFormData>(defaultFormData);
   const [clients, setClients] = useState<{ id: string; name: string; }[]>([]);
   const [statuses, setStatuses] = useState<{ id: string; name: string; }[]>([]);
+  const [stores, setStores] = useState<{ id: string; name: string; }[]>([]);
   const { toast } = useToast();
 
   const fetchOrders = async () => {
@@ -88,6 +125,19 @@ const ServiceOrders = () => {
           total_price,
           created_at,
           created_by_type,
+          seller_id,
+          store_id,
+          equipment,
+          equipment_serial_number,
+          problem,
+          reception_notes,
+          internal_notes,
+          order_number,
+          expected_date,
+          completion_date,
+          exit_date,
+          start_time,
+          end_time,
           client:clients(name),
           status:service_order_statuses!service_orders_status_id_fkey(name, color)
         `)
@@ -121,6 +171,31 @@ const ServiceOrders = () => {
       toast({
         variant: "destructive",
         title: "Erro ao carregar status",
+        description: error.message,
+      });
+    }
+  };
+
+  const fetchStores = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("stores")
+        .select("id, name");
+
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar lojas",
+          description: error.message,
+        });
+        return;
+      }
+
+      setStores(data || []);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar lojas",
         description: error.message,
       });
     }
@@ -162,6 +237,18 @@ const ServiceOrders = () => {
       description: order.description,
       total_price: order.total_price,
       status_id: order.status_id || "",
+      seller_id: order.seller_id || "",
+      store_id: order.store_id || "",
+      equipment: order.equipment || "",
+      equipment_serial_number: order.equipment_serial_number || "",
+      problem: order.problem || "",
+      reception_notes: order.reception_notes || "",
+      internal_notes: order.internal_notes || "",
+      expected_date: order.expected_date || "",
+      completion_date: order.completion_date || "",
+      exit_date: order.exit_date || "",
+      start_time: order.start_time || "",
+      end_time: order.end_time || "",
     });
     setDialogOpen(true);
   };
@@ -237,6 +324,7 @@ const ServiceOrders = () => {
   useEffect(() => {
     fetchClients();
     fetchStatuses();
+    fetchStores();
   }, []);
 
   return (
@@ -338,74 +426,245 @@ const ServiceOrders = () => {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Nova Ordem de Serviço</DialogTitle>
+            <p className="text-sm text-muted-foreground">(*) Campos obrigatórios</p>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="client_id">Cliente</Label>
-              <select
-                id="client_id"
-                name="client_id"
-                value={formData.client_id}
-                onChange={handleInputChange}
-                className="w-full border rounded-md h-10 px-3 bg-background text-foreground"
-                required
-              >
-                <option value="">Selecione um cliente</option>
-                {clients.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição</Label>
-              <Input
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="status_id">Status</Label>
-              <select
-                id="status_id"
-                name="status_id"
-                value={formData.status_id}
-                onChange={handleInputChange}
-                className="w-full border rounded-md h-10 px-3 bg-background text-foreground"
-                required
-              >
-                <option value="">Selecione um status</option>
-                {statuses.map((status) => (
-                  <option key={status.id} value={status.id}>
-                    {status.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="total_price">Valor Total</Label>
-              <Input
-                id="total_price"
-                name="total_price"
-                type="number"
-                step="0.01"
-                value={formData.total_price}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <DialogFooter>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Informações Básicas</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="client_id">Cliente *</Label>
+                  <select
+                    id="client_id"
+                    name="client_id"
+                    value={formData.client_id}
+                    onChange={handleInputChange}
+                    className="w-full border rounded-md h-10 px-3 bg-background text-foreground"
+                    required
+                  >
+                    <option value="">Selecione um cliente</option>
+                    {clients.map((client) => (
+                      <option key={client.id} value={client.id}>
+                        {client.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="seller_id">Vendedor *</Label>
+                    <Input
+                      id="seller_id"
+                      name="seller_id"
+                      value={formData.seller_id}
+                      onChange={handleInputChange}
+                      required
+                      disabled
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="store_id">Loja *</Label>
+                    <select
+                      id="store_id"
+                      name="store_id"
+                      value={formData.store_id}
+                      onChange={handleInputChange}
+                      className="w-full border rounded-md h-10 px-3 bg-background text-foreground"
+                      required
+                    >
+                      <option value="">Selecione uma loja</option>
+                      {stores.map((store) => (
+                        <option key={store.id} value={store.id}>
+                          {store.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="equipment">Equipamento *</Label>
+                    <Input
+                      id="equipment"
+                      name="equipment"
+                      value={formData.equipment}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="equipment_serial_number">Número de Série do Equipamento</Label>
+                    <Input
+                      id="equipment_serial_number"
+                      name="equipment_serial_number"
+                      value={formData.equipment_serial_number}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="problem">Problema *</Label>
+                  <Input
+                    id="problem"
+                    name="problem"
+                    value={formData.problem}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="reception_notes">Observações do Recebimento</Label>
+                  <Input
+                    id="reception_notes"
+                    name="reception_notes"
+                    value={formData.reception_notes}
+                    onChange={handleInputChange}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="internal_notes">Observações Internas</Label>
+                  <Input
+                    id="internal_notes"
+                    name="internal_notes"
+                    value={formData.internal_notes}
+                    onChange={handleInputChange}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Datas e Horários</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="expected_date">Data Prevista</Label>
+                    <Input
+                      id="expected_date"
+                      name="expected_date"
+                      type="datetime-local"
+                      value={formData.expected_date}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="completion_date">Data Término</Label>
+                    <Input
+                      id="completion_date"
+                      name="completion_date"
+                      type="datetime-local"
+                      value={formData.completion_date}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="start_time">Hora de Início</Label>
+                    <Input
+                      id="start_time"
+                      name="start_time"
+                      type="time"
+                      value={formData.start_time}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="end_time">Hora de Término</Label>
+                    <Input
+                      id="end_time"
+                      name="end_time"
+                      type="time"
+                      value={formData.end_time}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="exit_date">Data de Saída</Label>
+                  <Input
+                    id="exit_date"
+                    name="exit_date"
+                    type="datetime-local"
+                    value={formData.exit_date}
+                    onChange={handleInputChange}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Detalhes da Ordem de Serviço</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="status_id">Status *</Label>
+                    <select
+                      id="status_id"
+                      name="status_id"
+                      value={formData.status_id}
+                      onChange={handleInputChange}
+                      className="w-full border rounded-md h-10 px-3 bg-background text-foreground"
+                      required
+                    >
+                      <option value="">Selecione um status</option>
+                      {statuses.map((status) => (
+                        <option key={status.id} value={status.id}>
+                          {status.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="total_price">Valor Total *</Label>
+                    <Input
+                      id="total_price"
+                      name="total_price"
+                      type="number"
+                      step="0.01"
+                      value={formData.total_price}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Descrição *</Label>
+                  <Input
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <DialogFooter className="gap-2">
               <Button variant="outline" type="button" onClick={() => setDialogOpen(false)}>
-                Cancelar
+                Fechar
               </Button>
-              <Button type="submit">Criar</Button>
+              <Button type="submit">
+                Salvar
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
