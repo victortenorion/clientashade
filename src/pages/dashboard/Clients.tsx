@@ -38,7 +38,8 @@ import {
   Client,
   ClientFormData,
   DeleteDialogState,
-  Store
+  Store,
+  ContactPerson
 } from "./types/client.types";
 import {
   defaultFormData,
@@ -319,47 +320,22 @@ const Clients = () => {
 
   const parseAddress = (address: string) => {
     try {
-      // Exemplo: "RUA EXEMPLO, 123, BAIRRO, CIDADE - UF, 12345-678"
+      // Exemplo formato de entrada: "TIPO LOGRADOURO NOME LOGRADOURO, NUMERO, COMPLEMENTO, BAIRRO, CIDADE - UF, CEP"
       const parts = address.split(',').map(part => part.trim());
       
-      // Processa rua e número
-      let street = parts[0] || '';
-      let number = '';
+      // Processa rua
+      const streetPart = parts[0] || '';
+      const streetWords = streetPart.split(' ');
+      const number = parts[1] || '';
       
-      // Extrai o número do final da rua, se existir
-      const streetParts = street.split(' ');
-      if (streetParts.length > 1 && /^\d+$/.test(streetParts[streetParts.length - 1])) {
-        number = streetParts.pop() || '';
-        street = streetParts.join(' ');
-      }
-      
-      // Processa bairro (agora sem o número)
-      const neighborhood = parts[2]?.trim() || '';
-      
-      // Processa cidade e estado
-      const cityStatePart = parts[3]?.trim() || '';
-      const [city, stateAndCep] = cityStatePart.split('-').map(s => s.trim());
-      
-      // Processa estado e CEP
-      let state = '';
-      let cep = '';
-      if (stateAndCep) {
-        const lastPart = stateAndCep.split(',');
-        state = lastPart[0]?.trim() || '';
-        cep = lastPart[1]?.trim() || '';
-      }
-
-      // Remove todos os caracteres não numéricos do CEP
-      const cleanCep = cep.replace(/\D/g, '');
-
       return {
-        street: street.trim(),
+        street: streetPart,
         street_number: number,
-        complement: parts[1]?.trim() || '',
-        neighborhood,
-        city: city || '',
-        state: state || '',
-        zip_code: cleanCep
+        complement: parts[2] || '',
+        neighborhood: parts[3] || '',
+        city: parts[4]?.split('-')[0]?.trim() || '',
+        state: parts[4]?.split('-')[1]?.split(',')[0]?.trim() || '',
+        zip_code: parts[5]?.replace(/\D/g, '') || parts[4]?.split('-')[1]?.split(',')[1]?.replace(/\D/g, '') || ''
       };
     } catch (error) {
       console.error('Erro ao parsear endereço:', error);
