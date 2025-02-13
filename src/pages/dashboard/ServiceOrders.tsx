@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +39,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { NFCeForm } from "./components/NFCeForm";
 import { NFSeForm } from "./components/NFSeForm";
+import { NFCeFormData } from "./types/nfce.types";
 
 interface ServiceOrder {
   id: string;
@@ -431,7 +431,7 @@ const ServiceOrders = () => {
     setShowNFSeDialog(true);
   };
 
-  const handleNFCeSubmit = async (data: any) => {
+  const handleNFCeSubmit = async (data: NFCeFormData) => {
     try {
       toast({
         title: "NFC-e emitida com sucesso",
@@ -839,15 +839,7 @@ const ServiceOrders = () => {
             <NFCeForm
               onSubmit={handleNFCeSubmit}
               onCancel={() => setShowNFCeDialog(false)}
-              defaultValues={{
-                client_id: selectedOrder.client_id,
-                items: selectedOrder.items.map(item => ({
-                  product_id: "",
-                  quantidade: 1,
-                  valor_unitario: item.price,
-                  descricao: item.description
-                }))
-              }}
+              isLoading={false}
             />
           )}
         </DialogContent>
@@ -862,15 +854,7 @@ const ServiceOrders = () => {
             <NFSeForm
               onSubmit={handleNFSeSubmit}
               onCancel={() => setShowNFSeDialog(false)}
-              defaultValues={{
-                client_id: selectedOrder.client_id,
-                discriminacao_servicos: selectedOrder.items.map(item => item.description).join("\n"),
-                valor_servicos: selectedOrder.total_price,
-                data_competencia: new Date().toISOString().split('T')[0],
-                deducoes: 0,
-                observacoes: "",
-                codigo_servico: ""
-              }}
+              isLoading={false}
             />
           )}
         </DialogContent>
