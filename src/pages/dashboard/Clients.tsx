@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -522,6 +521,18 @@ const Clients = () => {
             <TableRow>
               {visibleFields
                 .filter(field => field.visible)
+                .sort((a, b) => {
+                  // Nome sempre primeiro
+                  if (a.field_name === 'name') return -1;
+                  if (b.field_name === 'name') return 1;
+                  // Telefone/Celular sempre segundo
+                  if ((a.field_name === 'phone' || a.field_name === 'mobile_phone') && 
+                      b.field_name !== 'name') return -1;
+                  if ((b.field_name === 'phone' || b.field_name === 'mobile_phone') && 
+                      a.field_name !== 'name') return 1;
+                  // Resto mantém a ordem original
+                  return 0;
+                })
                 .map(field => (
                   <TableHead key={field.field_name}>{getFieldLabel(field.field_name)}</TableHead>
               ))}
@@ -546,6 +557,18 @@ const Clients = () => {
                 <TableRow key={client.id}>
                   {visibleFields
                     .filter(field => field.visible)
+                    .sort((a, b) => {
+                      // Nome sempre primeiro
+                      if (a.field_name === 'name') return -1;
+                      if (b.field_name === 'name') return 1;
+                      // Telefone/Celular sempre segundo
+                      if ((a.field_name === 'phone' || a.field_name === 'mobile_phone') && 
+                          b.field_name !== 'name') return -1;
+                      if ((b.field_name === 'phone' || b.field_name === 'mobile_phone') && 
+                          a.field_name !== 'name') return 1;
+                      // Resto mantém a ordem original
+                      return 0;
+                    })
                     .map(field => (
                       <TableCell key={field.field_name}>
                         {client[field.field_name as keyof Client]?.toString() || ''}
@@ -897,27 +920,4 @@ const Clients = () => {
                     name="client_password"
                     value={formData.client_password}
                     onChange={handleInputChange}
-                    placeholder={editingId ? "(deixe em branco para manter a atual)" : "4 últimos dígitos do telefone"}
-                    {...(!editingId && { required: true })}
-                    className="h-9"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => setDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit">
-                {editingId ? "Salvar" : "Criar"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-};
-
-export default Clients;
+                    placeholder={editingId ?
