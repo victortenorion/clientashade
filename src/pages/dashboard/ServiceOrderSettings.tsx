@@ -35,6 +35,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface Status {
   id: string;
@@ -112,6 +124,9 @@ const ServiceOrderSettings = () => {
     cnae: "",
     tax_regime: "simples"
   });
+  const [serviceCodeSearch, setServiceCodeSearch] = useState("");
+  const [serviceCodes, setServiceCodes] = useState<Array<{ code: string; description: string }>>([]);
+  const [serviceCodePopoverOpen, setServiceCodePopoverOpen] = useState(false);
 
   const fetchStatuses = async () => {
     try {
@@ -198,6 +213,24 @@ const ServiceOrderSettings = () => {
       toast({
         variant: "destructive",
         title: "Erro ao carregar configurações fiscais",
+        description: error.message,
+      });
+    }
+  };
+
+  const fetchServiceCodes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("lc116_service_codes")
+        .select("code, description")
+        .order('code');
+
+      if (error) throw error;
+      if (data) setServiceCodes(data);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar códigos de serviço",
         description: error.message,
       });
     }
@@ -384,6 +417,7 @@ const ServiceOrderSettings = () => {
     fetchFieldSettings();
     fetchNFConfigs();
     fetchFiscalConfig();
+    fetchServiceCodes();
   }, []);
 
   return (
@@ -535,14 +569,55 @@ const ServiceOrderSettings = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Código do Serviço (LC 116)</Label>
-                    <Input
-                      value={fiscalConfig?.service_code || ""}
-                      onChange={(e) => setFiscalConfig(prev => ({
-                        ...prev,
-                        service_code: e.target.value
-                      }))}
-                      placeholder="Código do serviço"
-                    />
+                    <Popover open={serviceCodePopoverOpen} onOpenChange={setServiceCodePopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={serviceCodePopoverOpen}
+                          className="w-full justify-between"
+                        >
+                          {fiscalConfig.service_code
+                            ? serviceCodes.find((item) => item.code === fiscalConfig.service_code)?.code || fiscalConfig.service_code
+                            : "Selecione o código do serviço..."}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[400px] p-0">
+                        <Command>
+                          <CommandInput
+                            placeholder="Buscar código de serviço..."
+                            value={serviceCodeSearch}
+                            onValueChange={setServiceCodeSearch}
+                          />
+                          <CommandEmpty>Nenhum código encontrado.</CommandEmpty>
+                          <CommandGroup className="max-h-[300px] overflow-auto">
+                            {serviceCodes.map((item) => (
+                              <CommandItem
+                                key={item.code}
+                                value={item.code}
+                                onSelect={(value) => {
+                                  setFiscalConfig(prev => ({
+                                    ...prev,
+                                    service_code: value
+                                  }));
+                                  setServiceCodePopoverOpen(false);
+                                }}
+                              >
+                                <span className="font-medium">{item.code}</span>
+                                <span className="ml-2 text-sm text-muted-foreground">
+                                  {item.description}
+                                </span>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    {fiscalConfig.service_code && (
+                      <p className="text-sm text-muted-foreground">
+                        {serviceCodes.find((item) => item.code === fiscalConfig.service_code)?.description}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>CNAE</Label>

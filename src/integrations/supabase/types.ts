@@ -167,6 +167,30 @@ export type Database = {
         }
         Relationships: []
       }
+      lc116_service_codes: {
+        Row: {
+          code: string
+          created_at: string
+          description: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       nfce: {
         Row: {
           ambiente: string | null
