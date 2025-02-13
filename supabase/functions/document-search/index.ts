@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -101,6 +102,16 @@ const supabaseClient = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 )
 
+const formatDocument = (doc: string) => {
+  const cleanDoc = doc.replace(/[^\d]/g, '');
+  if (cleanDoc.length === 11) {
+    return cleanDoc.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  } else if (cleanDoc.length === 14) {
+    return cleanDoc.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+  }
+  return doc;
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -144,7 +155,7 @@ serve(async (req) => {
       const { data: clients, error } = await supabaseClient
         .from('clients')
         .select('*')
-        .eq('document', cleanDocument)
+        .eq('document', formatDocument(cleanDocument))
       
       if (error) throw error
       
@@ -178,7 +189,7 @@ serve(async (req) => {
         supabaseClient
           .from('clients')
           .select('*')
-          .eq('document', cleanDocument)
+          .eq('document', formatDocument(cleanDocument))
       ])
       
       if (error) throw error
