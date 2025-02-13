@@ -141,6 +141,7 @@ const Users = () => {
 
       setUsers(usersWithPermissions);
     } catch (error: any) {
+      console.error("Erro ao carregar usuários:", error);
       toast({
         variant: "destructive",
         title: "Erro ao carregar usuários",
@@ -157,19 +158,8 @@ const Users = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      const { error: permissionsError } = await supabase
-        .from("user_permissions")
-        .delete()
-        .eq("user_id", id);
-
-      if (permissionsError) throw permissionsError;
-
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("id", id);
-
-      if (profileError) throw profileError;
+      const { error: authError } = await supabase.auth.admin.deleteUser(id);
+      if (authError) throw authError;
 
       toast({
         title: "Usuário excluído com sucesso",
@@ -177,6 +167,7 @@ const Users = () => {
       
       fetchUsers();
     } catch (error: any) {
+      console.error("Erro ao excluir usuário:", error);
       toast({
         variant: "destructive",
         title: "Erro ao excluir usuário",
@@ -198,12 +189,6 @@ const Users = () => {
       permissions: permissions?.map(p => p.menu_permission) || [],
     });
     setEditingId(user.id);
-    setDialogOpen(true);
-  };
-
-  const handleNewUser = () => {
-    setEditingId(null);
-    setFormData(defaultFormData);
     setDialogOpen(true);
   };
 
@@ -292,6 +277,7 @@ const Users = () => {
       setEditingId(null);
       fetchUsers();
     } catch (error: any) {
+      console.error("Erro ao salvar usuário:", error);
       toast({
         variant: "destructive",
         title: editingId ? "Erro ao atualizar usuário" : "Erro ao criar usuário",
