@@ -1,4 +1,4 @@
-<lov-code>
+
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -947,4 +947,40 @@ const ServiceOrderSettings = () => {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">
+              <Label htmlFor="description">Descrição</Label>
+              <Input
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" type="button" onClick={() => {
+                setDialogOpen(false);
+                setEditingStatus(null);
+                setFormData({ name: "", color: "#000000", description: "" });
+              }}>
+                Cancelar
+              </Button>
+              <Button type="submit">
+                {editingStatus ? "Salvar" : "Criar"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <div className="mt-8 flex justify-end">
+        <Button 
+          size="lg"
+          onClick={handleSaveAllConfigs}
+        >
+          Salvar Todas as Configurações
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+export default ServiceOrderSettings;
