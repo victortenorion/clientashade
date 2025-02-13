@@ -44,13 +44,7 @@ interface Requirement {
   met: boolean;
 }
 
-const defaultFormData: UserFormData = {
-  username: "",
-  email: "",
-  password: "",
-  permissions: [],
-};
-
+// Atualizando o defaultFormData para incluir todas as permissões por padrão
 const menuOptions = [
   { value: 'dashboard', label: 'Dashboard' },
   { value: 'clients', label: 'Clientes' },
@@ -61,6 +55,13 @@ const menuOptions = [
   { value: 'service_order_settings', label: 'Configurações de O.S.' },
   { value: 'customer_area', label: 'Área do Cliente' },
 ];
+
+const defaultFormData: UserFormData = {
+  username: "",
+  email: "",
+  password: "",
+  permissions: menuOptions.map(option => option.value), // Todas as permissões pré-selecionadas
+};
 
 const Users = () => {
   const [loading, setLoading] = useState(true);
@@ -329,7 +330,7 @@ const Users = () => {
         <h2 className="text-xl font-bold">Usuários</h2>
         <Button onClick={() => {
           setEditingId(null);
-          setFormData(defaultFormData);
+          setFormData(defaultFormData); // Agora vai setar todas as permissões por padrão
           setDialogOpen(true);
         }}>
           <UserPlus className="h-4 w-4 mr-2" />
