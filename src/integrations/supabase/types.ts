@@ -59,6 +59,7 @@ export type Database = {
           state: string | null
           state_registration: string | null
           state_registration_exempt: boolean | null
+          store_id: string | null
           street: string | null
           street_number: string | null
           updated_at: string
@@ -90,6 +91,7 @@ export type Database = {
           state?: string | null
           state_registration?: string | null
           state_registration_exempt?: boolean | null
+          store_id?: string | null
           street?: string | null
           street_number?: string | null
           updated_at?: string
@@ -121,13 +123,22 @@ export type Database = {
           state?: string | null
           state_registration?: string | null
           state_registration_exempt?: boolean | null
+          store_id?: string | null
           street?: string | null
           street_number?: string | null
           updated_at?: string
           website?: string | null
           zip_code?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clients_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
