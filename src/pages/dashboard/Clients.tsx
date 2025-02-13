@@ -277,15 +277,18 @@ const Clients = () => {
   const searchDocument = async (document: string) => {
     try {
       setSearchingDocument(true);
-      const response = await fetch('/api/document-search', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ document }),
+      const { data, error } = await supabase.functions.invoke('document-search', {
+        body: { document }
       });
 
-      const data = await response.json();
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Erro na busca",
+          description: error.message,
+        });
+        return;
+      }
 
       if (data.error) {
         toast({
