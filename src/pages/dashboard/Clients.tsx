@@ -273,9 +273,180 @@ const Clients = () => {
     setDialogOpen(true);
   };
 
+  useEffect(() => {
+    fetchClients();
+    fetchStores();
+    fetchVisibleFields();
+  }, [searchTerm]);
+
   return (
-    <div>
-      {/* Component content */}
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div className="flex-1 max-w-sm">
+          <Input
+            placeholder="Buscar clientes..."
+            value={searchTerm}
+            onChange={handleSearch}
+          />
+        </div>
+        <Button onClick={() => {
+          setFormData(defaultFormData);
+          setEditingId(null);
+          setDialogOpen(true);
+        }}>
+          <Plus className="h-4 w-4 mr-2" />
+          Novo Cliente
+        </Button>
+      </div>
+
+      <div className="border rounded-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nome</TableHead>
+              <TableHead>Documento</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Telefone</TableHead>
+              <TableHead>Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center">
+                  Carregando...
+                </TableCell>
+              </TableRow>
+            ) : clients.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center">
+                  Nenhum cliente encontrado
+                </TableCell>
+              </TableRow>
+            ) : (
+              clients.map((client) => (
+                <TableRow key={client.id}>
+                  <TableCell>{client.name}</TableCell>
+                  <TableCell>{client.document}</TableCell>
+                  <TableCell>{client.email}</TableCell>
+                  <TableCell>{client.phone}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(client)}
+                      >
+                        Editar
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeleteClick(client.id)}
+                      >
+                        Excluir
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingId ? "Editar Cliente" : "Novo Cliente"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <ClientBasicInfo
+              formData={formData}
+              onFormChange={handleInputChange}
+              onSearchDocument={(doc) => {
+                // Implementar busca por documento
+                console.log("Buscar documento:", doc);
+              }}
+              searchingDocument={searchingDocument}
+              editingId={editingId}
+            />
+            <ClientAddress
+              formData={formData}
+              onFormChange={handleInputChange}
+              onCEPChange={(cep) => {
+                // Implementar busca por CEP
+                console.log("Buscar CEP:", cep);
+              }}
+            />
+            <ClientContact
+              formData={formData}
+              onFormChange={handleInputChange}
+            />
+            <ClientAccess
+              formData={formData}
+              onFormChange={handleInputChange}
+              editingId={editingId}
+            />
+            <ClientStore
+              formData={formData}
+              stores={stores}
+              onFormChange={handleInputChange}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit">
+              {editingId ? "Salvar" : "Criar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={deleteDialog.isOpen}
+        onOpenChange={(open) =>
+          setDeleteDialog((prev) => ({ ...prev, isOpen: open }))
+        }
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteDialog.withOrders ? (
+                <>
+                  Este cliente possui ordens de serviço. Para excluí-lo, você precisará
+                  informar a senha de administrador.
+                  <Input
+                    type="password"
+                    placeholder="Senha de administrador"
+                    value={deleteDialog.adminPassword}
+                    onChange={(e) =>
+                      setDeleteDialog((prev) => ({
+                        ...prev,
+                        adminPassword: e.target.value,
+                      }))
+                    }
+                    className="mt-2"
+                  />
+                </>
+              ) : (
+                "Tem certeza que deseja excluir este cliente?"
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
