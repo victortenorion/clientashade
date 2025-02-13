@@ -428,8 +428,7 @@ const ServiceOrders = () => {
   };
 
   const handleGenerateNFSe = (order: ServiceOrder) => {
-    setSelectedOrder(order);
-    setShowNFSeDialog(true);
+    navigate(`/dashboard/nfse/from-service-order/${order.id}`);
   };
 
   const handleNFCeSubmit = async (data: NFCeFormData) => {
