@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { PlusCircle } from "lucide-react";
 
 interface ServiceOrder {
   id: string;
@@ -61,6 +63,10 @@ const CustomerArea = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold">Minhas Ordens de Serviço</h2>
+        <Button variant="destructive">
+          <PlusCircle className="mr-2" />
+          Nova Ordem de Serviço
+        </Button>
       </div>
       <div className="border rounded-lg">
         <Table>
