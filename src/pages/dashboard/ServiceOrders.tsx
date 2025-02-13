@@ -89,13 +89,19 @@ const ServiceOrders = () => {
           created_at,
           created_by_type,
           client:clients(name),
-          status:service_order_statuses(name, color)
+          status:service_order_statuses!inner(name, color)
         `)
         .ilike("description", `%${searchTerm}%`);
 
       if (error) throw error;
 
-      setOrders(data as ServiceOrder[]);
+      if (data) {
+        const formattedData = data.map(order => ({
+          ...order,
+          status: order.status || { name: 'Sem status', color: '#374151' }
+        }));
+        setOrders(formattedData as ServiceOrder[]);
+      }
     } catch (error: any) {
       toast({
         variant: "destructive",

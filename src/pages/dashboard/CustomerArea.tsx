@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -25,7 +26,10 @@ import { Input } from "@/components/ui/input";
 interface ServiceOrder {
   id: string;
   description: string;
-  status: string;
+  status: {
+    name: string;
+    color: string;
+  };
   total_price: number;
   created_at: string;
 }
@@ -67,13 +71,25 @@ const CustomerArea = () => {
 
       const { data, error } = await supabase
         .from("service_orders")
-        .select("*")
+        .select(`
+          id,
+          description,
+          total_price,
+          created_at,
+          status:service_order_statuses(name, color)
+        `)
         .eq('client_id', clientId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      setOrders(data || []);
+      if (data) {
+        const formattedData = data.map(order => ({
+          ...order,
+          status: order.status || { name: 'Sem status', color: '#374151' }
+        }));
+        setOrders(formattedData);
+      }
     } catch (error: any) {
       console.error("Erro completo:", error);
       toast({
@@ -115,6 +131,7 @@ const CustomerArea = () => {
         .insert({
           ...formData,
           client_id: clientId,
+          created_by_type: 'client'
         });
 
       if (error) throw error;
@@ -149,7 +166,7 @@ const CustomerArea = () => {
             <LogOut className="mr-2 h-4 w-4" />
             Sair
           </Button>
-          <Button variant="destructive" onClick={handleNewOrder}>
+          <Button onClick={handleNewOrder}>
             <PlusCircle className="mr-2" />
             Nova Ordem de Serviço
           </Button>
@@ -182,7 +199,17 @@ const CustomerArea = () => {
               orders.map((order) => (
                 <TableRow key={order.id}>
                   <TableCell>{order.description}</TableCell>
-                  <TableCell>{order.status}</TableCell>
+                  <TableCell>
+                    <span 
+                      className="px-2 py-1 rounded-full text-xs font-semibold"
+                      style={{ 
+                        backgroundColor: order.status?.color ? `${order.status.color}20` : '#f3f4f6',
+                        color: order.status?.color || '#374151'
+                      }}
+                    >
+                      {order.status?.name || "Sem status"}
+                    </span>
+                  </TableCell>
                   <TableCell>
                     {order.total_price.toLocaleString('pt-BR', {
                       style: 'currency',
