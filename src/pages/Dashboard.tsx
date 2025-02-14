@@ -336,6 +336,15 @@ const Dashboard = () => {
                           <span>Campos Página do Cliente</span>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          onClick={() => navigate("/dashboard/service-order-settings/notas-fiscais")}
+                          isActive={location.pathname.includes("/dashboard/service-order-settings/notas-fiscais")}
+                        >
+                          <Receipt className="h-4 w-4" />
+                          <span>Notas Fiscais</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
                     </SidebarMenu>
                   </SidebarGroupContent>
                 )}
