@@ -309,7 +309,7 @@ const CustomerArea = () => {
           expected_date,
           completion_date,
           exit_date,
-          status:service_order_statuses!service_orders_status_id_fkey (
+          status:service_order_statuses (
             name,
             color
           )
@@ -320,7 +320,7 @@ const CustomerArea = () => {
       if (error) throw error;
       
       if (data) {
-        setOrders(data);
+        setOrders(data as ServiceOrder[]);
       }
     } catch (error: any) {
       console.error("Erro completo:", error);
