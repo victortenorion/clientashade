@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -17,9 +17,15 @@ interface NFSeFormProps {
   onSubmit: (formData: NFSeFormData) => Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
+  initialData?: NFSeFormData;
 }
 
-export const NFSeForm: React.FC<NFSeFormProps> = ({ onSubmit, onCancel, isLoading }) => {
+export const NFSeForm: React.FC<NFSeFormProps> = ({
+  onSubmit,
+  onCancel,
+  isLoading,
+  initialData
+}) => {
   const [formData, setFormData] = useState<NFSeFormData>({
     client_id: "",
     codigo_servico: "",
@@ -29,6 +35,12 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({ onSubmit, onCancel, isLoadin
     deducoes: 0,
     observacoes: ""
   });
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData(initialData);
+    }
+  }, [initialData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

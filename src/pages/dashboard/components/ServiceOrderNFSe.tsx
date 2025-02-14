@@ -1,22 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
-import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { useToast } from "@/components/ui/use-toast";
+import { NFSeForm } from "./NFSeForm";
 import { supabase } from "@/lib/supabase";
+import { useNavigate } from "react-router-dom";
+import type { NFSeFormData } from "../types/nfse.types";
 
 interface ServiceOrderNFSeProps {
   serviceOrderId: string;
@@ -29,95 +16,86 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
   onSubmit,
   onCancel
 }) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [formData, setFormData] = useState<NFSeFormData | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const [serviceCode, setServiceCode] = useState("");
-  const [cnae, setCnae] = useState("");
-  const [date, setDate] = React.useState<Date | undefined>(new Date());
-
   useEffect(() => {
-    const loadFiscalConfig = async () => {
-      const { data: fiscalData, error: fiscalError } = await supabase
-        .from('fiscal_config')
-        .select('*')
-        .eq('type', 'general')
-        .single();
+    const fetchServiceOrder = async () => {
+      try {
+        const { data: serviceOrder, error } = await supabase
+          .from("service_orders")
+          .select(`
+            *,
+            items:service_order_items(description, price),
+            client:clients(id)
+          `)
+          .eq("id", serviceOrderId)
+          .single();
 
-      if (fiscalError) {
-        console.error('Erro ao carregar configurações fiscais:', fiscalError);
-        return;
-      }
+        if (error) throw error;
 
-      if (fiscalData?.config) {
-        const config = fiscalData.config as { service_code: string; cnae: string };
-        setServiceCode(config.service_code || '');
-        setCnae(config.cnae || '');
+        if (serviceOrder) {
+          const nfseData: NFSeFormData = {
+            client_id: serviceOrder.client.id,
+            codigo_servico: "", // This needs to be filled by the user
+            discriminacao_servicos: serviceOrder.items
+              .map((item: { description: string }) => item.description)
+              .join("\n"),
+            valor_servicos: serviceOrder.total_price,
+            data_competencia: new Date().toISOString().split("T")[0],
+            deducoes: 0,
+            observacoes: `Ordem de Serviço #${serviceOrder.order_number}`
+          };
+
+          setFormData(nfseData);
+        }
+      } catch (error: any) {
+        console.error("Error fetching service order:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar ordem de serviço",
+          description: error.message
+        });
+        navigate("/dashboard/service-orders");
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    loadFiscalConfig();
-  }, []);
+    fetchServiceOrder();
+  }, [serviceOrderId, toast, navigate]);
+
+  const handleSubmit = async (data: NFSeFormData) => {
+    try {
+      setIsLoading(true);
+      console.log("Emitting NFSe with data:", data);
+      toast({
+        title: "NFS-e emitida com sucesso"
+      });
+      onSubmit();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao emitir NFS-e",
+        description: error.message
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading || !formData) {
+    return <div>Carregando...</div>;
+  }
 
   return (
-    <div className="container py-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>Emitir NFS-e</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="serviceCode">Código de Serviço</Label>
-              <Input id="serviceCode" value={serviceCode} disabled />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="cnae">CNAE</Label>
-              <Input id="cnae" value={cnae} disabled />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="date">Data de Emissão</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-[240px] justify-start text-left font-normal",
-                      !date && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione a data</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    disabled={(date) =>
-                      date > new Date()
-                    }
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição dos Serviços</Label>
-              <Textarea id="description" placeholder="Detalhe os serviços prestados" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="amount">Valor Total dos Serviços</Label>
-              <Input id="amount" type="number" placeholder="Informe o valor total" />
-            </div>
-            <Button onClick={() => toast({
-              title: "Sucesso",
-              description: "NFS-e emitida com sucesso!",
-            })}>Emitir NFS-e</Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    <NFSeForm
+      onSubmit={handleSubmit}
+      onCancel={onCancel}
+      isLoading={isLoading}
+      initialData={formData}
+    />
   );
 };
