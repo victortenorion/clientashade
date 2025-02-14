@@ -20,13 +20,15 @@ interface NFSeFormProps {
   onCancel: () => void;
   isLoading?: boolean;
   initialData?: NFSeFormData;
+  submitButtonText?: string;
 }
 
 export const NFSeForm: React.FC<NFSeFormProps> = ({
   onSubmit,
   onCancel,
   isLoading,
-  initialData
+  initialData,
+  submitButtonText = "Salvar"
 }) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState<NFSeFormData>({
@@ -447,7 +449,7 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
           Cancelar
         </Button>
         <Button type="submit" disabled={isLoading}>
-          {isLoading ? "Emitindo..." : "Emitir NFS-e"}
+          {isLoading ? "Salvando..." : submitButtonText}
         </Button>
       </div>
     </form>

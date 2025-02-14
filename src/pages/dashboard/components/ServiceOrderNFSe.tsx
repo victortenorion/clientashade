@@ -5,7 +5,6 @@ import { NFSeForm } from "./NFSeForm";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 import type { NFSeFormData } from "../types/nfse.types";
-import { SEFAZTransmissionStatus } from "./SEFAZTransmissionStatus";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface ServiceOrder {
@@ -38,8 +37,6 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState<NFSeFormData | null>(null);
-  const [transmissionStatus, setTransmissionStatus] = useState<string>('pendente');
-  const [transmissionError, setTransmissionError] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -109,7 +106,6 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
   const handleSubmit = async (data: NFSeFormData) => {
     try {
       setIsLoading(true);
-      setTransmissionStatus('processando');
 
       // Create NFS-e record
       const { data: nfse, error: nfseError } = await supabase
@@ -124,41 +120,18 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
 
       if (nfseError) throw nfseError;
 
-      // Create transmission queue entry
-      const { error: queueError } = await supabase
-        .from("sefaz_transmission_queue")
-        .insert({
-          tipo: 'nfse',
-          documento_id: nfse.id,
-          status: 'pendente'
-        });
-
-      if (queueError) throw queueError;
-
-      // Start SEFAZ transmission
-      const { error: transmissionError } = await supabase.functions.invoke('process-nfse', {
-        body: { nfseId: nfse.id }
-      });
-
-      if (transmissionError) {
-        setTransmissionStatus('erro');
-        setTransmissionError(transmissionError.message);
-        throw transmissionError;
-      }
-
-      setTransmissionStatus('enviado');
       toast({
-        title: "NFS-e emitida com sucesso",
-        description: "O documento foi enviado para processamento na SEFAZ"
+        title: "NFS-e salva com sucesso",
+        description: "A nota fiscal foi salva e pode ser enviada posteriormente"
       });
       
-      // Wait a moment to show the success status before redirecting
-      setTimeout(onSubmit, 2000);
+      // Redirecionar para a lista de NFS-e
+      navigate("/dashboard/nfse");
     } catch (error: any) {
-      console.error("Error submitting NFSe:", error);
+      console.error("Error saving NFSe:", error);
       toast({
         variant: "destructive",
-        title: "Erro ao emitir NFS-e",
+        title: "Erro ao salvar NFS-e",
         description: error.message
       });
     } finally {
@@ -173,18 +146,15 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Emitir NFS-e</CardTitle>
+        <CardTitle>Nova NFS-e</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <SEFAZTransmissionStatus 
-          status={transmissionStatus}
-          error={transmissionError}
-        />
         <NFSeForm
           onSubmit={handleSubmit}
           onCancel={onCancel}
-          isLoading={isLoading || transmissionStatus === 'processando'}
+          isLoading={isLoading}
           initialData={formData}
+          submitButtonText="Salvar"
         />
       </CardContent>
     </Card>
