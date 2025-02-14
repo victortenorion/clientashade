@@ -74,6 +74,15 @@ const CustomerArea = () => {
   const handleCreateOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      if (!allowCreateOrders) {
+        toast({
+          variant: "destructive",
+          title: "Erro ao criar ordem de serviço",
+          description: "A criação de ordens está desabilitada no momento"
+        });
+        return;
+      }
+
       const clientId = localStorage.getItem('clientId');
       if (!clientId) {
         toast({
@@ -355,12 +364,20 @@ const CustomerArea = () => {
             </div>
             <div className="flex items-center gap-2">
               <Button 
-                onClick={() => setCreateOrderDialogOpen(true)}
-                className="bg-[#ea384c] hover:bg-[#ea384c]/90"
+                onClick={() => {}}
+                className="bg-[#000000e6] hover:bg-[#000000cc]"
               >
-                <Plus className="mr-2 h-4 w-4" />
-                Incluir Ordem de Serviço
+                Alterar Senha
               </Button>
+              {allowCreateOrders && (
+                <Button 
+                  onClick={() => setCreateOrderDialogOpen(true)}
+                  className="bg-[#ea384c] hover:bg-[#ea384c]/90"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Incluir Ordem de Serviço
+                </Button>
+              )}
               <Button variant="outline" onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Sair
