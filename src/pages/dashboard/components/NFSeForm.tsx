@@ -91,31 +91,32 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
       try {
         const { data: spConfig, error: spError } = await supabase
           .from("nfse_sp_config")
-          .select("numero_inicial_rps, ultima_rps_numero")
+          .select("*")
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
 
         if (spError) throw spError;
 
-        let proximoNumeroRPS = "1"; // Valor padrão
-
-        if (spConfig) {
-          if (spConfig.numero_inicial_rps > 0) {
-            if (!spConfig.ultima_rps_numero || spConfig.ultima_rps_numero < spConfig.numero_inicial_rps) {
-              proximoNumeroRPS = spConfig.numero_inicial_rps.toString();
-              console.log('Usando número inicial RPS configurado:', proximoNumeroRPS);
-            } else {
-              proximoNumeroRPS = (spConfig.ultima_rps_numero + 1).toString();
-              console.log('Usando próximo número após o último RPS:', proximoNumeroRPS);
-            }
-          } else if (spConfig.ultima_rps_numero) {
-            proximoNumeroRPS = (spConfig.ultima_rps_numero + 1).toString();
-            console.log('Usando próximo número após o último RPS:', proximoNumeroRPS);
-          }
+        if (!spConfig) {
+          console.error('Nenhuma configuração encontrada');
+          return;
         }
 
-        console.log('Número RPS definido:', proximoNumeroRPS);
+        let proximoNumeroRPS: string;
+
+        if (spConfig.numero_inicial_rps && spConfig.numero_inicial_rps > 0) {
+          if (!spConfig.ultima_rps_numero || spConfig.ultima_rps_numero < spConfig.numero_inicial_rps) {
+            proximoNumeroRPS = spConfig.numero_inicial_rps.toString();
+          } else {
+            proximoNumeroRPS = (spConfig.ultima_rps_numero + 1).toString();
+          }
+        } else {
+          proximoNumeroRPS = ((spConfig.ultima_rps_numero || 0) + 1).toString();
+        }
+
+        console.log('Config encontrada:', spConfig);
+        console.log('Próximo número RPS calculado:', proximoNumeroRPS);
 
         setFormData(prev => ({
           ...prev,
