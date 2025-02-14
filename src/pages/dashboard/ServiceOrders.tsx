@@ -140,7 +140,72 @@ const ServiceOrders = () => {
     try {
       setLoading(true);
 
-      let query = supabase
+      if (!searchTerm) {
+        const { data, error } = await supabase
+          .from("service_orders")
+          .select(`
+            id,
+            client_id,
+            description,
+            status_id,
+            total_price,
+            created_at,
+            created_by_type,
+            seller_id,
+            store_id,
+            equipment,
+            equipment_serial_number,
+            problem,
+            reception_notes,
+            internal_notes,
+            order_number,
+            expected_date,
+            completion_date,
+            exit_date,
+            client:clients(name),
+            status:service_order_statuses!service_orders_status_id_fkey(name, color),
+            items:service_order_items(id, description, price)
+          `);
+
+        if (error) throw error;
+        setOrders(data as ServiceOrder[]);
+        return;
+      }
+
+      if (!isNaN(Number(searchTerm))) {
+        const { data, error } = await supabase
+          .from("service_orders")
+          .select(`
+            id,
+            client_id,
+            description,
+            status_id,
+            total_price,
+            created_at,
+            created_by_type,
+            seller_id,
+            store_id,
+            equipment,
+            equipment_serial_number,
+            problem,
+            reception_notes,
+            internal_notes,
+            order_number,
+            expected_date,
+            completion_date,
+            exit_date,
+            client:clients(name),
+            status:service_order_statuses!service_orders_status_id_fkey(name, color),
+            items:service_order_items(id, description, price)
+          `)
+          .eq('order_number', Number(searchTerm));
+
+        if (error) throw error;
+        setOrders(data as ServiceOrder[]);
+        return;
+      }
+
+      const { data: ordersData, error: ordersError } = await supabase
         .from("service_orders")
         .select(`
           id,
@@ -164,26 +229,49 @@ const ServiceOrders = () => {
           client:clients(name),
           status:service_order_statuses!service_orders_status_id_fkey(name, color),
           items:service_order_items(id, description, price)
-        `);
+        `)
+        .or(`description.ilike.%${searchTerm}%,equipment.ilike.%${searchTerm}%,equipment_serial_number.ilike.%${searchTerm}%,problem.ilike.%${searchTerm}%`);
 
-      if (searchTerm) {
-        if (!isNaN(Number(searchTerm))) {
-          query = query.eq('order_number', Number(searchTerm));
-        } else {
-          query = query
-            .or(`description.ilike.%${searchTerm}%`)
-            .or(`equipment.ilike.%${searchTerm}%`)
-            .or(`equipment_serial_number.ilike.%${searchTerm}%`)
-            .or(`problem.ilike.%${searchTerm}%`)
-            .or(`client.name.ilike.%${searchTerm}%`);
-        }
-      }
+      if (ordersError) throw ordersError;
 
-      const { data, error } = await query;
+      const { data: clientOrdersData, error: clientOrdersError } = await supabase
+        .from("service_orders")
+        .select(`
+          id,
+          client_id,
+          description,
+          status_id,
+          total_price,
+          created_at,
+          created_by_type,
+          seller_id,
+          store_id,
+          equipment,
+          equipment_serial_number,
+          problem,
+          reception_notes,
+          internal_notes,
+          order_number,
+          expected_date,
+          completion_date,
+          exit_date,
+          client:clients(name),
+          status:service_order_statuses!service_orders_status_id_fkey(name, color),
+          items:service_order_items(id, description, price)
+        `)
+        .in('client_id', 
+          supabase
+            .from('clients')
+            .select('id')
+            .ilike('name', `%${searchTerm}%`)
+        );
 
-      if (error) throw error;
+      if (clientOrdersError) throw clientOrdersError;
 
-      setOrders(data as ServiceOrder[]);
+      const allOrders = [...(ordersData || []), ...(clientOrdersData || [])];
+      const uniqueOrders = Array.from(new Map(allOrders.map(order => [order.id, order])).values());
+
+      setOrders(uniqueOrders as ServiceOrder[]);
     } catch (error: any) {
       console.error('Erro na busca:', error);
       toast({
