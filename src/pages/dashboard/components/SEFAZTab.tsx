@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -66,8 +67,11 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
   handleSaveAllConfigs,
 }) => {
   const { toast } = useToast();
-  const [isValidatingNFCe, setIsValidatingNFCe] = useState(false);
-  const [isValidatingNFSe, setIsValidatingNFSe] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+  const [certificadoDigital, setCertificadoDigital] = useState("");
+  const [senhaCertificado, setSenhaCertificado] = useState("");
+  const [certificadoValido, setCertificadoValido] = useState<boolean | undefined>();
+  const [certificadoValidade, setCertificadoValidade] = useState<string | undefined>();
 
   useEffect(() => {
     const loadCompanyInfo = async () => {
@@ -94,7 +98,7 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
     loadCompanyInfo();
   }, []);
 
-  const handleFileUpload = (file: File, isNFCe: boolean) => {
+  const handleFileUpload = async (file: File) => {
     return new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       
@@ -130,84 +134,57 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
   };
 
   const handleSaveWithValidation = async () => {
-    let hasErrors = false;
-
-    // Validar certificado NFC-e
-    if (nfceConfig.certificado_digital && nfceConfig.senha_certificado) {
-      setIsValidatingNFCe(true);
+    if (certificadoDigital && senhaCertificado) {
+      setIsValidating(true);
       try {
-        const nfceValidation = await validateCertificate(
-          nfceConfig.certificado_digital,
-          nfceConfig.senha_certificado
+        const validation = await validateCertificate(
+          certificadoDigital,
+          senhaCertificado
         );
 
+        setCertificadoValido(validation.valid);
+        setCertificadoValidade(validation.validUntil);
+
+        // Atualiza ambas as configurações com o mesmo certificado
         setNfceConfig({
           ...nfceConfig,
-          certificado_valido: nfceValidation.valid,
-          certificado_validade: nfceValidation.validUntil,
+          certificado_digital: certificadoDigital,
+          senha_certificado: senhaCertificado,
+          certificado_valido: validation.valid,
+          certificado_validade: validation.validUntil,
         });
-
-        if (!nfceValidation.valid) {
-          toast({
-            title: "Erro",
-            description: "Certificado ou senha da NFC-e inválidos",
-            variant: "destructive",
-          });
-          hasErrors = true;
-        }
-      } catch (error) {
-        console.error('Erro na validação do certificado NFC-e:', error);
-        toast({
-          title: "Erro",
-          description: "Erro ao validar certificado NFC-e",
-          variant: "destructive",
-        });
-        hasErrors = true;
-      }
-      setIsValidatingNFCe(false);
-    }
-
-    // Validar certificado NFS-e
-    if (nfseConfig.certificado_digital && nfseConfig.senha_certificado) {
-      setIsValidatingNFSe(true);
-      try {
-        const nfseValidation = await validateCertificate(
-          nfseConfig.certificado_digital,
-          nfseConfig.senha_certificado
-        );
 
         setNfseConfig({
           ...nfseConfig,
-          certificado_valido: nfseValidation.valid,
-          certificado_validade: nfseValidation.validUntil,
+          certificado_digital: certificadoDigital,
+          senha_certificado: senhaCertificado,
+          certificado_valido: validation.valid,
+          certificado_validade: validation.validUntil,
         });
 
-        if (!nfseValidation.valid) {
+        if (!validation.valid) {
           toast({
             title: "Erro",
-            description: "Certificado ou senha da NFS-e inválidos",
+            description: "Certificado ou senha inválidos",
             variant: "destructive",
           });
-          hasErrors = true;
+          return;
         }
+
+        handleSaveAllConfigs();
+        toast({
+          title: "Sucesso",
+          description: "Certificado validado e configurações salvas com sucesso",
+        });
       } catch (error) {
-        console.error('Erro na validação do certificado NFS-e:', error);
+        console.error('Erro na validação do certificado:', error);
         toast({
           title: "Erro",
-          description: "Erro ao validar certificado NFS-e",
+          description: "Erro ao validar certificado",
           variant: "destructive",
         });
-        hasErrors = true;
       }
-      setIsValidatingNFSe(false);
-    }
-
-    if (!hasErrors) {
-      handleSaveAllConfigs();
-      toast({
-        title: "Sucesso",
-        description: "Certificados validados e configurações salvas com sucesso",
-      });
+      setIsValidating(false);
     }
   };
 
@@ -242,15 +219,14 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* NFC-e Config */}
+      {/* Certificado Digital Compartilhado */}
       <Card>
         <CardContent className="pt-6">
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Configurações NFC-e</h3>
-
+            <h3 className="text-lg font-semibold">Certificado Digital</h3>
             <div className="grid gap-4">
               <div className="space-y-2">
-                <Label>Certificado Digital</Label>
+                <Label>Certificado Digital (NFC-e e NFS-e)</Label>
                 <Input
                   type="file"
                   accept=".pfx"
@@ -258,13 +234,10 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                     const file = e.target.files?.[0];
                     if (file) {
                       try {
-                        const fileData = await handleFileUpload(file, true);
-                        setNfceConfig({
-                          ...nfceConfig,
-                          certificado_digital: fileData,
-                          certificado_valido: undefined,
-                          certificado_validade: undefined,
-                        });
+                        const fileData = await handleFileUpload(file);
+                        setCertificadoDigital(fileData);
+                        setCertificadoValido(undefined);
+                        setCertificadoValidade(undefined);
                       } catch (error) {
                         console.error('Erro ao carregar arquivo:', error);
                         toast({
@@ -275,28 +248,36 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                       }
                     }
                   }}
-                  disabled={isValidatingNFCe}
+                  disabled={isValidating}
                 />
-                {renderCertificateStatus(nfceConfig.certificado_valido, nfceConfig.certificado_validade)}
+                {renderCertificateStatus(certificadoValido, certificadoValidade)}
               </div>
 
               <div className="space-y-2">
                 <Label>Senha do Certificado</Label>
                 <Input
                   type="password"
-                  value={nfceConfig.senha_certificado}
-                  onChange={(e) =>
-                    setNfceConfig({
-                      ...nfceConfig,
-                      senha_certificado: e.target.value,
-                      certificado_valido: undefined,
-                      certificado_validade: undefined,
-                    })
-                  }
-                  disabled={isValidatingNFCe}
+                  value={senhaCertificado}
+                  onChange={(e) => {
+                    setSenhaCertificado(e.target.value);
+                    setCertificadoValido(undefined);
+                    setCertificadoValidade(undefined);
+                  }}
+                  disabled={isValidating}
                 />
               </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
+      {/* NFC-e Config */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Configurações NFC-e</h3>
+
+            <div className="grid gap-4">
               <div className="space-y-2">
                 <Label>Ambiente</Label>
                 <Select
@@ -356,54 +337,6 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
             <h3 className="text-lg font-semibold">Configurações NFS-e</h3>
 
             <div className="grid gap-4">
-              <div className="space-y-2">
-                <Label>Certificado Digital</Label>
-                <Input
-                  type="file"
-                  accept=".pfx"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      try {
-                        const fileData = await handleFileUpload(file, false);
-                        setNfseConfig({
-                          ...nfseConfig,
-                          certificado_digital: fileData,
-                          certificado_valido: undefined,
-                          certificado_validade: undefined,
-                        });
-                      } catch (error) {
-                        console.error('Erro ao carregar arquivo:', error);
-                        toast({
-                          title: "Erro",
-                          description: "Erro ao carregar o certificado",
-                          variant: "destructive",
-                        });
-                      }
-                    }
-                  }}
-                  disabled={isValidatingNFSe}
-                />
-                {renderCertificateStatus(nfseConfig.certificado_valido, nfseConfig.certificado_validade)}
-              </div>
-
-              <div className="space-y-2">
-                <Label>Senha do Certificado</Label>
-                <Input
-                  type="password"
-                  value={nfseConfig.senha_certificado}
-                  onChange={(e) =>
-                    setNfseConfig({
-                      ...nfseConfig,
-                      senha_certificado: e.target.value,
-                      certificado_valido: undefined,
-                      certificado_validade: undefined,
-                    })
-                  }
-                  disabled={isValidatingNFSe}
-                />
-              </div>
-
               <div className="space-y-2">
                 <Label>Ambiente</Label>
                 <Select
@@ -476,12 +409,12 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
       <div className="flex justify-end">
         <Button 
           onClick={handleSaveWithValidation}
-          disabled={isValidatingNFCe || isValidatingNFSe}
+          disabled={isValidating}
         >
-          {(isValidatingNFCe || isValidatingNFSe) && (
+          {isValidating && (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           )}
-          {isValidatingNFCe || isValidatingNFSe ? 'Validando...' : 'Salvar Configurações'}
+          {isValidating ? 'Validando...' : 'Salvar Configurações'}
         </Button>
       </div>
     </div>
