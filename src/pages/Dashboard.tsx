@@ -345,15 +345,6 @@ const Dashboard = () => {
                           <span>Campos Página do Cliente</span>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton
-                          onClick={() => navigate("/dashboard/service-order-settings/campos-visiveis")}
-                          isActive={location.pathname.includes("/dashboard/service-order-settings/campos-visiveis")}
-                        >
-                          <Eye className="h-4 w-4" />
-                          <span>Campos Visíveis</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
                     </SidebarMenu>
                   </SidebarGroupContent>
                 )}
