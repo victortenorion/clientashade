@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -38,7 +39,7 @@ export const CustomerAreaSettingsForm = () => {
           .from("customer_area_settings")
           .select("*")
           .eq("store_id", storeData.store_id)
-          .single();
+          .maybeSingle();
 
         if (error && error.code !== 'PGRST116') throw error;
 
