@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -81,35 +80,39 @@ export const CompanyInfoTab = () => {
   const searchCNPJ = async (cnpj: string) => {
     setIsLoading(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const response = await fetch(`${window.location.origin}/functions/v1/document-search`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabase.auth.getSession()?.access_token}`,
+          'Authorization': `Bearer ${session?.access_token}`,
         },
         body: JSON.stringify({ document: cnpj })
       });
 
       const data = await response.json();
+      console.log('Resposta da busca CNPJ:', data);
 
       if (data.error) {
         throw new Error(data.error);
       }
 
       if (data.apiData) {
+        const { apiData } = data;
         setCompanyInfo(prev => ({
           ...prev,
           cnpj,
-          razao_social: data.apiData.name,
-          nome_fantasia: data.apiData.name,
-          email: data.apiData.email,
-          telefone: data.apiData.phone,
-          endereco_logradouro: data.apiData.address.split(',')[0].split(' ')[0],
-          endereco_numero: data.apiData.address.split(',')[0].split(' ')[1],
-          endereco_bairro: data.apiData.address.split(',')[1].trim(),
-          endereco_cidade: data.apiData.address.split(',')[2].split('-')[0].trim(),
-          endereco_uf: data.apiData.address.split(',')[2].split('-')[1].trim(),
-          endereco_cep: data.apiData.address.split(',')[3].trim()
+          razao_social: apiData.name,
+          nome_fantasia: apiData.name,
+          email: apiData.email,
+          telefone: apiData.phone,
+          endereco_logradouro: apiData.address.split(',')[0].split(' ').slice(1).join(' '),
+          endereco_numero: apiData.address.split(',')[0].split(' ').pop(),
+          endereco_bairro: apiData.address.split(',')[1].trim(),
+          endereco_cidade: apiData.address.split(',')[2].split('-')[0].trim(),
+          endereco_uf: apiData.address.split(',')[2].split('-')[1].trim(),
+          endereco_cep: apiData.address.split(',')[3].trim()
         }));
 
         toast({
