@@ -33,6 +33,30 @@ export type Database = {
         }
         Relationships: []
       }
+      client_registration_field_settings: {
+        Row: {
+          created_at: string
+          field_name: string
+          id: string
+          updated_at: string
+          visible: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          field_name: string
+          id?: string
+          updated_at?: string
+          visible?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          field_name?: string
+          id?: string
+          updated_at?: string
+          visible?: boolean | null
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           city: string | null

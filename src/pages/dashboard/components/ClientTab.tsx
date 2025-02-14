@@ -88,7 +88,7 @@ export const ClientTab = () => {
         <CardContent className="pt-6">
           <div className="grid gap-4">
             <div className="text-lg font-semibold mb-4">
-              Campos Visíveis na Área do Cliente
+              Campos Visíveis na Página do Cliente
             </div>
             <div className="grid gap-6">
               {fields.map((field) => (

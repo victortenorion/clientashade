@@ -342,7 +342,7 @@ const Dashboard = () => {
                           isActive={location.pathname.includes("/dashboard/service-order-settings/area-cliente")}
                         >
                           <Users className="h-4 w-4" />
-                          <span>Área do Cliente</span>
+                          <span>Campos Página do Cliente</span>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                       <SidebarMenuItem>
