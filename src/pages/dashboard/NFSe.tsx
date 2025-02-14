@@ -231,10 +231,19 @@ const NFSePage = () => {
 
   const handleSendToSefaz = async (nfseId: string) => {
     try {
-      if (!nfseConfig?.certificado_digital) {
+      // Verificar configurações do SEFAZ
+      const { data: config, error: configError } = await supabase
+        .from("nfse_config")
+        .select("*")
+        .maybeSingle();
+
+      if (configError) throw configError;
+
+      // Verificar se precisa de certificado digital
+      if (!config.permite_emissao_sem_certificado && !config.certificado_digital) {
         toast({
-          title: "Configuração necessária",
-          description: "Configure o certificado digital antes de enviar notas fiscais para a SEFAZ.",
+          title: "Erro ao emitir NFS-e",
+          description: "Configure o certificado digital antes de emitir notas fiscais.",
           variant: "destructive",
         });
         return;

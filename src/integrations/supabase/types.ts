@@ -779,6 +779,7 @@ export type Database = {
           id: string
           incentivo_fiscal: boolean | null
           inscricao_municipal: string | null
+          permite_emissao_sem_certificado: boolean | null
           regime_especial: string | null
           regime_tributario: string | null
           senha_certificado: string | null
@@ -795,6 +796,7 @@ export type Database = {
           id?: string
           incentivo_fiscal?: boolean | null
           inscricao_municipal?: string | null
+          permite_emissao_sem_certificado?: boolean | null
           regime_especial?: string | null
           regime_tributario?: string | null
           senha_certificado?: string | null
@@ -811,6 +813,7 @@ export type Database = {
           id?: string
           incentivo_fiscal?: boolean | null
           inscricao_municipal?: string | null
+          permite_emissao_sem_certificado?: boolean | null
           regime_especial?: string | null
           regime_tributario?: string | null
           senha_certificado?: string | null
