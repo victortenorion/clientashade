@@ -29,6 +29,7 @@ interface CompanyInfo {
   endereco_codigo_municipio: string | null;
   telefone: string | null;
   email: string | null;
+  numero_inicial_rps?: number;
 }
 
 export const CompanyInfoTab = () => {
@@ -55,6 +56,7 @@ export const CompanyInfoTab = () => {
     endereco_codigo_municipio: "",
     telefone: "",
     email: "",
+    numero_inicial_rps: 0,
   });
 
   const loadCompanyInfo = async () => {
@@ -68,6 +70,22 @@ export const CompanyInfoTab = () => {
 
       if (data) {
         setCompanyInfo(data);
+      }
+
+      const { data: rpsConfig, error: rpsError } = await supabase
+        .from('nfse_sp_config')
+        .select('numero_inicial_rps')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (rpsError) throw rpsError;
+
+      if (rpsConfig) {
+        setCompanyInfo(prev => ({
+          ...prev,
+          numero_inicial_rps: rpsConfig.numero_inicial_rps
+        }));
       }
     } catch (error) {
       console.error('Erro ao carregar dados da empresa:', error);
@@ -210,6 +228,26 @@ export const CompanyInfoTab = () => {
         .upsert(companyInfo);
 
       if (error) throw error;
+
+      const { data: currentConfig, error: fetchError } = await supabase
+        .from('nfse_sp_config')
+        .select('id')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      if (currentConfig) {
+        const { error: updateError } = await supabase
+          .from('nfse_sp_config')
+          .update({ 
+            numero_inicial_rps: parseInt(companyInfo.numero_inicial_rps?.toString() || "0", 10)
+          })
+          .eq('id', currentConfig.id);
+
+        if (updateError) throw updateError;
+      }
 
       toast({
         title: "Sucesso",
@@ -448,6 +486,22 @@ export const CompanyInfoTab = () => {
                 }
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Número Inicial do RPS</Label>
+            <Input
+              type="number"
+              min="0"
+              value={companyInfo.numero_inicial_rps || 0}
+              onChange={(e) =>
+                setCompanyInfo({
+                  ...companyInfo,
+                  numero_inicial_rps: parseInt(e.target.value) || 0
+                })
+              }
+              placeholder="Digite o número inicial do RPS"
+            />
           </div>
 
           <div className="flex justify-end">
