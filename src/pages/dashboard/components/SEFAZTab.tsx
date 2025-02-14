@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { supabase } from "@/lib/supabase";
 
 interface NFCeConfig {
   certificado_digital: string;
@@ -58,6 +59,31 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
   setNfseConfig,
   handleSaveAllConfigs,
 }) => {
+  useEffect(() => {
+    const loadCompanyInfo = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('company_info')
+          .select('*')
+          .single();
+
+        if (error) throw error;
+
+        if (data) {
+          setNfseConfig({
+            ...nfseConfig,
+            inscricao_municipal: data.inscricao_municipal || '',
+            codigo_municipio: data.endereco_codigo_municipio || '',
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados da empresa:', error);
+      }
+    };
+
+    loadCompanyInfo();
+  }, []);
+
   return (
     <div className="space-y-6">
       {/* NFC-e Config */}
@@ -222,12 +248,8 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                 <Label>Inscrição Municipal</Label>
                 <Input
                   value={nfseConfig.inscricao_municipal}
-                  onChange={(e) =>
-                    setNfseConfig({
-                      ...nfseConfig,
-                      inscricao_municipal: e.target.value,
-                    })
-                  }
+                  disabled
+                  className="bg-muted"
                 />
               </div>
 
@@ -235,12 +257,8 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                 <Label>Código do Município</Label>
                 <Input
                   value={nfseConfig.codigo_municipio}
-                  onChange={(e) =>
-                    setNfseConfig({
-                      ...nfseConfig,
-                      codigo_municipio: e.target.value,
-                    })
-                  }
+                  disabled
+                  className="bg-muted"
                 />
               </div>
 
