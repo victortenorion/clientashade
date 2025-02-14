@@ -1,8 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -28,10 +30,28 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Edit, Trash } from "lucide-react";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Plus, Edit, Trash, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Status
+  Status,
+  ClientField,
+  CustomerAreaField,
+  FiscalConfig,
 } from "./types/service-order-settings.types";
 
 const defaultFormData = {
@@ -52,6 +72,14 @@ const ServiceOrderSettings = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("status");
+  const [showSubFields, setShowSubFields] = useState(false);
+  const [clientFields, setClientFields] = useState<ClientField[]>([]);
+  const [customerAreaFields, setCustomerAreaFields] = useState<CustomerAreaField[]>([]);
+  const [fiscalConfig, setFiscalConfig] = useState<FiscalConfig>({
+    service_code: "",
+    cnae: "",
+    tax_regime: "",
+  });
 
   const fetchStatuses = async () => {
     try {
@@ -78,6 +106,65 @@ const ServiceOrderSettings = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchClientFields = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("client_field_settings")
+        .select("*")
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+
+      setClientFields(data || []);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar campos do cliente",
+        description: error.message,
+      });
+    }
+  };
+
+  const fetchCustomerAreaFields = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("customer_area_field_settings")
+        .select("*")
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+
+      setCustomerAreaFields(data || []);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar campos da área do cliente",
+        description: error.message,
+      });
+    }
+  };
+
+  const fetchFiscalConfig = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("fiscal_config")
+        .select("*")
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+
+      if (data) {
+        setFiscalConfig(data);
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar configuração fiscal",
+        description: error.message,
+      });
     }
   };
 
@@ -149,10 +236,10 @@ const ServiceOrderSettings = () => {
   const handleSave = async () => {
     try {
       const statusData = {
-        name: formData.name || '', // Garantir que name nunca é undefined
+        name: formData.name || "",
         color: formData.color,
         description: formData.description,
-        is_active: formData.is_active
+        is_active: formData.is_active,
       };
 
       if (editingId) {
@@ -191,9 +278,72 @@ const ServiceOrderSettings = () => {
     }
   };
 
+  const handleToggleFieldVisibility = async (
+    fieldName: string,
+    currentVisibility: boolean,
+    type: "client" | "customer_area"
+  ) => {
+    try {
+      const table =
+        type === "client"
+          ? "client_field_settings"
+          : "customer_area_field_settings";
+
+      const { error } = await supabase
+        .from(table)
+        .update({ visible: !currentVisibility })
+        .eq("field_name", fieldName);
+
+      if (error) throw error;
+
+      toast({
+        title: "Campo atualizado com sucesso",
+      });
+
+      if (type === "client") {
+        fetchClientFields();
+      } else {
+        fetchCustomerAreaFields();
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao atualizar campo",
+        description: error.message,
+      });
+    }
+  };
+
+  const handleFiscalConfigSave = async () => {
+    try {
+      const { error } = await supabase
+        .from("fiscal_config")
+        .upsert([fiscalConfig]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Configuração fiscal salva com sucesso",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar configuração fiscal",
+        description: error.message,
+      });
+    }
+  };
+
   useEffect(() => {
-    fetchStatuses();
-  }, [searchTerm]);
+    if (activeTab === "status") {
+      fetchStatuses();
+    } else if (activeTab === "fields") {
+      fetchClientFields();
+      fetchCustomerAreaFields();
+    } else if (activeTab === "settings") {
+      fetchFiscalConfig();
+    }
+  }, [activeTab, searchTerm]);
 
   return (
     <div className="space-y-4">
@@ -308,14 +458,144 @@ const ServiceOrderSettings = () => {
       )}
 
       {activeTab === "fields" && (
-        <div className="text-center p-4">
-          <p>Configuração de campos em desenvolvimento</p>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Campos do Cliente</CardTitle>
+              <CardDescription>
+                Configure quais campos do cliente serão visíveis no cadastro
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {clientFields.map((field) => (
+                  <div
+                    key={field.id}
+                    className="flex items-center justify-between p-2 border rounded"
+                  >
+                    <span>{field.label}</span>
+                    <Button
+                      variant={field.visible ? "default" : "outline"}
+                      onClick={() =>
+                        handleToggleFieldVisibility(
+                          field.field,
+                          field.visible,
+                          "client"
+                        )
+                      }
+                    >
+                      {field.visible ? "Visível" : "Oculto"}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Campos da Área do Cliente</CardTitle>
+              <CardDescription>
+                Configure quais campos serão visíveis na área do cliente
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {customerAreaFields.map((field) => (
+                  <div
+                    key={field.id}
+                    className="flex items-center justify-between p-2 border rounded"
+                  >
+                    <span>{field.label}</span>
+                    <Button
+                      variant={field.visible ? "default" : "outline"}
+                      onClick={() =>
+                        handleToggleFieldVisibility(
+                          field.field,
+                          field.visible,
+                          "customer_area"
+                        )
+                      }
+                    >
+                      {field.visible ? "Visível" : "Oculto"}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
 
       {activeTab === "settings" && (
-        <div className="text-center p-4">
-          <p>Configurações gerais em desenvolvimento</p>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Configurações Fiscais</CardTitle>
+              <CardDescription>
+                Configure as informações fiscais para emissão de notas
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form className="space-y-4">
+                <div className="grid gap-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="service_code" className="text-right">
+                      Código de Serviço
+                    </Label>
+                    <Input
+                      id="service_code"
+                      value={fiscalConfig.service_code}
+                      onChange={(e) =>
+                        setFiscalConfig((prev) => ({
+                          ...prev,
+                          service_code: e.target.value,
+                        }))
+                      }
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="cnae" className="text-right">
+                      CNAE
+                    </Label>
+                    <Input
+                      id="cnae"
+                      value={fiscalConfig.cnae}
+                      onChange={(e) =>
+                        setFiscalConfig((prev) => ({
+                          ...prev,
+                          cnae: e.target.value,
+                        }))
+                      }
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="tax_regime" className="text-right">
+                      Regime Tributário
+                    </Label>
+                    <Input
+                      id="tax_regime"
+                      value={fiscalConfig.tax_regime}
+                      onChange={(e) =>
+                        setFiscalConfig((prev) => ({
+                          ...prev,
+                          tax_regime: e.target.value,
+                        }))
+                      }
+                      className="col-span-3"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <Button type="button" onClick={handleFiscalConfigSave}>
+                    Salvar Configurações
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
         </div>
       )}
 
