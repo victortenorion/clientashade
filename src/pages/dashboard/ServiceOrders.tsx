@@ -170,15 +170,12 @@ const ServiceOrders = () => {
         if (!isNaN(Number(searchTerm))) {
           query = query.eq('order_number', Number(searchTerm));
         } else {
-          const filters = [
-            { column: 'description', operator: 'ilike', value: `%${searchTerm}%` },
-            { column: 'equipment', operator: 'ilike', value: `%${searchTerm}%` },
-            { column: 'equipment_serial_number', operator: 'ilike', value: `%${searchTerm}%` },
-            { column: 'problem', operator: 'ilike', value: `%${searchTerm}%` },
-            { column: 'client.name', operator: 'ilike', value: `%${searchTerm}%` }
-          ];
-
-          query = query.or(filters.map(filter => `${filter.column}.${filter.operator}.${filter.value}`).join(','));
+          query = query
+            .or(`description.ilike.%${searchTerm}%`)
+            .or(`equipment.ilike.%${searchTerm}%`)
+            .or(`equipment_serial_number.ilike.%${searchTerm}%`)
+            .or(`problem.ilike.%${searchTerm}%`)
+            .or(`client.name.ilike.%${searchTerm}%`);
         }
       }
 
