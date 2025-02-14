@@ -28,7 +28,7 @@ interface Status {
   color: string;
 }
 
-interface ServiceOrder {
+interface ServiceOrderResponse {
   id: string;
   description: string;
   status_id: string | null;
@@ -43,6 +43,10 @@ interface ServiceOrder {
   expected_date: string | null;
   completion_date: string | null;
   exit_date: string | null;
+}
+
+interface ServiceOrder extends Omit<ServiceOrderResponse, 'status'> {
+  status: Status | null;
 }
 
 interface ServiceOrderFormData {
@@ -132,11 +136,11 @@ const CustomerArea = () => {
 
       if (error) throw error;
 
-      const typedData = (data || []).map(order => ({
+      const typedData: ServiceOrder[] = (data || []).map(order => ({
         ...order,
         status: order.status ? {
-          name: order.status.name,
-          color: order.status.color
+          name: order.status.name as string,
+          color: order.status.color as string
         } : null
       }));
 
