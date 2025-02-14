@@ -68,6 +68,7 @@ const CustomerArea = () => {
   const [clientName, setClientName] = useState<string>("");
   const [allowCreateOrders, setAllowCreateOrders] = useState(false);
   const [createOrderDialogOpen, setCreateOrderDialogOpen] = useState(false);
+  const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
   const [formData, setFormData] = useState<NewOrderForm>({
     equipment: "",
     equipment_serial_number: "",
@@ -80,17 +81,16 @@ const CustomerArea = () => {
   });
   const { toast } = useToast();
 
-  const handleCreateOrder = async (e: React.FormEvent) => {
+  const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // Recarregar configurações antes de tentar criar a ordem
       await fetchCustomerAreaSettings();
       
       if (!allowCreateOrders) {
         toast({
           variant: "destructive",
-          title: "Erro ao criar ordem de serviço",
-          description: "A criação de ordens está desabilitada no momento"
+          title: "Erro ao processar ordem de serviço",
+          description: "A criação/edição de ordens está desabilitada no momento"
         });
         return;
       }
@@ -99,7 +99,7 @@ const CustomerArea = () => {
       if (!clientId) {
         toast({
           variant: "destructive",
-          title: "Erro ao criar ordem de serviço",
+          title: "Erro ao processar ordem de serviço",
           description: "Cliente não identificado"
         });
         return;
@@ -113,29 +113,45 @@ const CustomerArea = () => {
 
       if (statusError) throw statusError;
 
-      const { error } = await supabase
-        .from("service_orders")
-        .insert({
-          client_id: clientId,
-          equipment: formData.equipment,
-          equipment_serial_number: formData.equipment_serial_number,
-          problem: formData.problem,
-          description: formData.description,
-          created_by_type: 'client',
-          status_id: statusData.id,
-          invoice_number: formData.invoice_number,
-          invoice_key: formData.invoice_key,
-          shipping_company: formData.shipping_company,
-          tracking_code: formData.tracking_code
-        });
+      const orderData = {
+        client_id: clientId,
+        equipment: formData.equipment,
+        equipment_serial_number: formData.equipment_serial_number,
+        problem: formData.problem,
+        description: formData.description,
+        created_by_type: 'client',
+        status_id: statusData.id,
+        invoice_number: formData.invoice_number,
+        invoice_key: formData.invoice_key,
+        shipping_company: formData.shipping_company,
+        tracking_code: formData.tracking_code
+      };
+
+      let error;
+
+      if (editingOrderId) {
+        // Atualizar ordem existente
+        ({ error } = await supabase
+          .from("service_orders")
+          .update(orderData)
+          .eq('id', editingOrderId));
+      } else {
+        // Criar nova ordem
+        ({ error } = await supabase
+          .from("service_orders")
+          .insert(orderData));
+      }
 
       if (error) throw error;
 
       toast({
-        title: "Ordem de serviço criada com sucesso",
+        title: editingOrderId 
+          ? "Ordem de serviço atualizada com sucesso"
+          : "Ordem de serviço criada com sucesso",
       });
       
       setCreateOrderDialogOpen(false);
+      setEditingOrderId(null);
       setFormData({
         equipment: "",
         equipment_serial_number: "",
@@ -150,10 +166,25 @@ const CustomerArea = () => {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Erro ao criar ordem de serviço",
+        title: "Erro ao processar ordem de serviço",
         description: error.message
       });
     }
+  };
+
+  const handleEditOrder = (order: ServiceOrder) => {
+    setEditingOrderId(order.id);
+    setFormData({
+      equipment: order.equipment || "",
+      equipment_serial_number: order.equipment_serial_number || "",
+      problem: order.problem || "",
+      description: order.description || "",
+      invoice_number: "", // Mantendo campos vazios pois não fazem parte da ServiceOrder
+      invoice_key: "",
+      shipping_company: "",
+      tracking_code: "",
+    });
+    setCreateOrderDialogOpen(true);
   };
 
   const handleInputChange = (
@@ -208,13 +239,9 @@ const CustomerArea = () => {
         throw error;
       }
       
-      console.log("Configurações recebidas:", data);
-      
       if (data) {
-        console.log("Valor de allow_create_orders:", data.allow_create_orders);
         setAllowCreateOrders(data.allow_create_orders || false);
       } else {
-        console.log("Nenhuma configuração encontrada, definindo como false");
         setAllowCreateOrders(false);
       }
     } catch (error: any) {
@@ -266,8 +293,6 @@ const CustomerArea = () => {
         return;
       }
 
-      console.log("Buscando ordens para o cliente:", clientId);
-
       const { data, error } = await supabase
         .from("service_orders")
         .select(`
@@ -292,19 +317,10 @@ const CustomerArea = () => {
         .eq('client_id', clientId)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error("Erro ao buscar ordens:", error);
-        throw error;
-      }
-
-      console.log("Ordens recebidas:", data);
+      if (error) throw error;
       
       if (data) {
-        const typedOrders: ServiceOrder[] = data.map(order => ({
-          ...order,
-          status: order.status || null
-        }));
-        setOrders(typedOrders);
+        setOrders(data);
       }
     } catch (error: any) {
       console.error("Erro completo:", error);
@@ -325,8 +341,6 @@ const CustomerArea = () => {
         navigate('/client-login');
         return;
       }
-      
-      console.log("ClientId encontrado:", clientId);
       
       try {
         await fetchClientName(clientId);
@@ -392,8 +406,6 @@ const CustomerArea = () => {
     }
   };
 
-  const visibleFieldsList = visibleFields.filter(field => field.visible);
-
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-4">
@@ -404,7 +416,20 @@ const CustomerArea = () => {
             </Button>
             <div className="flex flex-col gap-2">
               <Button 
-                onClick={() => setCreateOrderDialogOpen(true)}
+                onClick={() => {
+                  setEditingOrderId(null);
+                  setFormData({
+                    equipment: "",
+                    equipment_serial_number: "",
+                    problem: "",
+                    description: "",
+                    invoice_number: "",
+                    invoice_key: "",
+                    shipping_company: "",
+                    tracking_code: "",
+                  });
+                  setCreateOrderDialogOpen(true);
+                }}
                 className="bg-[#ea384c] hover:bg-[#ea384c]/90 whitespace-nowrap"
               >
                 <Plus className="mr-2 h-4 w-4" />
@@ -446,18 +471,19 @@ const CustomerArea = () => {
                         {field.field_name === 'total_price' && 'Valor Total'}
                       </TableHead>
                     ))}
+                    <TableHead>Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={visibleFields.length} className="text-center">
+                      <TableCell colSpan={visibleFields.length + 1} className="text-center">
                         Carregando...
                       </TableCell>
                     </TableRow>
                   ) : orders.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={visibleFields.length} className="text-center">
+                      <TableCell colSpan={visibleFields.length + 1} className="text-center">
                         Nenhuma ordem de serviço encontrada
                       </TableCell>
                     </TableRow>
@@ -469,6 +495,15 @@ const CustomerArea = () => {
                             {getFieldValue(order, field.field_name)}
                           </TableCell>
                         ))}
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditOrder(order)}
+                          >
+                            Editar
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
@@ -482,9 +517,11 @@ const CustomerArea = () => {
       <Dialog open={createOrderDialogOpen} onOpenChange={setCreateOrderDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Nova Ordem de Serviço</DialogTitle>
+            <DialogTitle>
+              {editingOrderId ? 'Editar Ordem de Serviço' : 'Nova Ordem de Serviço'}
+            </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleCreateOrder} className="space-y-4">
+          <form onSubmit={handleSubmitOrder} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="equipment">Equipamento *</Label>
               <Input
@@ -564,7 +601,7 @@ const CustomerArea = () => {
                 Cancelar
               </Button>
               <Button type="submit">
-                Criar Ordem
+                {editingOrderId ? 'Salvar' : 'Criar Ordem'}
               </Button>
             </DialogFooter>
           </form>
