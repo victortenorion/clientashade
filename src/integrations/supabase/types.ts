@@ -649,6 +649,10 @@ export type Database = {
           serie_rps: string | null
           service_order_id: string | null
           status_sefaz: string | null
+          substituido_rps_numero: string | null
+          substituido_rps_serie: string | null
+          substituido_rps_tipo: string | null
+          tipo_rps: string | null
           updated_at: string | null
           valor_comissao: number | null
           valor_inss: number | null
@@ -694,6 +698,10 @@ export type Database = {
           serie_rps?: string | null
           service_order_id?: string | null
           status_sefaz?: string | null
+          substituido_rps_numero?: string | null
+          substituido_rps_serie?: string | null
+          substituido_rps_tipo?: string | null
+          tipo_rps?: string | null
           updated_at?: string | null
           valor_comissao?: number | null
           valor_inss?: number | null
@@ -739,6 +747,10 @@ export type Database = {
           serie_rps?: string | null
           service_order_id?: string | null
           status_sefaz?: string | null
+          substituido_rps_numero?: string | null
+          substituido_rps_serie?: string | null
+          substituido_rps_tipo?: string | null
+          tipo_rps?: string | null
           updated_at?: string | null
           valor_comissao?: number | null
           valor_inss?: number | null
@@ -783,7 +795,10 @@ export type Database = {
           regime_especial: string | null
           regime_tributario: string | null
           senha_certificado: string | null
+          serie_rps_padrao: string | null
+          tipo_rps: string | null
           ultima_nfse_numero: number | null
+          ultima_rps_numero: number | null
           updated_at: string | null
         }
         Insert: {
@@ -800,7 +815,10 @@ export type Database = {
           regime_especial?: string | null
           regime_tributario?: string | null
           senha_certificado?: string | null
+          serie_rps_padrao?: string | null
+          tipo_rps?: string | null
           ultima_nfse_numero?: number | null
+          ultima_rps_numero?: number | null
           updated_at?: string | null
         }
         Update: {
@@ -817,7 +835,10 @@ export type Database = {
           regime_especial?: string | null
           regime_tributario?: string | null
           senha_certificado?: string | null
+          serie_rps_padrao?: string | null
+          tipo_rps?: string | null
           ultima_nfse_numero?: number | null
+          ultima_rps_numero?: number | null
           updated_at?: string | null
         }
         Relationships: []

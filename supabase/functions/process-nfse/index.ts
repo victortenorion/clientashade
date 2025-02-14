@@ -34,6 +34,19 @@ serve(async (req) => {
       throw new Error('ID da NFS-e não informado');
     }
 
+    // Get NFSe config and increment RPS number
+    const { data: nfseConfig, error: configError } = await supabase
+      .from('nfse_config')
+      .update({ 
+        ultima_rps_numero: supabase.sql`ultima_rps_numero + 1` 
+      })
+      .eq('id', supabase.sql`(SELECT id FROM nfse_config LIMIT 1)`)
+      .select('*')
+      .single();
+
+    if (configError) throw configError;
+    if (!nfseConfig) throw new Error('Configurações da NFS-e não encontradas');
+
     // Update queue status
     const { error: queueError } = await supabase
       .from('sefaz_transmission_queue')
@@ -46,9 +59,15 @@ serve(async (req) => {
 
     if (queueError) throw queueError;
 
-    // Get NFSe data
-    const { data: nfse, error: nfseError } = await supabase
+    // Update NFSe with RPS info
+    const { data: nfse, error: nfseUpdateError } = await supabase
       .from('nfse')
+      .update({
+        numero_rps: nfseConfig.ultima_rps_numero.toString(),
+        serie_rps: nfseConfig.serie_rps_padrao,
+        tipo_rps: nfseConfig.tipo_rps
+      })
+      .eq('id', nfseId)
       .select(`
         *,
         client:clients(
@@ -64,11 +83,9 @@ serve(async (req) => {
           zip_code
         )
       `)
-      .eq('id', nfseId)
-      .limit(1)
       .single();
 
-    if (nfseError) throw nfseError;
+    if (nfseUpdateError) throw nfseUpdateError;
     if (!nfse) throw new Error('NFS-e não encontrada');
 
     // Get company info
@@ -80,16 +97,6 @@ serve(async (req) => {
 
     if (companyError) throw companyError;
     if (!companyInfo) throw new Error('Informações da empresa não configuradas');
-
-    // Get certificate
-    const { data: nfseConfig, error: configError } = await supabase
-      .from('nfse_config')
-      .select('*')
-      .limit(1)
-      .single();
-
-    if (configError) throw configError;
-    if (!nfseConfig) throw new Error('Configurações da NFS-e não encontradas');
 
     // Verificar se precisa de certificado
     if (!nfseConfig.permite_emissao_sem_certificado) {
@@ -106,11 +113,14 @@ serve(async (req) => {
       nfseId,
       ambiente: nfseConfig.ambiente,
       certificadoValido: nfseConfig.certificado_valido,
-      permiteEmissaoSemCertificado: nfseConfig.permite_emissao_sem_certificado
+      permiteEmissaoSemCertificado: nfseConfig.permite_emissao_sem_certificado,
+      numeroRPS: nfse.numero_rps,
+      serieRPS: nfse.serie_rps,
+      tipoRPS: nfse.tipo_rps
     });
 
     // In a real implementation, here you would:
-    // 1. Generate the XML
+    // 1. Generate the XML with RPS info
     // 2. Sign it with the certificate (if required)
     // 3. Send to SEFAZ
     // 4. Process the response
@@ -120,8 +130,7 @@ serve(async (req) => {
     const { error: updateError } = await supabase
       .from('nfse')
       .update({
-        status_sefaz: 'processado',
-        numero_nfse: nfse.numero_nfse
+        status_sefaz: 'processado'
       })
       .eq('id', nfseId);
 
@@ -140,7 +149,14 @@ serve(async (req) => {
     if (queueUpdateError) throw queueUpdateError;
 
     return new Response(
-      JSON.stringify({ success: true }),
+      JSON.stringify({ 
+        success: true,
+        rps: {
+          numero: nfse.numero_rps,
+          serie: nfse.serie_rps,
+          tipo: nfse.tipo_rps
+        }
+      }),
       { 
         headers: { 
           ...corsHeaders,
