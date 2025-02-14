@@ -91,7 +91,7 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
       try {
         const { data: spConfig, error: spError } = await supabase
           .from("nfse_sp_config")
-          .select("numero_inicial_rps")
+          .select("numero_inicial_rps, ultima_rps_numero")
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
@@ -100,21 +100,12 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
 
         let proximoNumeroRPS = "1"; // Valor padrão
 
-        if (spConfig?.numero_inicial_rps) {
-          proximoNumeroRPS = (spConfig.numero_inicial_rps).toString();
-          console.log('Usando número inicial configurado:', proximoNumeroRPS);
-        } else {
-          const { data: ultimaConfig, error: configError } = await supabase
-            .from("nfse_sp_config")
-            .select("ultima_rps_numero")
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          if (configError) throw configError;
-
-          if (ultimaConfig) {
-            proximoNumeroRPS = (ultimaConfig.ultima_rps_numero + 1).toString();
+        if (spConfig) {
+          if (spConfig.numero_inicial_rps && spConfig.numero_inicial_rps > (spConfig.ultima_rps_numero || 0)) {
+            proximoNumeroRPS = spConfig.numero_inicial_rps.toString();
+            console.log('Usando número inicial configurado:', proximoNumeroRPS);
+          } else {
+            proximoNumeroRPS = ((spConfig.ultima_rps_numero || 0) + 1).toString();
             console.log('Próximo número RPS baseado no último:', proximoNumeroRPS);
           }
         }
