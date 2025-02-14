@@ -14,6 +14,9 @@ import {
   Store,
   ArrowLeft,
   Receipt,
+  Database,
+  Building,
+  Eye
 } from "lucide-react";
 import {
   Sidebar,
@@ -49,6 +52,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const hasAllPermissions = userPermissions.includes("all");
+  const [configuracoesOpen, setConfiguracoesOpen] = useState(true);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -292,17 +296,68 @@ const Dashboard = () => {
             </SidebarGroup>
 
             {hasPermission('service_order_settings') && (
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    onClick={() => navigate("/dashboard/service-order-settings/status")}
-                    isActive={location.pathname.includes("/dashboard/service-order-settings")}
-                  >
+              <SidebarGroup>
+                <SidebarGroupLabel 
+                  onClick={() => setConfiguracoesOpen(!configuracoesOpen)} 
+                  className="cursor-pointer hover:bg-muted/50 rounded-md"
+                >
+                  <div className="flex items-center gap-2">
                     <Settings className="h-4 w-4" />
                     <span>Configurações</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
+                  </div>
+                </SidebarGroupLabel>
+                {configuracoesOpen && (
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          onClick={() => navigate("/dashboard/service-order-settings/status")}
+                          isActive={location.pathname.includes("/dashboard/service-order-settings/status")}
+                        >
+                          <Database className="h-4 w-4" />
+                          <span>Status</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          onClick={() => navigate("/dashboard/service-order-settings/notas-fiscais")}
+                          isActive={location.pathname.includes("/dashboard/service-order-settings/notas-fiscais")}
+                        >
+                          <Receipt className="h-4 w-4" />
+                          <span>Notas Fiscais</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          onClick={() => navigate("/dashboard/service-order-settings/sefaz")}
+                          isActive={location.pathname.includes("/dashboard/service-order-settings/sefaz")}
+                        >
+                          <Building className="h-4 w-4" />
+                          <span>SEFAZ</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          onClick={() => navigate("/dashboard/service-order-settings/area-cliente")}
+                          isActive={location.pathname.includes("/dashboard/service-order-settings/area-cliente")}
+                        >
+                          <Users className="h-4 w-4" />
+                          <span>Área do Cliente</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          onClick={() => navigate("/dashboard/service-order-settings/campos-visiveis")}
+                          isActive={location.pathname.includes("/dashboard/service-order-settings/campos-visiveis")}
+                        >
+                          <Eye className="h-4 w-4" />
+                          <span>Campos Visíveis</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                )}
+              </SidebarGroup>
             )}
 
             <SidebarGroup>
