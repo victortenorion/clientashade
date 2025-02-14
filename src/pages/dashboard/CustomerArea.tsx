@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -83,7 +82,8 @@ const CustomerArea = () => {
     try {
       const { data, error } = await supabase
         .from("customer_area_field_settings")
-        .select("field_name, visible");
+        .select("field_name, visible")
+        .eq('visible', true);
 
       if (error) throw error;
 
@@ -269,24 +269,22 @@ const CustomerArea = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              {visibleFields.map((field) => 
-                field.visible && (
-                  <TableHead key={field.field}>
-                    {field.field === 'order_number' && 'Número'}
-                    {field.field === 'created_at' && 'Data de Criação'}
-                    {field.field === 'status' && 'Status'}
-                    {field.field === 'priority' && 'Prioridade'}
-                    {field.field === 'equipment' && 'Equipamento'}
-                    {field.field === 'equipment_serial_number' && 'Número de Série'}
-                    {field.field === 'problem' && 'Problema'}
-                    {field.field === 'description' && 'Descrição'}
-                    {field.field === 'expected_date' && 'Previsão'}
-                    {field.field === 'completion_date' && 'Conclusão'}
-                    {field.field === 'exit_date' && 'Saída'}
-                    {field.field === 'total_price' && 'Valor Total'}
-                  </TableHead>
-                )
-              )}
+              {visibleFields.filter(field => field.visible).map((field) => (
+                <TableHead key={field.field}>
+                  {field.field === 'order_number' && 'Número'}
+                  {field.field === 'created_at' && 'Data de Criação'}
+                  {field.field === 'status' && 'Status'}
+                  {field.field === 'priority' && 'Prioridade'}
+                  {field.field === 'equipment' && 'Equipamento'}
+                  {field.field === 'equipment_serial_number' && 'Número de Série'}
+                  {field.field === 'problem' && 'Problema'}
+                  {field.field === 'description' && 'Descrição'}
+                  {field.field === 'expected_date' && 'Previsão'}
+                  {field.field === 'completion_date' && 'Conclusão'}
+                  {field.field === 'exit_date' && 'Saída'}
+                  {field.field === 'total_price' && 'Valor Total'}
+                </TableHead>
+              ))}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -305,13 +303,11 @@ const CustomerArea = () => {
             ) : (
               orders.map((order) => (
                 <TableRow key={order.id}>
-                  {visibleFields.map((field) => 
-                    field.visible && (
-                      <TableCell key={field.field}>
-                        {getFieldValue(order, field.field)}
-                      </TableCell>
-                    )
-                  )}
+                  {visibleFields.filter(field => field.visible).map((field) => (
+                    <TableCell key={field.field}>
+                      {getFieldValue(order, field.field)}
+                    </TableCell>
+                  ))}
                 </TableRow>
               ))
             )}
