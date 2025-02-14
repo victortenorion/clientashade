@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
+import { Loader2 } from "lucide-react";
 
 interface CompanyInfo {
   id: string;
@@ -32,6 +33,7 @@ interface CompanyInfo {
 
 export const CompanyInfoTab = () => {
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
     id: "",
     razao_social: "",
@@ -75,6 +77,74 @@ export const CompanyInfoTab = () => {
     }
   };
 
+  const searchCNPJ = async (cnpj: string) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${window.location.origin}/functions/v1/document-search`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ document: cnpj })
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      if (data.apiData) {
+        const addressParts = data.apiData.address.split(',').map((part: string) => part.trim());
+        const [logradouro, numero] = addressParts[0].split(' ');
+        const bairro = addressParts[1];
+        const [cidade, uf] = addressParts[2].split('-').map((part: string) => part.trim());
+        const cep = addressParts[3];
+
+        setCompanyInfo(prev => ({
+          ...prev,
+          razao_social: data.apiData.name,
+          nome_fantasia: data.apiData.name,
+          email: data.apiData.email,
+          telefone: data.apiData.phone,
+          endereco_logradouro: logradouro,
+          endereco_numero: numero,
+          endereco_bairro: bairro,
+          endereco_cidade: cidade,
+          endereco_uf: uf,
+          endereco_cep: cep
+        }));
+
+        toast({
+          title: "Sucesso",
+          description: "Dados da empresa carregados com sucesso.",
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao buscar CNPJ:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível buscar os dados do CNPJ.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCNPJChange = (value: string) => {
+    setCompanyInfo(prev => ({ ...prev, cnpj: value }));
+    
+    // Remove caracteres não numéricos
+    const cleanCNPJ = value.replace(/\D/g, '');
+    
+    // Se o CNPJ estiver completo (14 dígitos), faz a busca
+    if (cleanCNPJ.length === 14) {
+      searchCNPJ(cleanCNPJ);
+    }
+  };
+
   const handleSave = async () => {
     try {
       const { error } = await supabase
@@ -112,6 +182,21 @@ export const CompanyInfoTab = () => {
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
+              <Label>CNPJ</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={companyInfo.cnpj}
+                  onChange={(e) => handleCNPJChange(e.target.value)}
+                  disabled={isLoading}
+                  placeholder="Digite o CNPJ para buscar os dados"
+                />
+                {isLoading && (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
               <Label>Razão Social</Label>
               <Input
                 value={companyInfo.razao_social}
@@ -127,16 +212,6 @@ export const CompanyInfoTab = () => {
                 value={companyInfo.nome_fantasia || ""}
                 onChange={(e) =>
                   setCompanyInfo({ ...companyInfo, nome_fantasia: e.target.value })
-                }
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>CNPJ</Label>
-              <Input
-                value={companyInfo.cnpj}
-                onChange={(e) =>
-                  setCompanyInfo({ ...companyInfo, cnpj: e.target.value })
                 }
               />
             </div>
