@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -12,7 +11,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import { LogOut, ArrowLeft, User } from "lucide-react";
+import { LogOut, ArrowLeft, User, Plus } from "lucide-react";
 
 interface ServiceOrder {
   id: string;
@@ -45,6 +44,7 @@ const CustomerArea = () => {
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [visibleFields, setVisibleFields] = useState<CustomerAreaField[]>([]);
   const [clientName, setClientName] = useState<string>("");
+  const [allowCreateOrders, setAllowCreateOrders] = useState(false);
   const { toast } = useToast();
 
   const handleLogout = () => {
@@ -174,6 +174,23 @@ const CustomerArea = () => {
     }
   };
 
+  const fetchCustomerAreaSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('customer_area_settings')
+        .select('allow_create_orders')
+        .single();
+
+      if (error) throw error;
+      
+      if (data) {
+        setAllowCreateOrders(data.allow_create_orders);
+      }
+    } catch (error: any) {
+      console.error("Erro ao carregar configurações da área do cliente:", error);
+    }
+  };
+
   useEffect(() => {
     const checkClientAndFetch = async () => {
       const clientId = localStorage.getItem('clientId');
@@ -182,7 +199,11 @@ const CustomerArea = () => {
         return;
       }
       await fetchClientName(clientId);
-      await Promise.all([fetchOrders(), fetchVisibleFields()]);
+      await Promise.all([
+        fetchOrders(), 
+        fetchVisibleFields(),
+        fetchCustomerAreaSettings()
+      ]);
     };
 
     checkClientAndFetch();
@@ -258,6 +279,16 @@ const CustomerArea = () => {
             Sair
           </Button>
         </div>
+      </div>
+
+      <div className="flex justify-between items-center">
+        <div /> {/* Espaço vazio para manter o alinhamento */}
+        {allowCreateOrders && (
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Nova Ordem de Serviço
+          </Button>
+        )}
       </div>
 
       <div className="border rounded-lg">
