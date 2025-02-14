@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/lib/supabase";
 import type { NFSeFormData } from "../types/nfse.types";
+import { useToast } from "@/components/ui/use-toast";
 
 interface NFSeFormProps {
   onSubmit: (formData: NFSeFormData) => Promise<void>;
@@ -21,6 +22,7 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
   isLoading,
   initialData
 }) => {
+  const { toast } = useToast();
   const [formData, setFormData] = useState<NFSeFormData>({
     client_id: "",
     codigo_servico: "",
@@ -71,29 +73,45 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
         }
       } catch (error) {
         console.error("Erro ao buscar informações da empresa:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Não foi possível carregar as informações da empresa"
+        });
       }
     };
 
     const fetchNFSeConfig = async () => {
       try {
-        const { data: configs, error } = await supabase
-          .from("nfse_config")
+        const { data: spConfig, error: spError } = await supabase
+          .from("nfse_sp_config")
           .select("ultima_rps_numero")
           .order('created_at', { ascending: false })
           .limit(1);
 
-        if (error) throw error;
+        if (spError) throw spError;
 
-        if (configs && configs.length > 0) {
-          const config = configs[0];
+        if (spConfig && spConfig.length > 0) {
+          const config = spConfig[0];
           const proximoNumeroRPS = (config.ultima_rps_numero + 1).toString();
           setFormData(prev => ({
             ...prev,
             numero_rps: proximoNumeroRPS
           }));
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Erro",
+            description: "Não foi possível obter o próximo número do RPS"
+          });
         }
       } catch (error) {
         console.error("Erro ao buscar configuração da NFS-e:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Não foi possível obter o próximo número do RPS"
+        });
       }
     };
 
@@ -103,7 +121,28 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(formData);
+    try {
+      // Atualizar o último número de RPS antes de submeter
+      const { error: updateError } = await supabase
+        .from("nfse_sp_config")
+        .update({ 
+          ultima_rps_numero: parseInt(formData.numero_rps || "0", 10)
+        })
+        .eq('id', (await supabase.from("nfse_sp_config").select("id").limit(1).single()).data?.id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      await onSubmit(formData);
+    } catch (error) {
+      console.error("Erro ao atualizar número do RPS:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível atualizar o número do RPS"
+      });
+    }
   };
 
   return (

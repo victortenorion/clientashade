@@ -952,6 +952,27 @@ export type Database = {
         }
         Relationships: []
       }
+      nfse_sp_config: {
+        Row: {
+          created_at: string
+          id: string
+          ultima_rps_numero: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ultima_rps_numero?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ultima_rps_numero?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           created_at: string
