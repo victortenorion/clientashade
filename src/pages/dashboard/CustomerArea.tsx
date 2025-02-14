@@ -76,6 +76,23 @@ const CustomerArea = () => {
     }
   };
 
+  const fetchCustomerAreaSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('customer_area_settings')
+        .select('allow_create_orders')
+        .maybeSingle();
+
+      if (error) throw error;
+      
+      if (data) {
+        setAllowCreateOrders(data.allow_create_orders || false);
+      }
+    } catch (error: any) {
+      console.error("Erro ao carregar configurações da área do cliente:", error);
+    }
+  };
+
   const fetchVisibleFields = async () => {
     try {
       const { data, error } = await supabase
@@ -171,23 +188,6 @@ const CustomerArea = () => {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchCustomerAreaSettings = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('customer_area_settings')
-        .select('allow_create_orders')
-        .single();
-
-      if (error) throw error;
-      
-      if (data) {
-        setAllowCreateOrders(data.allow_create_orders);
-      }
-    } catch (error: any) {
-      console.error("Erro ao carregar configurações da área do cliente:", error);
     }
   };
 
