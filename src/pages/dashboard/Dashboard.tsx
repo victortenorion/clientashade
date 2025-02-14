@@ -360,6 +360,15 @@ const Dashboard = () => {
                       </SidebarMenuItem>
                       <SidebarMenuItem>
                         <SidebarMenuButton
+                          onClick={() => navigate("/dashboard/service-order-settings/dados-empresa")}
+                          isActive={location.pathname.includes("/dashboard/service-order-settings/dados-empresa")}
+                        >
+                          <Building className="h-4 w-4" />
+                          <span>Dados da Empresa</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
                           onClick={() => navigate("/dashboard/service-order-settings/sefaz")}
                           isActive={location.pathname.includes("/dashboard/service-order-settings/sefaz")}
                         >
