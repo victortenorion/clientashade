@@ -54,6 +54,8 @@ interface ServiceOrder {
   priority: string;
   expected_date: string | null;
   store_id: string | null;
+  order_number: number;
+  created_at: string;
 }
 
 interface ServiceOrderFormData {
@@ -88,6 +90,10 @@ const ServiceOrders = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
 
   const fetchOrders = async () => {
     try {
@@ -168,7 +174,127 @@ const ServiceOrders = () => {
 
   return (
     <div className="space-y-4">
-      {/* Rest of your JSX */}
+      <div className="flex justify-between items-center">
+        <Input
+          placeholder="Buscar ordem de serviço..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="max-w-sm"
+        />
+        <Button onClick={() => setDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Nova Ordem
+        </Button>
+      </div>
+
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Número</TableHead>
+              <TableHead>Data</TableHead>
+              <TableHead>Cliente</TableHead>
+              <TableHead>Descrição</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Prioridade</TableHead>
+              <TableHead>Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {orders.map((order) => (
+              <TableRow key={order.id}>
+                <TableCell>{order.order_number}</TableCell>
+                <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
+                <TableCell>{selectedClient?.name}</TableCell>
+                <TableCell>{order.description}</TableCell>
+                <TableCell>{order.status_id}</TableCell>
+                <TableCell>{order.priority}</TableCell>
+                <TableCell>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setEditingId(order.id);
+                      setFormData({
+                        equipment: order.equipment || "",
+                        equipment_serial_number: order.equipment_serial_number || "",
+                        problem: order.problem || "",
+                        description: order.description,
+                        status_id: order.status_id || "",
+                        priority: order.priority,
+                        expected_date: order.expected_date || "",
+                        store_id: order.store_id || ""
+                      });
+                      setDialogOpen(true);
+                    }}
+                  >
+                    Editar
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingId ? "Editar Ordem de Serviço" : "Nova Ordem de Serviço"}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Equipamento</label>
+                <Input
+                  value={formData.equipment}
+                  onChange={(e) =>
+                    setFormData({ ...formData, equipment: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Número de Série</label>
+                <Input
+                  value={formData.equipment_serial_number}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      equipment_serial_number: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Problema</label>
+                <Input
+                  value={formData.problem}
+                  onChange={(e) =>
+                    setFormData({ ...formData, problem: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Descrição</label>
+                <Input
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  required
+                />
+              </div>
+            </div>
+            <DialogFooter className="mt-4">
+              <Button type="submit">
+                {editingId ? "Atualizar" : "Criar"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
