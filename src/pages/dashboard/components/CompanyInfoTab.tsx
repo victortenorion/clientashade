@@ -18,6 +18,7 @@ interface CompanyInfo {
   inscricao_municipal: string | null;
   cnae: string | null;
   regime_tributario: string | null;
+  codigo_servico: string | null;
   endereco_cep: string | null;
   endereco_logradouro: string | null;
   endereco_numero: string | null;
@@ -43,6 +44,7 @@ export const CompanyInfoTab = () => {
     inscricao_municipal: "",
     cnae: "",
     regime_tributario: "",
+    codigo_servico: "",
     endereco_cep: "",
     endereco_logradouro: "",
     endereco_numero: "",
@@ -320,6 +322,17 @@ export const CompanyInfoTab = () => {
                   <SelectItem value="lucro_real">Lucro Real</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Código de Serviço</Label>
+              <Input
+                value={companyInfo.codigo_servico || ""}
+                onChange={(e) =>
+                  setCompanyInfo({ ...companyInfo, codigo_servico: e.target.value })
+                }
+                placeholder="Digite o código de serviço"
+              />
             </div>
           </div>
 
