@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/lib/supabase";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
 interface CompanyInfo {
@@ -82,23 +82,21 @@ export const CompanyInfoTab = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
-      const response = await fetch(`${window.location.origin}/functions/v1/document-search`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`,
-        },
-        body: JSON.stringify({ document: cnpj })
-      });
-
-      const data = await response.json();
-      console.log('Resposta da busca CNPJ:', data);
-
-      if (data.error) {
-        throw new Error(data.error);
+      if (!session) {
+        throw new Error('Usuário não autenticado');
       }
 
-      if (data.apiData) {
+      const { data, error } = await supabase.functions.invoke('document-search', {
+        body: { document: cnpj }
+      });
+
+      console.log('Resposta da edge function:', data);
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.apiData) {
         const { apiData } = data;
         setCompanyInfo(prev => ({
           ...prev,

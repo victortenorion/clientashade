@@ -96,7 +96,7 @@ const searchCNPJ = async (cnpj: string) => {
     }
   } catch (error) {
     console.error('Erro ao buscar CNPJ:', error)
-    throw new Error(`Erro ao buscar dados do CNPJ: ${error.message}`)
+    throw error
   }
 }
 
