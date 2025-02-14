@@ -237,6 +237,8 @@ const CustomerArea = () => {
         return;
       }
 
+      console.log("Buscando ordens para o cliente:", clientId);
+
       const { data, error } = await supabase
         .from("service_orders")
         .select(`
@@ -253,16 +255,24 @@ const CustomerArea = () => {
           expected_date,
           completion_date,
           exit_date,
-          status:service_order_statuses(name, color)
+          status:service_order_statuses (
+            name,
+            color
+          )
         `)
         .eq('client_id', clientId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro ao buscar ordens:", error);
+        throw error;
+      }
 
-      const typedOrders: ServiceOrder[] = (data || []).map(order => ({
+      console.log("Ordens recebidas:", data);
+
+      const typedOrders: ServiceOrder[] = data.map(order => ({
         ...order,
-        status: order.status ? order.status[0] : null
+        status: order.status || null
       }));
 
       setOrders(typedOrders);
@@ -285,12 +295,19 @@ const CustomerArea = () => {
         navigate('/client-login');
         return;
       }
-      await fetchClientName(clientId);
-      await Promise.all([
-        fetchOrders(), 
-        fetchVisibleFields(),
-        fetchCustomerAreaSettings()
-      ]);
+      
+      console.log("ClientId encontrado:", clientId);
+      
+      try {
+        await fetchClientName(clientId);
+        await Promise.all([
+          fetchOrders(), 
+          fetchVisibleFields(),
+          fetchCustomerAreaSettings()
+        ]);
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+      }
     };
 
     checkClientAndFetch();
