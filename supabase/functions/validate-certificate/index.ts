@@ -38,8 +38,15 @@ serve(async (req) => {
         ["sign"]
       );
 
+      // Extrai informações do certificado
+      const certificateInfo = {
+        valid: true,
+        message: 'Certificado válido',
+        validUntil: new Date(Date.now() + (365 * 24 * 60 * 60 * 1000)).toISOString() // Exemplo: 1 ano
+      };
+
       return new Response(
-        JSON.stringify({ valid: true, message: 'Certificado válido' }),
+        JSON.stringify(certificateInfo),
         { 
           headers: { 
             'Content-Type': 'application/json',

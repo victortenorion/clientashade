@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 
 interface NFCeConfig {
   certificado_digital: string;
@@ -24,6 +24,8 @@ interface NFCeConfig {
   csc_token: string;
   inscricao_estadual: string;
   regime_tributario: string;
+  certificado_valido?: boolean;
+  certificado_validade?: string;
 }
 
 interface NFSeConfig {
@@ -35,6 +37,8 @@ interface NFSeConfig {
   regime_tributario: string;
   regime_especial: string;
   incentivo_fiscal: boolean;
+  certificado_valido?: boolean;
+  certificado_validade?: string;
 }
 
 interface FiscalConfig {
@@ -97,10 +101,10 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
 
       if (error) throw error;
 
-      return data.valid;
+      return data;
     } catch (error) {
       console.error('Erro ao validar certificado:', error);
-      return false;
+      return { valid: false };
     }
   };
 
@@ -110,12 +114,18 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
     // Validar certificado NFC-e
     if (nfceConfig.certificado_digital && nfceConfig.senha_certificado) {
       setIsValidatingNFCe(true);
-      const isNFCeValid = await validateCertificate(
+      const nfceValidation = await validateCertificate(
         nfceConfig.certificado_digital,
         nfceConfig.senha_certificado
       );
 
-      if (!isNFCeValid) {
+      setNfceConfig({
+        ...nfceConfig,
+        certificado_valido: nfceValidation.valid,
+        certificado_validade: nfceValidation.validUntil,
+      });
+
+      if (!nfceValidation.valid) {
         toast({
           title: "Erro",
           description: "Certificado ou senha da NFC-e inválidos",
@@ -129,12 +139,18 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
     // Validar certificado NFS-e
     if (nfseConfig.certificado_digital && nfseConfig.senha_certificado) {
       setIsValidatingNFSe(true);
-      const isNFSeValid = await validateCertificate(
+      const nfseValidation = await validateCertificate(
         nfseConfig.certificado_digital,
         nfseConfig.senha_certificado
       );
 
-      if (!isNFSeValid) {
+      setNfseConfig({
+        ...nfseConfig,
+        certificado_valido: nfseValidation.valid,
+        certificado_validade: nfseValidation.validUntil,
+      });
+
+      if (!nfseValidation.valid) {
         toast({
           title: "Erro",
           description: "Certificado ou senha da NFS-e inválidos",
@@ -152,6 +168,35 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
         description: "Certificados validados e configurações salvas com sucesso",
       });
     }
+  };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
+  const renderCertificateStatus = (isValid?: boolean, validUntil?: string) => {
+    if (isValid === undefined) return null;
+
+    return (
+      <div className="flex items-center gap-2 mt-2">
+        {isValid ? (
+          <>
+            <CheckCircle2 className="w-5 h-5 text-green-500" />
+            <span className="text-sm text-green-600">
+              Certificado válido até {formatDate(validUntil)}
+            </span>
+          </>
+        ) : (
+          <>
+            <XCircle className="w-5 h-5 text-red-500" />
+            <span className="text-sm text-red-600">
+              Certificado inválido
+            </span>
+          </>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -177,6 +222,8 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                           setNfceConfig({
                             ...nfceConfig,
                             certificado_digital: event.target.result as string,
+                            certificado_valido: undefined,
+                            certificado_validade: undefined,
                           });
                         }
                       };
@@ -185,6 +232,7 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                   }}
                   disabled={isValidatingNFCe}
                 />
+                {renderCertificateStatus(nfceConfig.certificado_valido, nfceConfig.certificado_validade)}
               </div>
 
               <div className="space-y-2">
@@ -196,6 +244,8 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                     setNfceConfig({
                       ...nfceConfig,
                       senha_certificado: e.target.value,
+                      certificado_valido: undefined,
+                      certificado_validade: undefined,
                     })
                   }
                   disabled={isValidatingNFCe}
@@ -275,6 +325,8 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                           setNfseConfig({
                             ...nfseConfig,
                             certificado_digital: event.target.result as string,
+                            certificado_valido: undefined,
+                            certificado_validade: undefined,
                           });
                         }
                       };
@@ -283,6 +335,7 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                   }}
                   disabled={isValidatingNFSe}
                 />
+                {renderCertificateStatus(nfseConfig.certificado_valido, nfseConfig.certificado_validade)}
               </div>
 
               <div className="space-y-2">
@@ -294,6 +347,8 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                     setNfseConfig({
                       ...nfseConfig,
                       senha_certificado: e.target.value,
+                      certificado_valido: undefined,
+                      certificado_validade: undefined,
                     })
                   }
                   disabled={isValidatingNFSe}
