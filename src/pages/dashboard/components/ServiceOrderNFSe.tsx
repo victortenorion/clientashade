@@ -20,6 +20,11 @@ interface ServiceOrderProps {
   total_price: number;
 }
 
+interface ServiceOrderItem {
+  description: string;
+  price: number;
+}
+
 interface ServiceOrderNFSeProps {
   serviceOrderId: string;
   onSubmit: () => void;
@@ -67,8 +72,9 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
         if (error) throw error;
 
         if (serviceOrder) {
+          const items = serviceOrder.items as ServiceOrderItem[];
           // Formatar a descrição dos serviços em uma única linha
-          const servicesDescription = `OS #${serviceOrder.order_number} - ${serviceOrder.equipment || 'Equipamento não especificado'} - S/N: ${serviceOrder.equipment_serial_number || 'N/A'} - Serviços realizados: ${serviceOrder.items.map((item: { description: string; price: number }) => `${item.description}`).join(', ')} - (Total: R$ ${serviceOrder.total_price.toFixed(2)})`;
+          const servicesDescription = `OS #${serviceOrder.order_number} - ${serviceOrder.equipment || 'Equipamento não especificado'} - S/N: ${serviceOrder.equipment_serial_number || 'N/A'} - Serviços realizados: ${items.map(item => item.description).join(', ')} - (Total: R$ ${serviceOrder.total_price.toFixed(2)})`;
 
           const nfseData: NFSeFormData = {
             client_id: serviceOrder.client.id,
