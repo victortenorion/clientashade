@@ -49,7 +49,7 @@ import {
 } from "./utils/client.utils";
 import { Json } from "@/integrations/supabase/types";
 
-const Clients = () => {
+const ClientPage = () => {
   const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState<Client[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
@@ -59,6 +59,7 @@ const Clients = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchingDocument, setSearchingDocument] = useState(false);
   const [visibleFields, setVisibleFields] = useState<{ field_name: string, visible: boolean }[]>([]);
+  const [fields, setFields] = useState<{ field_name: string, visible: boolean }[]>([]);
   const { toast } = useToast();
   const [deleteDialog, setDeleteDialog] = useState<DeleteDialogState>({
     isOpen: false,
@@ -100,6 +101,22 @@ const Clients = () => {
         title: "Erro ao carregar configurações dos campos",
         description: error.message,
       });
+    }
+  };
+
+  const fetchFields = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("customer_area_field_settings")
+        .select("field_name, visible");
+
+      if (error) throw error;
+
+      if (data) {
+        setFields(data);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar campos:", error);
     }
   };
 
@@ -438,6 +455,7 @@ const Clients = () => {
     fetchClients();
     fetchStores();
     fetchVisibleFields();
+    fetchFields();
   }, [searchTerm]);
 
   return (
@@ -608,4 +626,4 @@ const Clients = () => {
   );
 };
 
-export default Clients;
+export default ClientPage;

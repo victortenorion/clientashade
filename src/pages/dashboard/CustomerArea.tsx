@@ -44,7 +44,7 @@ interface ServiceOrder {
 }
 
 interface CustomerAreaField {
-  field: string;
+  field_name: string;
   visible: boolean;
 }
 
@@ -204,12 +204,9 @@ const CustomerArea = () => {
           'equipment_serial_number', 'problem', 'description', 'expected_date', 
           'completion_date', 'exit_date', 'total_price'
         ];
-        setVisibleFields(defaultFields.map(field => ({ field, visible: true })));
+        setVisibleFields(defaultFields.map(field_name => ({ field_name, visible: true })));
       } else {
-        setVisibleFields(data.map(item => ({
-          field: item.field_name,
-          visible: true
-        })));
+        setVisibleFields(data);
       }
     } catch (error: any) {
       console.error("Erro ao carregar configurações dos campos:", error);
@@ -258,10 +255,7 @@ const CustomerArea = () => {
         id: order.id,
         description: order.description,
         status_id: order.status_id,
-        status: order.status ? {
-          name: order.status.name,
-          color: order.status.color
-        } : null,
+        status: order.status,
         total_price: order.total_price,
         created_at: order.created_at,
         order_number: order.order_number,
