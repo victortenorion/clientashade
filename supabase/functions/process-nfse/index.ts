@@ -30,8 +30,12 @@ serve(async (req) => {
 
     const { nfseId } = await req.json();
 
+    if (!nfseId) {
+      throw new Error('ID da NFS-e não informado');
+    }
+
     // Update queue status
-    await supabase
+    const { error: queueError } = await supabase
       .from('sefaz_transmission_queue')
       .update({ 
         status: 'processando',
@@ -39,6 +43,8 @@ serve(async (req) => {
       })
       .eq('documento_id', nfseId)
       .eq('tipo', 'nfse');
+
+    if (queueError) throw queueError;
 
     // Get NFSe data
     const { data: nfse, error: nfseError } = await supabase
@@ -59,7 +65,8 @@ serve(async (req) => {
         )
       `)
       .eq('id', nfseId)
-      .maybeSingle();
+      .limit(1)
+      .single();
 
     if (nfseError) throw nfseError;
     if (!nfse) throw new Error('NFS-e não encontrada');
@@ -68,7 +75,8 @@ serve(async (req) => {
     const { data: companyInfo, error: companyError } = await supabase
       .from('company_info')
       .select('*')
-      .maybeSingle();
+      .limit(1)
+      .single();
 
     if (companyError) throw companyError;
     if (!companyInfo) throw new Error('Informações da empresa não configuradas');
@@ -77,33 +85,39 @@ serve(async (req) => {
     const { data: nfseConfig, error: configError } = await supabase
       .from('nfse_config')
       .select('*')
-      .maybeSingle();
+      .limit(1)
+      .single();
 
     if (configError) throw configError;
     if (!nfseConfig) throw new Error('Configurações da NFS-e não encontradas');
-    if (!nfseConfig.certificado_digital) throw new Error('Certificado digital não configurado');
+
+    // Verificar se precisa de certificado
+    if (!nfseConfig.permite_emissao_sem_certificado) {
+      if (!nfseConfig.certificado_digital) {
+        throw new Error('Certificado digital não configurado');
+      }
+      if (!nfseConfig.certificado_valido) {
+        throw new Error('Certificado digital inválido ou expirado');
+      }
+    }
 
     // Log the processing attempt
     console.log('Processing NFSe:', {
       nfseId,
       ambiente: nfseConfig.ambiente,
-      certificadoValido: nfseConfig.certificado_valido
+      certificadoValido: nfseConfig.certificado_valido,
+      permiteEmissaoSemCertificado: nfseConfig.permite_emissao_sem_certificado
     });
-
-    // Validate certificate
-    if (!nfseConfig.certificado_valido) {
-      throw new Error('Certificado digital inválido ou expirado');
-    }
 
     // In a real implementation, here you would:
     // 1. Generate the XML
-    // 2. Sign it with the certificate
+    // 2. Sign it with the certificate (if required)
     // 3. Send to SEFAZ
     // 4. Process the response
     // For now, we'll simulate success
 
     // Update NFSe status
-    await supabase
+    const { error: updateError } = await supabase
       .from('nfse')
       .update({
         status_sefaz: 'processado',
@@ -111,8 +125,10 @@ serve(async (req) => {
       })
       .eq('id', nfseId);
 
+    if (updateError) throw updateError;
+
     // Update queue status
-    await supabase
+    const { error: queueUpdateError } = await supabase
       .from('sefaz_transmission_queue')
       .update({ 
         status: 'enviado',
@@ -120,6 +136,8 @@ serve(async (req) => {
       })
       .eq('documento_id', nfseId)
       .eq('tipo', 'nfse');
+
+    if (queueUpdateError) throw queueUpdateError;
 
     return new Response(
       JSON.stringify({ success: true }),
