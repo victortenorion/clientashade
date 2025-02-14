@@ -1,81 +1,51 @@
 
-import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useNavigate, useLocation } from "react-router-dom";
 import { StatusTab } from "./components/StatusTab";
+import { NotasFiscaisTab } from "./components/NotasFiscaisTab";
 import { SEFAZTab } from "./components/SEFAZTab";
 import { ClientTab } from "./components/ClientTab";
-import { NotasFiscaisTab } from "./components/NotasFiscaisTab";
-import { useLocation } from "react-router-dom";
+import PersonalizarTab from "./components/PersonalizarTab";
 
 const ServiceOrderSettings = () => {
+  const navigate = useNavigate();
   const location = useLocation();
 
-  const [nfceConfig, setNfceConfig] = useState({
-    certificado_digital: "",
-    senha_certificado: "",
-    ambiente: "homologacao",
-    regime_tributario: "",
-    inscricao_estadual: "",
-    token_ibpt: "",
-    csc_token: "",
-    csc_id: ""
-  });
+  const currentTab = location.pathname.split("/").pop() || "status";
 
-  const [nfseConfig, setNfseConfig] = useState({
-    certificado_digital: "",
-    senha_certificado: "",
-    ambiente: "homologacao",
-    regime_tributario: "",
-    regime_especial: "",
-    inscricao_municipal: "",
-    codigo_municipio: "",
-    incentivo_fiscal: false
-  });
-
-  const [fiscalConfig, setFiscalConfig] = useState({
-    service_code: "",
-    cnae: "",
-    tax_regime: ""
-  });
-
-  const handleSaveAllConfigs = async () => {
-    // Implementar a lógica de salvar as configurações
-    console.log("Salvando configurações...");
-  };
-
-  const renderContent = () => {
-    if (location.pathname.includes("/notas-fiscais")) {
-      return (
-        <NotasFiscaisTab 
-          fiscalConfig={fiscalConfig}
-          setFiscalConfig={setFiscalConfig}
-          handleSaveAllConfigs={handleSaveAllConfigs}
-        />
-      );
+  const handleTabChange = (value: string) => {
+    if (value === "status") {
+      navigate("/dashboard/service-order-settings");
+    } else {
+      navigate(`/dashboard/service-order-settings/${value}`);
     }
-    if (location.pathname.includes("/sefaz")) {
-      return (
-        <SEFAZTab 
-          nfceConfig={nfceConfig}
-          nfseConfig={nfseConfig}
-          fiscalConfig={fiscalConfig}
-          setNfceConfig={setNfceConfig}
-          setNfseConfig={setNfseConfig}
-          setFiscalConfig={setFiscalConfig}
-          handleSaveAllConfigs={handleSaveAllConfigs}
-        />
-      );
-    }
-    if (location.pathname.includes("/area-cliente") || location.pathname.includes("/campos-visiveis")) {
-      return <ClientTab />;
-    }
-    // Default to StatusTab
-    return <StatusTab />;
   };
 
   return (
-    <div className="space-y-6">
-      {renderContent()}
-    </div>
+    <Tabs value={currentTab} onValueChange={handleTabChange}>
+      <TabsList>
+        <TabsTrigger value="status">Status</TabsTrigger>
+        <TabsTrigger value="personalizar">Personalizar</TabsTrigger>
+        <TabsTrigger value="notas-fiscais">Notas Fiscais</TabsTrigger>
+        <TabsTrigger value="sefaz">SEFAZ</TabsTrigger>
+        <TabsTrigger value="area-cliente">Área do Cliente</TabsTrigger>
+      </TabsList>
+      <TabsContent value="status">
+        <StatusTab />
+      </TabsContent>
+      <TabsContent value="personalizar">
+        <PersonalizarTab />
+      </TabsContent>
+      <TabsContent value="notas-fiscais">
+        <NotasFiscaisTab />
+      </TabsContent>
+      <TabsContent value="sefaz">
+        <SEFAZTab />
+      </TabsContent>
+      <TabsContent value="area-cliente">
+        <ClientTab />
+      </TabsContent>
+    </Tabs>
   );
 };
 
