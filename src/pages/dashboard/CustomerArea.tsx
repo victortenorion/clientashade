@@ -12,7 +12,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import { LogOut, ArrowLeft } from "lucide-react";
+import { LogOut, ArrowLeft, User } from "lucide-react";
 
 interface ServiceOrder {
   id: string;
@@ -44,6 +44,7 @@ const CustomerArea = () => {
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [visibleFields, setVisibleFields] = useState<CustomerAreaField[]>([]);
+  const [clientName, setClientName] = useState<string>("");
   const { toast } = useToast();
 
   const handleLogout = () => {
@@ -58,6 +59,23 @@ const CustomerArea = () => {
     navigate(-1);
   };
 
+  const fetchClientName = async (clientId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("clients")
+        .select("name")
+        .eq('id', clientId)
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        setClientName(data.name);
+      }
+    } catch (error: any) {
+      console.error("Erro ao carregar nome do cliente:", error);
+    }
+  };
+
   const fetchVisibleFields = async () => {
     try {
       const { data, error } = await supabase
@@ -68,7 +86,6 @@ const CustomerArea = () => {
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        // Se não houver configurações, mostrar todos os campos por padrão
         const defaultFields = [
           'order_number', 'created_at', 'status', 'priority', 'equipment', 
           'equipment_serial_number', 'problem', 'description', 'expected_date', 
@@ -117,14 +134,13 @@ const CustomerArea = () => {
           expected_date,
           completion_date,
           exit_date,
-          status:service_order_statuses(name, color)
+          status:service_order_statuses!fk_service_order_status(name, color)
         `)
         .eq('client_id', clientId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // Mapear os dados para garantir a tipagem correta
       const typedOrders: ServiceOrder[] = (data || []).map(order => ({
         id: order.id,
         description: order.description,
@@ -165,6 +181,7 @@ const CustomerArea = () => {
         navigate('/client-login');
         return;
       }
+      await fetchClientName(clientId);
       await Promise.all([fetchOrders(), fetchVisibleFields()]);
     };
 
@@ -231,10 +248,16 @@ const CustomerArea = () => {
           </Button>
           <h2 className="text-xl font-bold">Minhas Ordens de Serviço</h2>
         </div>
-        <Button variant="outline" onClick={handleLogout}>
-          <LogOut className="mr-2 h-4 w-4" />
-          Sair
-        </Button>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <User className="h-4 w-4" />
+            <span className="text-sm font-medium">{clientName}</span>
+          </div>
+          <Button variant="outline" onClick={handleLogout}>
+            <LogOut className="mr-2 h-4 w-4" />
+            Sair
+          </Button>
+        </div>
       </div>
 
       <div className="border rounded-lg">
