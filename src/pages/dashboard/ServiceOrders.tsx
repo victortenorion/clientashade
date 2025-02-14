@@ -79,6 +79,7 @@ interface ServiceOrderItem {
 }
 
 interface ServiceOrderFormData {
+  id?: string;
   client_id: string;
   description: string;
   status_id: string;
@@ -277,6 +278,7 @@ const ServiceOrders = () => {
 
   const handleEditOrder = async (order: ServiceOrder) => {
     setFormData({
+      id: order.id, // Adicionando o id para identificar que é uma edição
       client_id: order.client_id,
       description: order.description,
       status_id: order.status_id || "",
@@ -329,53 +331,94 @@ const ServiceOrders = () => {
     if (!currentUser) {
       toast({
         variant: "destructive",
-        title: "Erro ao criar ordem de serviço",
+        title: "Erro ao processar ordem de serviço",
         description: "Usuário não está autenticado",
       });
       return;
     }
 
     try {
-      const { data: orderData, error: orderError } = await supabase
-        .from("service_orders")
-        .insert({
-          client_id: formData.client_id,
-          description: formData.description,
-          status_id: formData.status_id,
-          seller_id: currentUser.id,
-          store_id: formData.store_id,
-          equipment: formData.equipment,
-          equipment_serial_number: formData.equipment_serial_number,
-          problem: formData.problem,
-          reception_notes: formData.reception_notes,
-          internal_notes: formData.internal_notes,
-          expected_date: formData.expected_date || null,
-          completion_date: formData.completion_date || null,
-          exit_date: formData.exit_date || null,
-          created_by_type: 'admin'
-        })
-        .select()
-        .single();
+      let orderData = {
+        client_id: formData.client_id,
+        description: formData.description,
+        status_id: formData.status_id,
+        seller_id: currentUser.id,
+        store_id: formData.store_id,
+        equipment: formData.equipment,
+        equipment_serial_number: formData.equipment_serial_number,
+        problem: formData.problem,
+        reception_notes: formData.reception_notes,
+        internal_notes: formData.internal_notes,
+        expected_date: formData.expected_date || null,
+        completion_date: formData.completion_date || null,
+        exit_date: formData.exit_date || null,
+        created_by_type: 'admin'
+      };
 
-      if (orderError) throw orderError;
+      // Verifica se é uma edição ou nova ordem
+      if (formData.id) {
+        // Atualiza a ordem existente
+        const { error: orderError } = await supabase
+          .from("service_orders")
+          .update(orderData)
+          .eq('id', formData.id);
 
-      if (formData.items.length > 0) {
-        const { error: itemsError } = await supabase
+        if (orderError) throw orderError;
+
+        // Remove os itens existentes
+        const { error: deleteError } = await supabase
           .from("service_order_items")
-          .insert(
-            formData.items.map(item => ({
-              service_order_id: orderData.id,
-              description: item.description,
-              price: item.price
-            }))
-          );
+          .delete()
+          .eq('service_order_id', formData.id);
 
-        if (itemsError) throw itemsError;
+        if (deleteError) throw deleteError;
+
+        // Insere os novos itens
+        if (formData.items.length > 0) {
+          const { error: itemsError } = await supabase
+            .from("service_order_items")
+            .insert(
+              formData.items.map(item => ({
+                service_order_id: formData.id,
+                description: item.description,
+                price: item.price
+              }))
+            );
+
+          if (itemsError) throw itemsError;
+        }
+
+        toast({
+          title: "Ordem de serviço atualizada com sucesso",
+        });
+      } else {
+        // Cria uma nova ordem
+        const { data: orderData, error: orderError } = await supabase
+          .from("service_orders")
+          .insert(orderData)
+          .select()
+          .single();
+
+        if (orderError) throw orderError;
+
+        if (formData.items.length > 0) {
+          const { error: itemsError } = await supabase
+            .from("service_order_items")
+            .insert(
+              formData.items.map(item => ({
+                service_order_id: orderData.id,
+                description: item.description,
+                price: item.price
+              }))
+            );
+
+          if (itemsError) throw itemsError;
+        }
+
+        toast({
+          title: "Ordem de serviço criada com sucesso",
+        });
       }
-
-      toast({
-        title: "Ordem de serviço criada com sucesso",
-      });
 
       setDialogOpen(false);
       setFormData(defaultFormData);
@@ -383,7 +426,7 @@ const ServiceOrders = () => {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Erro ao criar ordem de serviço",
+        title: "Erro ao processar ordem de serviço",
         description: error.message,
       });
     }
