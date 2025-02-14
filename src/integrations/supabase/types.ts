@@ -1363,6 +1363,12 @@ export type Database = {
         }
         Returns: string
       }
+      increment_rps_numero: {
+        Args: {
+          config_id?: string
+        }
+        Returns: Json
+      }
       user_has_all_permissions: {
         Args: {
           user_uuid: string

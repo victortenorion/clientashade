@@ -8,16 +8,16 @@ import type { NFSeFormData } from "../types/nfse.types";
 import { SEFAZTransmissionStatus } from "./SEFAZTransmissionStatus";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-interface ServiceOrderProps {
+interface ServiceOrder {
   id: string;
   order_number: string;
-  equipment: string;
-  equipment_serial_number: string;
-  items: Array<{
-    description: string;
-    price: number;
-  }>;
+  equipment: string | null;
+  equipment_serial_number: string | null;
   total_price: number;
+  items: ServiceOrderItem[];
+  client: {
+    id: string;
+  };
 }
 
 interface ServiceOrderItem {
@@ -72,18 +72,18 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
         if (error) throw error;
 
         if (serviceOrder) {
-          const items = serviceOrder.items as ServiceOrderItem[];
+          const typedServiceOrder = serviceOrder as unknown as ServiceOrder;
           // Formatar a descrição dos serviços em uma única linha
-          const servicesDescription = `OS #${serviceOrder.order_number} - ${serviceOrder.equipment || 'Equipamento não especificado'} - S/N: ${serviceOrder.equipment_serial_number || 'N/A'} - Serviços realizados: ${items.map(item => item.description).join(', ')} - (Total: R$ ${serviceOrder.total_price.toFixed(2)})`;
+          const servicesDescription = `OS #${typedServiceOrder.order_number} - ${typedServiceOrder.equipment || 'Equipamento não especificado'} - S/N: ${typedServiceOrder.equipment_serial_number || 'N/A'} - Serviços realizados: ${typedServiceOrder.items.map(item => item.description).join(', ')} - (Total: R$ ${typedServiceOrder.total_price.toFixed(2)})`;
 
           const nfseData: NFSeFormData = {
-            client_id: serviceOrder.client.id,
+            client_id: typedServiceOrder.client.id,
             codigo_servico: companyInfo?.codigo_servico || "",
             discriminacao_servicos: servicesDescription,
-            valor_servicos: serviceOrder.total_price,
+            valor_servicos: typedServiceOrder.total_price,
             data_competencia: new Date().toISOString().split("T")[0],
             deducoes: 0,
-            observacoes: `Ordem de Serviço #${serviceOrder.order_number}`,
+            observacoes: `Ordem de Serviço #${typedServiceOrder.order_number}`,
             natureza_operacao: "1",
             serie_rps: companyInfo?.serie_rps_padrao || "1"
           };
@@ -155,6 +155,7 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
       // Wait a moment to show the success status before redirecting
       setTimeout(onSubmit, 2000);
     } catch (error: any) {
+      console.error("Error submitting NFSe:", error);
       toast({
         variant: "destructive",
         title: "Erro ao emitir NFS-e",
