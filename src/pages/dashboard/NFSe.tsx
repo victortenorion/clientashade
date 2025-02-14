@@ -503,24 +503,14 @@ const NFSePage = () => {
                       )}
 
                       {nota.status_sefaz === "enviando" && (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleCancelEnvio(nota.id)}
-                            title="Cancelar envio"
-                          >
-                            <XCircle className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleDeleteNFSe(nota.id)}
-                            title="Excluir"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleCancelEnvio(nota.id)}
+                          title="Cancelar envio"
+                        >
+                          <XCircle className="h-4 w-4" />
+                        </Button>
                       )}
 
                       {(nota.status_sefaz === "processado" || nota.status_sefaz === "autorizada") && !nota.cancelada && (
