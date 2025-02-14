@@ -49,6 +49,11 @@ import {
 } from "./utils/client.utils";
 import { Json } from "@/integrations/supabase/types";
 
+interface VisibleField {
+  field_name: string;
+  visible: boolean;
+}
+
 const Clients = () => {
   const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState<Client[]>([]);
@@ -58,7 +63,7 @@ const Clients = () => {
   const [formData, setFormData] = useState<ClientFormData>(defaultFormData);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchingDocument, setSearchingDocument] = useState(false);
-  const [visibleFields, setVisibleFields] = useState<{ field_name: string, visible: boolean }[]>([]);
+  const [visibleFields, setVisibleFields] = useState<VisibleField[]>([]);
   const [fields, setFields] = useState<{ field_name: string, visible: boolean }[]>([]);
   const { toast } = useToast();
   const [deleteDialog, setDeleteDialog] = useState<DeleteDialogState>({
@@ -89,12 +94,14 @@ const Clients = () => {
   const fetchVisibleFields = async () => {
     try {
       const { data, error } = await supabase
-        .from("customer_area_field_settings")
+        .from("client_field_settings")
         .select("field_name, visible");
 
       if (error) throw error;
 
-      setVisibleFields(data || []);
+      if (data) {
+        setVisibleFields(data);
+      }
     } catch (error: any) {
       console.error("Erro ao carregar configurações dos campos:", error);
       toast({
@@ -456,7 +463,6 @@ const Clients = () => {
     fetchClients();
     fetchStores();
     fetchVisibleFields();
-    fetchFields();
   }, [searchTerm]);
 
   return (
@@ -483,33 +489,39 @@ const Clients = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Documento</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Telefone</TableHead>
+              {visibleFields
+                .filter(field => field.visible)
+                .map(field => (
+                  <TableHead key={field.field_name}>
+                    {getFieldLabel(field.field_name)}
+                  </TableHead>
+                ))}
               <TableHead>Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center">
+                <TableCell colSpan={visibleFields.filter(f => f.visible).length + 1} className="text-center">
                   Carregando...
                 </TableCell>
               </TableRow>
             ) : clients.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center">
+                <TableCell colSpan={visibleFields.filter(f => f.visible).length + 1} className="text-center">
                   Nenhum cliente encontrado
                 </TableCell>
               </TableRow>
             ) : (
               clients.map((client) => (
                 <TableRow key={client.id}>
-                  <TableCell>{client.name}</TableCell>
-                  <TableCell>{client.document}</TableCell>
-                  <TableCell>{client.email}</TableCell>
-                  <TableCell>{client.phone}</TableCell>
+                  {visibleFields
+                    .filter(field => field.visible)
+                    .map(field => (
+                      <TableCell key={field.field_name}>
+                        {client[field.field_name as keyof Client]}
+                      </TableCell>
+                    ))}
                   <TableCell>
                     <div className="flex gap-2">
                       <Button
