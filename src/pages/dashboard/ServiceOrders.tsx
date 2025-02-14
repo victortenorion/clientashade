@@ -167,14 +167,19 @@ const ServiceOrders = () => {
         `);
 
       if (searchTerm) {
-        query = query.or(
-          `description.ilike.%${searchTerm}%,` +
-          `equipment.ilike.%${searchTerm}%,` +
-          `equipment_serial_number.ilike.%${searchTerm}%,` +
-          `problem.ilike.%${searchTerm}%,` +
-          `clients.name.ilike.%${searchTerm}%` +
-          (!isNaN(Number(searchTerm)) ? `,order_number.eq.${searchTerm}` : '')
-        );
+        const searchConditions = [
+          `description.ilike.%${searchTerm}%`,
+          `equipment.ilike.%${searchTerm}%`,
+          `equipment_serial_number.ilike.%${searchTerm}%`,
+          `problem.ilike.%${searchTerm}%`,
+          `clients.name.ilike.%${searchTerm}%`
+        ];
+
+        if (!isNaN(Number(searchTerm))) {
+          query = query.or(`order_number.eq.${searchTerm}`);
+        }
+
+        query = query.or(searchConditions.join(','));
       }
 
       const { data, error } = await query;
@@ -183,6 +188,7 @@ const ServiceOrders = () => {
 
       setOrders(data as ServiceOrder[]);
     } catch (error: any) {
+      console.error('Erro na busca:', error);
       toast({
         variant: "destructive",
         title: "Erro ao carregar ordens de serviço",
