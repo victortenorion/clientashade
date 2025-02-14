@@ -5,12 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { Checkbox } from "@/components/ui/checkbox";
+import { supabase } from "@/lib/supabase";
 import type { NFSeFormData } from "../types/nfse.types";
 
 interface NFSeFormProps {
@@ -31,7 +27,7 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
     codigo_servico: "",
     discriminacao_servicos: "",
     valor_servicos: 0,
-    data_competencia: format(new Date(), "yyyy-MM-dd"),
+    data_competencia: new Date().toISOString().split("T")[0],
     deducoes: 0,
     observacoes: "",
     natureza_operacao: "",
@@ -48,7 +44,7 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
     vendedor_id: "",
     comissao_percentual: 0,
     numero_rps: "",
-    serie_rps: ""
+    serie_rps: "1"
   });
 
   useEffect(() => {
@@ -56,6 +52,53 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
       setFormData(initialData);
     }
   }, [initialData]);
+
+  useEffect(() => {
+    const fetchCompanyInfo = async () => {
+      try {
+        const { data: companyInfo, error } = await supabase
+          .from("company_info")
+          .select("cnae, endereco_cidade")
+          .single();
+
+        if (error) throw error;
+
+        if (companyInfo) {
+          setFormData(prev => ({
+            ...prev,
+            cnae: companyInfo.cnae || "",
+            municipio_prestacao: companyInfo.endereco_cidade || ""
+          }));
+        }
+      } catch (error) {
+        console.error("Erro ao buscar informações da empresa:", error);
+      }
+    };
+
+    const fetchNFSeConfig = async () => {
+      try {
+        const { data: config, error } = await supabase
+          .from("nfse_config")
+          .select("ultima_rps_numero")
+          .single();
+
+        if (error) throw error;
+
+        if (config) {
+          const proximoNumeroRPS = (config.ultima_rps_numero + 1).toString();
+          setFormData(prev => ({
+            ...prev,
+            numero_rps: proximoNumeroRPS
+          }));
+        }
+      } catch (error) {
+        console.error("Erro ao buscar configuração da NFS-e:", error);
+      }
+    };
+
+    fetchCompanyInfo();
+    fetchNFSeConfig();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,6 +119,7 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
                 id="numero_rps"
                 value={formData.numero_rps}
                 onChange={(e) => setFormData(prev => ({ ...prev, numero_rps: e.target.value }))}
+                readOnly
               />
             </div>
             <div className="space-y-2">
@@ -84,6 +128,7 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
                 id="serie_rps"
                 value={formData.serie_rps}
                 onChange={(e) => setFormData(prev => ({ ...prev, serie_rps: e.target.value }))}
+                readOnly
               />
             </div>
           </div>
@@ -112,6 +157,7 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
                   id="municipio_prestacao"
                   value={formData.municipio_prestacao}
                   onChange={(e) => setFormData(prev => ({ ...prev, municipio_prestacao: e.target.value }))}
+                  readOnly
                 />
               </div>
               <div className="space-y-2">
@@ -120,6 +166,7 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
                   id="cnae"
                   value={formData.cnae}
                   onChange={(e) => setFormData(prev => ({ ...prev, cnae: e.target.value }))}
+                  readOnly
                 />
               </div>
             </div>
@@ -202,51 +249,56 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
 
           <div className="grid grid-cols-2 gap-4 mt-4">
             <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
+              <Checkbox
                 id="retencao_ir"
                 checked={formData.retencao_ir}
-                onChange={(e) => setFormData(prev => ({ ...prev, retencao_ir: e.target.checked }))}
+                onCheckedChange={(checked) => 
+                  setFormData(prev => ({ ...prev, retencao_ir: checked as boolean }))
+                }
               />
               <Label htmlFor="retencao_ir">Reter IR</Label>
             </div>
 
             <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
+              <Checkbox
                 id="retencao_iss"
                 checked={formData.retencao_iss}
-                onChange={(e) => setFormData(prev => ({ ...prev, retencao_iss: e.target.checked }))}
+                onCheckedChange={(checked) => 
+                  setFormData(prev => ({ ...prev, retencao_iss: checked as boolean }))
+                }
               />
               <Label htmlFor="retencao_iss">Reter ISS</Label>
             </div>
 
             <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
+              <Checkbox
                 id="desconto_iss"
                 checked={formData.desconto_iss}
-                onChange={(e) => setFormData(prev => ({ ...prev, desconto_iss: e.target.checked }))}
+                onCheckedChange={(checked) => 
+                  setFormData(prev => ({ ...prev, desconto_iss: checked as boolean }))
+                }
               />
               <Label htmlFor="desconto_iss">Descontar ISS</Label>
             </div>
 
             <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
+              <Checkbox
                 id="retencao_inss"
                 checked={formData.retencao_inss}
-                onChange={(e) => setFormData(prev => ({ ...prev, retencao_inss: e.target.checked }))}
+                onCheckedChange={(checked) => 
+                  setFormData(prev => ({ ...prev, retencao_inss: checked as boolean }))
+                }
               />
               <Label htmlFor="retencao_inss">Reter INSS</Label>
             </div>
 
             <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
+              <Checkbox
                 id="retencao_pis_cofins_csll"
                 checked={formData.retencao_pis_cofins_csll}
-                onChange={(e) => setFormData(prev => ({ ...prev, retencao_pis_cofins_csll: e.target.checked }))}
+                onCheckedChange={(checked) => 
+                  setFormData(prev => ({ ...prev, retencao_pis_cofins_csll: checked as boolean }))
+                }
               />
               <Label htmlFor="retencao_pis_cofins_csll">Reter CSLL, PIS e COFINS</Label>
             </div>
