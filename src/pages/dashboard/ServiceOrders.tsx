@@ -218,6 +218,40 @@ const ServiceOrders = () => {
         return;
       }
 
+      const { data: serialData, error: serialError } = await supabase
+        .from("service_orders")
+        .select(`
+          id,
+          client_id,
+          description,
+          status_id,
+          total_price,
+          created_at,
+          created_by_type,
+          seller_id,
+          store_id,
+          equipment,
+          equipment_serial_number,
+          problem,
+          reception_notes,
+          internal_notes,
+          order_number,
+          expected_date,
+          completion_date,
+          exit_date,
+          client:clients(name),
+          status:service_order_statuses!service_orders_status_id_fkey(name, color),
+          items:service_order_items(id, description, price)
+        `)
+        .eq('equipment_serial_number', searchTerm);
+
+      if (serialError) throw serialError;
+
+      if (serialData && serialData.length > 0) {
+        setOrders(serialData as ServiceOrder[]);
+        return;
+      }
+
       const { data: ordersData, error: ordersError } = await supabase
         .from("service_orders")
         .select(`
