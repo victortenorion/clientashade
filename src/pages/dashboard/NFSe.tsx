@@ -68,6 +68,8 @@ const NFSePage = () => {
 
       return data;
     },
+    staleTime: 0, // Força o refetch sempre que solicitado
+    refetchOnWindowFocus: true // Atualiza quando a janela recebe foco
   });
 
   const { data: nfseConfig } = useQuery({
@@ -358,7 +360,8 @@ const NFSePage = () => {
         title: "NFS-e excluída com sucesso",
       });
 
-      refetch();
+      // Força uma nova busca dos dados
+      await refetch();
     } catch (error: any) {
       console.error('Erro ao excluir NFS-e:', error);
       toast({
