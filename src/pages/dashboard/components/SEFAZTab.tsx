@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -90,8 +89,24 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
             codigo_municipio: data.endereco_codigo_municipio || '',
           });
         }
+
+        const { data: rpsConfig, error: rpsError } = await supabase
+          .from('nfse_sp_config')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (rpsError) throw rpsError;
+
+        if (rpsConfig) {
+          setNfseConfig(prev => ({
+            ...prev,
+            numero_inicial_rps: rpsConfig.numero_inicial_rps
+          }));
+        }
       } catch (error) {
-        console.error('Erro ao carregar dados da empresa:', error);
+        console.error('Erro ao carregar dados:', error);
       }
     };
 
@@ -145,7 +160,6 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
         setCertificadoValido(validation.valid);
         setCertificadoValidade(validation.validUntil);
 
-        // Atualiza ambas as configurações com o mesmo certificado
         setNfceConfig({
           ...nfceConfig,
           certificado_digital: certificadoDigital,
@@ -171,7 +185,17 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
           return;
         }
 
-        handleSaveAllConfigs();
+        const { error: rpsError } = await supabase
+          .from('nfse_sp_config')
+          .update({ 
+            numero_inicial_rps: parseInt(nfseConfig.numero_inicial_rps?.toString() || "0", 10)
+          })
+          .eq('id', supabase.sql`(SELECT id FROM nfse_sp_config ORDER BY created_at DESC LIMIT 1)`);
+
+        if (rpsError) throw rpsError;
+
+        await handleSaveAllConfigs();
+        
         toast({
           title: "Sucesso",
           description: "Certificado validado e configurações salvas com sucesso",
@@ -185,6 +209,22 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
         });
       }
       setIsValidating(false);
+    } else {
+      const { error: rpsError } = await supabase
+        .from('nfse_sp_config')
+        .update({ 
+          numero_inicial_rps: parseInt(nfseConfig.numero_inicial_rps?.toString() || "0", 10)
+        })
+        .eq('id', supabase.sql`(SELECT id FROM nfse_sp_config ORDER BY created_at DESC LIMIT 1)`);
+
+      if (rpsError) throw rpsError;
+
+      await handleSaveAllConfigs();
+      
+      toast({
+        title: "Sucesso",
+        description: "Configurações salvas com sucesso",
+      });
     }
   };
 
@@ -219,7 +259,6 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Certificado Digital Compartilhado */}
       <Card>
         <CardContent className="pt-6">
           <div className="space-y-4">
@@ -271,7 +310,6 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
         </CardContent>
       </Card>
 
-      {/* NFC-e Config */}
       <Card>
         <CardContent className="pt-6">
           <div className="space-y-4">
@@ -330,7 +368,6 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
         </CardContent>
       </Card>
 
-      {/* NFS-e Config */}
       <Card>
         <CardContent className="pt-6">
           <div className="space-y-4">
