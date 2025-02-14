@@ -622,25 +622,42 @@ export type Database = {
           base_calculo: number | null
           cancelada: boolean | null
           client_id: string
+          cnae: string | null
           codigo_servico: string
+          comissao_percentual: number | null
           created_at: string | null
           data_cancelamento: string | null
           data_competencia: string
           data_emissao: string | null
           deducoes: number | null
+          desconto_incondicional: number | null
+          desconto_iss: boolean | null
           discriminacao_servicos: string
           id: string
           motivo_cancelamento: string | null
+          municipio_prestacao: string | null
+          natureza_operacao: string | null
           numero_nfse: number
           numero_rps: string | null
           observacoes: string | null
+          percentual_ir: number | null
+          percentual_tributos_ibpt: number | null
+          retencao_inss: boolean | null
+          retencao_ir: boolean | null
+          retencao_iss: boolean | null
+          retencao_pis_cofins_csll: boolean | null
           serie_rps: string | null
           service_order_id: string | null
           status_sefaz: string | null
           updated_at: string | null
+          valor_comissao: number | null
+          valor_inss: number | null
+          valor_ir: number | null
           valor_iss: number | null
           valor_servicos: number
           valor_total: number | null
+          valor_tributos_ibpt: number | null
+          vendedor_id: string | null
           xml_envio: string | null
           xml_retorno: string | null
         }
@@ -650,25 +667,42 @@ export type Database = {
           base_calculo?: number | null
           cancelada?: boolean | null
           client_id: string
+          cnae?: string | null
           codigo_servico: string
+          comissao_percentual?: number | null
           created_at?: string | null
           data_cancelamento?: string | null
           data_competencia: string
           data_emissao?: string | null
           deducoes?: number | null
+          desconto_incondicional?: number | null
+          desconto_iss?: boolean | null
           discriminacao_servicos: string
           id?: string
           motivo_cancelamento?: string | null
+          municipio_prestacao?: string | null
+          natureza_operacao?: string | null
           numero_nfse?: number
           numero_rps?: string | null
           observacoes?: string | null
+          percentual_ir?: number | null
+          percentual_tributos_ibpt?: number | null
+          retencao_inss?: boolean | null
+          retencao_ir?: boolean | null
+          retencao_iss?: boolean | null
+          retencao_pis_cofins_csll?: boolean | null
           serie_rps?: string | null
           service_order_id?: string | null
           status_sefaz?: string | null
           updated_at?: string | null
+          valor_comissao?: number | null
+          valor_inss?: number | null
+          valor_ir?: number | null
           valor_iss?: number | null
           valor_servicos: number
           valor_total?: number | null
+          valor_tributos_ibpt?: number | null
+          vendedor_id?: string | null
           xml_envio?: string | null
           xml_retorno?: string | null
         }
@@ -678,25 +712,42 @@ export type Database = {
           base_calculo?: number | null
           cancelada?: boolean | null
           client_id?: string
+          cnae?: string | null
           codigo_servico?: string
+          comissao_percentual?: number | null
           created_at?: string | null
           data_cancelamento?: string | null
           data_competencia?: string
           data_emissao?: string | null
           deducoes?: number | null
+          desconto_incondicional?: number | null
+          desconto_iss?: boolean | null
           discriminacao_servicos?: string
           id?: string
           motivo_cancelamento?: string | null
+          municipio_prestacao?: string | null
+          natureza_operacao?: string | null
           numero_nfse?: number
           numero_rps?: string | null
           observacoes?: string | null
+          percentual_ir?: number | null
+          percentual_tributos_ibpt?: number | null
+          retencao_inss?: boolean | null
+          retencao_ir?: boolean | null
+          retencao_iss?: boolean | null
+          retencao_pis_cofins_csll?: boolean | null
           serie_rps?: string | null
           service_order_id?: string | null
           status_sefaz?: string | null
           updated_at?: string | null
+          valor_comissao?: number | null
+          valor_inss?: number | null
+          valor_ir?: number | null
           valor_iss?: number | null
           valor_servicos?: number
           valor_total?: number | null
+          valor_tributos_ibpt?: number | null
+          vendedor_id?: string | null
           xml_envio?: string | null
           xml_retorno?: string | null
         }
@@ -1142,6 +1193,7 @@ export type Database = {
       service_tax_codes: {
         Row: {
           aliquota_iss: number | null
+          cnae: string | null
           codigo: string
           created_at: string | null
           descricao: string
@@ -1151,6 +1203,7 @@ export type Database = {
         }
         Insert: {
           aliquota_iss?: number | null
+          cnae?: string | null
           codigo: string
           created_at?: string | null
           descricao: string
@@ -1160,6 +1213,7 @@ export type Database = {
         }
         Update: {
           aliquota_iss?: number | null
+          cnae?: string | null
           codigo?: string
           created_at?: string | null
           descricao?: string

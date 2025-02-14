@@ -24,6 +24,23 @@ export interface NFSe {
   xml_retorno: string | null;
   created_at: string;
   updated_at: string;
+  natureza_operacao: string;
+  municipio_prestacao: string;
+  cnae: string;
+  retencao_ir: boolean;
+  valor_ir: number;
+  percentual_ir: number;
+  retencao_iss: boolean;
+  desconto_iss: boolean;
+  retencao_inss: boolean;
+  valor_inss: number;
+  retencao_pis_cofins_csll: boolean;
+  percentual_tributos_ibpt: number;
+  valor_tributos_ibpt: number;
+  desconto_incondicional: number;
+  vendedor_id: string | null;
+  comissao_percentual: number;
+  valor_comissao: number;
 }
 
 export interface NFSeEvento {
@@ -70,6 +87,21 @@ export interface NFSeFormData {
   data_competencia: string;
   observacoes?: string;
   deducoes?: number;
+  natureza_operacao?: string;
+  municipio_prestacao?: string;
+  cnae?: string;
+  retencao_ir?: boolean;
+  percentual_ir?: number;
+  retencao_iss?: boolean;
+  desconto_iss?: boolean;
+  retencao_inss?: boolean;
+  retencao_pis_cofins_csll?: boolean;
+  percentual_tributos_ibpt?: number;
+  desconto_incondicional?: number;
+  vendedor_id?: string;
+  comissao_percentual?: number;
+  numero_rps?: string;
+  serie_rps?: string;
 }
 
 export interface NFSeCancelamento {

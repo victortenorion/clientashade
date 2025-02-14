@@ -33,7 +33,22 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
     valor_servicos: 0,
     data_competencia: format(new Date(), "yyyy-MM-dd"),
     deducoes: 0,
-    observacoes: ""
+    observacoes: "",
+    natureza_operacao: "",
+    municipio_prestacao: "",
+    cnae: "",
+    retencao_ir: false,
+    percentual_ir: 0,
+    retencao_iss: false,
+    desconto_iss: false,
+    retencao_inss: false,
+    retencao_pis_cofins_csll: false,
+    percentual_tributos_ibpt: 0,
+    desconto_incondicional: 0,
+    vendedor_id: "",
+    comissao_percentual: 0,
+    numero_rps: "",
+    serie_rps: ""
   });
 
   useEffect(() => {
@@ -51,12 +66,66 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
     <form onSubmit={handleSubmit}>
       <Card>
         <CardHeader>
-          <CardTitle>Emitir NFS-e</CardTitle>
+          <CardTitle>Dados do RPS</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="codigo_servico">Código de Serviço</Label>
+              <Label htmlFor="numero_rps">Número RPS</Label>
+              <Input
+                id="numero_rps"
+                value={formData.numero_rps}
+                onChange={(e) => setFormData(prev => ({ ...prev, numero_rps: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="serie_rps">Série RPS</Label>
+              <Input
+                id="serie_rps"
+                value={formData.serie_rps}
+                onChange={(e) => setFormData(prev => ({ ...prev, serie_rps: e.target.value }))}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-4">
+        <CardHeader>
+          <CardTitle>Dados do Serviço</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="natureza_operacao">Natureza da Operação</Label>
+              <Input
+                id="natureza_operacao"
+                value={formData.natureza_operacao}
+                onChange={(e) => setFormData(prev => ({ ...prev, natureza_operacao: e.target.value }))}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="municipio_prestacao">Município de Prestação</Label>
+                <Input
+                  id="municipio_prestacao"
+                  value={formData.municipio_prestacao}
+                  onChange={(e) => setFormData(prev => ({ ...prev, municipio_prestacao: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cnae">CNAE</Label>
+                <Input
+                  id="cnae"
+                  value={formData.cnae}
+                  onChange={(e) => setFormData(prev => ({ ...prev, cnae: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="codigo_servico">Código do Serviço *</Label>
               <Input
                 id="codigo_servico"
                 value={formData.codigo_servico}
@@ -64,8 +133,9 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
                 required
               />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="discriminacao_servicos">Descrição dos Serviços</Label>
+              <Label htmlFor="discriminacao_servicos">Descrição dos Serviços *</Label>
               <Textarea
                 id="discriminacao_servicos"
                 value={formData.discriminacao_servicos}
@@ -74,61 +144,152 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
                 required
               />
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-4">
+        <CardHeader>
+          <CardTitle>Valores e Impostos</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="valor_servicos">Valor Total dos Serviços</Label>
+              <Label htmlFor="valor_servicos">Valor Total dos Serviços *</Label>
               <Input
                 id="valor_servicos"
                 type="number"
+                step="0.01"
                 value={formData.valor_servicos}
                 onChange={(e) => setFormData(prev => ({ ...prev, valor_servicos: parseFloat(e.target.value) || 0 }))}
                 required
               />
             </div>
+            
             <div className="space-y-2">
-              <Label>Data de Competência</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-[240px] justify-start text-left font-normal",
-                      !formData.data_competencia && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.data_competencia ? format(new Date(formData.data_competencia), "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione a data</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={new Date(formData.data_competencia)}
-                    onSelect={(date) => date && setFormData(prev => ({ ...prev, data_competencia: format(date, "yyyy-MM-dd") }))}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="observacoes">Observações</Label>
-              <Textarea
-                id="observacoes"
-                value={formData.observacoes || ""}
-                onChange={(e) => setFormData(prev => ({ ...prev, observacoes: e.target.value }))}
-                placeholder="Observações adicionais"
+              <Label htmlFor="desconto_incondicional">Desconto Incondicional</Label>
+              <Input
+                id="desconto_incondicional"
+                type="number"
+                step="0.01"
+                value={formData.desconto_incondicional}
+                onChange={(e) => setFormData(prev => ({ ...prev, desconto_incondicional: parseFloat(e.target.value) || 0 }))}
               />
             </div>
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={onCancel}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Emitindo..." : "Emitir NFS-e"}
-              </Button>
+
+            <div className="space-y-2">
+              <Label htmlFor="percentual_ir">Percentual IR (%)</Label>
+              <Input
+                id="percentual_ir"
+                type="number"
+                step="0.01"
+                value={formData.percentual_ir}
+                onChange={(e) => setFormData(prev => ({ ...prev, percentual_ir: parseFloat(e.target.value) || 0 }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="percentual_tributos_ibpt">Percentual Tributos IBPT (%)</Label>
+              <Input
+                id="percentual_tributos_ibpt"
+                type="number"
+                step="0.01"
+                value={formData.percentual_tributos_ibpt}
+                onChange={(e) => setFormData(prev => ({ ...prev, percentual_tributos_ibpt: parseFloat(e.target.value) || 0 }))}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="retencao_ir"
+                checked={formData.retencao_ir}
+                onChange={(e) => setFormData(prev => ({ ...prev, retencao_ir: e.target.checked }))}
+              />
+              <Label htmlFor="retencao_ir">Reter IR</Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="retencao_iss"
+                checked={formData.retencao_iss}
+                onChange={(e) => setFormData(prev => ({ ...prev, retencao_iss: e.target.checked }))}
+              />
+              <Label htmlFor="retencao_iss">Reter ISS</Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="desconto_iss"
+                checked={formData.desconto_iss}
+                onChange={(e) => setFormData(prev => ({ ...prev, desconto_iss: e.target.checked }))}
+              />
+              <Label htmlFor="desconto_iss">Descontar ISS</Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="retencao_inss"
+                checked={formData.retencao_inss}
+                onChange={(e) => setFormData(prev => ({ ...prev, retencao_inss: e.target.checked }))}
+              />
+              <Label htmlFor="retencao_inss">Reter INSS</Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="retencao_pis_cofins_csll"
+                checked={formData.retencao_pis_cofins_csll}
+                onChange={(e) => setFormData(prev => ({ ...prev, retencao_pis_cofins_csll: e.target.checked }))}
+              />
+              <Label htmlFor="retencao_pis_cofins_csll">Reter CSLL, PIS e COFINS</Label>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      <Card className="mt-4">
+        <CardHeader>
+          <CardTitle>Dados do Vendedor</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="vendedor_id">Vendedor</Label>
+              <Input
+                id="vendedor_id"
+                value={formData.vendedor_id}
+                onChange={(e) => setFormData(prev => ({ ...prev, vendedor_id: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="comissao_percentual">Comissão (%)</Label>
+              <Input
+                id="comissao_percentual"
+                type="number"
+                step="0.01"
+                value={formData.comissao_percentual}
+                onChange={(e) => setFormData(prev => ({ ...prev, comissao_percentual: parseFloat(e.target.value) || 0 }))}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex justify-end gap-2 mt-4">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancelar
+        </Button>
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? "Emitindo..." : "Emitir NFS-e"}
+        </Button>
+      </div>
     </form>
   );
 };
