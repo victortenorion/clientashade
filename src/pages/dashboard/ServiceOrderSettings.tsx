@@ -3,6 +3,7 @@ import { useState } from "react";
 import { StatusTab } from "./components/StatusTab";
 import { SEFAZTab } from "./components/SEFAZTab";
 import { ClientTab } from "./components/ClientTab";
+import { NotasFiscaisTab } from "./components/NotasFiscaisTab";
 import { useLocation } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { ClientField } from "./types/service-order-settings.types";
@@ -60,12 +61,8 @@ const ServiceOrderSettings = () => {
   const renderContent = () => {
     if (location.pathname.includes("/notas-fiscais")) {
       return (
-        <SEFAZTab 
-          nfceConfig={nfceConfig}
-          nfseConfig={nfseConfig}
+        <NotasFiscaisTab 
           fiscalConfig={fiscalConfig}
-          setNfceConfig={setNfceConfig}
-          setNfseConfig={setNfseConfig}
           setFiscalConfig={setFiscalConfig}
           handleSaveAllConfigs={handleSaveAllConfigs}
         />
