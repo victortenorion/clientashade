@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -10,14 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-
-interface NFSeFormData {
-  serviceCode: string;
-  cnae: string;
-  date: Date;
-  description: string;
-  amount: number;
-}
+import type { NFSeFormData } from "../types/nfse.types";
 
 interface NFSeFormProps {
   onSubmit: (formData: NFSeFormData) => Promise<void>;
@@ -27,11 +21,13 @@ interface NFSeFormProps {
 
 export const NFSeForm: React.FC<NFSeFormProps> = ({ onSubmit, onCancel, isLoading }) => {
   const [formData, setFormData] = useState<NFSeFormData>({
-    serviceCode: "",
-    cnae: "",
-    date: new Date(),
-    description: "",
-    amount: 0
+    client_id: "",
+    codigo_servico: "",
+    discriminacao_servicos: "",
+    valor_servicos: 0,
+    data_competencia: format(new Date(), "yyyy-MM-dd"),
+    deducoes: 0,
+    observacoes: ""
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -48,68 +44,66 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({ onSubmit, onCancel, isLoadin
         <CardContent>
           <div className="grid gap-4">
             <div className="space-y-2">
-              <Label htmlFor="serviceCode">Código de Serviço</Label>
+              <Label htmlFor="codigo_servico">Código de Serviço</Label>
               <Input
-                id="serviceCode"
-                value={formData.serviceCode}
-                onChange={(e) => setFormData(prev => ({ ...prev, serviceCode: e.target.value }))}
+                id="codigo_servico"
+                value={formData.codigo_servico}
+                onChange={(e) => setFormData(prev => ({ ...prev, codigo_servico: e.target.value }))}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="cnae">CNAE</Label>
-              <Input
-                id="cnae"
-                value={formData.cnae}
-                onChange={(e) => setFormData(prev => ({ ...prev, cnae: e.target.value }))}
+              <Label htmlFor="discriminacao_servicos">Descrição dos Serviços</Label>
+              <Textarea
+                id="discriminacao_servicos"
+                value={formData.discriminacao_servicos}
+                onChange={(e) => setFormData(prev => ({ ...prev, discriminacao_servicos: e.target.value }))}
+                placeholder="Detalhe os serviços prestados"
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="date">Data de Emissão</Label>
+              <Label htmlFor="valor_servicos">Valor Total dos Serviços</Label>
+              <Input
+                id="valor_servicos"
+                type="number"
+                value={formData.valor_servicos}
+                onChange={(e) => setFormData(prev => ({ ...prev, valor_servicos: parseFloat(e.target.value) || 0 }))}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Data de Competência</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant={"outline"}
                     className={cn(
                       "w-[240px] justify-start text-left font-normal",
-                      !formData.date && "text-muted-foreground"
+                      !formData.data_competencia && "text-muted-foreground"
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.date ? format(formData.date, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione a data</span>}
+                    {formData.data_competencia ? format(new Date(formData.data_competencia), "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione a data</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
-                    selected={formData.date}
-                    onSelect={(date) => date && setFormData(prev => ({ ...prev, date }))}
-                    disabled={(date) => date > new Date()}
+                    selected={new Date(formData.data_competencia)}
+                    onSelect={(date) => date && setFormData(prev => ({ ...prev, data_competencia: format(date, "yyyy-MM-dd") }))}
                     initialFocus
                   />
                 </PopoverContent>
               </Popover>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Descrição dos Serviços</Label>
+              <Label htmlFor="observacoes">Observações</Label>
               <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Detalhe os serviços prestados"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="amount">Valor Total dos Serviços</Label>
-              <Input
-                id="amount"
-                type="number"
-                value={formData.amount}
-                onChange={(e) => setFormData(prev => ({ ...prev, amount: parseFloat(e.target.value) }))}
-                placeholder="Informe o valor total"
-                required
+                id="observacoes"
+                value={formData.observacoes || ""}
+                onChange={(e) => setFormData(prev => ({ ...prev, observacoes: e.target.value }))}
+                placeholder="Observações adicionais"
               />
             </div>
             <div className="flex justify-end gap-2">

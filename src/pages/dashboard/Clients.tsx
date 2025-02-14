@@ -54,7 +54,7 @@ interface VisibleField {
   visible: boolean;
 }
 
-const Clients = () => {
+export const Clients = () => {
   const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState<Client[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
@@ -520,8 +520,8 @@ const Clients = () => {
                     .map(field => (
                       <TableCell key={field.field_name}>
                         {field.field_name === 'contact_persons' 
-                          ? (client[field.field_name] as ContactPerson[])?.map(p => p.name).join(', ') 
-                          : client[field.field_name as keyof Client]}
+                          ? (client[field.field_name] as ContactPerson[])?.map(p => p.name).join(', ') || ''
+                          : String(client[field.field_name as keyof Client] || '')}
                       </TableCell>
                     ))}
                   <TableCell>
