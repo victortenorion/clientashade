@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
 
 interface CustomerAreaField {
@@ -41,7 +41,7 @@ export const ClientTab = () => {
       if (error) throw error;
 
       setFields(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao carregar campos:', error);
       toast({
         title: "Erro",
@@ -68,7 +68,7 @@ export const ClientTab = () => {
         title: "Sucesso",
         description: "Visibilidade do campo atualizada com sucesso.",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao atualizar visibilidade:', error);
       toast({
         title: "Erro",
