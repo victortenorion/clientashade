@@ -502,31 +502,35 @@ export const CompanyInfoTab = () => {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Número Inicial do RPS</Label>
-            <Input
-              type="number"
-              min="0"
-              value={rpsConfig.numero_inicial_rps === 0 ? '' : rpsConfig.numero_inicial_rps}
-              onChange={(e) =>
-                setRpsConfig({
-                  ...rpsConfig,
-                  numero_inicial_rps: e.target.value === '' ? 0 : parseInt(e.target.value)
-                })
-              }
-              placeholder="Digite o número inicial do RPS"
-            />
-          </div>
+          <div className="flex justify-center">
+            <div className="grid grid-cols-2 gap-6 w-1/2">
+              <div className="space-y-2">
+                <Label>Número Inicial do RPS</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={rpsConfig.numero_inicial_rps === 0 ? '' : rpsConfig.numero_inicial_rps}
+                  onChange={(e) =>
+                    setRpsConfig({
+                      ...rpsConfig,
+                      numero_inicial_rps: e.target.value === '' ? 0 : parseInt(e.target.value)
+                    })
+                  }
+                  placeholder="Digite o número inicial"
+                />
+              </div>
 
-          <div className="space-y-2">
-            <Label>Série RPS</Label>
-            <Input
-              value={companyInfo.serie_rps_padrao || ""}
-              onChange={(e) =>
-                setCompanyInfo({ ...companyInfo, serie_rps_padrao: e.target.value })
-              }
-              placeholder="Digite a série do RPS"
-            />
+              <div className="space-y-2">
+                <Label>Série RPS</Label>
+                <Input
+                  value={companyInfo.serie_rps_padrao || ""}
+                  onChange={(e) =>
+                    setCompanyInfo({ ...companyInfo, serie_rps_padrao: e.target.value })
+                  }
+                  placeholder="Digite a série"
+                />
+              </div>
+            </div>
           </div>
 
           <div className="flex justify-end">
