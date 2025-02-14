@@ -59,25 +59,29 @@ serve(async (req) => {
         )
       `)
       .eq('id', nfseId)
-      .single();
+      .maybeSingle();
 
     if (nfseError) throw nfseError;
+    if (!nfse) throw new Error('NFS-e não encontrada');
 
     // Get company info
     const { data: companyInfo, error: companyError } = await supabase
       .from('company_info')
       .select('*')
-      .single();
+      .maybeSingle();
 
     if (companyError) throw companyError;
+    if (!companyInfo) throw new Error('Informações da empresa não configuradas');
 
     // Get certificate
     const { data: nfseConfig, error: configError } = await supabase
       .from('nfse_config')
       .select('*')
-      .single();
+      .maybeSingle();
 
     if (configError) throw configError;
+    if (!nfseConfig) throw new Error('Configurações da NFS-e não encontradas');
+    if (!nfseConfig.certificado_digital) throw new Error('Certificado digital não configurado');
 
     // Log the processing attempt
     console.log('Processing NFSe:', {
@@ -85,6 +89,11 @@ serve(async (req) => {
       ambiente: nfseConfig.ambiente,
       certificadoValido: nfseConfig.certificado_valido
     });
+
+    // Validate certificate
+    if (!nfseConfig.certificado_valido) {
+      throw new Error('Certificado digital inválido ou expirado');
+    }
 
     // In a real implementation, here you would:
     // 1. Generate the XML
