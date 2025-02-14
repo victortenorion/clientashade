@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -77,14 +76,16 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
 
     const fetchNFSeConfig = async () => {
       try {
-        const { data: config, error } = await supabase
+        const { data: configs, error } = await supabase
           .from("nfse_config")
           .select("ultima_rps_numero")
-          .single();
+          .order('created_at', { ascending: false })
+          .limit(1);
 
         if (error) throw error;
 
-        if (config) {
+        if (configs && configs.length > 0) {
+          const config = configs[0];
           const proximoNumeroRPS = (config.ultima_rps_numero + 1).toString();
           setFormData(prev => ({
             ...prev,
