@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -28,7 +27,7 @@ interface Status {
   color: string;
 }
 
-interface ServiceOrderResponse {
+interface ServiceOrder {
   id: string;
   description: string;
   status_id: string | null;
@@ -43,10 +42,6 @@ interface ServiceOrderResponse {
   expected_date: string | null;
   completion_date: string | null;
   exit_date: string | null;
-}
-
-interface ServiceOrder extends Omit<ServiceOrderResponse, 'status'> {
-  status: Status | null;
 }
 
 interface ServiceOrderFormData {
