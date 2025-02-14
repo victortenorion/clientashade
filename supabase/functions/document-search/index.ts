@@ -42,7 +42,6 @@ const validateCNPJ = (cnpj: string) => {
   if (cleanCNPJ.length !== 14) return false
   if (/^(\d)\1{13}$/.test(cleanCNPJ)) return false
 
-  // Validação do primeiro dígito
   let size = cleanCNPJ.length - 2
   let numbers = cleanCNPJ.substring(0, size)
   const digits = cleanCNPJ.substring(size)
@@ -57,7 +56,6 @@ const validateCNPJ = (cnpj: string) => {
   let result = sum % 11 < 2 ? 0 : 11 - sum % 11
   if (result !== parseInt(digits.charAt(0))) return false
 
-  // Validação do segundo dígito
   size = size + 1
   numbers = cleanCNPJ.substring(0, size)
   sum = 0
@@ -77,40 +75,30 @@ const validateCNPJ = (cnpj: string) => {
 const searchCNPJ = async (cnpj: string) => {
   try {
     const cleanCNPJ = cnpj.replace(/[^\d]/g, '')
+    console.log('Buscando CNPJ:', cleanCNPJ)
+    
     const response = await fetch(`${CNPJ_API_BASE}/${cleanCNPJ}`)
+    console.log('Status da resposta:', response.status)
     
     if (!response.ok) {
-      throw new Error('CNPJ não encontrado')
+      throw new Error(`CNPJ não encontrado: ${response.status}`)
     }
     
     const data = await response.json()
+    console.log('Dados recebidos:', data)
+    
     return {
       name: data.razao_social,
       document: cnpj,
       email: data.email || '',
       phone: data.telefone1 || '',
-      address: `${data.estabelecimento.tipo_logradouro} ${data.estabelecimento.logradouro}, ${data.estabelecimento.numero}${data.estabelecimento.complemento ? `, ${data.estabelecimento.complemento}` : ''} - ${data.estabelecimento.bairro}, ${data.estabelecimento.cidade.nome} - ${data.estabelecimento.estado.sigla}, ${data.estabelecimento.cep}`,
+      address: `${data.estabelecimento.tipo_logradouro} ${data.estabelecimento.logradouro} ${data.estabelecimento.numero}, ${data.estabelecimento.bairro}, ${data.estabelecimento.cidade.nome} - ${data.estabelecimento.estado.sigla}, ${data.estabelecimento.cep}`,
     }
   } catch (error) {
-    throw new Error('Erro ao buscar dados do CNPJ')
+    console.error('Erro ao buscar CNPJ:', error)
+    throw new Error(`Erro ao buscar dados do CNPJ: ${error.message}`)
   }
 }
-
-// Initialize Supabase client
-const supabaseClient = createClient(
-  Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-)
-
-const formatDocument = (doc: string) => {
-  const cleanDoc = doc.replace(/[^\d]/g, '');
-  if (cleanDoc.length === 11) {
-    return cleanDoc.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-  } else if (cleanDoc.length === 14) {
-    return cleanDoc.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
-  }
-  return doc;
-};
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -120,7 +108,6 @@ serve(async (req) => {
 
   try {
     const { document } = await req.json()
-    const cleanDocument = document.replace(/[^\d]/g, '')
     
     if (!document) {
       return new Response(
@@ -135,52 +122,10 @@ serve(async (req) => {
       )
     }
 
-    // Verifica se é CPF ou CNPJ pelo tamanho
-    if (cleanDocument.length === 11) {
-      const isValid = validateCPF(cleanDocument)
-      if (!isValid) {
-        return new Response(
-          JSON.stringify({ error: 'CPF inválido' }),
-          { 
-            status: 400, 
-            headers: { 
-              'Content-Type': 'application/json',
-              ...corsHeaders 
-            } 
-          }
-        )
-      }
-      
-      // Busca no banco local usando o cliente Supabase inicializado
-      const { data: clients, error } = await supabaseClient
-        .from('clients')
-        .select('*')
-        .eq('document', formatDocument(cleanDocument))
-      
-      if (error) throw error
-
-      // Formatamos a resposta similar ao CNPJ para manter consistência
-      const formattedDocument = formatDocument(cleanDocument)
-      
-      return new Response(
-        JSON.stringify({ 
-          apiData: clients && clients.length > 0 ? null : {
-            name: '',
-            document: formattedDocument,
-            email: '',
-            phone: '',
-            address: ''
-          },
-          results: clients 
-        }),
-        { 
-          headers: { 
-            'Content-Type': 'application/json',
-            ...corsHeaders 
-          } 
-        }
-      )
-    } else if (cleanDocument.length === 14) {
+    console.log('Documento recebido:', document)
+    const cleanDocument = document.replace(/[^\d]/g, '')
+    
+    if (cleanDocument.length === 14) {
       const isValid = validateCNPJ(cleanDocument)
       if (!isValid) {
         return new Response(
@@ -195,29 +140,29 @@ serve(async (req) => {
         )
       }
       
-      // Busca na API pública e no banco local
-      const [apiData, { data: clients, error }] = await Promise.all([
-        searchCNPJ(cleanDocument),
-        supabaseClient
-          .from('clients')
-          .select('*')
-          .eq('document', formatDocument(cleanDocument))
-      ])
-      
-      if (error) throw error
-      
-      return new Response(
-        JSON.stringify({ 
-          apiData,
-          results: clients 
-        }),
-        { 
-          headers: { 
-            'Content-Type': 'application/json',
-            ...corsHeaders 
-          } 
-        }
-      )
+      try {
+        const apiData = await searchCNPJ(cleanDocument)
+        return new Response(
+          JSON.stringify({ apiData }),
+          { 
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders 
+            } 
+          }
+        )
+      } catch (error) {
+        return new Response(
+          JSON.stringify({ error: error.message }),
+          { 
+            status: 500, 
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders 
+            } 
+          }
+        )
+      }
     } else {
       return new Response(
         JSON.stringify({ error: 'Documento inválido' }),
