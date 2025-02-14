@@ -287,6 +287,40 @@ const NFSePage = () => {
     }
   };
 
+  const handleCancelEnvio = async (nfseId: string) => {
+    try {
+      // Atualizar status da NFS-e
+      const { error: nfseError } = await supabase
+        .from("nfse")
+        .update({ status_sefaz: "pendente" })
+        .eq("id", nfseId);
+
+      if (nfseError) throw nfseError;
+
+      // Remover da fila de transmissão
+      const { error: queueError } = await supabase
+        .from("sefaz_transmission_queue")
+        .delete()
+        .eq("documento_id", nfseId)
+        .eq("tipo", "nfse");
+
+      if (queueError) throw queueError;
+
+      toast({
+        title: "Envio cancelado",
+        description: "A NFS-e voltou para o status pendente.",
+      });
+
+      refetch();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao cancelar envio",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const formatMoney = (value: number | null) => {
     if (value === null) return "R$ 0,00";
     return new Intl.NumberFormat("pt-BR", {
@@ -389,6 +423,27 @@ const NFSePage = () => {
                             title="Enviar para SEFAZ"
                           >
                             <Send className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+
+                      {nota.status_sefaz === "enviando" && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleCancelEnvio(nota.id)}
+                            title="Cancelar envio"
+                          >
+                            <XCircle className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleDeleteNFSe(nota.id)}
+                            title="Excluir"
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </>
                       )}
