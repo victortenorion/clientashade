@@ -234,41 +234,48 @@ const ServiceOrders = () => {
 
       if (ordersError) throw ordersError;
 
-      const { data: clientOrdersData, error: clientOrdersError } = await supabase
-        .from("service_orders")
-        .select(`
-          id,
-          client_id,
-          description,
-          status_id,
-          total_price,
-          created_at,
-          created_by_type,
-          seller_id,
-          store_id,
-          equipment,
-          equipment_serial_number,
-          problem,
-          reception_notes,
-          internal_notes,
-          order_number,
-          expected_date,
-          completion_date,
-          exit_date,
-          client:clients(name),
-          status:service_order_statuses!service_orders_status_id_fkey(name, color),
-          items:service_order_items(id, description, price)
-        `)
-        .in('client_id', 
-          supabase
-            .from('clients')
-            .select('id')
-            .ilike('name', `%${searchTerm}%`)
-        );
+      const { data: clientsData, error: clientsError } = await supabase
+        .from('clients')
+        .select('id')
+        .ilike('name', `%${searchTerm}%`);
 
-      if (clientOrdersError) throw clientOrdersError;
+      if (clientsError) throw clientsError;
 
-      const allOrders = [...(ordersData || []), ...(clientOrdersData || [])];
+      let clientOrdersData: any[] = [];
+      if (clientsData && clientsData.length > 0) {
+        const clientIds = clientsData.map(client => client.id);
+        const { data: clientOrders, error: clientOrdersError } = await supabase
+          .from("service_orders")
+          .select(`
+            id,
+            client_id,
+            description,
+            status_id,
+            total_price,
+            created_at,
+            created_by_type,
+            seller_id,
+            store_id,
+            equipment,
+            equipment_serial_number,
+            problem,
+            reception_notes,
+            internal_notes,
+            order_number,
+            expected_date,
+            completion_date,
+            exit_date,
+            client:clients(name),
+            status:service_order_statuses!service_orders_status_id_fkey(name, color),
+            items:service_order_items(id, description, price)
+          `)
+          .in('client_id', clientIds);
+
+        if (clientOrdersError) throw clientOrdersError;
+        clientOrdersData = clientOrders || [];
+      }
+
+      const allOrders = [...(ordersData || []), ...clientOrdersData];
       const uniqueOrders = Array.from(new Map(allOrders.map(order => [order.id, order])).values());
 
       setOrders(uniqueOrders as ServiceOrder[]);
