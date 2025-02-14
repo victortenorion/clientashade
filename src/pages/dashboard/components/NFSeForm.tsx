@@ -91,38 +91,38 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
       try {
         const { data: spConfig, error: spError } = await supabase
           .from("nfse_sp_config")
-          .select("id, ultima_rps_numero")
+          .select("numero_inicial_rps")
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
 
         if (spError) throw spError;
 
-        if (spConfig) {
-          console.log('Configuração atual:', spConfig); // Debug
-          const proximoNumeroRPS = (spConfig.ultima_rps_numero + 1).toString();
-          console.log('Próximo número RPS:', proximoNumeroRPS); // Debug
-          setFormData(prev => ({
-            ...prev,
-            numero_rps: proximoNumeroRPS
-          }));
+        let proximoNumeroRPS = "1"; // Valor padrão
+
+        if (spConfig?.numero_inicial_rps) {
+          proximoNumeroRPS = (spConfig.numero_inicial_rps).toString();
+          console.log('Usando número inicial configurado:', proximoNumeroRPS);
         } else {
-          // Se não houver configuração, criar uma nova
-          const { data: newConfig, error: insertError } = await supabase
+          const { data: ultimaConfig, error: configError } = await supabase
             .from("nfse_sp_config")
-            .insert({ ultima_rps_numero: 0 })
-            .select()
-            .single();
+            .select("ultima_rps_numero")
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
 
-          if (insertError) throw insertError;
+          if (configError) throw configError;
 
-          if (newConfig) {
-            setFormData(prev => ({
-              ...prev,
-              numero_rps: "1"
-            }));
+          if (ultimaConfig) {
+            proximoNumeroRPS = (ultimaConfig.ultima_rps_numero + 1).toString();
+            console.log('Próximo número RPS baseado no último:', proximoNumeroRPS);
           }
         }
+
+        setFormData(prev => ({
+          ...prev,
+          numero_rps: proximoNumeroRPS
+        }));
       } catch (error) {
         console.error("Erro ao buscar configuração da NFS-e:", error);
         toast({
@@ -153,7 +153,6 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
         throw new Error("Configuração não encontrada");
       }
 
-      // Atualizar o último número de RPS antes de submeter
       const { error: updateError } = await supabase
         .from("nfse_sp_config")
         .update({ 
