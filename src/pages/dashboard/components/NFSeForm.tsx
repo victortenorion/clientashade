@@ -1,14 +1,19 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/lib/supabase";
 import type { NFSeFormData } from "../types/nfse.types";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface NFSeFormProps {
   onSubmit: (formData: NFSeFormData) => Promise<void>;
@@ -208,12 +213,24 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
         <CardContent>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="natureza_operacao">Natureza da Operação</Label>
-              <Input
-                id="natureza_operacao"
+              <Label htmlFor="natureza_operacao">Natureza da Operação *</Label>
+              <Select
                 value={formData.natureza_operacao}
-                onChange={(e) => setFormData(prev => ({ ...prev, natureza_operacao: e.target.value }))}
-              />
+                onValueChange={(value) => setFormData(prev => ({ ...prev, natureza_operacao: value }))}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a natureza da operação" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 - Tributação no município de São Paulo</SelectItem>
+                  <SelectItem value="2">2 - Tributação fora do município de São Paulo</SelectItem>
+                  <SelectItem value="3">3 - Isenção</SelectItem>
+                  <SelectItem value="4">4 - Imune</SelectItem>
+                  <SelectItem value="5">5 - Exigibilidade suspensa por decisão judicial</SelectItem>
+                  <SelectItem value="6">6 - Exigibilidade suspensa por procedimento administrativo</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -314,59 +331,84 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
           </div>
 
           <div className="grid grid-cols-2 gap-4 mt-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="retencao_ir"
-                checked={formData.retencao_ir}
-                onCheckedChange={(checked) => 
-                  setFormData(prev => ({ ...prev, retencao_ir: checked as boolean }))
-                }
-              />
-              <Label htmlFor="retencao_ir">Reter IR</Label>
+            <div className="space-y-2">
+              <Label>Retenções de Impostos</Label>
+              <Select
+                value={formData.retencao_ir ? "sim" : "nao"}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, retencao_ir: value === "sim" }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Reter IR?" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sim">Sim</SelectItem>
+                  <SelectItem value="nao">Não</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="retencao_iss"
-                checked={formData.retencao_iss}
-                onCheckedChange={(checked) => 
-                  setFormData(prev => ({ ...prev, retencao_iss: checked as boolean }))
-                }
-              />
-              <Label htmlFor="retencao_iss">Reter ISS</Label>
+            <div className="space-y-2">
+              <Label>Retenção ISS</Label>
+              <Select
+                value={formData.retencao_iss ? "sim" : "nao"}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, retencao_iss: value === "sim" }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Reter ISS?" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sim">Sim</SelectItem>
+                  <SelectItem value="nao">Não</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="desconto_iss"
-                checked={formData.desconto_iss}
-                onCheckedChange={(checked) => 
-                  setFormData(prev => ({ ...prev, desconto_iss: checked as boolean }))
-                }
-              />
-              <Label htmlFor="desconto_iss">Descontar ISS</Label>
+            <div className="space-y-2">
+              <Label>Desconto ISS</Label>
+              <Select
+                value={formData.desconto_iss ? "sim" : "nao"}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, desconto_iss: value === "sim" }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Descontar ISS?" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sim">Sim</SelectItem>
+                  <SelectItem value="nao">Não</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="retencao_inss"
-                checked={formData.retencao_inss}
-                onCheckedChange={(checked) => 
-                  setFormData(prev => ({ ...prev, retencao_inss: checked as boolean }))
-                }
-              />
-              <Label htmlFor="retencao_inss">Reter INSS</Label>
+            <div className="space-y-2">
+              <Label>Retenção INSS</Label>
+              <Select
+                value={formData.retencao_inss ? "sim" : "nao"}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, retencao_inss: value === "sim" }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Reter INSS?" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sim">Sim</SelectItem>
+                  <SelectItem value="nao">Não</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="retencao_pis_cofins_csll"
-                checked={formData.retencao_pis_cofins_csll}
-                onCheckedChange={(checked) => 
-                  setFormData(prev => ({ ...prev, retencao_pis_cofins_csll: checked as boolean }))
-                }
-              />
-              <Label htmlFor="retencao_pis_cofins_csll">Reter CSLL, PIS e COFINS</Label>
+            <div className="space-y-2">
+              <Label>Retenção PIS/COFINS/CSLL</Label>
+              <Select
+                value={formData.retencao_pis_cofins_csll ? "sim" : "nao"}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, retencao_pis_cofins_csll: value === "sim" }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Reter PIS/COFINS/CSLL?" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sim">Sim</SelectItem>
+                  <SelectItem value="nao">Não</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>
