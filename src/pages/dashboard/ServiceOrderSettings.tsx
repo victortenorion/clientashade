@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusTab } from "./components/StatusTab";
 import { SEFAZTab } from "./components/SEFAZTab";
 import { ClientTab } from "./components/ClientTab";
@@ -58,62 +57,57 @@ const ServiceOrderSettings = () => {
     console.log("Salvando configurações...");
   };
 
-  const getDefaultTab = () => {
-    if (location.pathname.includes("/sefaz")) return "sefaz";
-    if (location.pathname.includes("/notas-fiscais")) return "notas-fiscais";
-    if (location.pathname.includes("/area-cliente")) return "area-cliente";
-    if (location.pathname.includes("/campos-visiveis")) return "campos-visiveis";
-    return "status";
+  const renderContent = () => {
+    if (location.pathname.includes("/notas-fiscais")) {
+      return (
+        <SEFAZTab 
+          nfceConfig={nfceConfig}
+          nfseConfig={nfseConfig}
+          fiscalConfig={fiscalConfig}
+          setNfceConfig={setNfceConfig}
+          setNfseConfig={setNfseConfig}
+          setFiscalConfig={setFiscalConfig}
+          handleSaveAllConfigs={handleSaveAllConfigs}
+        />
+      );
+    }
+    if (location.pathname.includes("/sefaz")) {
+      return (
+        <SEFAZTab 
+          nfceConfig={nfceConfig}
+          nfseConfig={nfseConfig}
+          fiscalConfig={fiscalConfig}
+          setNfceConfig={setNfceConfig}
+          setNfseConfig={setNfseConfig}
+          setFiscalConfig={setFiscalConfig}
+          handleSaveAllConfigs={handleSaveAllConfigs}
+        />
+      );
+    }
+    if (location.pathname.includes("/area-cliente")) {
+      return (
+        <ClientTab 
+          clientFields={clientFields}
+          onFieldVisibilityChange={handleFieldVisibilityChange}
+        />
+      );
+    }
+    if (location.pathname.includes("/campos-visiveis")) {
+      return (
+        <ClientTab 
+          clientFields={clientFields}
+          onFieldVisibilityChange={handleFieldVisibilityChange}
+        />
+      );
+    }
+    // Default to StatusTab
+    return <StatusTab />;
   };
 
   return (
-    <Tabs defaultValue={getDefaultTab()} className="space-y-6">
-      <TabsList>
-        <TabsTrigger value="status">Status</TabsTrigger>
-        <TabsTrigger value="notas-fiscais">Notas Fiscais</TabsTrigger>
-        <TabsTrigger value="sefaz">SEFAZ</TabsTrigger>
-        <TabsTrigger value="area-cliente">Área do Cliente</TabsTrigger>
-        <TabsTrigger value="campos-visiveis">Campos Visíveis</TabsTrigger>
-      </TabsList>
-
-      <TabsContent value="status">
-        <StatusTab />
-      </TabsContent>
-      <TabsContent value="notas-fiscais">
-        <SEFAZTab 
-          nfceConfig={nfceConfig}
-          nfseConfig={nfseConfig}
-          fiscalConfig={fiscalConfig}
-          setNfceConfig={setNfceConfig}
-          setNfseConfig={setNfseConfig}
-          setFiscalConfig={setFiscalConfig}
-          handleSaveAllConfigs={handleSaveAllConfigs}
-        />
-      </TabsContent>
-      <TabsContent value="sefaz">
-        <SEFAZTab 
-          nfceConfig={nfceConfig}
-          nfseConfig={nfseConfig}
-          fiscalConfig={fiscalConfig}
-          setNfceConfig={setNfceConfig}
-          setNfseConfig={setNfseConfig}
-          setFiscalConfig={setFiscalConfig}
-          handleSaveAllConfigs={handleSaveAllConfigs}
-        />
-      </TabsContent>
-      <TabsContent value="area-cliente">
-        <ClientTab 
-          clientFields={clientFields}
-          onFieldVisibilityChange={handleFieldVisibilityChange}
-        />
-      </TabsContent>
-      <TabsContent value="campos-visiveis">
-        <ClientTab 
-          clientFields={clientFields}
-          onFieldVisibilityChange={handleFieldVisibilityChange}
-        />
-      </TabsContent>
-    </Tabs>
+    <div className="space-y-6">
+      {renderContent()}
+    </div>
   );
 };
 
