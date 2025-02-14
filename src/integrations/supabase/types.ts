@@ -375,6 +375,7 @@ export type Database = {
           numero_nfce: number
           protocolo_autorizacao: string | null
           serie: number | null
+          service_order_id: string | null
           status_sefaz: string | null
           updated_at: string | null
           valor_desconto: number | null
@@ -402,6 +403,7 @@ export type Database = {
           numero_nfce?: number
           protocolo_autorizacao?: string | null
           serie?: number | null
+          service_order_id?: string | null
           status_sefaz?: string | null
           updated_at?: string | null
           valor_desconto?: number | null
@@ -429,6 +431,7 @@ export type Database = {
           numero_nfce?: number
           protocolo_autorizacao?: string | null
           serie?: number | null
+          service_order_id?: string | null
           status_sefaz?: string | null
           updated_at?: string | null
           valor_desconto?: number | null
@@ -448,12 +451,21 @@ export type Database = {
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "nfce_service_order_id_fkey"
+            columns: ["service_order_id"]
+            isOneToOne: false
+            referencedRelation: "service_orders"
+            referencedColumns: ["id"]
+          },
         ]
       }
       nfce_config: {
         Row: {
           ambiente: string | null
           certificado_digital: string | null
+          certificado_validade: string | null
+          certificado_valido: boolean | null
           created_at: string | null
           csc_id: string | null
           csc_token: string | null
@@ -468,6 +480,8 @@ export type Database = {
         Insert: {
           ambiente?: string | null
           certificado_digital?: string | null
+          certificado_validade?: string | null
+          certificado_valido?: boolean | null
           created_at?: string | null
           csc_id?: string | null
           csc_token?: string | null
@@ -482,6 +496,8 @@ export type Database = {
         Update: {
           ambiente?: string | null
           certificado_digital?: string | null
+          certificado_validade?: string | null
+          certificado_valido?: boolean | null
           created_at?: string | null
           csc_id?: string | null
           csc_token?: string | null
@@ -705,6 +721,8 @@ export type Database = {
         Row: {
           ambiente: string | null
           certificado_digital: string | null
+          certificado_validade: string | null
+          certificado_valido: boolean | null
           codigo_municipio: string | null
           created_at: string | null
           id: string
@@ -719,6 +737,8 @@ export type Database = {
         Insert: {
           ambiente?: string | null
           certificado_digital?: string | null
+          certificado_validade?: string | null
+          certificado_valido?: boolean | null
           codigo_municipio?: string | null
           created_at?: string | null
           id?: string
@@ -733,6 +753,8 @@ export type Database = {
         Update: {
           ambiente?: string | null
           certificado_digital?: string | null
+          certificado_validade?: string | null
+          certificado_valido?: boolean | null
           codigo_municipio?: string | null
           created_at?: string | null
           id?: string
@@ -903,6 +925,42 @@ export type Database = {
           id?: string
           updated_at?: string
           username?: string | null
+        }
+        Relationships: []
+      }
+      sefaz_transmission_queue: {
+        Row: {
+          created_at: string | null
+          documento_id: string
+          erro_mensagem: string | null
+          id: string
+          status: string
+          tentativas: number | null
+          tipo: string
+          ultima_tentativa: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          documento_id: string
+          erro_mensagem?: string | null
+          id?: string
+          status?: string
+          tentativas?: number | null
+          tipo: string
+          ultima_tentativa?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          documento_id?: string
+          erro_mensagem?: string | null
+          id?: string
+          status?: string
+          tentativas?: number | null
+          tipo?: string
+          ultima_tentativa?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -1080,6 +1138,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      service_tax_codes: {
+        Row: {
+          aliquota_iss: number | null
+          codigo: string
+          created_at: string | null
+          descricao: string
+          id: string
+          tipo: string
+          updated_at: string | null
+        }
+        Insert: {
+          aliquota_iss?: number | null
+          codigo: string
+          created_at?: string | null
+          descricao: string
+          id?: string
+          tipo: string
+          updated_at?: string | null
+        }
+        Update: {
+          aliquota_iss?: number | null
+          codigo?: string
+          created_at?: string | null
+          descricao?: string
+          id?: string
+          tipo?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       stores: {
         Row: {
