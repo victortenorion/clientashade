@@ -164,7 +164,14 @@ const ServiceOrders = () => {
           status:service_order_statuses!service_orders_status_id_fkey(name, color),
           items:service_order_items(id, description, price)
         `)
-        .ilike("description", `%${searchTerm}%`);
+        .or(
+          `description.ilike.%${searchTerm}%,` +
+          `equipment.ilike.%${searchTerm}%,` +
+          `equipment_serial_number.ilike.%${searchTerm}%,` +
+          `problem.ilike.%${searchTerm}%,` +
+          `order_number.eq.${!isNaN(Number(searchTerm)) ? searchTerm : -1},` +
+          `clients.name.ilike.%${searchTerm}%`
+        );
 
       if (error) throw error;
 
@@ -554,7 +561,11 @@ const ServiceOrders = () => {
               </TableRow>
             ) : (
               orders.map((order) => (
-                <TableRow key={order.id}>
+                <TableRow 
+                  key={order.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => navigate(`/dashboard/service-orders/${order.id}`)}
+                >
                   <TableCell className="font-medium">
                     {String(order.order_number).padStart(6, '0')}
                   </TableCell>
@@ -583,13 +594,16 @@ const ServiceOrders = () => {
                   <TableCell>
                     {order.created_by_type === 'admin' ? 'Administrador' : 'Cliente'}
                   </TableCell>
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <div className="flex gap-2">
                       <Button
                         variant="ghost"
                         size="icon"
                         className="text-blue-500 hover:text-blue-500 hover:bg-blue-50"
-                        onClick={() => handleEditOrder(order)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditOrder(order);
+                        }}
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -597,7 +611,10 @@ const ServiceOrders = () => {
                         variant="ghost"
                         size="icon"
                         className="text-amber-500 hover:text-amber-500 hover:bg-amber-50"
-                        onClick={() => handleGenerateNFCe(order)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleGenerateNFCe(order);
+                        }}
                         title="Gerar NFC-e"
                       >
                         <Receipt className="h-4 w-4" />
@@ -606,7 +623,10 @@ const ServiceOrders = () => {
                         variant="ghost"
                         size="icon"
                         className="text-green-500 hover:text-green-500 hover:bg-green-50"
-                        onClick={() => handleGenerateNFSe(order)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleGenerateNFSe(order);
+                        }}
                         title="Gerar NFS-e"
                       >
                         <FileText className="h-4 w-4" />
@@ -615,7 +635,10 @@ const ServiceOrders = () => {
                         variant="ghost"
                         size="icon"
                         className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => handleConfirmDelete(order.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleConfirmDelete(order.id);
+                        }}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

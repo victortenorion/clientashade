@@ -22,6 +22,7 @@ import NotFound from "./pages/NotFound";
 import ClientLogin from "./pages/ClientLogin";
 import { LoginForm } from "./components/LoginForm";
 import { ClientProtectedRoute } from "./components/ClientProtectedRoute";
+import { ServiceOrderDetails } from "./pages/dashboard/components/ServiceOrderDetails";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +46,7 @@ function App() {
                   <Route path="users" element={<Users />} />
                   <Route path="stores" element={<Stores />} />
                   <Route path="service-orders" element={<ServiceOrders />} />
+                  <Route path="service-orders/:id" element={<ServiceOrderDetails />} />
                   <Route path="service-order-settings/*" element={<ServiceOrderSettings />} />
                   <Route path="customer-area" element={<CustomerArea />} />
                   <Route path="nfse" element={<NFSe />} />
