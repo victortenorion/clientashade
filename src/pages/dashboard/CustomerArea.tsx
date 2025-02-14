@@ -293,6 +293,7 @@ const CustomerArea = () => {
         return;
       }
 
+      console.log("Buscando ordens para o cliente:", clientId);
       const { data, error } = await supabase
         .from("service_orders")
         .select(`
@@ -309,7 +310,7 @@ const CustomerArea = () => {
           expected_date,
           completion_date,
           exit_date,
-          status:service_order_statuses (
+          status:service_order_statuses!fk_service_order_status (
             name,
             color
           )
@@ -319,8 +320,9 @@ const CustomerArea = () => {
 
       if (error) throw error;
       
+      console.log("Ordens recebidas:", data);
       if (data) {
-        setOrders(data as ServiceOrder[]);
+        setOrders(data);
       }
     } catch (error: any) {
       console.error("Erro completo:", error);
