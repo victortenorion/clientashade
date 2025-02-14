@@ -69,7 +69,7 @@ const CustomerArea = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('clientId');
-    navigate('/');
+    navigate('/client-login');
     toast({
       title: "Logout realizado com sucesso",
     });
@@ -103,7 +103,8 @@ const CustomerArea = () => {
       const clientId = localStorage.getItem('clientId');
       
       if (!clientId) {
-        throw new Error("Cliente não identificado");
+        navigate('/client-login');
+        return;
       }
 
       const { data, error } = await supabase
@@ -122,19 +123,22 @@ const CustomerArea = () => {
           expected_date,
           completion_date,
           exit_date,
-          status:service_order_statuses!service_orders_status_id_fkey(name, color)
+          status:service_order_statuses(name, color)
         `)
         .eq('client_id', clientId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
+      // Transformar os dados para corresponder à interface ServiceOrder
       const typedData = (data || []).map(order => ({
         ...order,
-        status: order.status ? {
-          name: order.status.name || '',
-          color: order.status.color || ''
-        } : null
+        status: order.status && Array.isArray(order.status) && order.status.length > 0
+          ? {
+              name: order.status[0].name || '',
+              color: order.status[0].color || ''
+            }
+          : null
       })) as ServiceOrder[];
 
       setOrders(typedData);
@@ -202,8 +206,17 @@ const CustomerArea = () => {
   };
 
   useEffect(() => {
-    Promise.all([fetchOrders(), fetchVisibleFields()]);
-  }, []);
+    const checkClientAndFetch = async () => {
+      const clientId = localStorage.getItem('clientId');
+      if (!clientId) {
+        navigate('/client-login');
+        return;
+      }
+      await Promise.all([fetchOrders(), fetchVisibleFields()]);
+    };
+
+    checkClientAndFetch();
+  }, [navigate]);
 
   const formatDate = (date: string | null) => {
     if (!date) return "";
