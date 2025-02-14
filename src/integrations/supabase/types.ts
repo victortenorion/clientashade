@@ -62,6 +62,7 @@ export type Database = {
           city: string | null
           client_login: string | null
           client_password: string | null
+          codigo_servico: string | null
           complement: string | null
           contact_info: string | null
           contact_persons: Json | null
@@ -94,6 +95,7 @@ export type Database = {
           city?: string | null
           client_login?: string | null
           client_password?: string | null
+          codigo_servico?: string | null
           complement?: string | null
           contact_info?: string | null
           contact_persons?: Json | null
@@ -126,6 +128,7 @@ export type Database = {
           city?: string | null
           client_login?: string | null
           client_password?: string | null
+          codigo_servico?: string | null
           complement?: string | null
           contact_info?: string | null
           contact_persons?: Json | null
