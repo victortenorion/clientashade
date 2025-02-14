@@ -286,21 +286,24 @@ const Dashboard = () => {
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     )}
-                    {hasPermission('service_order_settings') && (
-                      <SidebarMenuItem>
-                        <SidebarMenuButton
-                          onClick={() => navigate("/dashboard/service-order-settings/status")}
-                          isActive={location.pathname.includes("/dashboard/service-order-settings")}
-                        >
-                          <Settings className="h-4 w-4" />
-                          <span>Configurações</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    )}
                   </SidebarMenu>
                 </SidebarGroupContent>
               )}
             </SidebarGroup>
+
+            {hasPermission('service_order_settings') && (
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => navigate("/dashboard/service-order-settings/status")}
+                    isActive={location.pathname.includes("/dashboard/service-order-settings")}
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span>Configurações</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            )}
 
             <SidebarGroup>
               <SidebarGroupLabel 
