@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -11,7 +10,6 @@ import {
   LayoutDashboard,
   FolderOpen,
   ClipboardList,
-  UserCircle,
   Settings,
   Store,
   ArrowLeft,
@@ -284,17 +282,6 @@ const Dashboard = () => {
                         >
                           <Settings className="h-4 w-4" />
                           <span>Configurações</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    )}
-                    {hasPermission('customer_area') && (
-                      <SidebarMenuItem>
-                        <SidebarMenuButton
-                          onClick={() => navigate("/dashboard/customer-area")}
-                          isActive={location.pathname.includes("/dashboard/customer-area")}
-                        >
-                          <UserCircle className="h-4 w-4" />
-                          <span>Área do Cliente</span>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     )}
