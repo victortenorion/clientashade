@@ -167,17 +167,16 @@ const ServiceOrders = () => {
         `);
 
       if (searchTerm) {
-        query = query.or(
-          `description.ilike.%${searchTerm}%,` + 
-          `equipment.ilike.%${searchTerm}%,` +
-          `equipment_serial_number.ilike.%${searchTerm}%,` +
-          `problem.ilike.%${searchTerm}%`
-        );
-
-        query = query.or(`clients.name.ilike.%${searchTerm}%`);
-
         if (!isNaN(Number(searchTerm))) {
-          query = query.or(`order_number.eq.${searchTerm}`);
+          query = query.eq('order_number', Number(searchTerm));
+        } else {
+          query = query.or(`
+            description.ilike.%${searchTerm}%,
+            equipment.ilike.%${searchTerm}%,
+            equipment_serial_number.ilike.%${searchTerm}%,
+            problem.ilike.%${searchTerm}%,
+            clients.name.ilike.%${searchTerm}%
+          `.split(',').map(condition => condition.trim()).join(','));
         }
       }
 
