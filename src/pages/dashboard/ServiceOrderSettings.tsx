@@ -1,4 +1,3 @@
-<lov-code>
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -927,4 +926,125 @@ const ServiceOrderSettings = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="homologacao">Homologação</SelectItem>
-                        <SelectItem value="producao">Produção
+                        <SelectItem value="producao">Produção</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Inscrição Municipal</Label>
+                    <Input
+                      value={nfseConfig.inscricao_municipal}
+                      onChange={(e) => setNfseConfig(prev => ({ ...prev, inscricao_municipal: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Código do Município</Label>
+                    <Input
+                      value={nfseConfig.codigo_municipio}
+                      onChange={(e) => setNfseConfig(prev => ({ ...prev, codigo_municipio: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Regime Tributário</Label>
+                    <Select
+                      value={nfseConfig.regime_tributario}
+                      onValueChange={(value) => setNfseConfig(prev => ({ ...prev, regime_tributario: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="simples">Simples Nacional</SelectItem>
+                        <SelectItem value="presumido">Lucro Presumido</SelectItem>
+                        <SelectItem value="real">Lucro Real</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Regime Especial</Label>
+                    <Input
+                      value={nfseConfig.regime_especial}
+                      onChange={(e) => setNfseConfig(prev => ({ ...prev, regime_especial: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Incentivo Fiscal</Label>
+                    <Checkbox
+                      checked={nfseConfig.incentivo_fiscal}
+                      onCheckedChange={(checked) => 
+                        setNfseConfig(prev => ({ ...prev, incentivo_fiscal: checked }))
+                      }
+                    />
+                  </div>
+                </div>
+                <Button onClick={handleNFSeConfigSave}>Salvar Configurações NFS-e</Button>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="sefaz" className="mt-6">
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Configuração SEFAZ</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {/* ... keep existing code (SEFAZ config fields) */}
+                </div>
+                <Button onClick={handleSaveAllConfigs}>Salvar Todas as Configurações</Button>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingStatus ? "Editar Status" : "Novo Status"}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nome</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="color">Cor</Label>
+                <Input
+                  id="color"
+                  name="color"
+                  type="color"
+                  value={formData.color}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Descrição</Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
+            <DialogFooter className="mt-4">
+              <Button type="submit">
+                {editingStatus ? "Atualizar" : "Criar"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default ServiceOrderSettings;
