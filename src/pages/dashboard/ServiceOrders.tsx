@@ -140,25 +140,6 @@ const ServiceOrders = () => {
     try {
       setLoading(true);
 
-      // Array de condições para a busca
-      let conditions = [];
-
-      // Só adiciona condições se houver um termo de busca
-      if (searchTerm) {
-        conditions = [
-          `description.ilike.%${searchTerm}%`,
-          `equipment.ilike.%${searchTerm}%`,
-          `equipment_serial_number.ilike.%${searchTerm}%`,
-          `problem.ilike.%${searchTerm}%`,
-          `clients.name.ilike.%${searchTerm}%`
-        ];
-
-        // Adiciona a condição de número da OS apenas se o termo for numérico
-        if (!isNaN(Number(searchTerm))) {
-          conditions.push(`order_number.eq.${searchTerm}`);
-        }
-      }
-
       let query = supabase
         .from("service_orders")
         .select(`
@@ -185,9 +166,15 @@ const ServiceOrders = () => {
           items:service_order_items(id, description, price)
         `);
 
-      // Só aplica o filtro se houver condições
-      if (conditions.length > 0) {
-        query = query.or(conditions.join(','));
+      if (searchTerm) {
+        query = query.or(
+          `description.ilike.%${searchTerm}%,` +
+          `equipment.ilike.%${searchTerm}%,` +
+          `equipment_serial_number.ilike.%${searchTerm}%,` +
+          `problem.ilike.%${searchTerm}%,` +
+          `clients.name.ilike.%${searchTerm}%` +
+          (!isNaN(Number(searchTerm)) ? `,order_number.eq.${searchTerm}` : '')
+        );
       }
 
       const { data, error } = await query;
@@ -373,9 +360,7 @@ const ServiceOrders = () => {
         created_by_type: 'admin'
       };
 
-      // Verifica se é uma edição ou nova ordem
       if (formData.id) {
-        // Atualiza a ordem existente
         const { error: orderError } = await supabase
           .from("service_orders")
           .update(serviceOrderData)
@@ -383,7 +368,6 @@ const ServiceOrders = () => {
 
         if (orderError) throw orderError;
 
-        // Remove os itens existentes
         const { error: deleteError } = await supabase
           .from("service_order_items")
           .delete()
@@ -391,7 +375,6 @@ const ServiceOrders = () => {
 
         if (deleteError) throw deleteError;
 
-        // Insere os novos itens
         if (formData.items.length > 0) {
           const { error: itemsError } = await supabase
             .from("service_order_items")
@@ -410,7 +393,6 @@ const ServiceOrders = () => {
           title: "Ordem de serviço atualizada com sucesso",
         });
       } else {
-        // Cria uma nova ordem
         const { data: newOrder, error: orderError } = await supabase
           .from("service_orders")
           .insert(serviceOrderData)
