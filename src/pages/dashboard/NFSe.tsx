@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +14,7 @@ import {
 } from "@/components/ui/table";
 import { NFSe, NFSeFormData } from "./types/nfse.types";
 import { format } from "date-fns";
-import { Plus, Pencil, Trash2, Send, XCircle, Printer } from "lucide-react";
+import { Plus, Pencil, Trash2, Send, XCircle, Printer, File } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import {
   Dialog,
@@ -316,7 +317,7 @@ const NFSePage = () => {
                         onClick={() => setSelectedNFSeId(nota.id)}
                         title="Visualizar"
                       >
-                        <FileText className="h-4 w-4" />
+                        <File className="h-4 w-4" />
                       </Button>
 
                       {/* Botões de ação baseados no status */}
