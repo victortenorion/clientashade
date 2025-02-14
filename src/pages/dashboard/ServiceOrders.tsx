@@ -342,7 +342,7 @@ const ServiceOrders = () => {
         client_id: formData.client_id,
         description: formData.description,
         status_id: formData.status_id,
-        seller_id: currentUser.id,
+        seller_id: currentUser?.id || null,
         store_id: formData.store_id,
         equipment: formData.equipment,
         equipment_serial_number: formData.equipment_serial_number,
@@ -669,9 +669,9 @@ const ServiceOrders = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Vendedor *</Label>
+                    <Label>Vendedor</Label>
                     <Input
-                      value={formData.seller_name || ''}
+                      value={formData.seller_name || currentUser?.user_metadata?.name || currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || ''}
                       disabled
                       className="bg-muted"
                     />
