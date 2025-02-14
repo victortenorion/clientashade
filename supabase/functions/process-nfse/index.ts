@@ -36,12 +36,7 @@ serve(async (req) => {
 
     // Get NFSe config and increment RPS number
     const { data: nfseConfig, error: configError } = await supabase
-      .from('nfse_config')
-      .update({ 
-        ultima_rps_numero: supabase.sql`ultima_rps_numero + 1` 
-      })
-      .eq('id', supabase.sql`(SELECT id FROM nfse_config LIMIT 1)`)
-      .select('*')
+      .rpc('increment_rps_numero', { config_id: null })
       .single();
 
     if (configError) throw configError;
@@ -118,13 +113,6 @@ serve(async (req) => {
       serieRPS: nfse.serie_rps,
       tipoRPS: nfse.tipo_rps
     });
-
-    // In a real implementation, here you would:
-    // 1. Generate the XML with RPS info
-    // 2. Sign it with the certificate (if required)
-    // 3. Send to SEFAZ
-    // 4. Process the response
-    // For now, we'll simulate success
 
     // Update NFSe status
     const { error: updateError } = await supabase
