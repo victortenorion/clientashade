@@ -128,7 +128,15 @@ const CustomerArea = () => {
 
       if (error) throw error;
 
-      setOrders(data as ServiceOrder[]);
+      const typedData = (data || []).map(order => ({
+        ...order,
+        status: order.status ? {
+          name: order.status.name as string,
+          color: order.status.color as string
+        } : null
+      })) as ServiceOrder[];
+
+      setOrders(typedData);
     } catch (error: any) {
       console.error("Erro completo:", error);
       toast({

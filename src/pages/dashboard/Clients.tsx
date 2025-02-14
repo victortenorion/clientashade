@@ -388,7 +388,7 @@ const Clients = () => {
         street_number: formData.street_number || null,
         complement: formData.complement || null,
         contact_info: formData.contact_info || null,
-        contact_persons: formData.contact_persons as Json,
+        contact_persons: formData.contact_persons as unknown as Json,
         phone_landline: formData.phone_landline || null,
         fax: formData.fax || null,
         mobile_phone: formData.mobile_phone || null,
