@@ -2,9 +2,21 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CustomerAreaTab } from "./components/CustomerAreaTab";
 import { StatusTab } from "./components/StatusTab";
-import { CustomerAreaSettings } from "./components/CustomerAreaSettings";
+import { CustomerAreaSettingsForm } from "./components/CustomerAreaSettingsForm";
+import { useState } from "react";
 
 const ServiceOrderSettings = () => {
+  const [statuses, setStatuses] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const handleSaveStatus = async (status: any) => {
+    // Implementar lógica de salvamento
+  };
+
+  const handleDeleteStatus = async (id: string) => {
+    // Implementar lógica de deleção
+  };
+
   return (
     <Tabs defaultValue="status" className="space-y-6">
       <TabsList>
@@ -14,7 +26,12 @@ const ServiceOrderSettings = () => {
       </TabsList>
 
       <TabsContent value="status">
-        <StatusTab />
+        <StatusTab 
+          statuses={statuses}
+          loading={loading}
+          onSave={handleSaveStatus}
+          onDelete={handleDeleteStatus}
+        />
       </TabsContent>
 
       <TabsContent value="customer_area_fields">
@@ -25,7 +42,7 @@ const ServiceOrderSettings = () => {
       </TabsContent>
 
       <TabsContent value="customer_area_settings">
-        <CustomerAreaSettings />
+        <CustomerAreaSettingsForm />
       </TabsContent>
     </Tabs>
   );
