@@ -48,12 +48,22 @@ export const NFSeSefazLogs = ({ nfseId, isOpen, onClose }: Props) => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data;
+
+      // Garantir que o status está no formato correto
+      return (data || []).map(log => ({
+        ...log,
+        id: log.id,
+        nfse_id: log.nfse_id,
+        status: log.status as 'processing' | 'success' | 'error',
+        message: log.message || '',
+        created_at: log.created_at,
+        request_payload: log.request_payload,
+        response_payload: log.response_payload
+      }));
     },
     enabled: !!nfseId && isOpen,
     refetchInterval: (data) => {
-      if (!data) return false;
-      // Atualiza a cada 5 segundos se houver algum log com status 'processing'
+      if (!Array.isArray(data)) return false;
       const hasProcessing = data.some((log) => log.status === "processing");
       return hasProcessing ? 5000 : false;
     },
