@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -13,6 +12,16 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { LogOut, ArrowLeft, User, Plus } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ServiceOrder {
   id: string;
@@ -39,6 +48,13 @@ interface CustomerAreaField {
   visible: boolean;
 }
 
+interface NewOrderForm {
+  equipment: string;
+  equipment_serial_number: string;
+  problem: string;
+  description: string;
+}
+
 const CustomerArea = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -46,7 +62,71 @@ const CustomerArea = () => {
   const [visibleFields, setVisibleFields] = useState<CustomerAreaField[]>([]);
   const [clientName, setClientName] = useState<string>("");
   const [allowCreateOrders, setAllowCreateOrders] = useState(false);
+  const [createOrderDialogOpen, setCreateOrderDialogOpen] = useState(false);
+  const [formData, setFormData] = useState<NewOrderForm>({
+    equipment: "",
+    equipment_serial_number: "",
+    problem: "",
+    description: "",
+  });
   const { toast } = useToast();
+
+  const handleCreateOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const clientId = localStorage.getItem('clientId');
+      if (!clientId) {
+        toast({
+          variant: "destructive",
+          title: "Erro ao criar ordem de serviço",
+          description: "Cliente não identificado"
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from("service_orders")
+        .insert({
+          client_id: clientId,
+          equipment: formData.equipment,
+          equipment_serial_number: formData.equipment_serial_number,
+          problem: formData.problem,
+          description: formData.description,
+          created_by_type: 'client'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Ordem de serviço criada com sucesso",
+      });
+      
+      setCreateOrderDialogOpen(false);
+      setFormData({
+        equipment: "",
+        equipment_serial_number: "",
+        problem: "",
+        description: "",
+      });
+      fetchOrders();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao criar ordem de serviço",
+        description: error.message
+      });
+    }
+  };
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('clientId');
@@ -282,7 +362,7 @@ const CustomerArea = () => {
                 Sair
               </Button>
               {allowCreateOrders && (
-                <Button>
+                <Button onClick={() => setCreateOrderDialogOpen(true)}>
                   <Plus className="mr-2 h-4 w-4" />
                   Nova Ordem de Serviço
                 </Button>
@@ -341,6 +421,62 @@ const CustomerArea = () => {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={createOrderDialogOpen} onOpenChange={setCreateOrderDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nova Ordem de Serviço</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreateOrder} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="equipment">Equipamento *</Label>
+              <Input
+                id="equipment"
+                name="equipment"
+                value={formData.equipment}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="equipment_serial_number">Número de Série</Label>
+              <Input
+                id="equipment_serial_number"
+                name="equipment_serial_number"
+                value={formData.equipment_serial_number}
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="problem">Problema *</Label>
+              <Textarea
+                id="problem"
+                name="problem"
+                value={formData.problem}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Descrição Adicional</Label>
+              <Textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setCreateOrderDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit">
+                Criar Ordem
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
