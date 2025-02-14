@@ -152,7 +152,7 @@ const CustomerArea = () => {
           expected_date,
           completion_date,
           exit_date,
-          status:service_order_statuses(name, color)
+          status:service_order_statuses!fk_service_order_status(name, color)
         `)
         .eq('client_id', clientId)
         .order('created_at', { ascending: false });
@@ -163,7 +163,10 @@ const CustomerArea = () => {
         id: order.id,
         description: order.description,
         status_id: order.status_id,
-        status: order.status || null,
+        status: order.status ? {
+          name: order.status.name,
+          color: order.status.color
+        } : null,
         total_price: order.total_price,
         created_at: order.created_at,
         order_number: order.order_number,
