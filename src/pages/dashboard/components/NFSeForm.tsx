@@ -101,14 +101,21 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
         let proximoNumeroRPS = "1"; // Valor padrão
 
         if (spConfig) {
-          if (spConfig.numero_inicial_rps && spConfig.numero_inicial_rps > (spConfig.ultima_rps_numero || 0)) {
-            proximoNumeroRPS = spConfig.numero_inicial_rps.toString();
-            console.log('Usando número inicial configurado:', proximoNumeroRPS);
-          } else {
-            proximoNumeroRPS = ((spConfig.ultima_rps_numero || 0) + 1).toString();
-            console.log('Próximo número RPS baseado no último:', proximoNumeroRPS);
+          if (spConfig.numero_inicial_rps > 0) {
+            if (!spConfig.ultima_rps_numero || spConfig.ultima_rps_numero < spConfig.numero_inicial_rps) {
+              proximoNumeroRPS = spConfig.numero_inicial_rps.toString();
+              console.log('Usando número inicial RPS configurado:', proximoNumeroRPS);
+            } else {
+              proximoNumeroRPS = (spConfig.ultima_rps_numero + 1).toString();
+              console.log('Usando próximo número após o último RPS:', proximoNumeroRPS);
+            }
+          } else if (spConfig.ultima_rps_numero) {
+            proximoNumeroRPS = (spConfig.ultima_rps_numero + 1).toString();
+            console.log('Usando próximo número após o último RPS:', proximoNumeroRPS);
           }
         }
+
+        console.log('Número RPS definido:', proximoNumeroRPS);
 
         setFormData(prev => ({
           ...prev,
