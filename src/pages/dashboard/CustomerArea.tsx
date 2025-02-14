@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -15,17 +16,17 @@ import { ptBR } from "date-fns/locale";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { ServiceOrder } from "./types/service-order-settings.types";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-export const CustomerArea = () => {
+const CustomerArea = () => {
   const { clientId } = useParams();
   const [serviceOrders, setServiceOrders] = useState<ServiceOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  const [date, setDate] = React.useState<Date | undefined>(new Date());
+  const [date, setDate] = useState<Date | undefined>(new Date());
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -47,13 +48,13 @@ export const CustomerArea = () => {
       if (error) throw error;
 
       // Convert the data to match ServiceOrder type
-      const formattedOrders: ServiceOrder[] = data?.map(order => ({
+      const formattedOrders: ServiceOrder[] = (data || []).map(order => ({
         ...order,
         status: {
           name: order.status?.[0]?.name || '',
           color: order.status?.[0]?.color || ''
         }
-      })) || [];
+      }));
 
       setServiceOrders(formattedOrders);
     } catch (error) {
@@ -145,3 +146,5 @@ export const CustomerArea = () => {
     </div>
   );
 };
+
+export default CustomerArea;
