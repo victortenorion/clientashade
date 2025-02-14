@@ -29,6 +29,7 @@ interface CompanyInfo {
   endereco_codigo_municipio: string | null;
   telefone: string | null;
   email: string | null;
+  serie_rps_padrao: string | null;
 }
 
 interface RPSConfig {
@@ -62,6 +63,7 @@ export const CompanyInfoTab = () => {
     endereco_codigo_municipio: "",
     telefone: "",
     email: "",
+    serie_rps_padrao: "",
   });
 
   const loadCompanyInfo = async () => {
@@ -513,6 +515,17 @@ export const CompanyInfoTab = () => {
                 })
               }
               placeholder="Digite o número inicial do RPS"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Série RPS</Label>
+            <Input
+              value={companyInfo.serie_rps_padrao || ""}
+              onChange={(e) =>
+                setCompanyInfo({ ...companyInfo, serie_rps_padrao: e.target.value })
+              }
+              placeholder="Digite a série do RPS"
             />
           </div>
 
