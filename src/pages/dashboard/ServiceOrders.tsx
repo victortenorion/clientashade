@@ -139,7 +139,27 @@ const ServiceOrders = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+
+      // Array de condições para a busca
+      let conditions = [];
+
+      // Só adiciona condições se houver um termo de busca
+      if (searchTerm) {
+        conditions = [
+          `description.ilike.%${searchTerm}%`,
+          `equipment.ilike.%${searchTerm}%`,
+          `equipment_serial_number.ilike.%${searchTerm}%`,
+          `problem.ilike.%${searchTerm}%`,
+          `clients.name.ilike.%${searchTerm}%`
+        ];
+
+        // Adiciona a condição de número da OS apenas se o termo for numérico
+        if (!isNaN(Number(searchTerm))) {
+          conditions.push(`order_number.eq.${searchTerm}`);
+        }
+      }
+
+      let query = supabase
         .from("service_orders")
         .select(`
           id,
@@ -163,15 +183,14 @@ const ServiceOrders = () => {
           client:clients(name),
           status:service_order_statuses!service_orders_status_id_fkey(name, color),
           items:service_order_items(id, description, price)
-        `)
-        .or(
-          `description.ilike.%${searchTerm}%,` +
-          `equipment.ilike.%${searchTerm}%,` +
-          `equipment_serial_number.ilike.%${searchTerm}%,` +
-          `problem.ilike.%${searchTerm}%,` +
-          `order_number.eq.${!isNaN(Number(searchTerm)) ? searchTerm : -1},` +
-          `clients.name.ilike.%${searchTerm}%`
-        );
+        `);
+
+      // Só aplica o filtro se houver condições
+      if (conditions.length > 0) {
+        query = query.or(conditions.join(','));
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
