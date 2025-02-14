@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -356,6 +357,15 @@ const Dashboard = () => {
                         >
                           <Database className="h-4 w-4" />
                           <span>Status</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          onClick={() => navigate("/dashboard/service-order-settings/dados-empresa")}
+                          isActive={location.pathname.includes("/dashboard/service-order-settings/dados-empresa")}
+                        >
+                          <Building className="h-4 w-4" />
+                          <span>Dados da Empresa</span>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                       <SidebarMenuItem>
