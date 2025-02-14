@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -77,12 +76,110 @@ const NFSePage = () => {
       const { data, error } = await supabase
         .from("nfse_config")
         .select("*")
-        .maybeSingle();
+        .limit(1)
+        .single();
 
       if (error) throw error;
       return data;
     },
   });
+
+  const handleSendToSefaz = async (nfseId: string) => {
+    try {
+      // Verificar configurações do SEFAZ
+      const { data: config, error: configError } = await supabase
+        .from("nfse_config")
+        .select("*")
+        .limit(1)
+        .single();
+
+      if (configError) throw configError;
+      if (!config) {
+        toast({
+          title: "Erro ao emitir NFS-e",
+          description: "Configurações da NFS-e não encontradas.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Verificar se precisa de certificado digital
+      if (!config.permite_emissao_sem_certificado && !config.certificado_digital) {
+        toast({
+          title: "Erro ao emitir NFS-e",
+          description: "Configure o certificado digital antes de emitir notas fiscais.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Criar entrada na fila de transmissão
+      const { error: queueError } = await supabase
+        .from('sefaz_transmission_queue')
+        .insert({
+          tipo: 'nfse',
+          documento_id: nfseId,
+          status: 'pendente'
+        });
+
+      if (queueError) throw queueError;
+
+      // Registrar o início do processamento
+      await supabase.from("nfse_sefaz_logs").insert({
+        nfse_id: nfseId,
+        status: "processing",
+        message: "Iniciando envio para SEFAZ",
+      });
+
+      // Atualizar status da NFSe
+      const { error: updateError } = await supabase
+        .from("nfse")
+        .update({ status_sefaz: "enviando" })
+        .eq("id", nfseId);
+
+      if (updateError) throw updateError;
+
+      // Iniciar processamento via Edge Function
+      const { error: processError } = await supabase.functions.invoke('process-nfse', {
+        body: { nfseId }
+      });
+
+      if (processError) throw processError;
+
+      // Registrar o sucesso do envio para processamento
+      await supabase.from("nfse_sefaz_logs").insert({
+        nfse_id: nfseId,
+        status: "success",
+        message: "NFS-e enviada para processamento com sucesso",
+      });
+
+      toast({
+        title: "NFS-e enviada para processamento",
+        description: "Em breve o status será atualizado.",
+      });
+
+      // Abrir automaticamente os logs após o envio
+      setSelectedNFSeIdForLogs(nfseId);
+      setShowLogsDialog(true);
+
+      refetch();
+    } catch (error: any) {
+      console.error('Erro ao enviar NFSe:', error);
+      
+      // Registrar o erro
+      await supabase.from("nfse_sefaz_logs").insert({
+        nfse_id: nfseId,
+        status: "error",
+        message: error.message,
+      });
+
+      toast({
+        title: "Erro ao enviar para SEFAZ",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleEmitirNFSe = async (formData: NFSeFormData) => {
     try {
@@ -224,102 +321,6 @@ const NFSePage = () => {
     } catch (error: any) {
       toast({
         title: "Erro ao excluir NFS-e",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleSendToSefaz = async (nfseId: string) => {
-    try {
-      // Verificar configurações do SEFAZ
-      const { data: config, error: configError } = await supabase
-        .from("nfse_config")
-        .select("*")
-        .maybeSingle();
-
-      if (configError) throw configError;
-      if (!config) {
-        toast({
-          title: "Erro ao emitir NFS-e",
-          description: "Configurações da NFS-e não encontradas.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Verificar se precisa de certificado digital
-      if (!config.permite_emissao_sem_certificado && !config.certificado_digital) {
-        toast({
-          title: "Erro ao emitir NFS-e",
-          description: "Configure o certificado digital antes de emitir notas fiscais.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Criar entrada na fila de transmissão
-      const { error: queueError } = await supabase
-        .from('sefaz_transmission_queue')
-        .insert({
-          tipo: 'nfse',
-          documento_id: nfseId,
-          status: 'pendente'
-        });
-
-      if (queueError) throw queueError;
-
-      // Registrar o início do processamento
-      await supabase.from("nfse_sefaz_logs").insert({
-        nfse_id: nfseId,
-        status: "processing",
-        message: "Iniciando envio para SEFAZ",
-      });
-
-      // Atualizar status da NFSe
-      const { error: updateError } = await supabase
-        .from("nfse")
-        .update({ status_sefaz: "enviando" })
-        .eq("id", nfseId);
-
-      if (updateError) throw updateError;
-
-      // Iniciar processamento via Edge Function
-      const { error: processError } = await supabase.functions.invoke('process-nfse', {
-        body: { nfseId }
-      });
-
-      if (processError) throw processError;
-
-      // Registrar o sucesso do envio para processamento
-      await supabase.from("nfse_sefaz_logs").insert({
-        nfse_id: nfseId,
-        status: "success",
-        message: "NFS-e enviada para processamento com sucesso",
-      });
-
-      toast({
-        title: "NFS-e enviada para processamento",
-        description: "Em breve o status será atualizado.",
-      });
-
-      // Abrir automaticamente os logs após o envio
-      setSelectedNFSeIdForLogs(nfseId);
-      setShowLogsDialog(true);
-
-      refetch();
-    } catch (error: any) {
-      console.error('Erro ao enviar NFSe:', error);
-      
-      // Registrar o erro
-      await supabase.from("nfse_sefaz_logs").insert({
-        nfse_id: nfseId,
-        status: "error",
-        message: error.message,
-      });
-
-      toast({
-        title: "Erro ao enviar para SEFAZ",
         description: error.message,
         variant: "destructive",
       });
