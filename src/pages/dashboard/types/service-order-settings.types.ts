@@ -9,23 +9,24 @@ export interface Status {
 
 export interface ClientField {
   id: string;
-  label: string;
   field: string;
+  label: string;
   visible: boolean;
-}
-
-export interface FiscalConfig {
-  id?: string;
-  service_code: string;
-  cnae: string;
-  tax_regime: string;
+  field_name: string;
 }
 
 export interface CustomerAreaField {
   id: string;
-  label: string;
   field: string;
+  label: string;
   visible: boolean;
+  field_name: string;
+}
+
+export interface FiscalConfig {
+  service_code: string;
+  cnae: string;
+  tax_regime: string;
 }
 
 export interface NFCeConfig {
@@ -48,4 +49,9 @@ export interface NFSeConfig {
   regime_tributario: string;
   regime_especial: string;
   incentivo_fiscal: boolean;
+}
+
+export interface ServiceCode {
+  code: string;
+  description: string;
 }

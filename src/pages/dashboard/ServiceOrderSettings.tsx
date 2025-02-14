@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,7 +51,11 @@ import {
   ClientField,
   CustomerAreaField,
   FiscalConfig,
+  NFCeConfig,
+  NFSeConfig,
 } from "./types/service-order-settings.types";
+import { SEFAZTab } from "./components/SEFAZTab";
+import { FiscalTab } from "./components/FiscalTab";
 
 const defaultFormData = {
   name: "",
@@ -75,6 +78,26 @@ const ServiceOrderSettings = () => {
   const [showSubFields, setShowSubFields] = useState(false);
   const [clientFields, setClientFields] = useState<ClientField[]>([]);
   const [customerAreaFields, setCustomerAreaFields] = useState<CustomerAreaField[]>([]);
+  const [nfceConfig, setNfceConfig] = useState<NFCeConfig>({
+    certificado_digital: "",
+    senha_certificado: "",
+    ambiente: "homologacao",
+    token_ibpt: "",
+    csc_id: "",
+    csc_token: "",
+    inscricao_estadual: "",
+    regime_tributario: ""
+  });
+  const [nfseConfig, setNfseConfig] = useState<NFSeConfig>({
+    certificado_digital: "",
+    senha_certificado: "",
+    ambiente: "homologacao",
+    inscricao_municipal: "",
+    codigo_municipio: "",
+    regime_tributario: "",
+    regime_especial: "",
+    incentivo_fiscal: false
+  });
   const [fiscalConfig, setFiscalConfig] = useState<FiscalConfig>({
     service_code: "",
     cnae: "",
@@ -118,7 +141,15 @@ const ServiceOrderSettings = () => {
 
       if (error) throw error;
 
-      setClientFields(data || []);
+      const formattedData: ClientField[] = (data || []).map(item => ({
+        id: item.id,
+        field: item.field_name,
+        field_name: item.field_name,
+        label: getFieldLabel(item.field_name),
+        visible: item.visible
+      }));
+
+      setClientFields(formattedData);
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -137,7 +168,15 @@ const ServiceOrderSettings = () => {
 
       if (error) throw error;
 
-      setCustomerAreaFields(data || []);
+      const formattedData: CustomerAreaField[] = (data || []).map(item => ({
+        id: item.id,
+        field: item.field_name,
+        field_name: item.field_name,
+        label: getFieldLabel(item.field_name),
+        visible: item.visible
+      }));
+
+      setCustomerAreaFields(formattedData);
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -334,16 +373,59 @@ const ServiceOrderSettings = () => {
     }
   };
 
+  const handleSaveAllConfigs = () => {
+    Promise.all([
+      handleFiscalConfigSave(),
+      // handleNFCeConfigSave(),
+      // handleNFSeConfigSave()
+    ]).then(() => {
+      toast({
+        title: "Configurações salvas com sucesso!",
+      });
+    }).catch((error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar configurações",
+        description: error.message,
+      });
+    });
+  };
+
   useEffect(() => {
     if (activeTab === "status") {
       fetchStatuses();
     } else if (activeTab === "fields") {
       fetchClientFields();
       fetchCustomerAreaFields();
-    } else if (activeTab === "settings") {
+    } else if (activeTab === "fiscal") {
       fetchFiscalConfig();
     }
   }, [activeTab, searchTerm]);
+
+  const getFieldLabel = (fieldName: string): string => {
+    const fieldLabels: { [key: string]: string } = {
+      order_number: 'Número',
+      created_at: 'Data de Criação',
+      status: 'Status',
+      priority: 'Prioridade',
+      equipment: 'Equipamento',
+      equipment_serial_number: 'Número de Série',
+      problem: 'Problema',
+      description: 'Descrição',
+      expected_date: 'Previsão',
+      completion_date: 'Conclusão',
+      exit_date: 'Saída',
+      total_price: 'Valor Total',
+      // Campos do cliente
+      name: 'Nome',
+      email: 'Email',
+      document: 'Documento',
+      phone: 'Telefone',
+      address: 'Endereço'
+    };
+
+    return fieldLabels[fieldName] || fieldName;
+  };
 
   return (
     <div className="space-y-4">
@@ -362,10 +444,28 @@ const ServiceOrderSettings = () => {
             Campos
           </Button>
           <Button
-            variant={activeTab === "settings" ? "default" : "ghost"}
-            onClick={() => setActiveTab("settings")}
+            variant={activeTab === "fiscal" ? "default" : "ghost"}
+            onClick={() => setActiveTab("fiscal")}
           >
-            Configurações
+            Fiscal
+          </Button>
+          <Button
+            variant={activeTab === "sefaz" ? "default" : "ghost"}
+            onClick={() => setActiveTab("sefaz")}
+          >
+            SEFAZ
+          </Button>
+          <Button
+            variant={activeTab === "nfce" ? "default" : "ghost"}
+            onClick={() => setActiveTab("nfce")}
+          >
+            NFC-e
+          </Button>
+          <Button
+            variant={activeTab === "nfse" ? "default" : "ghost"}
+            onClick={() => setActiveTab("nfse")}
+          >
+            NFS-e
           </Button>
         </nav>
       </div>
@@ -527,7 +627,7 @@ const ServiceOrderSettings = () => {
         </div>
       )}
 
-      {activeTab === "settings" && (
+      {activeTab === "fiscal" && (
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -596,6 +696,43 @@ const ServiceOrderSettings = () => {
               </form>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {activeTab === "sefaz" && (
+        <SEFAZTab
+          nfceConfig={nfceConfig}
+          nfseConfig={nfseConfig}
+          fiscalConfig={fiscalConfig}
+          setNfceConfig={setNfceConfig}
+          setNfseConfig={setNfseConfig}
+          setFiscalConfig={setFiscalConfig}
+          handleSaveAllConfigs={handleSaveAllConfigs}
+        />
+      )}
+
+      {activeTab === "nfce" && (
+        <FiscalTab
+          nfceConfig={nfceConfig}
+          nfseConfig={nfseConfig}
+          fiscalConfig={fiscalConfig}
+          serviceCodes={[]}
+          serviceCodeSearch=""
+          setServiceCodeSearch={() => {}}
+          setNfceConfig={setNfceConfig}
+          setNfseConfig={setNfseConfig}
+          setFiscalConfig={setFiscalConfig}
+          fetchServiceCodes={() => {}}
+          handleNFCeConfigSave={() => {}}
+          handleNFSeConfigSave={() => {}}
+          handleFiscalConfigSave={() => {}}
+          handleSaveAllConfigs={() => {}}
+        />
+      )}
+
+      {activeTab === "nfse" && (
+        <div className="text-center p-4">
+          <p>Configurações de NFS-e em desenvolvimento</p>
         </div>
       )}
 
