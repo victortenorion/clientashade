@@ -251,24 +251,7 @@ const CustomerArea = () => {
 
       if (error) throw error;
 
-      const typedOrders: ServiceOrder[] = (data || []).map(order => ({
-        id: order.id,
-        description: order.description,
-        status_id: order.status_id,
-        status: order.status,
-        total_price: order.total_price,
-        created_at: order.created_at,
-        order_number: order.order_number,
-        priority: order.priority,
-        equipment: order.equipment,
-        equipment_serial_number: order.equipment_serial_number,
-        problem: order.problem,
-        expected_date: order.expected_date,
-        completion_date: order.completion_date,
-        exit_date: order.exit_date
-      }));
-
-      setOrders(typedOrders);
+      setOrders(data || []);
     } catch (error: any) {
       console.error("Erro completo:", error);
       toast({
@@ -304,8 +287,8 @@ const CustomerArea = () => {
     return new Date(date).toLocaleString('pt-BR');
   };
 
-  const getFieldValue = (order: ServiceOrder, field: string) => {
-    switch (field) {
+  const getFieldValue = (order: ServiceOrder, fieldName: string) => {
+    switch (fieldName) {
       case 'order_number':
         return String(order.order_number).padStart(6, '0');
       case 'created_at':
@@ -386,19 +369,19 @@ const CustomerArea = () => {
           <TableHeader>
             <TableRow>
               {visibleFieldsList.map((field) => (
-                <TableHead key={field.field}>
-                  {field.field === 'order_number' && 'Número'}
-                  {field.field === 'created_at' && 'Data de Criação'}
-                  {field.field === 'status' && 'Status'}
-                  {field.field === 'priority' && 'Prioridade'}
-                  {field.field === 'equipment' && 'Equipamento'}
-                  {field.field === 'equipment_serial_number' && 'Número de Série'}
-                  {field.field === 'problem' && 'Problema'}
-                  {field.field === 'description' && 'Descrição'}
-                  {field.field === 'expected_date' && 'Previsão'}
-                  {field.field === 'completion_date' && 'Conclusão'}
-                  {field.field === 'exit_date' && 'Saída'}
-                  {field.field === 'total_price' && 'Valor Total'}
+                <TableHead key={field.field_name}>
+                  {field.field_name === 'order_number' && 'Número'}
+                  {field.field_name === 'created_at' && 'Data de Criação'}
+                  {field.field_name === 'status' && 'Status'}
+                  {field.field_name === 'priority' && 'Prioridade'}
+                  {field.field_name === 'equipment' && 'Equipamento'}
+                  {field.field_name === 'equipment_serial_number' && 'Número de Série'}
+                  {field.field_name === 'problem' && 'Problema'}
+                  {field.field_name === 'description' && 'Descrição'}
+                  {field.field_name === 'expected_date' && 'Previsão'}
+                  {field.field_name === 'completion_date' && 'Conclusão'}
+                  {field.field_name === 'exit_date' && 'Saída'}
+                  {field.field_name === 'total_price' && 'Valor Total'}
                 </TableHead>
               ))}
             </TableRow>
@@ -420,8 +403,8 @@ const CustomerArea = () => {
               orders.map((order) => (
                 <TableRow key={order.id}>
                   {visibleFieldsList.map((field) => (
-                    <TableCell key={field.field}>
-                      {getFieldValue(order, field.field)}
+                    <TableCell key={field.field_name}>
+                      {getFieldValue(order, field.field_name)}
                     </TableCell>
                   ))}
                 </TableRow>

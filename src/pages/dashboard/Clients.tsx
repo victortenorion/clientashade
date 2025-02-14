@@ -49,7 +49,7 @@ import {
 } from "./utils/client.utils";
 import { Json } from "@/integrations/supabase/types";
 
-const ClientPage = () => {
+const Clients = () => {
   const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState<Client[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
@@ -89,13 +89,14 @@ const ClientPage = () => {
   const fetchVisibleFields = async () => {
     try {
       const { data, error } = await supabase
-        .from('client_field_settings')
-        .select('field_name, visible')
-        .order('field_name');
+        .from("customer_area_field_settings")
+        .select("field_name, visible");
 
       if (error) throw error;
+
       setVisibleFields(data || []);
     } catch (error: any) {
+      console.error("Erro ao carregar configurações dos campos:", error);
       toast({
         variant: "destructive",
         title: "Erro ao carregar configurações dos campos",
@@ -626,4 +627,4 @@ const ClientPage = () => {
   );
 };
 
-export default ClientPage;
+export default Clients;
