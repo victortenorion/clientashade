@@ -29,13 +29,19 @@ interface CompanyInfo {
   endereco_codigo_municipio: string | null;
   telefone: string | null;
   email: string | null;
-  numero_inicial_rps?: number;
+}
+
+interface RPSConfig {
+  numero_inicial_rps: number;
 }
 
 export const CompanyInfoTab = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isCepLoading, setIsCepLoading] = useState(false);
+  const [rpsConfig, setRpsConfig] = useState<RPSConfig>({
+    numero_inicial_rps: 0
+  });
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
     id: "",
     razao_social: "",
@@ -56,7 +62,6 @@ export const CompanyInfoTab = () => {
     endereco_codigo_municipio: "",
     telefone: "",
     email: "",
-    numero_inicial_rps: 0,
   });
 
   const loadCompanyInfo = async () => {
@@ -72,20 +77,19 @@ export const CompanyInfoTab = () => {
         setCompanyInfo(data);
       }
 
-      const { data: rpsConfig, error: rpsError } = await supabase
+      const { data: rpsData, error: rpsError } = await supabase
         .from('nfse_sp_config')
         .select('numero_inicial_rps')
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
 
-      if (rpsError) throw rpsError;
+      if (rpsError && rpsError.code !== 'PGRST116') throw rpsError;
 
-      if (rpsConfig) {
-        setCompanyInfo(prev => ({
-          ...prev,
-          numero_inicial_rps: rpsConfig.numero_inicial_rps
-        }));
+      if (rpsData) {
+        setRpsConfig({
+          numero_inicial_rps: rpsData.numero_inicial_rps || 0
+        });
       }
     } catch (error) {
       console.error('Erro ao carregar dados da empresa:', error);
@@ -236,17 +240,25 @@ export const CompanyInfoTab = () => {
         .limit(1)
         .single();
 
-      if (fetchError) throw fetchError;
+      if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
 
       if (currentConfig) {
         const { error: updateError } = await supabase
           .from('nfse_sp_config')
           .update({ 
-            numero_inicial_rps: parseInt(companyInfo.numero_inicial_rps?.toString() || "0", 10)
+            numero_inicial_rps: rpsConfig.numero_inicial_rps
           })
           .eq('id', currentConfig.id);
 
         if (updateError) throw updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from('nfse_sp_config')
+          .insert([{ 
+            numero_inicial_rps: rpsConfig.numero_inicial_rps
+          }]);
+
+        if (insertError) throw insertError;
       }
 
       toast({
@@ -493,10 +505,10 @@ export const CompanyInfoTab = () => {
             <Input
               type="number"
               min="0"
-              value={companyInfo.numero_inicial_rps || 0}
+              value={rpsConfig.numero_inicial_rps}
               onChange={(e) =>
-                setCompanyInfo({
-                  ...companyInfo,
+                setRpsConfig({
+                  ...rpsConfig,
                   numero_inicial_rps: parseInt(e.target.value) || 0
                 })
               }
