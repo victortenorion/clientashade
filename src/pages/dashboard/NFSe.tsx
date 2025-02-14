@@ -29,6 +29,7 @@ import { NFSeSefazLogs } from "./components/NFSeSefazLogs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useQueryClient } from "@tanstack/react-query";
 
 const NFSePage = () => {
   const { toast } = useToast();
@@ -41,6 +42,8 @@ const NFSePage = () => {
   const [nfseCancelamento, setNfseCancelamento] = useState<string | null>(null);
   const [showLogsDialog, setShowLogsDialog] = useState(false);
   const [selectedNFSeIdForLogs, setSelectedNFSeIdForLogs] = useState<string | null>(null);
+
+  const queryClient = useQueryClient();
 
   const { data: notas, isLoading, refetch } = useQuery({
     queryKey: ["nfse", searchTerm],
@@ -68,8 +71,8 @@ const NFSePage = () => {
 
       return data;
     },
-    staleTime: 0, // Força o refetch sempre que solicitado
-    refetchOnWindowFocus: true // Atualiza quando a janela recebe foco
+    staleTime: 0,
+    refetchOnWindowFocus: true
   });
 
   const { data: nfseConfig } = useQuery({
@@ -88,7 +91,6 @@ const NFSePage = () => {
 
   const handleSendToSefaz = async (nfseId: string) => {
     try {
-      // Verificar configurações do SEFAZ
       const { data: config, error: configError } = await supabase
         .from("nfse_config")
         .select("*")
@@ -105,7 +107,6 @@ const NFSePage = () => {
         return;
       }
 
-      // Verificar se precisa de certificado digital
       if (!config.permite_emissao_sem_certificado && !config.certificado_digital) {
         toast({
           title: "Erro ao emitir NFS-e",
@@ -115,7 +116,6 @@ const NFSePage = () => {
         return;
       }
 
-      // Criar entrada na fila de transmissão
       const { error: queueError } = await supabase
         .from('sefaz_transmission_queue')
         .insert({
@@ -126,14 +126,12 @@ const NFSePage = () => {
 
       if (queueError) throw queueError;
 
-      // Registrar o início do processamento
       await supabase.from("nfse_sefaz_logs").insert({
         nfse_id: nfseId,
         status: "processing",
         message: "Iniciando envio para SEFAZ",
       });
 
-      // Atualizar status da NFSe
       const { error: updateError } = await supabase
         .from("nfse")
         .update({ status_sefaz: "enviando" })
@@ -141,14 +139,12 @@ const NFSePage = () => {
 
       if (updateError) throw updateError;
 
-      // Iniciar processamento via Edge Function
       const { error: processError } = await supabase.functions.invoke('process-nfse', {
         body: { nfseId }
       });
 
       if (processError) throw processError;
 
-      // Registrar o sucesso do envio para processamento
       await supabase.from("nfse_sefaz_logs").insert({
         nfse_id: nfseId,
         status: "success",
@@ -160,7 +156,6 @@ const NFSePage = () => {
         description: "Em breve o status será atualizado.",
       });
 
-      // Abrir automaticamente os logs após o envio
       setSelectedNFSeIdForLogs(nfseId);
       setShowLogsDialog(true);
 
@@ -168,7 +163,6 @@ const NFSePage = () => {
     } catch (error: any) {
       console.error('Erro ao enviar NFSe:', error);
       
-      // Registrar o erro
       await supabase.from("nfse_sefaz_logs").insert({
         nfse_id: nfseId,
         status: "error",
@@ -187,7 +181,6 @@ const NFSePage = () => {
     try {
       setIsEmitindo(true);
 
-      // Verificar configurações do SEFAZ
       const { data: config, error: configError } = await supabase
         .from("nfse_config")
         .select("*")
@@ -204,7 +197,6 @@ const NFSePage = () => {
         return;
       }
 
-      // Buscar informações do serviço
       const { data: servico, error: servicoError } = await supabase
         .from("nfse_servicos")
         .select("*")
@@ -213,7 +205,6 @@ const NFSePage = () => {
 
       if (servicoError) throw servicoError;
 
-      // Inserir NFS-e
       const { data: nfse, error: nfseError } = await supabase
         .from("nfse")
         .insert({
@@ -292,7 +283,6 @@ const NFSePage = () => {
   };
 
   const handleImprimirNFSe = async (nfseId: string) => {
-    // Esta função será implementada posteriormente quando tivermos a API de impressão
     toast({
       title: "Impressão",
       description: "Funcionalidade de impressão será implementada em breve.",
@@ -316,7 +306,6 @@ const NFSePage = () => {
 
       if (nfseError) throw nfseError;
 
-      // Permitir exclusão apenas se estiver pendente ou cancelada
       if (nfse.status_sefaz !== "pendente" && !nfse.cancelada) {
         toast({
           variant: "destructive",
@@ -326,7 +315,6 @@ const NFSePage = () => {
         return;
       }
 
-      // Deletar registros relacionados primeiro
       const promises = [
         supabase
           .from("nfse_eventos")
@@ -345,10 +333,8 @@ const NFSePage = () => {
           .eq("tipo", "nfse")
       ];
 
-      // Aguardar todas as deleções relacionadas
       await Promise.all(promises);
 
-      // Finalmente, deletar a NFS-e
       const { error: deleteError } = await supabase
         .from("nfse")
         .delete()
@@ -356,12 +342,18 @@ const NFSePage = () => {
 
       if (deleteError) throw deleteError;
 
+      await queryClient.invalidateQueries({ queryKey: ["nfse"] });
+      
+      queryClient.setQueryData(["nfse", searchTerm], (oldData: any) => {
+        if (!oldData) return oldData;
+        return oldData.filter((nota: any) => nota.id !== nfseId);
+      });
+
       toast({
         title: "NFS-e excluída com sucesso",
       });
 
-      // Força uma nova busca dos dados
-      await refetch();
+      refetch();
     } catch (error: any) {
       console.error('Erro ao excluir NFS-e:', error);
       toast({
