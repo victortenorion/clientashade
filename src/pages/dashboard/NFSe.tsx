@@ -26,7 +26,7 @@ import {
 import { NFSeForm } from "./components/NFSeForm";
 import { NFSeView } from "./components/NFSeView";
 import { NFSeSefazLogs } from "./components/NFSeSefazLogs";
-import { Alert } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -66,6 +66,19 @@ const NFSePage = () => {
         throw error;
       }
 
+      return data;
+    },
+  });
+
+  const { data: nfseConfig } = useQuery({
+    queryKey: ["nfse_config"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("nfse_config")
+        .select("*")
+        .maybeSingle();
+
+      if (error) throw error;
       return data;
     },
   });
@@ -218,6 +231,15 @@ const NFSePage = () => {
 
   const handleSendToSefaz = async (nfseId: string) => {
     try {
+      if (!nfseConfig?.certificado_digital) {
+        toast({
+          title: "Configuração necessária",
+          description: "Configure o certificado digital antes de enviar notas fiscais para a SEFAZ.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Registrar o início do processamento
       await supabase.from("nfse_sefaz_logs").insert({
         nfse_id: nfseId,
@@ -232,7 +254,7 @@ const NFSePage = () => {
 
       if (error) throw error;
 
-      // Registrar o sucesso
+      // Registrar o sucesso do envio para processamento
       await supabase.from("nfse_sefaz_logs").insert({
         nfse_id: nfseId,
         status: "success",
