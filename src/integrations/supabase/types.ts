@@ -816,14 +816,18 @@ export type Database = {
           expected_date: string | null
           id: string
           internal_notes: string | null
+          invoice_key: string | null
+          invoice_number: string | null
           order_number: number
           priority: string | null
           problem: string | null
           reception_notes: string | null
           seller_id: string | null
+          shipping_company: string | null
           status_id: string | null
           store_id: string | null
           total_price: number
+          tracking_code: string | null
           updated_at: string
         }
         Insert: {
@@ -838,14 +842,18 @@ export type Database = {
           expected_date?: string | null
           id?: string
           internal_notes?: string | null
+          invoice_key?: string | null
+          invoice_number?: string | null
           order_number?: number
           priority?: string | null
           problem?: string | null
           reception_notes?: string | null
           seller_id?: string | null
+          shipping_company?: string | null
           status_id?: string | null
           store_id?: string | null
           total_price?: number
+          tracking_code?: string | null
           updated_at?: string
         }
         Update: {
@@ -860,14 +868,18 @@ export type Database = {
           expected_date?: string | null
           id?: string
           internal_notes?: string | null
+          invoice_key?: string | null
+          invoice_number?: string | null
           order_number?: number
           priority?: string | null
           problem?: string | null
           reception_notes?: string | null
           seller_id?: string | null
+          shipping_company?: string | null
           status_id?: string | null
           store_id?: string | null
           total_price?: number
+          tracking_code?: string | null
           updated_at?: string
         }
         Relationships: [

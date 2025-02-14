@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -54,6 +53,10 @@ interface NewOrderForm {
   equipment_serial_number: string;
   problem: string;
   description: string;
+  invoice_number: string;
+  invoice_key: string;
+  shipping_company: string;
+  tracking_code: string;
 }
 
 const CustomerArea = () => {
@@ -69,6 +72,10 @@ const CustomerArea = () => {
     equipment_serial_number: "",
     problem: "",
     description: "",
+    invoice_number: "",
+    invoice_key: "",
+    shipping_company: "",
+    tracking_code: "",
   });
   const { toast } = useToast();
 
@@ -94,6 +101,14 @@ const CustomerArea = () => {
         return;
       }
 
+      const { data: statusData, error: statusError } = await supabase
+        .from("service_order_statuses")
+        .select("id")
+        .eq("name", "Cliente enviando")
+        .single();
+
+      if (statusError) throw statusError;
+
       const { error } = await supabase
         .from("service_orders")
         .insert({
@@ -102,7 +117,12 @@ const CustomerArea = () => {
           equipment_serial_number: formData.equipment_serial_number,
           problem: formData.problem,
           description: formData.description,
-          created_by_type: 'client'
+          created_by_type: 'client',
+          status_id: statusData.id,
+          invoice_number: formData.invoice_number,
+          invoice_key: formData.invoice_key,
+          shipping_company: formData.shipping_company,
+          tracking_code: formData.tracking_code
         });
 
       if (error) throw error;
@@ -117,6 +137,10 @@ const CustomerArea = () => {
         equipment_serial_number: "",
         problem: "",
         description: "",
+        invoice_number: "",
+        invoice_key: "",
+        shipping_company: "",
+        tracking_code: "",
       });
       fetchOrders();
     } catch (error: any) {
@@ -473,6 +497,42 @@ const CustomerArea = () => {
                 id="equipment_serial_number"
                 name="equipment_serial_number"
                 value={formData.equipment_serial_number}
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="invoice_number">Número da Nota Fiscal de Envio</Label>
+              <Input
+                id="invoice_number"
+                name="invoice_number"
+                value={formData.invoice_number}
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="invoice_key">Chave da Nota Fiscal</Label>
+              <Input
+                id="invoice_key"
+                name="invoice_key"
+                value={formData.invoice_key}
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="shipping_company">Transportadora</Label>
+              <Input
+                id="shipping_company"
+                name="shipping_company"
+                value={formData.shipping_company}
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tracking_code">Código de Rastreio</Label>
+              <Input
+                id="tracking_code"
+                name="tracking_code"
+                value={formData.tracking_code}
                 onChange={handleInputChange}
               />
             </div>
