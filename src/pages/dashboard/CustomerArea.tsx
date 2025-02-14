@@ -62,11 +62,11 @@ const CustomerArea = () => {
     try {
       const { data, error } = await supabase
         .from("customer_area_field_settings")
-        .select("field_name, visible")
-        .eq('visible', true);
+        .select("field_name, visible");
 
       if (error) throw error;
 
+      // Mapear todos os campos para o formato esperado
       setVisibleFields(data.map(item => ({
         field: item.field_name,
         visible: item.visible
@@ -229,7 +229,7 @@ const CustomerArea = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              {visibleFields.filter(field => field.visible).map((field) => (
+              {visibleFields.map((field) => (
                 <TableHead key={field.field}>
                   {field.field === 'order_number' && 'Número'}
                   {field.field === 'created_at' && 'Data de Criação'}
@@ -250,20 +250,20 @@ const CustomerArea = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={visibleFields.filter(f => f.visible).length} className="text-center">
+                <TableCell colSpan={visibleFields.length} className="text-center">
                   Carregando...
                 </TableCell>
               </TableRow>
             ) : orders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={visibleFields.filter(f => f.visible).length} className="text-center">
+                <TableCell colSpan={visibleFields.length} className="text-center">
                   Nenhuma ordem de serviço encontrada
                 </TableCell>
               </TableRow>
             ) : (
               orders.map((order) => (
                 <TableRow key={order.id}>
-                  {visibleFields.filter(field => field.visible).map((field) => (
+                  {visibleFields.map((field) => (
                     <TableCell key={field.field}>
                       {getFieldValue(order, field.field)}
                     </TableCell>
