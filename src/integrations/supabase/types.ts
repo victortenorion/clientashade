@@ -306,27 +306,24 @@ export type Database = {
       }
       fiscal_config: {
         Row: {
-          cnae: string | null
+          config: Json
           created_at: string
           id: string
-          service_code: string | null
-          tax_regime: string | null
+          type: string
           updated_at: string
         }
         Insert: {
-          cnae?: string | null
+          config?: Json
           created_at?: string
           id?: string
-          service_code?: string | null
-          tax_regime?: string | null
+          type: string
           updated_at?: string
         }
         Update: {
-          cnae?: string | null
+          config?: Json
           created_at?: string
           id?: string
-          service_code?: string | null
-          tax_regime?: string | null
+          type?: string
           updated_at?: string
         }
         Relationships: []

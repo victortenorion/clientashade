@@ -8,7 +8,6 @@ import { CompanyInfoTab } from "./components/CompanyInfoTab";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { FiscalTab } from "./components/FiscalTab";
 
 const ServiceOrderSettings = () => {
   const location = useLocation();
@@ -48,6 +47,7 @@ const ServiceOrderSettings = () => {
 
   const loadConfigurations = async () => {
     try {
+      // Carregar configurações NFC-e
       const { data: nfceData, error: nfceError } = await supabase
         .from('fiscal_config')
         .select('*')
@@ -58,6 +58,7 @@ const ServiceOrderSettings = () => {
         console.error('Erro ao carregar configurações NFC-e:', nfceError);
       }
 
+      // Carregar configurações NFS-e
       const { data: nfseData, error: nfseError } = await supabase
         .from('fiscal_config')
         .select('*')
@@ -66,6 +67,17 @@ const ServiceOrderSettings = () => {
 
       if (nfseError && nfseError.code !== 'PGRST116') {
         console.error('Erro ao carregar configurações NFS-e:', nfseError);
+      }
+
+      // Carregar configurações fiscais gerais
+      const { data: generalData, error: generalError } = await supabase
+        .from('fiscal_config')
+        .select('*')
+        .eq('type', 'general')
+        .single();
+
+      if (generalError && generalError.code !== 'PGRST116') {
+        console.error('Erro ao carregar configurações gerais:', generalError);
       }
 
       if (nfceData) {
@@ -79,6 +91,13 @@ const ServiceOrderSettings = () => {
         setNfseConfig({
           ...nfseConfig,
           ...nfseData.config,
+        });
+      }
+
+      if (generalData) {
+        setFiscalConfig({
+          ...fiscalConfig,
+          ...generalData.config,
         });
       }
     } catch (error) {
