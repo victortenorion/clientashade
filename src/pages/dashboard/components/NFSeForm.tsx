@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -60,7 +61,7 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
         const { data: companyInfo, error } = await supabase
           .from("company_info")
           .select("cnae, endereco_cidade")
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
 
@@ -85,14 +86,15 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
       try {
         const { data: spConfig, error: spError } = await supabase
           .from("nfse_sp_config")
-          .select("ultima_rps_numero")
+          .select("id, ultima_rps_numero")
           .order('created_at', { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
 
         if (spError) throw spError;
 
         if (spConfig) {
+          console.log('Configuração atual:', spConfig); // Debug
           const proximoNumeroRPS = (spConfig.ultima_rps_numero + 1).toString();
           console.log('Próximo número RPS:', proximoNumeroRPS); // Debug
           setFormData(prev => ({
@@ -100,11 +102,21 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
             numero_rps: proximoNumeroRPS
           }));
         } else {
-          toast({
-            variant: "destructive",
-            title: "Erro",
-            description: "Não foi possível obter o próximo número do RPS"
-          });
+          // Se não houver configuração, criar uma nova
+          const { data: newConfig, error: insertError } = await supabase
+            .from("nfse_sp_config")
+            .insert({ ultima_rps_numero: 0 })
+            .select()
+            .single();
+
+          if (insertError) throw insertError;
+
+          if (newConfig) {
+            setFormData(prev => ({
+              ...prev,
+              numero_rps: "1"
+            }));
+          }
         }
       } catch (error) {
         console.error("Erro ao buscar configuração da NFS-e:", error);
@@ -123,13 +135,26 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const { data: config, error: configError } = await supabase
+        .from("nfse_sp_config")
+        .select("id")
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (configError) throw configError;
+
+      if (!config) {
+        throw new Error("Configuração não encontrada");
+      }
+
       // Atualizar o último número de RPS antes de submeter
       const { error: updateError } = await supabase
         .from("nfse_sp_config")
         .update({ 
           ultima_rps_numero: parseInt(formData.numero_rps || "0", 10)
         })
-        .eq('id', (await supabase.from("nfse_sp_config").select("id").limit(1).single()).data?.id);
+        .eq('id', config.id);
 
       if (updateError) {
         throw updateError;
