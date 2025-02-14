@@ -13,15 +13,6 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { LogOut, ArrowLeft } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 
 interface ServiceOrder {
   id: string;
@@ -48,22 +39,10 @@ interface CustomerAreaField {
   visible: boolean;
 }
 
-interface ServiceOrderFormData {
-  description: string;
-  total_price: number;
-}
-
-const defaultFormData: ServiceOrderFormData = {
-  description: "",
-  total_price: 0,
-};
-
 const CustomerArea = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [formData, setFormData] = useState<ServiceOrderFormData>(defaultFormData);
   const [visibleFields, setVisibleFields] = useState<CustomerAreaField[]>([]);
   const { toast } = useToast();
 
@@ -166,57 +145,6 @@ const CustomerArea = () => {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleNewOrder = () => {
-    setFormData(defaultFormData);
-    setDialogOpen(true);
-  };
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === "total_price" ? Number(value) : value,
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const clientId = localStorage.getItem('clientId');
-      
-      if (!clientId) {
-        throw new Error("Cliente não identificado");
-      }
-
-      const { error } = await supabase
-        .from("service_orders")
-        .insert({
-          ...formData,
-          client_id: clientId,
-          created_by_type: 'client'
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Ordem de serviço criada com sucesso",
-      });
-
-      setDialogOpen(false);
-      setFormData(defaultFormData);
-      fetchOrders();
-    } catch (error: any) {
-      console.error("Erro completo:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao criar ordem de serviço",
-        description: error.message,
-      });
     }
   };
 
@@ -346,44 +274,6 @@ const CustomerArea = () => {
           </TableBody>
         </Table>
       </div>
-
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Nova Ordem de Serviço</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição</Label>
-              <Input
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="total_price">Valor Total</Label>
-              <Input
-                id="total_price"
-                name="total_price"
-                type="number"
-                step="0.01"
-                value={formData.total_price}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => setDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit">Criar</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
