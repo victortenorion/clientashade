@@ -44,7 +44,7 @@ import {
 import {
   defaultFormData,
   getFieldLabel,
-  formatDocument,
+  formatFieldValue,
   getLastFourDigits
 } from "./utils/client.utils";
 import { Json } from "@/integrations/supabase/types";
@@ -519,7 +519,7 @@ const Clients = () => {
                     .filter(field => field.visible)
                     .map(field => (
                       <TableCell key={field.field_name}>
-                        {client[field.field_name as keyof Client]}
+                        {formatFieldValue(field.field_name, client[field.field_name as keyof Client])}
                       </TableCell>
                     ))}
                   <TableCell>
