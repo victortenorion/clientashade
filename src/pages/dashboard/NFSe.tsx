@@ -306,12 +306,45 @@ const NFSePage = () => {
 
   const handleDeleteNFSe = async (nfseId: string) => {
     try {
-      const { error } = await supabase
+      const { data: nfse, error: nfseError } = await supabase
+        .from("nfse")
+        .select("status_sefaz")
+        .eq("id", nfseId)
+        .single();
+
+      if (nfseError) throw nfseError;
+
+      if (nfse.status_sefaz !== "pendente") {
+        toast({
+          variant: "destructive",
+          title: "Erro ao excluir NFS-e",
+          description: "Apenas NFS-e pendentes podem ser excluídas",
+        });
+        return;
+      }
+
+      await supabase
+        .from("nfse_eventos")
+        .delete()
+        .eq("nfse_id", nfseId);
+
+      await supabase
+        .from("nfse_sefaz_logs")
+        .delete()
+        .eq("nfse_id", nfseId);
+
+      await supabase
+        .from("sefaz_transmission_queue")
+        .delete()
+        .eq("documento_id", nfseId)
+        .eq("tipo", "nfse");
+
+      const { error: deleteError } = await supabase
         .from("nfse")
         .delete()
         .eq("id", nfseId);
 
-      if (error) throw error;
+      if (deleteError) throw deleteError;
 
       toast({
         title: "NFS-e excluída com sucesso",
@@ -320,16 +353,15 @@ const NFSePage = () => {
       refetch();
     } catch (error: any) {
       toast({
+        variant: "destructive",
         title: "Erro ao excluir NFS-e",
         description: error.message,
-        variant: "destructive",
       });
     }
   };
 
   const handleCancelEnvio = async (nfseId: string) => {
     try {
-      // Atualizar status da NFS-e
       const { error: nfseError } = await supabase
         .from("nfse")
         .update({ status_sefaz: "pendente" })
@@ -337,7 +369,6 @@ const NFSePage = () => {
 
       if (nfseError) throw nfseError;
 
-      // Remover da fila de transmissão
       const { error: queueError } = await supabase
         .from("sefaz_transmission_queue")
         .delete()
@@ -488,7 +519,7 @@ const NFSePage = () => {
                         </>
                       )}
 
-                      {nota.status_sefaz === "autorizada" && !nota.cancelada && (
+                      {(nota.status_sefaz === "processado" || nota.status_sefaz === "autorizada") && !nota.cancelada && (
                         <>
                           <Button
                             variant="outline"
@@ -505,13 +536,13 @@ const NFSePage = () => {
                               setNfseCancelamento(nota.id);
                               setShowCancelDialog(true);
                             }}
-                            title="Cancelar no SEFAZ"
+                            title="Cancelar NFS-e"
                           >
                             <XCircle className="h-4 w-4" />
                           </Button>
                         </>
                       )}
-                      
+
                       <Button
                         variant="outline"
                         size="icon"
