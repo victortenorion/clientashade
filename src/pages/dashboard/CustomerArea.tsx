@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -82,6 +83,9 @@ const CustomerArea = () => {
   const handleCreateOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Recarregar configurações antes de tentar criar a ordem
+      await fetchCustomerAreaSettings();
+      
       if (!allowCreateOrders) {
         toast({
           variant: "destructive",
@@ -197,7 +201,7 @@ const CustomerArea = () => {
       const { data, error } = await supabase
         .from('customer_area_settings')
         .select('allow_create_orders')
-        .maybeSingle();
+        .single();
 
       if (error) {
         console.error("Erro ao buscar configurações:", error);
