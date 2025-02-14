@@ -255,7 +255,7 @@ const CustomerArea = () => {
           expected_date,
           completion_date,
           exit_date,
-          status:service_order_statuses (
+          status:service_order_statuses!service_orders_status_id_fkey (
             name,
             color
           )
@@ -269,13 +269,14 @@ const CustomerArea = () => {
       }
 
       console.log("Ordens recebidas:", data);
-
-      const typedOrders: ServiceOrder[] = data.map(order => ({
-        ...order,
-        status: order.status || null
-      }));
-
-      setOrders(typedOrders);
+      
+      if (data) {
+        const typedOrders: ServiceOrder[] = data.map(order => ({
+          ...order,
+          status: order.status || null
+        }));
+        setOrders(typedOrders);
+      }
     } catch (error: any) {
       console.error("Erro completo:", error);
       toast({
@@ -402,7 +403,7 @@ const CustomerArea = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              {visibleFieldsList.map((field) => (
+              {visibleFieldsList?.map((field) => (
                 <TableHead key={field.field_name}>
                   {field.field_name === 'order_number' && 'Número'}
                   {field.field_name === 'created_at' && 'Data de Criação'}
@@ -423,20 +424,20 @@ const CustomerArea = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={visibleFieldsList.length} className="text-center">
+                <TableCell colSpan={visibleFieldsList?.length || 1} className="text-center">
                   Carregando...
                 </TableCell>
               </TableRow>
             ) : orders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={visibleFieldsList.length} className="text-center">
+                <TableCell colSpan={visibleFieldsList?.length || 1} className="text-center">
                   Nenhuma ordem de serviço encontrada
                 </TableCell>
               </TableRow>
             ) : (
               orders.map((order) => (
                 <TableRow key={order.id}>
-                  {visibleFieldsList.map((field) => (
+                  {visibleFieldsList?.map((field) => (
                     <TableCell key={field.field_name}>
                       {getFieldValue(order, field.field_name)}
                     </TableCell>
