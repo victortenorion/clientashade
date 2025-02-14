@@ -263,33 +263,33 @@ const CustomerArea = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={handleBack}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <h2 className="text-xl font-bold">Minhas Ordens de Serviço</h2>
-        </div>
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-4">
+        <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <User className="h-4 w-4" />
-            <span className="text-sm font-medium">{clientName}</span>
+            <Button variant="outline" size="icon" onClick={handleBack}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <h2 className="text-xl font-bold">Minhas Ordens de Serviço</h2>
           </div>
-          <Button variant="outline" onClick={handleLogout}>
-            <LogOut className="mr-2 h-4 w-4" />
-            Sair
-          </Button>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              <span className="text-sm font-medium">{clientName}</span>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Button variant="outline" onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Sair
+              </Button>
+              {allowCreateOrders && (
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Nova Ordem de Serviço
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div className="flex justify-between items-center">
-        <div /> {/* Espaço vazio para manter o alinhamento */}
-        {allowCreateOrders && (
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Nova Ordem de Serviço
-          </Button>
-        )}
       </div>
 
       <div className="border rounded-lg">
