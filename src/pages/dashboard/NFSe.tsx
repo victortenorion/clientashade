@@ -533,7 +533,7 @@ const NFSePage = () => {
       </div>
 
       <Dialog open={showEmissaoDialog} onOpenChange={setShowEmissaoDialog}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Emitir Nova NFS-e</DialogTitle>
           </DialogHeader>
