@@ -95,15 +95,17 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
           .select('*')
           .order('created_at', { ascending: false })
           .limit(1)
-          .maybeSingle();
+          .single();
 
         if (rpsError) throw rpsError;
 
         if (rpsConfig) {
-          setNfseConfig(prev => ({
-            ...prev,
+          console.log('Configuração RPS carregada:', rpsConfig);
+          const updatedConfig = {
+            ...nfseConfig,
             numero_inicial_rps: rpsConfig.numero_inicial_rps
-          }));
+          };
+          setNfseConfig(updatedConfig);
         }
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
@@ -185,14 +187,25 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
           return;
         }
 
-        const { error: rpsError } = await supabase
+        const { data: currentConfig, error: fetchError } = await supabase
           .from('nfse_sp_config')
-          .update({ 
-            numero_inicial_rps: parseInt(nfseConfig.numero_inicial_rps?.toString() || "0", 10)
-          })
-          .eq('id', supabase.sql`(SELECT id FROM nfse_sp_config ORDER BY created_at DESC LIMIT 1)`);
+          .select('id')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
 
-        if (rpsError) throw rpsError;
+        if (fetchError) throw fetchError;
+
+        if (currentConfig) {
+          const { error: updateError } = await supabase
+            .from('nfse_sp_config')
+            .update({ 
+              numero_inicial_rps: parseInt(nfseConfig.numero_inicial_rps?.toString() || "0", 10)
+            })
+            .eq('id', currentConfig.id);
+
+          if (updateError) throw updateError;
+        }
 
         await handleSaveAllConfigs();
         
@@ -210,21 +223,41 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
       }
       setIsValidating(false);
     } else {
-      const { error: rpsError } = await supabase
-        .from('nfse_sp_config')
-        .update({ 
-          numero_inicial_rps: parseInt(nfseConfig.numero_inicial_rps?.toString() || "0", 10)
-        })
-        .eq('id', supabase.sql`(SELECT id FROM nfse_sp_config ORDER BY created_at DESC LIMIT 1)`);
+      try {
+        const { data: currentConfig, error: fetchError } = await supabase
+          .from('nfse_sp_config')
+          .select('id')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
 
-      if (rpsError) throw rpsError;
+        if (fetchError) throw fetchError;
 
-      await handleSaveAllConfigs();
-      
-      toast({
-        title: "Sucesso",
-        description: "Configurações salvas com sucesso",
-      });
+        if (currentConfig) {
+          const { error: updateError } = await supabase
+            .from('nfse_sp_config')
+            .update({ 
+              numero_inicial_rps: parseInt(nfseConfig.numero_inicial_rps?.toString() || "0", 10)
+            })
+            .eq('id', currentConfig.id);
+
+          if (updateError) throw updateError;
+        }
+
+        await handleSaveAllConfigs();
+        
+        toast({
+          title: "Sucesso",
+          description: "Configurações salvas com sucesso",
+        });
+      } catch (error) {
+        console.error('Erro ao salvar configurações:', error);
+        toast({
+          title: "Erro",
+          description: "Erro ao salvar configurações",
+          variant: "destructive",
+        });
+      }
     }
   };
 
