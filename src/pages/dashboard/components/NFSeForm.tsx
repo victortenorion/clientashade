@@ -87,13 +87,14 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
           .from("nfse_sp_config")
           .select("ultima_rps_numero")
           .order('created_at', { ascending: false })
-          .limit(1);
+          .limit(1)
+          .single();
 
         if (spError) throw spError;
 
-        if (spConfig && spConfig.length > 0) {
-          const config = spConfig[0];
-          const proximoNumeroRPS = (config.ultima_rps_numero + 1).toString();
+        if (spConfig) {
+          const proximoNumeroRPS = (spConfig.ultima_rps_numero + 1).toString();
+          console.log('Próximo número RPS:', proximoNumeroRPS); // Debug
           setFormData(prev => ({
             ...prev,
             numero_rps: proximoNumeroRPS
