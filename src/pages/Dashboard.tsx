@@ -320,15 +320,6 @@ const Dashboard = () => {
                       </SidebarMenuItem>
                       <SidebarMenuItem>
                         <SidebarMenuButton
-                          onClick={() => navigate("/dashboard/service-order-settings/personalizar")}
-                          isActive={location.pathname.includes("/dashboard/service-order-settings/personalizar")}
-                        >
-                          <Eye className="h-4 w-4" />
-                          <span>Personalizar</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton
                           onClick={() => navigate("/dashboard/service-order-settings/notas-fiscais")}
                           isActive={location.pathname.includes("/dashboard/service-order-settings/notas-fiscais")}
                         >
@@ -352,6 +343,15 @@ const Dashboard = () => {
                         >
                           <Users className="h-4 w-4" />
                           <span>Área do Cliente</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          onClick={() => navigate("/dashboard/service-order-settings/campos-visiveis")}
+                          isActive={location.pathname.includes("/dashboard/service-order-settings/campos-visiveis")}
+                        >
+                          <Eye className="h-4 w-4" />
+                          <span>Campos Visíveis</span>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     </SidebarMenu>

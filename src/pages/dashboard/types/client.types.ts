@@ -1,4 +1,3 @@
-
 import { Json } from "@/integrations/supabase/types";
 
 export interface ContactPerson {
@@ -79,10 +78,4 @@ export interface DeleteDialogState {
   clientId: string | null;
   withOrders: boolean;
   adminPassword: string;
-}
-
-export interface ClientField {
-  id: string;
-  field_name: string;
-  visible: boolean;
 }

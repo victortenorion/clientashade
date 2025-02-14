@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -285,11 +286,7 @@ const CustomerArea = () => {
       if (error) throw error;
       
       if (data) {
-        const formattedData = data.map(order => ({
-          ...order,
-          status: order.status?.[0] || null
-        }));
-        setOrders(formattedData as ServiceOrder[]);
+        setOrders(data as ServiceOrder[]);
       }
     } catch (error: any) {
       console.error("Erro completo:", error);
