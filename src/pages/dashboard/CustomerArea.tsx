@@ -95,6 +95,11 @@ const CustomerArea = () => {
       })));
     } catch (error: any) {
       console.error("Erro ao carregar configurações dos campos:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar configurações dos campos",
+        description: error.message
+      });
     }
   };
 

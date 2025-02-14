@@ -56,6 +56,7 @@ import {
 } from "./types/service-order-settings.types";
 import { SEFAZTab } from "./components/SEFAZTab";
 import { FiscalTab } from "./components/FiscalTab";
+import { Switch } from "@/components/ui/switch";
 
 const defaultFormData = {
   name: "",
@@ -574,18 +575,16 @@ const ServiceOrderSettings = () => {
                     className="flex items-center justify-between p-2 border rounded"
                   >
                     <span>{field.label}</span>
-                    <Button
-                      variant={field.visible ? "default" : "outline"}
-                      onClick={() =>
+                    <Switch
+                      checked={field.visible}
+                      onCheckedChange={(checked) =>
                         handleToggleFieldVisibility(
                           field.field,
                           field.visible,
                           "client"
                         )
                       }
-                    >
-                      {field.visible ? "Visível" : "Oculto"}
-                    </Button>
+                    />
                   </div>
                 ))}
               </div>
@@ -607,18 +606,16 @@ const ServiceOrderSettings = () => {
                     className="flex items-center justify-between p-2 border rounded"
                   >
                     <span>{field.label}</span>
-                    <Button
-                      variant={field.visible ? "default" : "outline"}
-                      onClick={() =>
+                    <Switch
+                      checked={field.visible}
+                      onCheckedChange={(checked) =>
                         handleToggleFieldVisibility(
                           field.field,
                           field.visible,
                           "customer_area"
                         )
                       }
-                    >
-                      {field.visible ? "Visível" : "Oculto"}
-                    </Button>
+                    />
                   </div>
                 ))}
               </div>
