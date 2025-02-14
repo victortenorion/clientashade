@@ -173,6 +173,19 @@ const ServiceOrders = () => {
       }
 
       if (!isNaN(Number(searchTerm))) {
+        const orderNumber = Number(searchTerm);
+        
+        // Verifica se o número está dentro do intervalo permitido para integer
+        if (orderNumber > 2147483647 || orderNumber < -2147483648) {
+          toast({
+            variant: "destructive",
+            title: "Número inválido",
+            description: "O número da ordem de serviço está fora do intervalo permitido.",
+          });
+          setOrders([]);
+          return;
+        }
+
         const { data, error } = await supabase
           .from("service_orders")
           .select(`
@@ -198,7 +211,7 @@ const ServiceOrders = () => {
             status:service_order_statuses!service_orders_status_id_fkey(name, color),
             items:service_order_items(id, description, price)
           `)
-          .eq('order_number', Number(searchTerm));
+          .eq('order_number', orderNumber);
 
         if (error) throw error;
         setOrders(data as ServiceOrder[]);
