@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useNavigate, Outlet } from "react-router-dom";
+import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -40,6 +40,7 @@ interface User {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [cadastrosOpen, setCadastrosOpen] = useState(true);
   const [ordensOpen, setOrdensOpen] = useState(true);
@@ -169,7 +170,7 @@ const Dashboard = () => {
 
   return (
     <SidebarProvider defaultOpen>
-      <div className="min-h-screen bg-background flex">
+      <div className="min-h-screen bg-background flex w-full">
         <Sidebar>
           <SidebarHeader>
             <h2 className="text-xl font-bold p-4">Sistema</h2>
@@ -346,7 +347,7 @@ const Dashboard = () => {
         <SidebarInset>
           <header className="p-4 flex justify-between items-center border-b">
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" onClick={() => navigate(-1)}>
+              <Button variant="outline" size="icon" onClick={handleBack}>
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               <h1 className="text-2xl font-bold">Dashboard</h1>
@@ -355,7 +356,7 @@ const Dashboard = () => {
               <span className="text-sm text-muted-foreground">
                 Olá, {username || "Usuário"}
               </span>
-              <Button variant="outline" onClick={() => handleLogout()}>
+              <Button variant="outline" onClick={handleLogout}>
                 Sair
               </Button>
             </div>
