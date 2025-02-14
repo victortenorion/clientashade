@@ -1,5 +1,4 @@
-
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -13,6 +12,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 
 interface NFCeConfig {
   certificado_digital: string;
@@ -59,6 +60,10 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
   setNfseConfig,
   handleSaveAllConfigs,
 }) => {
+  const { toast } = useToast();
+  const [isValidatingNFCe, setIsValidatingNFCe] = useState(false);
+  const [isValidatingNFSe, setIsValidatingNFSe] = useState(false);
+
   useEffect(() => {
     const loadCompanyInfo = async () => {
       try {
@@ -83,6 +88,71 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
 
     loadCompanyInfo();
   }, []);
+
+  const validateCertificate = async (certificado: string, senha: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('validate-certificate', {
+        body: { certificado, senha }
+      });
+
+      if (error) throw error;
+
+      return data.valid;
+    } catch (error) {
+      console.error('Erro ao validar certificado:', error);
+      return false;
+    }
+  };
+
+  const handleSaveWithValidation = async () => {
+    let hasErrors = false;
+
+    // Validar certificado NFC-e
+    if (nfceConfig.certificado_digital && nfceConfig.senha_certificado) {
+      setIsValidatingNFCe(true);
+      const isNFCeValid = await validateCertificate(
+        nfceConfig.certificado_digital,
+        nfceConfig.senha_certificado
+      );
+
+      if (!isNFCeValid) {
+        toast({
+          title: "Erro",
+          description: "Certificado ou senha da NFC-e inválidos",
+          variant: "destructive",
+        });
+        hasErrors = true;
+      }
+      setIsValidatingNFCe(false);
+    }
+
+    // Validar certificado NFS-e
+    if (nfseConfig.certificado_digital && nfseConfig.senha_certificado) {
+      setIsValidatingNFSe(true);
+      const isNFSeValid = await validateCertificate(
+        nfseConfig.certificado_digital,
+        nfseConfig.senha_certificado
+      );
+
+      if (!isNFSeValid) {
+        toast({
+          title: "Erro",
+          description: "Certificado ou senha da NFS-e inválidos",
+          variant: "destructive",
+        });
+        hasErrors = true;
+      }
+      setIsValidatingNFSe(false);
+    }
+
+    if (!hasErrors) {
+      handleSaveAllConfigs();
+      toast({
+        title: "Sucesso",
+        description: "Certificados validados e configurações salvas com sucesso",
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -113,6 +183,7 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                       reader.readAsDataURL(file);
                     }
                   }}
+                  disabled={isValidatingNFCe}
                 />
               </div>
 
@@ -127,6 +198,7 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                       senha_certificado: e.target.value,
                     })
                   }
+                  disabled={isValidatingNFCe}
                 />
               </div>
 
@@ -209,6 +281,7 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                       reader.readAsDataURL(file);
                     }
                   }}
+                  disabled={isValidatingNFSe}
                 />
               </div>
 
@@ -223,6 +296,7 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                       senha_certificado: e.target.value,
                     })
                   }
+                  disabled={isValidatingNFSe}
                 />
               </div>
 
@@ -280,8 +354,14 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
       </Card>
 
       <div className="flex justify-end">
-        <Button onClick={handleSaveAllConfigs}>
-          Salvar Configurações
+        <Button 
+          onClick={handleSaveWithValidation}
+          disabled={isValidatingNFCe || isValidatingNFSe}
+        >
+          {(isValidatingNFCe || isValidatingNFSe) && (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          )}
+          {isValidatingNFCe || isValidatingNFSe ? 'Validando...' : 'Salvar Configurações'}
         </Button>
       </div>
     </div>
