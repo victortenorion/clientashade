@@ -188,6 +188,7 @@ export type Database = {
           nome_fantasia: string | null
           razao_social: string
           regime_tributario: string | null
+          serie_rps_padrao: string | null
           telefone: string | null
           updated_at: string
         }
@@ -211,6 +212,7 @@ export type Database = {
           nome_fantasia?: string | null
           razao_social: string
           regime_tributario?: string | null
+          serie_rps_padrao?: string | null
           telefone?: string | null
           updated_at?: string
         }
@@ -234,6 +236,7 @@ export type Database = {
           nome_fantasia?: string | null
           razao_social?: string
           regime_tributario?: string | null
+          serie_rps_padrao?: string | null
           telefone?: string | null
           updated_at?: string
         }

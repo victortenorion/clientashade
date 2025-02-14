@@ -44,7 +44,7 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
         // Buscar dados da empresa primeiro
         const { data: companyInfo, error: companyError } = await supabase
           .from("company_info")
-          .select("codigo_servico")
+          .select("codigo_servico, serie_rps_padrao")
           .maybeSingle();
 
         if (companyError) throw companyError;
@@ -78,7 +78,8 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
             data_competencia: new Date().toISOString().split("T")[0],
             deducoes: 0,
             observacoes: `Ordem de Serviço #${serviceOrder.order_number}`,
-            natureza_operacao: "1"
+            natureza_operacao: "1",
+            serie_rps: companyInfo?.serie_rps_padrao || "1"
           };
 
           setFormData(nfseData);
