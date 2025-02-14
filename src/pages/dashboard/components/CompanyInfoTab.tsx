@@ -502,7 +502,7 @@ export const CompanyInfoTab = () => {
             </div>
           </div>
 
-          <div className="flex justify-center">
+          <div className="flex justify-start">
             <div className="grid grid-cols-2 gap-6 w-1/2">
               <div className="space-y-2">
                 <Label>Número Inicial do RPS</Label>
