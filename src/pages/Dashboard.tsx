@@ -218,15 +218,26 @@ const Dashboard = () => {
                 <SidebarGroupContent>
                   <SidebarMenu>
                     {hasPermission('clients') && (
-                      <SidebarMenuItem>
-                        <SidebarMenuButton
-                          onClick={() => navigate("/dashboard/clients")}
-                          isActive={location.pathname.includes("/dashboard/clients")}
-                        >
-                          <Users className="h-4 w-4" />
-                          <span>Clientes</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
+                      <>
+                        <SidebarMenuItem>
+                          <SidebarMenuButton
+                            onClick={() => navigate("/dashboard/clients")}
+                            isActive={location.pathname.includes("/dashboard/clients")}
+                          >
+                            <Users className="h-4 w-4" />
+                            <span>Clientes</span>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                        <SidebarMenuItem>
+                          <SidebarMenuButton
+                            onClick={() => navigate("/dashboard/client-settings/fields")}
+                            isActive={location.pathname.includes("/dashboard/client-settings/fields")}
+                          >
+                            <Eye className="h-4 w-4" />
+                            <span>Campos Visíveis</span>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      </>
                     )}
                     {hasPermission('users') && (
                       <SidebarMenuItem>
