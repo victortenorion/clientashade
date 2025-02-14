@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import {
@@ -20,8 +21,8 @@ interface SefazLog {
   response_payload: Record<string, any>;
 }
 
-interface NFSeSefazLogsProps {
-  nfseId: string;
+export interface NFSeSefazLogsProps {
+  nfseId: string | null;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -30,6 +31,8 @@ export const NFSeSefazLogs: React.FC<NFSeSefazLogsProps> = ({ nfseId, isOpen, on
   const { data: logs, isLoading } = useQuery({
     queryKey: ['sefaz-logs', nfseId],
     queryFn: async () => {
+      if (!nfseId) return [];
+
       const { data, error } = await supabase
         .from('nfse_sefaz_logs')
         .select('*')
@@ -39,7 +42,8 @@ export const NFSeSefazLogs: React.FC<NFSeSefazLogsProps> = ({ nfseId, isOpen, on
       if (error) throw error;
 
       return (data || []) as SefazLog[];
-    }
+    },
+    enabled: !!nfseId, // Only run query if nfseId is provided
   });
 
   const formatJson = (json: Record<string, any>) => {
@@ -49,6 +53,8 @@ export const NFSeSefazLogs: React.FC<NFSeSefazLogsProps> = ({ nfseId, isOpen, on
       return 'Invalid JSON';
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="space-y-4">
