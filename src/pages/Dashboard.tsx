@@ -146,6 +146,18 @@ const Dashboard = () => {
           console.log("Permissões do usuário:", permissions);
           setUserPermissions(permissions);
         }
+
+        const { data: storeData, error: storeError } = await supabase
+          .from("user_stores")
+          .select("store_id")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+
+        if (storeError) {
+          console.error("Erro ao buscar loja do usuário:", storeError);
+        } else if (storeData) {
+          console.log("Loja do usuário:", storeData.store_id);
+        }
       }
     };
     
