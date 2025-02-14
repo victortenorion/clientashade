@@ -320,15 +320,6 @@ const Dashboard = () => {
                       </SidebarMenuItem>
                       <SidebarMenuItem>
                         <SidebarMenuButton
-                          onClick={() => navigate("/dashboard/service-order-settings/notas-fiscais")}
-                          isActive={location.pathname.includes("/dashboard/service-order-settings/notas-fiscais")}
-                        >
-                          <Receipt className="h-4 w-4" />
-                          <span>Notas Fiscais</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton
                           onClick={() => navigate("/dashboard/service-order-settings/sefaz")}
                           isActive={location.pathname.includes("/dashboard/service-order-settings/sefaz")}
                         >
