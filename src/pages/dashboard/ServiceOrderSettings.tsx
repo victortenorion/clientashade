@@ -1,6 +1,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useState } from "react";
 import { StatusTab } from "./components/StatusTab";
 import { NotasFiscaisTab } from "./components/NotasFiscaisTab";
 import { SEFAZTab } from "./components/SEFAZTab";
@@ -12,6 +13,39 @@ const ServiceOrderSettings = () => {
   const location = useLocation();
 
   const currentTab = location.pathname.split("/").pop() || "status";
+
+  const [nfceConfig, setNfceConfig] = useState({
+    certificado_digital: "",
+    senha_certificado: "",
+    ambiente: "homologacao",
+    token_ibpt: "",
+    csc_id: "",
+    csc_token: "",
+    inscricao_estadual: "",
+    regime_tributario: "",
+  });
+
+  const [nfseConfig, setNfseConfig] = useState({
+    certificado_digital: "",
+    senha_certificado: "",
+    ambiente: "homologacao",
+    inscricao_municipal: "",
+    codigo_municipio: "",
+    regime_tributario: "",
+    regime_especial: "",
+    incentivo_fiscal: false,
+  });
+
+  const [fiscalConfig, setFiscalConfig] = useState({
+    service_code: "",
+    cnae: "",
+    tax_regime: "",
+  });
+
+  const handleSaveAllConfigs = async () => {
+    // Implementar a lógica de salvar as configurações
+    console.log("Salvando configurações...");
+  };
 
   const handleTabChange = (value: string) => {
     if (value === "status") {
@@ -37,10 +71,22 @@ const ServiceOrderSettings = () => {
         <PersonalizarTab />
       </TabsContent>
       <TabsContent value="notas-fiscais">
-        <NotasFiscaisTab />
+        <NotasFiscaisTab 
+          fiscalConfig={fiscalConfig}
+          setFiscalConfig={setFiscalConfig}
+          handleSaveAllConfigs={handleSaveAllConfigs}
+        />
       </TabsContent>
       <TabsContent value="sefaz">
-        <SEFAZTab />
+        <SEFAZTab 
+          nfceConfig={nfceConfig}
+          nfseConfig={nfseConfig}
+          fiscalConfig={fiscalConfig}
+          setNfceConfig={setNfceConfig}
+          setNfseConfig={setNfseConfig}
+          setFiscalConfig={setFiscalConfig}
+          handleSaveAllConfigs={handleSaveAllConfigs}
+        />
       </TabsContent>
       <TabsContent value="area-cliente">
         <ClientTab />
