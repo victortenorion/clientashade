@@ -128,7 +128,7 @@ const CustomerArea = () => {
           expected_date,
           completion_date,
           exit_date,
-          status:service_order_statuses(name, color)
+          status:service_order_statuses!fk_service_order_status(name, color)
         `)
         .eq('client_id', clientId)
         .order('created_at', { ascending: false });
@@ -162,7 +162,7 @@ const CustomerArea = () => {
       toast({
         variant: "destructive",
         title: "Erro ao carregar ordens de serviço",
-        description: error.message,
+        description: error.message
       });
     } finally {
       setLoading(false);
