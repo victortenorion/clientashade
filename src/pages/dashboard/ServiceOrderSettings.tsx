@@ -1,6 +1,5 @@
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useState } from "react";
 import { StatusTab } from "./components/StatusTab";
 import { NotasFiscaisTab } from "./components/NotasFiscaisTab";
@@ -9,10 +8,8 @@ import { ClientTab } from "./components/ClientTab";
 import PersonalizarTab from "./components/PersonalizarTab";
 
 const ServiceOrderSettings = () => {
-  const navigate = useNavigate();
   const location = useLocation();
-
-  const currentTab = location.pathname.split("/").pop() || "status";
+  const currentPath = location.pathname.split("/").pop() || "status";
 
   const [nfceConfig, setNfceConfig] = useState({
     certificado_digital: "",
@@ -43,51 +40,47 @@ const ServiceOrderSettings = () => {
   });
 
   const handleSaveAllConfigs = async () => {
-    // Implementar a lógica de salvar as configurações
     console.log("Salvando configurações...");
   };
 
-  const handleTabChange = (value: string) => {
-    if (value === "status") {
-      navigate("/dashboard/service-order-settings");
-    } else {
-      navigate(`/dashboard/service-order-settings/${value}`);
+  // Renderiza o componente apropriado baseado na rota atual
+  const renderContent = () => {
+    switch (currentPath) {
+      case "personalizar":
+        return <PersonalizarTab />;
+      case "notas-fiscais":
+        return <NotasFiscaisTab />;
+      case "sefaz":
+        return (
+          <SEFAZTab
+            nfceConfig={nfceConfig}
+            nfseConfig={nfseConfig}
+            fiscalConfig={fiscalConfig}
+            setNfceConfig={setNfceConfig}
+            setNfseConfig={setNfseConfig}
+            setFiscalConfig={setFiscalConfig}
+            handleSaveAllConfigs={handleSaveAllConfigs}
+          />
+        );
+      case "area-cliente":
+        return <ClientTab />;
+      default:
+        return <StatusTab />;
     }
   };
 
   return (
-    <Tabs value={currentTab} onValueChange={handleTabChange}>
-      <TabsList>
-        <TabsTrigger value="status">Status</TabsTrigger>
-        <TabsTrigger value="personalizar">Personalizar</TabsTrigger>
-        <TabsTrigger value="notas-fiscais">Notas Fiscais</TabsTrigger>
-        <TabsTrigger value="sefaz">SEFAZ</TabsTrigger>
-        <TabsTrigger value="area-cliente">Área do Cliente</TabsTrigger>
-      </TabsList>
-      <TabsContent value="status">
-        <StatusTab />
-      </TabsContent>
-      <TabsContent value="personalizar">
-        <PersonalizarTab />
-      </TabsContent>
-      <TabsContent value="notas-fiscais">
-        <NotasFiscaisTab />
-      </TabsContent>
-      <TabsContent value="sefaz">
-        <SEFAZTab 
-          nfceConfig={nfceConfig}
-          nfseConfig={nfseConfig}
-          fiscalConfig={fiscalConfig}
-          setNfceConfig={setNfceConfig}
-          setNfseConfig={setNfseConfig}
-          setFiscalConfig={setFiscalConfig}
-          handleSaveAllConfigs={handleSaveAllConfigs}
-        />
-      </TabsContent>
-      <TabsContent value="area-cliente">
-        <ClientTab />
-      </TabsContent>
-    </Tabs>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">
+          {currentPath === "status" ? "Configurações" : currentPath.charAt(0).toUpperCase() + currentPath.slice(1).replace(/-/g, " ")}
+        </h2>
+        <p className="text-muted-foreground">
+          Configure as opções do sistema
+        </p>
+      </div>
+      {renderContent()}
+    </div>
   );
 };
 
