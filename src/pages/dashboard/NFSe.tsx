@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -238,6 +239,14 @@ const NFSePage = () => {
         .maybeSingle();
 
       if (configError) throw configError;
+      if (!config) {
+        toast({
+          title: "Erro ao emitir NFS-e",
+          description: "Configurações da NFS-e não encontradas.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       // Verificar se precisa de certificado digital
       if (!config.permite_emissao_sem_certificado && !config.certificado_digital) {
@@ -249,6 +258,17 @@ const NFSePage = () => {
         return;
       }
 
+      // Criar entrada na fila de transmissão
+      const { error: queueError } = await supabase
+        .from('sefaz_transmission_queue')
+        .insert({
+          tipo: 'nfse',
+          documento_id: nfseId,
+          status: 'pendente'
+        });
+
+      if (queueError) throw queueError;
+
       // Registrar o início do processamento
       await supabase.from("nfse_sefaz_logs").insert({
         nfse_id: nfseId,
@@ -256,12 +276,20 @@ const NFSePage = () => {
         message: "Iniciando envio para SEFAZ",
       });
 
-      const { error } = await supabase
+      // Atualizar status da NFSe
+      const { error: updateError } = await supabase
         .from("nfse")
         .update({ status_sefaz: "enviando" })
         .eq("id", nfseId);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
+
+      // Iniciar processamento via Edge Function
+      const { error: processError } = await supabase.functions.invoke('process-nfse', {
+        body: { nfseId }
+      });
+
+      if (processError) throw processError;
 
       // Registrar o sucesso do envio para processamento
       await supabase.from("nfse_sefaz_logs").insert({
@@ -281,6 +309,8 @@ const NFSePage = () => {
 
       refetch();
     } catch (error: any) {
+      console.error('Erro ao enviar NFSe:', error);
+      
       // Registrar o erro
       await supabase.from("nfse_sefaz_logs").insert({
         nfse_id: nfseId,
