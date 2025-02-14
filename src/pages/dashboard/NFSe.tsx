@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { NFSe, NFSeFormData } from "./types/nfse.types";
 import { format } from "date-fns";
-import { Plus, Pencil, Trash2, Send, XCircle, Printer, File } from "lucide-react";
+import { Plus, Pencil, Trash2, Send, XCircle, Printer } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import {
   Dialog,
@@ -289,7 +288,11 @@ const NFSePage = () => {
               </TableRow>
             ) : (
               notas?.map((nota: any) => (
-                <TableRow key={nota.id}>
+                <TableRow 
+                  key={nota.id} 
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => setSelectedNFSeId(nota.id)}
+                >
                   <TableCell>{nota.numero_nfse}</TableCell>
                   <TableCell>{nota.clients?.name}</TableCell>
                   <TableCell>
@@ -309,17 +312,8 @@ const NFSePage = () => {
                       {nota.status_sefaz}
                     </span>
                   </TableCell>
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setSelectedNFSeId(nota.id)}
-                        title="Visualizar"
-                      >
-                        <File className="h-4 w-4" />
-                      </Button>
-
                       {/* Botões de ação baseados no status */}
                       {nota.status_sefaz === "pendente" && (
                         <>

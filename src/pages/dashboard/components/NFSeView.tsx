@@ -5,7 +5,9 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -17,6 +19,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { NFSe, NFSeEvento } from "../types/nfse.types";
+import { FileText } from "lucide-react";
 
 interface Props {
   nfseId: string | null;
@@ -78,6 +81,10 @@ export const NFSeView = ({ nfseId, onClose }: Props) => {
       style: "currency",
       currency: "BRL",
     }).format(value);
+  };
+
+  const handlePrint = () => {
+    window.print();
   };
 
   return (
@@ -203,6 +210,13 @@ export const NFSeView = ({ nfseId, onClose }: Props) => {
             </div>
           </div>
         )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={handlePrint}>
+            <FileText className="h-4 w-4 mr-2" />
+            Visualizar
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
