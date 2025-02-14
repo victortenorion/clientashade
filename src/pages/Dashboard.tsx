@@ -207,7 +207,7 @@ const Dashboard = () => {
                       <SidebarMenuItem>
                         <SidebarMenuButton
                           onClick={() => navigate("/dashboard/clients")}
-                          isActive={location.pathname.startsWith("/dashboard/clients")}
+                          isActive={location.pathname.includes("/dashboard/clients")}
                         >
                           <Users className="h-4 w-4" />
                           <span>Clientes</span>
@@ -218,7 +218,7 @@ const Dashboard = () => {
                       <SidebarMenuItem>
                         <SidebarMenuButton
                           onClick={() => navigate("/dashboard/users")}
-                          isActive={location.pathname.startsWith("/dashboard/users")}
+                          isActive={location.pathname.includes("/dashboard/users")}
                         >
                           <UserIcon className="h-4 w-4" />
                           <span>Usuários</span>
@@ -229,7 +229,7 @@ const Dashboard = () => {
                       <SidebarMenuItem>
                         <SidebarMenuButton
                           onClick={() => navigate("/dashboard/products")}
-                          isActive={location.pathname.startsWith("/dashboard/products")}
+                          isActive={location.pathname.includes("/dashboard/products")}
                         >
                           <Package className="h-4 w-4" />
                           <span>Produtos</span>
@@ -240,7 +240,7 @@ const Dashboard = () => {
                       <SidebarMenuItem>
                         <SidebarMenuButton
                           onClick={() => navigate("/dashboard/stores")}
-                          isActive={location.pathname.startsWith("/dashboard/stores")}
+                          isActive={location.pathname.includes("/dashboard/stores")}
                         >
                           <Store className="h-4 w-4" />
                           <span>Lojas</span>
@@ -269,7 +269,7 @@ const Dashboard = () => {
                       <SidebarMenuItem>
                         <SidebarMenuButton
                           onClick={() => navigate("/dashboard/service-orders")}
-                          isActive={location.pathname === "/dashboard/service-orders"}
+                          isActive={location.pathname.includes("/dashboard/service-orders") && !location.pathname.includes("settings")}
                         >
                           <ClipboardList className="h-4 w-4" />
                           <span>Listar Ordens</span>
@@ -280,7 +280,7 @@ const Dashboard = () => {
                       <SidebarMenuItem>
                         <SidebarMenuButton
                           onClick={() => navigate("/dashboard/service-order-settings")}
-                          isActive={location.pathname === "/dashboard/service-order-settings"}
+                          isActive={location.pathname.includes("/dashboard/service-order-settings")}
                         >
                           <Settings className="h-4 w-4" />
                           <span>Configurações</span>
@@ -291,7 +291,7 @@ const Dashboard = () => {
                       <SidebarMenuItem>
                         <SidebarMenuButton
                           onClick={() => navigate("/dashboard/customer-area")}
-                          isActive={location.pathname === "/dashboard/customer-area"}
+                          isActive={location.pathname.includes("/dashboard/customer-area")}
                         >
                           <UserCircle className="h-4 w-4" />
                           <span>Área do Cliente</span>
@@ -320,7 +320,7 @@ const Dashboard = () => {
                       <SidebarMenuItem>
                         <SidebarMenuButton
                           onClick={() => navigate("/dashboard/nfce")}
-                          isActive={location.pathname === "/dashboard/nfce"}
+                          isActive={location.pathname.includes("/dashboard/nfce")}
                         >
                           <Receipt className="h-4 w-4" />
                           <span>NFC-e</span>
@@ -331,7 +331,7 @@ const Dashboard = () => {
                       <SidebarMenuItem>
                         <SidebarMenuButton
                           onClick={() => navigate("/dashboard/nfse")}
-                          isActive={location.pathname === "/dashboard/nfse"}
+                          isActive={location.pathname.includes("/dashboard/nfse")}
                         >
                           <Receipt className="h-4 w-4" />
                           <span>NFS-e</span>
@@ -350,7 +350,9 @@ const Dashboard = () => {
               <Button variant="outline" size="icon" onClick={handleBack}>
                 <ArrowLeft className="h-4 w-4" />
               </Button>
-              <h1 className="text-2xl font-bold">Dashboard</h1>
+              <h1 className="text-2xl font-bold">
+                {location.pathname.includes('service-order-settings') ? 'Configurações' : 'Dashboard'}
+              </h1>
             </div>
             <div className="flex items-center gap-4">
               <span className="text-sm text-muted-foreground">
