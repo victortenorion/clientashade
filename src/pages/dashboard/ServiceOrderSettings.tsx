@@ -51,6 +51,7 @@ const ServiceOrderSettings = () => {
   const { toast } = useToast();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("status");
 
   const fetchStatuses = async () => {
     try {
@@ -146,49 +147,49 @@ const ServiceOrderSettings = () => {
   };
 
   const handleSave = async () => {
-  try {
-    const statusData = {
-      name: formData.name || '', // Garantir que name nunca é undefined
-      color: formData.color,
-      description: formData.description,
-      is_active: formData.is_active
-    };
+    try {
+      const statusData = {
+        name: formData.name || '', // Garantir que name nunca é undefined
+        color: formData.color,
+        description: formData.description,
+        is_active: formData.is_active
+      };
 
-    if (editingId) {
-      const { error } = await supabase
-        .from("service_order_statuses")
-        .update(statusData)
-        .eq("id", editingId);
+      if (editingId) {
+        const { error } = await supabase
+          .from("service_order_statuses")
+          .update(statusData)
+          .eq("id", editingId);
 
-      if (error) throw error;
+        if (error) throw error;
 
+        toast({
+          title: "Status atualizado com sucesso",
+        });
+      } else {
+        const { error } = await supabase
+          .from("service_order_statuses")
+          .insert([statusData]);
+
+        if (error) throw error;
+
+        toast({
+          title: "Status criado com sucesso",
+        });
+      }
+
+      setDialogOpen(false);
+      setFormData(defaultFormData);
+      setEditingId(null);
+      fetchStatuses();
+    } catch (error: any) {
       toast({
-        title: "Status atualizado com sucesso",
-      });
-    } else {
-      const { error } = await supabase
-        .from("service_order_statuses")
-        .insert([statusData]);
-
-      if (error) throw error;
-
-      toast({
-        title: "Status criado com sucesso",
+        variant: "destructive",
+        title: "Erro ao salvar status",
+        description: error.message,
       });
     }
-
-    setDialogOpen(false);
-    setFormData(defaultFormData);
-    setEditingId(null);
-    fetchStatuses();
-  } catch (error: any) {
-    toast({
-      variant: "destructive",
-      title: "Erro ao salvar status",
-      description: error.message,
-    });
-  }
-};
+  };
 
   useEffect(() => {
     fetchStatuses();
@@ -196,88 +197,127 @@ const ServiceOrderSettings = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div className="flex-1 max-w-sm">
-          <Input
-            placeholder="Buscar status..."
-            value={searchTerm}
-            onChange={handleSearch}
-          />
-        </div>
-        <Button
-          onClick={() => {
-            setFormData(defaultFormData);
-            setEditingId(null);
-            setDialogOpen(true);
-          }}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Status
-        </Button>
+      <div className="border-b">
+        <nav className="flex space-x-4">
+          <Button
+            variant={activeTab === "status" ? "default" : "ghost"}
+            onClick={() => setActiveTab("status")}
+          >
+            Status
+          </Button>
+          <Button
+            variant={activeTab === "fields" ? "default" : "ghost"}
+            onClick={() => setActiveTab("fields")}
+          >
+            Campos
+          </Button>
+          <Button
+            variant={activeTab === "settings" ? "default" : "ghost"}
+            onClick={() => setActiveTab("settings")}
+          >
+            Configurações
+          </Button>
+        </nav>
       </div>
 
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Cor</TableHead>
-              <TableHead>Descrição</TableHead>
-              <TableHead>Ativo</TableHead>
-              <TableHead>Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center">
-                  Carregando...
-                </TableCell>
-              </TableRow>
-            ) : statuses.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center">
-                  Nenhum status encontrado
-                </TableCell>
-              </TableRow>
-            ) : (
-              statuses.map((status) => (
-                <TableRow key={status.id}>
-                  <TableCell>{status.name}</TableCell>
-                  <TableCell>
-                    <div
-                      className="w-6 h-6 rounded-full"
-                      style={{ backgroundColor: status.color }}
-                    />
-                  </TableCell>
-                  <TableCell>{status.description}</TableCell>
-                  <TableCell>{status.is_active ? "Sim" : "Não"}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(status)}
-                      >
-                        <Edit className="h-4 w-4 mr-2" />
-                        Editar
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDeleteClick(status.id)}
-                      >
-                        <Trash className="h-4 w-4 mr-2" />
-                        Excluir
-                      </Button>
-                    </div>
-                  </TableCell>
+      {activeTab === "status" && (
+        <>
+          <div className="flex justify-between items-center">
+            <div className="flex-1 max-w-sm">
+              <Input
+                placeholder="Buscar status..."
+                value={searchTerm}
+                onChange={handleSearch}
+              />
+            </div>
+            <Button
+              onClick={() => {
+                setFormData(defaultFormData);
+                setEditingId(null);
+                setDialogOpen(true);
+              }}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Status
+            </Button>
+          </div>
+
+          <div className="border rounded-lg">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Cor</TableHead>
+                  <TableHead>Descrição</TableHead>
+                  <TableHead>Ativo</TableHead>
+                  <TableHead>Ações</TableHead>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center">
+                      Carregando...
+                    </TableCell>
+                  </TableRow>
+                ) : statuses.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center">
+                      Nenhum status encontrado
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  statuses.map((status) => (
+                    <TableRow key={status.id}>
+                      <TableCell>{status.name}</TableCell>
+                      <TableCell>
+                        <div
+                          className="w-6 h-6 rounded-full"
+                          style={{ backgroundColor: status.color }}
+                        />
+                      </TableCell>
+                      <TableCell>{status.description}</TableCell>
+                      <TableCell>{status.is_active ? "Sim" : "Não"}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEdit(status)}
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Editar
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteClick(status.id)}
+                          >
+                            <Trash className="h-4 w-4 mr-2" />
+                            Excluir
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </>
+      )}
+
+      {activeTab === "fields" && (
+        <div className="text-center p-4">
+          <p>Configuração de campos em desenvolvimento</p>
+        </div>
+      )}
+
+      {activeTab === "settings" && (
+        <div className="text-center p-4">
+          <p>Configurações gerais em desenvolvimento</p>
+        </div>
+      )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md">
