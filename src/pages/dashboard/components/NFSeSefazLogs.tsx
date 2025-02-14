@@ -19,6 +19,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
 
+interface SefazLog {
+  id: string;
+  nfse_id: string;
+  status: 'processing' | 'success' | 'error';
+  message: string;
+  created_at: string;
+  request_payload?: Record<string, any>;
+  response_payload?: Record<string, any>;
+}
+
 interface Props {
   nfseId: string | null;
   isOpen: boolean;
@@ -26,7 +36,7 @@ interface Props {
 }
 
 export const NFSeSefazLogs = ({ nfseId, isOpen, onClose }: Props) => {
-  const { data: logs, isLoading } = useQuery({
+  const { data: logs, isLoading } = useQuery<SefazLog[]>({
     queryKey: ["nfse_sefaz_logs", nfseId],
     queryFn: async () => {
       if (!nfseId) return [];
@@ -42,8 +52,9 @@ export const NFSeSefazLogs = ({ nfseId, isOpen, onClose }: Props) => {
     },
     enabled: !!nfseId && isOpen,
     refetchInterval: (data) => {
+      if (!data) return false;
       // Atualiza a cada 5 segundos se houver algum log com status 'processing'
-      const hasProcessing = data?.some((log) => log.status === "processing");
+      const hasProcessing = data.some((log) => log.status === "processing");
       return hasProcessing ? 5000 : false;
     },
   });
