@@ -46,6 +46,7 @@ const Dashboard = () => {
   const [cadastrosOpen, setCadastrosOpen] = useState(true);
   const [ordensOpen, setOrdensOpen] = useState(true);
   const [notasFiscaisOpen, setNotasFiscaisOpen] = useState(true);
+  const [configuracoesOpen, setConfiguracoesOpen] = useState(true);
   const [username, setUsername] = useState<string>("");
   const [userPermissions, setUserPermissions] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -329,19 +330,66 @@ const Dashboard = () => {
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     )}
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        onClick={() => navigate("/dashboard/service-order-settings/notas-fiscais")}
-                        isActive={location.pathname.includes("/dashboard/service-order-settings/notas-fiscais")}
-                      >
-                        <Settings className="h-4 w-4" />
-                        <span>Configurações</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
                   </SidebarMenu>
                 </SidebarGroupContent>
               )}
             </SidebarGroup>
+
+            {hasPermission('service_order_settings') && (
+              <SidebarGroup>
+                <SidebarGroupLabel 
+                  onClick={() => setConfiguracoesOpen(!configuracoesOpen)} 
+                  className="cursor-pointer hover:bg-muted/50 rounded-md"
+                >
+                  <div className="flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    <span>Configurações</span>
+                  </div>
+                </SidebarGroupLabel>
+                {configuracoesOpen && (
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          onClick={() => navigate("/dashboard/service-order-settings")}
+                          isActive={location.pathname === "/dashboard/service-order-settings"}
+                        >
+                          <Database className="h-4 w-4" />
+                          <span>Status</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          onClick={() => navigate("/dashboard/service-order-settings/sefaz")}
+                          isActive={location.pathname.includes("/dashboard/service-order-settings/sefaz")}
+                        >
+                          <Building className="h-4 w-4" />
+                          <span>SEFAZ</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          onClick={() => navigate("/dashboard/service-order-settings/area-cliente")}
+                          isActive={location.pathname.includes("/dashboard/service-order-settings/area-cliente")}
+                        >
+                          <Users className="h-4 w-4" />
+                          <span>Campos Página do Cliente</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          onClick={() => navigate("/dashboard/service-order-settings/notas-fiscais")}
+                          isActive={location.pathname.includes("/dashboard/service-order-settings/notas-fiscais")}
+                        >
+                          <Receipt className="h-4 w-4" />
+                          <span>Notas Fiscais</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                )}
+              </SidebarGroup>
+            )}
           </SidebarContent>
         </Sidebar>
         <SidebarInset>
