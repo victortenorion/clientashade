@@ -8,6 +8,18 @@ import type { NFSeFormData } from "../types/nfse.types";
 import { SEFAZTransmissionStatus } from "./SEFAZTransmissionStatus";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+interface ServiceOrderNFSe {
+  id: string;
+  order_number: string;
+  equipment: string;
+  equipment_serial_number: string;
+  items: {
+    description: string;
+    price: number;
+  }[];
+  total_price: number;
+}
+
 interface ServiceOrderNFSeProps {
   serviceOrderId: string;
   onSubmit: () => void;
@@ -29,12 +41,25 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
   useEffect(() => {
     const fetchServiceOrder = async () => {
       try {
+        // Buscar dados da empresa primeiro
+        const { data: companyInfo, error: companyError } = await supabase
+          .from("company_info")
+          .select("codigo_servico")
+          .maybeSingle();
+
+        if (companyError) throw companyError;
+
+        // Buscar dados da ordem de serviço
         const { data: serviceOrder, error } = await supabase
           .from("service_orders")
           .select(`
-            *,
+            id,
+            order_number,
+            equipment,
+            equipment_serial_number,
+            total_price,
             items:service_order_items(description, price),
-            client:clients(id, codigo_servico)
+            client:clients(id)
           `)
           .eq("id", serviceOrderId)
           .single();
@@ -42,16 +67,18 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
         if (error) throw error;
 
         if (serviceOrder) {
+          // Formatar a descrição dos serviços
+          const servicesDescription = `OS #${serviceOrder.order_number} - ${serviceOrder.equipment || 'Equipamento não especificado'}${serviceOrder.equipment_serial_number ? ` - S/N: ${serviceOrder.equipment_serial_number}` : ''}\n\nServiços realizados:\n${serviceOrder.items.map((item: { description: string; price: number }) => `- ${item.description} - R$ ${item.price.toFixed(2)}`).join('\n')}\n\nTotal: R$ ${serviceOrder.total_price.toFixed(2)}`;
+
           const nfseData: NFSeFormData = {
             client_id: serviceOrder.client.id,
-            codigo_servico: serviceOrder.client.codigo_servico || "",
-            discriminacao_servicos: serviceOrder.items
-              .map((item: { description: string }) => item.description)
-              .join("\n"),
+            codigo_servico: companyInfo?.codigo_servico || "",
+            discriminacao_servicos: servicesDescription,
             valor_servicos: serviceOrder.total_price,
             data_competencia: new Date().toISOString().split("T")[0],
             deducoes: 0,
-            observacoes: `Ordem de Serviço #${serviceOrder.order_number}`
+            observacoes: `Ordem de Serviço #${serviceOrder.order_number}`,
+            natureza_operacao: "1"
           };
 
           setFormData(nfseData);
