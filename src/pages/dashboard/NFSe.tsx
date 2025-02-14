@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { NFSe, NFSeFormData } from "./types/nfse.types";
 import { format } from "date-fns";
-import { Plus } from "lucide-react";
+import { Plus, Pencil, Trash2, Send, XCircle, Printer } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import {
   Dialog,
@@ -184,6 +183,60 @@ const NFSePage = () => {
     });
   };
 
+  const handleEditNFSe = async (nfseId: string) => {
+    toast({
+      title: "Em desenvolvimento",
+      description: "A funcionalidade de edição será implementada em breve.",
+    });
+  };
+
+  const handleDeleteNFSe = async (nfseId: string) => {
+    try {
+      const { error } = await supabase
+        .from("nfse")
+        .delete()
+        .eq("id", nfseId);
+
+      if (error) throw error;
+
+      toast({
+        title: "NFS-e excluída com sucesso",
+      });
+
+      refetch();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao excluir NFS-e",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSendToSefaz = async (nfseId: string) => {
+    try {
+      const { error } = await supabase
+        .from("nfse")
+        .update({ status_sefaz: "enviando" })
+        .eq("id", nfseId);
+
+      if (error) throw error;
+
+      toast({
+        title: "NFS-e enviada para processamento",
+        description: "Em breve o status será atualizado.",
+      });
+
+      refetch();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao enviar para SEFAZ",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const formatMoney = (value: number | null) => {
     if (value === null) return "R$ 0,00";
     return new Intl.NumberFormat("pt-BR", {
@@ -259,29 +312,63 @@ const NFSePage = () => {
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
-                        size="sm"
+                        size="icon"
                         onClick={() => setSelectedNFSeId(nota.id)}
+                        title="Visualizar"
                       >
-                        Visualizar
+                        <FileText className="h-4 w-4" />
                       </Button>
-                      {nota.status_sefaz === "autorizada" && !nota.cancelada && (
+
+                      {/* Botões de ação baseados no status */}
+                      {nota.status_sefaz === "pendente" && (
                         <>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleImprimirNFSe(nota.id)}
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleEditNFSe(nota.id)}
+                            title="Editar"
                           >
-                            Imprimir
+                            <Pencil className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="outline"
-                            size="sm"
+                            size="icon"
+                            onClick={() => handleDeleteNFSe(nota.id)}
+                            title="Excluir"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleSendToSefaz(nota.id)}
+                            title="Enviar para SEFAZ"
+                          >
+                            <Send className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+
+                      {nota.status_sefaz === "autorizada" && !nota.cancelada && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleImprimirNFSe(nota.id)}
+                            title="Imprimir"
+                          >
+                            <Printer className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
                             onClick={() => {
                               setNfseCancelamento(nota.id);
                               setShowCancelDialog(true);
                             }}
+                            title="Cancelar no SEFAZ"
                           >
-                            Cancelar
+                            <XCircle className="h-4 w-4" />
                           </Button>
                         </>
                       )}
