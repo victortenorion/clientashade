@@ -8,15 +8,15 @@ import type { NFSeFormData } from "../types/nfse.types";
 import { SEFAZTransmissionStatus } from "./SEFAZTransmissionStatus";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-interface ServiceOrderNFSe {
+interface ServiceOrderProps {
   id: string;
   order_number: string;
   equipment: string;
   equipment_serial_number: string;
-  items: {
+  items: Array<{
     description: string;
     price: number;
-  }[];
+  }>;
   total_price: number;
 }
 
@@ -67,8 +67,8 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
         if (error) throw error;
 
         if (serviceOrder) {
-          // Formatar a descrição dos serviços
-          const servicesDescription = `OS #${serviceOrder.order_number} - ${serviceOrder.equipment || 'Equipamento não especificado'}${serviceOrder.equipment_serial_number ? ` - S/N: ${serviceOrder.equipment_serial_number}` : ''}\n\nServiços realizados:\n${serviceOrder.items.map((item: { description: string; price: number }) => `- ${item.description} - R$ ${item.price.toFixed(2)}`).join('\n')}\n\nTotal: R$ ${serviceOrder.total_price.toFixed(2)}`;
+          // Formatar a descrição dos serviços em uma única linha
+          const servicesDescription = `OS #${serviceOrder.order_number} - ${serviceOrder.equipment || 'Equipamento não especificado'} - S/N: ${serviceOrder.equipment_serial_number || 'N/A'} - Serviços realizados: ${serviceOrder.items.map((item: { description: string; price: number }) => `${item.description}`).join(', ')} - (Total: R$ ${serviceOrder.total_price.toFixed(2)})`;
 
           const nfseData: NFSeFormData = {
             client_id: serviceOrder.client.id,
