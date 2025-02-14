@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,18 +42,41 @@ import {
   Store,
   ContactPerson
 } from "./types/client.types";
-import {
-  defaultFormData,
-  getFieldLabel,
-  formatFieldValue,
-  getLastFourDigits
-} from "./utils/client.utils";
-import { Json } from "@/integrations/supabase/types";
 
-interface VisibleField {
-  field_name: string;
-  visible: boolean;
+interface ServiceOrder {
+  id: string;
+  client_id: string;
+  equipment: string | null;
+  equipment_serial_number: string | null;
+  problem: string | null;
+  description: string;
+  status_id: string | null;
+  priority: string;
+  expected_date: string | null;
+  store_id: string | null;
 }
+
+interface ServiceOrderFormData {
+  equipment: string;
+  equipment_serial_number: string;
+  problem: string;
+  description: string;
+  status_id: string;
+  priority: string;
+  expected_date: string;
+  store_id: string;
+}
+
+const defaultServiceOrderFormData: ServiceOrderFormData = {
+  equipment: "",
+  equipment_serial_number: "",
+  problem: "",
+  description: "",
+  status_id: "",
+  priority: "normal",
+  expected_date: "",
+  store_id: "",
+};
 
 const ServiceOrders = () => {
   const [loading, setLoading] = useState(true);
@@ -60,10 +84,36 @@ const ServiceOrders = () => {
   const [stores, setStores] = useState<Store[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [formData, setFormData] = useState<ServiceOrderFormData>(defaultFormData);
+  const [formData, setFormData] = useState<ServiceOrderFormData>(defaultServiceOrderFormData);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const { toast } = useToast();
+
+  const fetchOrders = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("service_orders")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setOrders(data || []);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar ordens de serviço",
+        description: error.message
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData(defaultServiceOrderFormData);
+    setEditingId(null);
+    setSelectedClient(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
