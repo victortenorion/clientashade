@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -131,8 +132,8 @@ const CustomerArea = () => {
       const typedData = (data || []).map(order => ({
         ...order,
         status: order.status ? {
-          name: order.status.name as string,
-          color: order.status.color as string
+          name: order.status.name || '',
+          color: order.status.color || ''
         } : null
       })) as ServiceOrder[];
 

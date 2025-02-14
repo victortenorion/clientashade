@@ -53,7 +53,7 @@ const App: React.FC = () => {
                   <Route path="nfse/from-service-order/:id" element={<NFSeFromServiceOrder />} />
                   <Route path="nfce" element={<NFCe />} />
                 </Route>
-                {/* Área do cliente separada do dashboard administrativo */}
+                {/* Área do cliente usando o mesmo componente CustomerArea */}
                 <Route 
                   path="/customer-area" 
                   element={
