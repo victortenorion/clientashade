@@ -89,10 +89,10 @@ export const ServiceOrderDetails = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 print:p-4">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={() => navigate(-1)}>
+          <Button variant="outline" size="icon" onClick={() => navigate(-1)} className="print:hidden">
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <h2 className="text-2xl font-bold">
@@ -105,8 +105,8 @@ export const ServiceOrderDetails = () => {
         </Button>
       </div>
 
-      <div className="space-y-6">
-        <Card>
+      <div className="space-y-6 print:block">
+        <Card className="print:shadow-none print:border-none">
           <CardHeader>
             <CardTitle>Informações do Cliente</CardTitle>
           </CardHeader>
@@ -118,7 +118,7 @@ export const ServiceOrderDetails = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="print:shadow-none print:border-none">
           <CardHeader>
             <CardTitle>Detalhes do Serviço</CardTitle>
           </CardHeader>
@@ -140,7 +140,7 @@ export const ServiceOrderDetails = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="print:shadow-none print:border-none">
           <CardHeader>
             <CardTitle>Datas</CardTitle>
           </CardHeader>
@@ -170,7 +170,7 @@ export const ServiceOrderDetails = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="print:shadow-none print:border-none">
           <CardHeader>
             <CardTitle>Serviços Realizados</CardTitle>
           </CardHeader>
@@ -201,7 +201,7 @@ export const ServiceOrderDetails = () => {
         </Card>
 
         {(order.reception_notes || order.internal_notes) && (
-          <Card>
+          <Card className="print:shadow-none print:border-none">
             <CardHeader>
               <CardTitle>Observações</CardTitle>
             </CardHeader>
@@ -225,18 +225,22 @@ export const ServiceOrderDetails = () => {
 
       <style>{`
         @media print {
-          body * {
-            visibility: hidden;
+          @page {
+            margin: 20mm;
           }
-          .print\\:hidden {
-            display: none;
+          
+          body {
+            visibility: visible !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
-          #root > div > div {
-            visibility: visible;
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
+
+          #root {
+            visibility: visible !important;
+          }
+
+          #root > div {
+            visibility: visible !important;
           }
         }
       `}</style>
