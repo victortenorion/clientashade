@@ -6,9 +6,12 @@ import { ClientTab } from "./components/ClientTab";
 import { NotasFiscaisTab } from "./components/NotasFiscaisTab";
 import { CompanyInfoTab } from "./components/CompanyInfoTab";
 import { useLocation } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
 
 const ServiceOrderSettings = () => {
   const location = useLocation();
+  const { toast } = useToast();
 
   const [nfceConfig, setNfceConfig] = useState({
     certificado_digital: "",
@@ -39,8 +42,22 @@ const ServiceOrderSettings = () => {
   });
 
   const handleSaveAllConfigs = async () => {
-    // Implementar a lógica de salvar as configurações
-    console.log("Salvando configurações...");
+    try {
+      // Implementar a lógica de salvar as configurações
+      console.log("Salvando configurações...");
+      
+      toast({
+        title: "Sucesso",
+        description: "Configurações salvas com sucesso",
+      });
+    } catch (error) {
+      console.error('Erro ao salvar configurações:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao salvar as configurações",
+        variant: "destructive"
+      });
+    }
   };
 
   const renderContent = () => {

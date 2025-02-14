@@ -48,10 +48,10 @@ serve(async (req) => {
         }
       )
     } catch (error) {
+      console.error('Erro ao validar certificado:', error);
       return new Response(
         JSON.stringify({ valid: false, message: 'Certificado ou senha inválidos' }),
         { 
-          status: 400, 
           headers: { 
             'Content-Type': 'application/json',
             ...corsHeaders 
@@ -60,6 +60,7 @@ serve(async (req) => {
       )
     }
   } catch (error) {
+    console.error('Erro na requisição:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
