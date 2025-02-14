@@ -159,18 +159,33 @@ const CustomerArea = () => {
 
   const fetchCustomerAreaSettings = async () => {
     try {
+      console.log("Buscando configurações da área do cliente...");
       const { data, error } = await supabase
         .from('customer_area_settings')
         .select('allow_create_orders')
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro ao buscar configurações:", error);
+        throw error;
+      }
+      
+      console.log("Configurações recebidas:", data);
       
       if (data) {
+        console.log("Valor de allow_create_orders:", data.allow_create_orders);
         setAllowCreateOrders(data.allow_create_orders || false);
+      } else {
+        console.log("Nenhuma configuração encontrada, definindo como false");
+        setAllowCreateOrders(false);
       }
     } catch (error: any) {
       console.error("Erro ao carregar configurações da área do cliente:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar configurações",
+        description: error.message
+      });
     }
   };
 
