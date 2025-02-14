@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -368,85 +369,86 @@ const CustomerArea = () => {
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-4">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2">
+        <div className="flex items-start gap-4">
+          <div className="flex flex-col gap-4">
             <Button variant="outline" size="icon" onClick={handleBack}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <h2 className="text-xl font-bold">Minhas Ordens de Serviço</h2>
-          </div>
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              <span className="text-sm font-medium">{clientName}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              {allowCreateOrders && (
-                <Button 
-                  onClick={() => setCreateOrderDialogOpen(true)}
-                  className="bg-[#ea384c] hover:bg-[#ea384c]/90"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Incluir Ordem de Serviço
-                </Button>
-              )}
-              <Button variant="outline" onClick={handleLogout}>
+            <div className="flex flex-col gap-2">
+              <Button 
+                onClick={() => setCreateOrderDialogOpen(true)}
+                className="bg-[#ea384c] hover:bg-[#ea384c]/90 whitespace-nowrap"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Incluir Ordem de Serviço
+              </Button>
+              <Button variant="outline" onClick={handleLogout} className="whitespace-nowrap">
                 <LogOut className="mr-2 h-4 w-4" />
                 Sair
               </Button>
             </div>
           </div>
-        </div>
-      </div>
+          
+          <div className="flex-1">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Minhas Ordens de Serviço</h2>
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                <span className="text-sm font-medium">{clientName}</span>
+              </div>
+            </div>
 
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {visibleFieldsList?.map((field) => (
-                <TableHead key={field.field_name}>
-                  {field.field_name === 'order_number' && 'Número'}
-                  {field.field_name === 'created_at' && 'Data de Criação'}
-                  {field.field_name === 'status' && 'Status'}
-                  {field.field_name === 'priority' && 'Prioridade'}
-                  {field.field_name === 'equipment' && 'Equipamento'}
-                  {field.field_name === 'equipment_serial_number' && 'Número de Série'}
-                  {field.field_name === 'problem' && 'Problema'}
-                  {field.field_name === 'description' && 'Descrição'}
-                  {field.field_name === 'expected_date' && 'Previsão'}
-                  {field.field_name === 'completion_date' && 'Conclusão'}
-                  {field.field_name === 'exit_date' && 'Saída'}
-                  {field.field_name === 'total_price' && 'Valor Total'}
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={visibleFieldsList?.length || 1} className="text-center">
-                  Carregando...
-                </TableCell>
-              </TableRow>
-            ) : orders.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={visibleFieldsList?.length || 1} className="text-center">
-                  Nenhuma ordem de serviço encontrada
-                </TableCell>
-              </TableRow>
-            ) : (
-              orders.map((order) => (
-                <TableRow key={order.id}>
-                  {visibleFieldsList?.map((field) => (
-                    <TableCell key={field.field_name}>
-                      {getFieldValue(order, field.field_name)}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+            <div className="border rounded-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {visibleFields.filter(field => field.visible).map((field) => (
+                      <TableHead key={field.field_name}>
+                        {field.field_name === 'order_number' && 'Número'}
+                        {field.field_name === 'created_at' && 'Data de Criação'}
+                        {field.field_name === 'status' && 'Status'}
+                        {field.field_name === 'priority' && 'Prioridade'}
+                        {field.field_name === 'equipment' && 'Equipamento'}
+                        {field.field_name === 'equipment_serial_number' && 'Número de Série'}
+                        {field.field_name === 'problem' && 'Problema'}
+                        {field.field_name === 'description' && 'Descrição'}
+                        {field.field_name === 'expected_date' && 'Previsão'}
+                        {field.field_name === 'completion_date' && 'Conclusão'}
+                        {field.field_name === 'exit_date' && 'Saída'}
+                        {field.field_name === 'total_price' && 'Valor Total'}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={visibleFields.length} className="text-center">
+                        Carregando...
+                      </TableCell>
+                    </TableRow>
+                  ) : orders.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={visibleFields.length} className="text-center">
+                        Nenhuma ordem de serviço encontrada
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    orders.map((order) => (
+                      <TableRow key={order.id}>
+                        {visibleFields.filter(field => field.visible).map((field) => (
+                          <TableCell key={field.field_name}>
+                            {getFieldValue(order, field.field_name)}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </div>
       </div>
 
       <Dialog open={createOrderDialogOpen} onOpenChange={setCreateOrderDialogOpen}>
