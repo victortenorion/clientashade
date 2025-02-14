@@ -1,7 +1,6 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusTab } from "./components/StatusTab";
-import { useState } from "react";
 
 const ServiceOrderSettings = () => {
   return (

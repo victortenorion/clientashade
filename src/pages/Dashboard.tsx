@@ -289,7 +289,7 @@ const Dashboard = () => {
                     {hasPermission('service_order_settings') && (
                       <SidebarMenuItem>
                         <SidebarMenuButton
-                          onClick={() => navigate("/dashboard/service-order-settings")}
+                          onClick={() => navigate("/dashboard/service-order-settings/status")}
                           isActive={location.pathname.includes("/dashboard/service-order-settings")}
                         >
                           <Settings className="h-4 w-4" />
