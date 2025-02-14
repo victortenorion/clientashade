@@ -1,104 +1,128 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/use-toast";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
-export const NFSeForm = () => {
-  const [serviceCode, setServiceCode] = useState('');
-  const [cnae, setCnae] = useState('');
-  const { toast } = useToast();
+interface NFSeFormData {
+  serviceCode: string;
+  cnae: string;
+  date: Date;
+  description: string;
+  amount: number;
+}
 
-  useEffect(() => {
-    const loadFiscalConfig = async () => {
-      const { data: fiscalData, error: fiscalError } = await supabase
-        .from('fiscal_config')
-        .select('*')
-        .eq('type', 'general')
-        .single();
+interface NFSeFormProps {
+  onSubmit: (formData: NFSeFormData) => Promise<void>;
+  onCancel: () => void;
+  isLoading?: boolean;
+}
 
-      if (fiscalError) {
-        console.error('Erro ao carregar configurações fiscais:', fiscalError);
-        return;
-      }
+export const NFSeForm: React.FC<NFSeFormProps> = ({ onSubmit, onCancel, isLoading }) => {
+  const [formData, setFormData] = useState<NFSeFormData>({
+    serviceCode: "",
+    cnae: "",
+    date: new Date(),
+    description: "",
+    amount: 0
+  });
 
-      if (fiscalData?.config) {
-        const config = fiscalData.config as { service_code: string; cnae: string };
-        setServiceCode(config.service_code || '');
-        setCnae(config.cnae || '');
-      }
-    };
-
-    loadFiscalConfig();
-  }, []);
-
-  const handleSave = async () => {
-    try {
-      const { error } = await supabase
-        .from('fiscal_config')
-        .upsert(
-          {
-            type: 'general',
-            config: {
-              service_code: serviceCode,
-              cnae: cnae,
-            },
-          },
-          { onConflict: 'type' }
-        );
-
-      if (error) {
-        console.error('Erro ao salvar configurações fiscais:', error);
-        toast({
-          title: "Erro",
-          description: "Erro ao salvar as configurações fiscais",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      toast({
-        title: "Sucesso",
-        description: "Configurações fiscais salvas com sucesso",
-      });
-    } catch (error) {
-      console.error('Erro ao salvar configurações fiscais:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao salvar as configurações fiscais",
-        variant: "destructive"
-      });
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await onSubmit(formData);
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Configurações Fiscais</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="serviceCode">Código de Serviço</Label>
-          <Input
-            id="serviceCode"
-            value={serviceCode}
-            onChange={(e) => setServiceCode(e.target.value)}
-            placeholder="Digite o código de serviço"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="cnae">CNAE</Label>
-          <Input
-            id="cnae"
-            value={cnae}
-            onChange={(e) => setCnae(e.target.value)}
-            placeholder="Digite o CNAE"
-          />
-        </div>
-        <Button onClick={handleSave}>Salvar</Button>
-      </CardContent>
-    </Card>
+    <form onSubmit={handleSubmit}>
+      <Card>
+        <CardHeader>
+          <CardTitle>Emitir NFS-e</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="serviceCode">Código de Serviço</Label>
+              <Input
+                id="serviceCode"
+                value={formData.serviceCode}
+                onChange={(e) => setFormData(prev => ({ ...prev, serviceCode: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cnae">CNAE</Label>
+              <Input
+                id="cnae"
+                value={formData.cnae}
+                onChange={(e) => setFormData(prev => ({ ...prev, cnae: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="date">Data de Emissão</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-[240px] justify-start text-left font-normal",
+                      !formData.date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.date ? format(formData.date, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione a data</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.date}
+                    onSelect={(date) => date && setFormData(prev => ({ ...prev, date }))}
+                    disabled={(date) => date > new Date()}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Descrição dos Serviços</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Detalhe os serviços prestados"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="amount">Valor Total dos Serviços</Label>
+              <Input
+                id="amount"
+                type="number"
+                value={formData.amount}
+                onChange={(e) => setFormData(prev => ({ ...prev, amount: parseFloat(e.target.value) }))}
+                placeholder="Informe o valor total"
+                required
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={onCancel}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Emitindo..." : "Emitir NFS-e"}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </form>
   );
 };

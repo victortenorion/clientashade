@@ -39,11 +39,16 @@ export interface ClientFormData {
   client_login: string;
   client_password: string;
   contact_persons: ContactPerson[];
+  phone?: string;
+  fax?: string;
+  contact_info?: string;
 }
 
 export interface DeleteDialogState {
   isOpen: boolean;
   clientId: string | null;
+  withOrders?: boolean;
+  adminPassword?: string;
 }
 
 export interface Client {
@@ -74,4 +79,7 @@ export interface Client {
   contact_persons: ContactPerson[];
   created_at: string;
   updated_at: string;
+  phone?: string;
+  fax?: string;
+  contact_info?: string;
 }

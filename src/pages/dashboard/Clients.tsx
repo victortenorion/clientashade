@@ -519,7 +519,9 @@ const Clients = () => {
                     .filter(field => field.visible)
                     .map(field => (
                       <TableCell key={field.field_name}>
-                        {client[field.field_name as keyof Client]}
+                        {field.field_name === 'contact_persons' 
+                          ? (client[field.field_name] as ContactPerson[])?.map(p => p.name).join(', ') 
+                          : client[field.field_name as keyof Client]}
                       </TableCell>
                     ))}
                   <TableCell>

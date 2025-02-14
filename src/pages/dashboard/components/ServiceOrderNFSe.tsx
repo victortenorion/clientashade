@@ -18,7 +18,17 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/lib/supabase";
 
-export const ServiceOrderNFSe = () => {
+interface ServiceOrderNFSeProps {
+  serviceOrderId: string;
+  onSubmit: () => void;
+  onCancel: () => void;
+}
+
+export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
+  serviceOrderId,
+  onSubmit,
+  onCancel
+}) => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
