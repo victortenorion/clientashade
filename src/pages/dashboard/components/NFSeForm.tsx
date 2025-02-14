@@ -187,7 +187,6 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
                 id="numero_rps"
                 value={formData.numero_rps}
                 onChange={(e) => setFormData(prev => ({ ...prev, numero_rps: e.target.value }))}
-                readOnly
               />
             </div>
             <div className="space-y-2">
