@@ -34,6 +34,7 @@ interface CompanyInfo {
 export const CompanyInfoTab = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isCepLoading, setIsCepLoading] = useState(false);
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
     id: "",
     razao_social: "",
@@ -84,7 +85,7 @@ export const CompanyInfoTab = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVyb3FneHBqaXFtZnRrZ3F5dW5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk0MTUyNjUsImV4cCI6MjA1NDk5MTI2NX0.XiXzmlcwblXg0qmTrhcHgCeQKTcdGxOnbtILa2eHAtQ`,
+          'Authorization': `Bearer ${supabase.auth.getSession()?.access_token}`,
         },
         body: JSON.stringify({ document: cnpj })
       });
@@ -96,24 +97,19 @@ export const CompanyInfoTab = () => {
       }
 
       if (data.apiData) {
-        const addressParts = data.apiData.address.split(',').map((part: string) => part.trim());
-        const [logradouro, numero] = addressParts[0].split(' ');
-        const bairro = addressParts[1];
-        const [cidade, uf] = addressParts[2].split('-').map((part: string) => part.trim());
-        const cep = addressParts[3];
-
         setCompanyInfo(prev => ({
           ...prev,
+          cnpj,
           razao_social: data.apiData.name,
           nome_fantasia: data.apiData.name,
           email: data.apiData.email,
           telefone: data.apiData.phone,
-          endereco_logradouro: logradouro,
-          endereco_numero: numero,
-          endereco_bairro: bairro,
-          endereco_cidade: cidade,
-          endereco_uf: uf,
-          endereco_cep: cep
+          endereco_logradouro: data.apiData.address.split(',')[0].split(' ')[0],
+          endereco_numero: data.apiData.address.split(',')[0].split(' ')[1],
+          endereco_bairro: data.apiData.address.split(',')[1].trim(),
+          endereco_cidade: data.apiData.address.split(',')[2].split('-')[0].trim(),
+          endereco_uf: data.apiData.address.split(',')[2].split('-')[1].trim(),
+          endereco_cep: data.apiData.address.split(',')[3].trim()
         }));
 
         toast({
@@ -133,15 +129,74 @@ export const CompanyInfoTab = () => {
     }
   };
 
+  const searchCEP = async (cep: string) => {
+    setIsCepLoading(true);
+    try {
+      const cleanCEP = cep.replace(/\D/g, '');
+      
+      if (cleanCEP.length !== 8) {
+        return;
+      }
+
+      const response = await fetch(`https://viacep.com.br/ws/${cleanCEP}/json/`);
+      const data = await response.json();
+
+      if (data.erro) {
+        throw new Error('CEP não encontrado');
+      }
+
+      setCompanyInfo(prev => ({
+        ...prev,
+        endereco_cep: cep,
+        endereco_logradouro: data.logradouro || prev.endereco_logradouro,
+        endereco_bairro: data.bairro || prev.endereco_bairro,
+        endereco_cidade: data.localidade || prev.endereco_cidade,
+        endereco_uf: data.uf || prev.endereco_uf,
+        endereco_codigo_municipio: data.ibge || prev.endereco_codigo_municipio
+      }));
+
+      toast({
+        title: "Sucesso",
+        description: "Endereço carregado com sucesso.",
+      });
+    } catch (error) {
+      console.error('Erro ao buscar CEP:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível buscar o endereço.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCepLoading(false);
+    }
+  };
+
   const handleCNPJChange = (value: string) => {
-    setCompanyInfo(prev => ({ ...prev, cnpj: value }));
+    const cleanValue = value.replace(/\D/g, '');
     
-    // Remove caracteres não numéricos
-    const cleanCNPJ = value.replace(/\D/g, '');
+    let formattedValue = cleanValue;
+    if (cleanValue.length > 2) formattedValue = cleanValue.replace(/^(\d{2})/, '$1.');
+    if (cleanValue.length > 5) formattedValue = formattedValue.replace(/^(\d{2})\.(\d{3})/, '$1.$2.');
+    if (cleanValue.length > 8) formattedValue = formattedValue.replace(/^(\d{2})\.(\d{3})\.(\d{3})/, '$1.$2.$3/');
+    if (cleanValue.length > 12) formattedValue = formattedValue.replace(/^(\d{2})\.(\d{3})\.(\d{3})\/(\d{4})/, '$1.$2.$3/$4-');
     
-    // Se o CNPJ estiver completo (14 dígitos), faz a busca
-    if (cleanCNPJ.length === 14) {
-      searchCNPJ(cleanCNPJ);
+    setCompanyInfo(prev => ({ ...prev, cnpj: formattedValue }));
+    
+    if (cleanValue.length === 14) {
+      searchCNPJ(cleanValue);
+    }
+  };
+
+  const handleCEPChange = (value: string) => {
+    const cleanValue = value.replace(/\D/g, '');
+    
+    let formattedValue = cleanValue;
+    if (cleanValue.length > 5) formattedValue = cleanValue.replace(/^(\d{5})/, '$1-');
+    
+    setCompanyInfo(prev => ({ ...prev, endereco_cep: formattedValue }));
+    
+    if (cleanValue.length === 8) {
+      searchCEP(cleanValue);
     }
   };
 
@@ -188,7 +243,8 @@ export const CompanyInfoTab = () => {
                   value={companyInfo.cnpj}
                   onChange={(e) => handleCNPJChange(e.target.value)}
                   disabled={isLoading}
-                  placeholder="Digite o CNPJ para buscar os dados"
+                  placeholder="00.000.000/0000-00"
+                  maxLength={18}
                 />
                 {isLoading && (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -271,12 +327,18 @@ export const CompanyInfoTab = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label>CEP</Label>
-              <Input
-                value={companyInfo.endereco_cep || ""}
-                onChange={(e) =>
-                  setCompanyInfo({ ...companyInfo, endereco_cep: e.target.value })
-                }
-              />
+              <div className="flex gap-2">
+                <Input
+                  value={companyInfo.endereco_cep || ""}
+                  onChange={(e) => handleCEPChange(e.target.value)}
+                  disabled={isCepLoading}
+                  placeholder="00000-000"
+                  maxLength={9}
+                />
+                {isCepLoading && (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">
