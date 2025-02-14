@@ -62,15 +62,25 @@ const CustomerArea = () => {
     try {
       const { data, error } = await supabase
         .from("customer_area_field_settings")
-        .select("field_name, visible");
+        .select("field_name, visible")
+        .eq('visible', true);
 
       if (error) throw error;
 
-      // Mapear todos os campos para o formato esperado
-      setVisibleFields(data.map(item => ({
-        field: item.field_name,
-        visible: item.visible
-      })));
+      if (!data || data.length === 0) {
+        // Se não houver configurações, mostrar todos os campos por padrão
+        const defaultFields = [
+          'order_number', 'created_at', 'status', 'priority', 'equipment', 
+          'equipment_serial_number', 'problem', 'description', 'expected_date', 
+          'completion_date', 'exit_date', 'total_price'
+        ];
+        setVisibleFields(defaultFields.map(field => ({ field, visible: true })));
+      } else {
+        setVisibleFields(data.map(item => ({
+          field: item.field_name,
+          visible: true
+        })));
+      }
     } catch (error: any) {
       console.error("Erro ao carregar configurações dos campos:", error);
       toast({
@@ -107,7 +117,7 @@ const CustomerArea = () => {
           expected_date,
           completion_date,
           exit_date,
-          status:service_order_statuses!fk_service_order_status(name, color)
+          status:service_order_statuses(name, color)
         `)
         .eq('client_id', clientId)
         .order('created_at', { ascending: false });
@@ -119,9 +129,9 @@ const CustomerArea = () => {
         id: order.id,
         description: order.description,
         status_id: order.status_id,
-        status: order.status?.[0] ? {
-          name: order.status[0].name,
-          color: order.status[0].color
+        status: order.status ? {
+          name: order.status.name,
+          color: order.status.color
         } : null,
         total_price: order.total_price,
         created_at: order.created_at,
@@ -210,6 +220,8 @@ const CustomerArea = () => {
     }
   };
 
+  const visibleFieldsList = visibleFields.filter(field => field.visible);
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -229,7 +241,7 @@ const CustomerArea = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              {visibleFields.map((field) => (
+              {visibleFieldsList.map((field) => (
                 <TableHead key={field.field}>
                   {field.field === 'order_number' && 'Número'}
                   {field.field === 'created_at' && 'Data de Criação'}
@@ -250,20 +262,20 @@ const CustomerArea = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={visibleFields.length} className="text-center">
+                <TableCell colSpan={visibleFieldsList.length} className="text-center">
                   Carregando...
                 </TableCell>
               </TableRow>
             ) : orders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={visibleFields.length} className="text-center">
+                <TableCell colSpan={visibleFieldsList.length} className="text-center">
                   Nenhuma ordem de serviço encontrada
                 </TableCell>
               </TableRow>
             ) : (
               orders.map((order) => (
                 <TableRow key={order.id}>
-                  {visibleFields.map((field) => (
+                  {visibleFieldsList.map((field) => (
                     <TableCell key={field.field}>
                       {getFieldValue(order, field.field)}
                     </TableCell>

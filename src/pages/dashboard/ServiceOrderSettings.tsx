@@ -46,9 +46,9 @@ const ServiceOrderSettings = () => {
     if (location.pathname.includes("/notas-fiscais")) {
       return (
         <NotasFiscaisTab 
-          config={fiscalConfig}
-          onConfigChange={setFiscalConfig}
-          onSave={handleSaveAllConfigs}
+          fiscalConfig={fiscalConfig}
+          setFiscalConfig={setFiscalConfig}
+          handleSaveAllConfigs={handleSaveAllConfigs}
         />
       );
     }
