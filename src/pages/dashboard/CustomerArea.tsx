@@ -135,7 +135,28 @@ const CustomerArea = () => {
 
       if (error) throw error;
 
-      setOrders(data || []);
+      // Mapear os dados para garantir a tipagem correta
+      const typedOrders: ServiceOrder[] = (data || []).map(order => ({
+        id: order.id,
+        description: order.description,
+        status_id: order.status_id,
+        status: order.status?.[0] ? {
+          name: order.status[0].name,
+          color: order.status[0].color
+        } : null,
+        total_price: order.total_price,
+        created_at: order.created_at,
+        order_number: order.order_number,
+        priority: order.priority,
+        equipment: order.equipment,
+        equipment_serial_number: order.equipment_serial_number,
+        problem: order.problem,
+        expected_date: order.expected_date,
+        completion_date: order.completion_date,
+        exit_date: order.exit_date
+      }));
+
+      setOrders(typedOrders);
     } catch (error: any) {
       console.error("Erro completo:", error);
       toast({
