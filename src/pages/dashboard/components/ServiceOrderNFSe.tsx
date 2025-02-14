@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { NFSeForm } from "./NFSeForm";
@@ -29,7 +30,7 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
           .select(`
             *,
             items:service_order_items(description, price),
-            client:clients(id)
+            client:clients(id, codigo_servico)
           `)
           .eq("id", serviceOrderId)
           .single();
@@ -39,7 +40,7 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
         if (serviceOrder) {
           const nfseData: NFSeFormData = {
             client_id: serviceOrder.client.id,
-            codigo_servico: "", // This needs to be filled by the user
+            codigo_servico: serviceOrder.client.codigo_servico || "", // Get the service code from client data
             discriminacao_servicos: serviceOrder.items
               .map((item: { description: string }) => item.description)
               .join("\n"),
