@@ -4,6 +4,7 @@ import { StatusTab } from "./components/StatusTab";
 import { SEFAZTab } from "./components/SEFAZTab";
 import { ClientTab } from "./components/ClientTab";
 import { NotasFiscaisTab } from "./components/NotasFiscaisTab";
+import { CompanyInfoTab } from "./components/CompanyInfoTab";
 import { useLocation } from "react-router-dom";
 
 const ServiceOrderSettings = () => {
@@ -45,11 +46,12 @@ const ServiceOrderSettings = () => {
   const renderContent = () => {
     if (location.pathname.includes("/notas-fiscais")) {
       return (
-        <NotasFiscaisTab 
-          fiscalConfig={fiscalConfig}
-          setFiscalConfig={setFiscalConfig}
-          handleSaveAllConfigs={handleSaveAllConfigs}
-        />
+        <NotasFiscaisTab />
+      );
+    }
+    if (location.pathname.includes("/dados-empresa")) {
+      return (
+        <CompanyInfoTab />
       );
     }
     if (location.pathname.includes("/sefaz")) {
