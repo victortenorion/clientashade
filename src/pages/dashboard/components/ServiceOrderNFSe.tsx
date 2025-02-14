@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { NFSeForm } from "./NFSeForm";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
@@ -71,7 +71,18 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
   const handleSubmit = async (data: NFSeFormData) => {
     try {
       setIsLoading(true);
-      console.log("Emitting NFSe with data:", data);
+
+      // Create NFS-e record
+      const { error: nfseError } = await supabase
+        .from("nfse")
+        .insert({
+          ...data,
+          service_order_id: serviceOrderId,
+          status_sefaz: "pendente"
+        });
+
+      if (nfseError) throw nfseError;
+
       toast({
         title: "NFS-e emitida com sucesso"
       });

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { StatusTab } from "./components/StatusTab";
 import { SEFAZTab } from "./components/SEFAZTab";
 import { ClientTab } from "./components/ClientTab";
+import { NotasFiscaisTab } from "./components/NotasFiscaisTab";
 import { CompanyInfoTab } from "./components/CompanyInfoTab";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -165,6 +166,9 @@ const ServiceOrderSettings = () => {
   };
 
   const renderContent = () => {
+    if (location.pathname.includes("/notas-fiscais")) {
+      return <NotasFiscaisTab />;
+    }
     if (location.pathname.includes("/dados-empresa")) {
       return <CompanyInfoTab />;
     }

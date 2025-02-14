@@ -619,6 +619,7 @@ export type Database = {
           numero_rps: string | null
           observacoes: string | null
           serie_rps: string | null
+          service_order_id: string | null
           status_sefaz: string | null
           updated_at: string | null
           valor_iss: number | null
@@ -646,6 +647,7 @@ export type Database = {
           numero_rps?: string | null
           observacoes?: string | null
           serie_rps?: string | null
+          service_order_id?: string | null
           status_sefaz?: string | null
           updated_at?: string | null
           valor_iss?: number | null
@@ -673,6 +675,7 @@ export type Database = {
           numero_rps?: string | null
           observacoes?: string | null
           serie_rps?: string | null
+          service_order_id?: string | null
           status_sefaz?: string | null
           updated_at?: string | null
           valor_iss?: number | null
@@ -687,6 +690,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nfse_service_order_id_fkey"
+            columns: ["service_order_id"]
+            isOneToOne: false
+            referencedRelation: "service_orders"
             referencedColumns: ["id"]
           },
         ]
