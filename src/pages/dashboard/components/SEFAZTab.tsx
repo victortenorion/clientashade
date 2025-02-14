@@ -39,6 +39,7 @@ interface NFSeConfig {
   incentivo_fiscal: boolean;
   certificado_valido?: boolean;
   certificado_validade?: string;
+  numero_inicial_rps?: number;
 }
 
 interface FiscalConfig {
@@ -419,6 +420,22 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                     <SelectItem value="producao">Produção</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Número Inicial do RPS</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={nfseConfig.numero_inicial_rps || 0}
+                  onChange={(e) =>
+                    setNfseConfig({
+                      ...nfseConfig,
+                      numero_inicial_rps: parseInt(e.target.value) || 0
+                    })
+                  }
+                  placeholder="Digite o número inicial do RPS"
+                />
               </div>
 
               <div className="space-y-2">

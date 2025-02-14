@@ -956,18 +956,21 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          numero_inicial_rps: number | null
           ultima_rps_numero: number
           updated_at: string
         }
         Insert: {
           created_at?: string
           id?: string
+          numero_inicial_rps?: number | null
           ultima_rps_numero?: number
           updated_at?: string
         }
         Update: {
           created_at?: string
           id?: string
+          numero_inicial_rps?: number | null
           ultima_rps_numero?: number
           updated_at?: string
         }
