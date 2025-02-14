@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -22,14 +23,16 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 
+interface Status {
+  name: string;
+  color: string;
+}
+
 interface ServiceOrder {
   id: string;
   description: string;
   status_id: string | null;
-  status: {
-    name: string;
-    color: string;
-  } | null;
+  status: Status | null;
   total_price: number;
   created_at: string;
   order_number: number;
@@ -132,10 +135,10 @@ const CustomerArea = () => {
       const typedData = (data || []).map(order => ({
         ...order,
         status: order.status ? {
-          name: order.status.name || '',
-          color: order.status.color || ''
+          name: order.status.name,
+          color: order.status.color
         } : null
-      })) as ServiceOrder[];
+      }));
 
       setOrders(typedData);
     } catch (error: any) {
