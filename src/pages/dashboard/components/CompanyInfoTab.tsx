@@ -505,11 +505,11 @@ export const CompanyInfoTab = () => {
             <Input
               type="number"
               min="0"
-              value={rpsConfig.numero_inicial_rps}
+              value={rpsConfig.numero_inicial_rps === 0 ? '' : rpsConfig.numero_inicial_rps}
               onChange={(e) =>
                 setRpsConfig({
                   ...rpsConfig,
-                  numero_inicial_rps: parseInt(e.target.value) || 0
+                  numero_inicial_rps: e.target.value === '' ? 0 : parseInt(e.target.value)
                 })
               }
               placeholder="Digite o número inicial do RPS"
