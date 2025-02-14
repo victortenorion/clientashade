@@ -54,7 +54,7 @@ export const ServiceOrderDetails = () => {
           .select(`
             *,
             client:clients(name, document, phone, email),
-            status:service_order_statuses(name, color),
+            status:service_order_statuses!service_orders_status_id_fkey(name, color),
             items:service_order_items(id, description, price)
           `)
           .eq("id", id)
