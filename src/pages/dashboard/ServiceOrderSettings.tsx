@@ -1,81 +1,26 @@
-import { useState, useEffect, useMemo } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useToast } from "@/components/ui/use-toast";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Plus, Trash2, Pencil, Settings2, Users, Receipt, ListFilter } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Settings2, Users, Receipt, ListFilter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { Checkbox } from "@/components/ui/checkbox";
+import { StatusTab } from "./components/StatusTab";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-
-interface Status {
-  id: string;
-  name: string;
-  color: string;
-  description: string;
-  is_active: boolean;
-}
-
-interface ClientField {
-  id: string;
-  label: string;
-  field: string;
-  visible: boolean;
-}
-
-interface FiscalConfig {
-  id?: string;
-  service_code: string;
-  cnae: string;
-  tax_regime: string;
-}
-
-interface CustomerAreaField {
-  id: string;
-  label: string;
-  field: string;
-  visible: boolean;
-}
+  Status,
+  ClientField,
+  FiscalConfig,
+  CustomerAreaField,
+  NFCeConfig,
+  NFSeConfig
+} from "./types/service-order-settings.types";
+import { ClientTab } from "./components/ClientTab";
+import { CustomerAreaTab } from "./components/CustomerAreaTab";
+import { FiscalTab } from "./components/FiscalTab";
+import { SEFAZTab } from "./components/SEFAZTab";
 
 const defaultClientFields: ClientField[] = [
   { id: "1", label: "Nome", field: "name", visible: true },
@@ -119,16 +64,10 @@ const defaultCustomerAreaFields: CustomerAreaField[] = [
 const ServiceOrderSettings = () => {
   const [statuses, setStatuses] = useState<Status[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingStatus, setEditingStatus] = useState<Status | null>(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    color: "#000000",
-    description: "",
-  });
-  const [clientFields, setClientFields] = useState<ClientField[]>(defaultClientFields);
   const { toast } = useToast();
-  const [nfceConfig, setNfceConfig] = useState({
+  const [clientFields, setClientFields] = useState<ClientField[]>(defaultClientFields);
+  const [customerAreaFields, setCustomerAreaFields] = useState<CustomerAreaField[]>(defaultCustomerAreaFields);
+  const [nfceConfig, setNfceConfig] = useState<NFCeConfig>({
     certificado_digital: "",
     senha_certificado: "",
     ambiente: "homologacao",
@@ -138,7 +77,7 @@ const ServiceOrderSettings = () => {
     inscricao_estadual: "",
     regime_tributario: "simples"
   });
-  const [nfseConfig, setNfseConfig] = useState({
+  const [nfseConfig, setNfseConfig] = useState<NFSeConfig>({
     certificado_digital: "",
     senha_certificado: "",
     ambiente: "homologacao",
@@ -155,8 +94,6 @@ const ServiceOrderSettings = () => {
   });
   const [serviceCodeSearch, setServiceCodeSearch] = useState("");
   const [serviceCodes, setServiceCodes] = useState<Array<{ code: string; description: string }>>([]);
-  const [serviceCodePopoverOpen, setServiceCodePopoverOpen] = useState(false);
-  const [customerAreaFields, setCustomerAreaFields] = useState<CustomerAreaField[]>(defaultCustomerAreaFields);
 
   const fetchStatuses = async () => {
     try {
@@ -167,8 +104,7 @@ const ServiceOrderSettings = () => {
         .order("created_at", { ascending: true });
 
       if (error) throw error;
-
-      setStatuses(data);
+      setStatuses(data || []);
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -180,7 +116,65 @@ const ServiceOrderSettings = () => {
     }
   };
 
-  const fetchFieldSettings = async () => {
+  const handleStatusSave = async (status: Partial<Status>) => {
+    try {
+      if ('id' in status) {
+        const { error } = await supabase
+          .from("service_order_statuses")
+          .update(status)
+          .eq("id", status.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Status atualizado com sucesso",
+        });
+      } else {
+        const { error } = await supabase
+          .from("service_order_statuses")
+          .insert(status);
+
+        if (error) throw error;
+
+        toast({
+          title: "Status criado com sucesso",
+        });
+      }
+
+      fetchStatuses();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar status",
+        description: error.message,
+      });
+    }
+  };
+
+  const handleStatusDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from("service_order_statuses")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Status excluído com sucesso",
+      });
+
+      fetchStatuses();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao excluir status",
+        description: error.message,
+      });
+    }
+  };
+
+  const fetchClientFieldSettings = async () => {
     try {
       const { data, error } = await supabase
         .from("client_field_settings")
@@ -189,7 +183,7 @@ const ServiceOrderSettings = () => {
       if (error) throw error;
 
       if (data) {
-        const updatedFields = clientFields.map(field => ({
+        const updatedFields = defaultClientFields.map(field => ({
           ...field,
           visible: data.find(setting => setting.field_name === field.field)?.visible ?? field.visible
         }));
@@ -198,7 +192,99 @@ const ServiceOrderSettings = () => {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Erro ao carregar configurações dos campos",
+        title: "Erro ao carregar configurações dos campos do cliente",
+        description: error.message,
+      });
+    }
+  };
+
+  const handleClientFieldVisibilityChange = async (field: string, checked: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('client_field_settings')
+        .upsert(
+          { 
+            field_name: field,
+            visible: checked,
+            updated_at: new Date().toISOString()
+          },
+          { onConflict: 'field_name' }
+        );
+
+      if (error) throw error;
+
+      setClientFields(prev => 
+        prev.map(f => 
+          f.field === field ? { ...f, visible: checked } : f
+        )
+      );
+
+      toast({
+        title: "Configuração salva",
+        description: `Campo ${field} ${checked ? 'será exibido' : 'será ocultado'} na listagem de clientes`,
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar configuração",
+        description: error.message,
+      });
+    }
+  };
+
+  const fetchCustomerAreaSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("customer_area_field_settings")
+        .select("*");
+
+      if (error) throw error;
+
+      if (data) {
+        const updatedFields = defaultCustomerAreaFields.map(field => ({
+          ...field,
+          visible: data.find(setting => setting.field_name === field.field)?.visible ?? field.visible
+        }));
+        setCustomerAreaFields(updatedFields);
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar configurações da área do cliente",
+        description: error.message,
+      });
+    }
+  };
+
+  const handleCustomerAreaFieldVisibilityChange = async (field: string, checked: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('customer_area_field_settings')
+        .upsert(
+          { 
+            field_name: field,
+            visible: checked,
+            updated_at: new Date().toISOString()
+          },
+          { onConflict: 'field_name' }
+        );
+
+      if (error) throw error;
+
+      setCustomerAreaFields(prev => 
+        prev.map(f => 
+          f.field === field ? { ...f, visible: checked } : f
+        )
+      );
+
+      toast({
+        title: "Configuração salva",
+        description: `Campo ${field} ${checked ? 'será exibido' : 'será ocultado'} na área do cliente`,
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar configuração",
         description: error.message,
       });
     }
@@ -326,127 +412,11 @@ const ServiceOrderSettings = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      if (editingStatus) {
-        const { error } = await supabase
-          .from("service_order_statuses")
-          .update(formData)
-          .eq("id", editingStatus.id);
-
-        if (error) throw error;
-
-        toast({
-          title: "Status atualizado com sucesso",
-        });
-      } else {
-        const { error } = await supabase
-          .from("service_order_statuses")
-          .insert(formData);
-
-        if (error) throw error;
-
-        toast({
-          title: "Status criado com sucesso",
-        });
-      }
-
-      setDialogOpen(false);
-      setFormData({ name: "", color: "#000000", description: "" });
-      setEditingStatus(null);
-      fetchStatuses();
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: editingStatus ? "Erro ao atualizar status" : "Erro ao criar status",
-        description: error.message,
-      });
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from("service_order_statuses")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Status excluído com sucesso",
-      });
-
-      fetchStatuses();
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao excluir status",
-        description: error.message,
-      });
-    }
-  };
-
-  const handleEdit = (status: Status) => {
-    setEditingStatus(status);
-    setFormData({
-      name: status.name,
-      color: status.color || "#000000",
-      description: status.description || "",
-    });
-    setDialogOpen(true);
-  };
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleFieldVisibilityChange = async (field: string, checked: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('client_field_settings')
-        .upsert(
-          { 
-            field_name: field,
-            visible: checked,
-            updated_at: new Date().toISOString()
-          },
-          { onConflict: 'field_name' }
-        );
-
-      if (error) throw error;
-
-      setClientFields(prev => 
-        prev.map(f => 
-          f.field === field ? { ...f, visible: checked } : f
-        )
-      );
-
-      toast({
-        title: "Configuração salva",
-        description: `Campo ${field} ${checked ? 'será exibido' : 'será ocultado'} na listagem`,
-      });
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao salvar configuração",
-        description: error.message,
-      });
-    }
-  };
-
-  const handleNFCeConfigSave = async () => {
+  const handleNFCeConfigSave = async (config: NFCeConfig) => {
     try {
       const { error } = await supabase
         .from("nfce_config")
-        .upsert(nfceConfig);
+        .upsert(config);
 
       if (error) throw error;
 
@@ -462,11 +432,11 @@ const ServiceOrderSettings = () => {
     }
   };
 
-  const handleNFSeConfigSave = async () => {
+  const handleNFSeConfigSave = async (config: NFSeConfig) => {
     try {
       const { error } = await supabase
         .from("nfse_config")
-        .upsert(nfseConfig);
+        .upsert(config);
 
       if (error) throw error;
 
@@ -482,14 +452,14 @@ const ServiceOrderSettings = () => {
     }
   };
 
-  const handleFiscalConfigSave = async () => {
+  const handleFiscalConfigSave = async (config: FiscalConfig) => {
     try {
       const { error } = await supabase
         .from("fiscal_config")
         .upsert({
-          service_code: fiscalConfig.service_code,
-          cnae: fiscalConfig.cnae,
-          tax_regime: fiscalConfig.tax_regime,
+          service_code: config.service_code,
+          cnae: config.cnae,
+          tax_regime: config.tax_regime,
           id: fiscalConfig?.id,
         }, { onConflict: 'id' });
 
@@ -557,87 +527,16 @@ const ServiceOrderSettings = () => {
     }
   };
 
-  const fetchCustomerAreaSettings = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("customer_area_field_settings")
-        .select("*");
-
-      if (error) throw error;
-
-      if (data) {
-        const updatedFields = customerAreaFields.map(field => ({
-          ...field,
-          visible: data.find(setting => setting.field_name === field.field)?.visible ?? field.visible
-        }));
-        setCustomerAreaFields(updatedFields);
-      }
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao carregar configurações da área do cliente",
-        description: error.message,
-      });
-    }
-  };
-
-  const handleCustomerAreaFieldVisibilityChange = async (field: string, checked: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('customer_area_field_settings')
-        .upsert(
-          { 
-            field_name: field,
-            visible: checked,
-            updated_at: new Date().toISOString()
-          },
-          { onConflict: 'field_name' }
-        );
-
-      if (error) throw error;
-
-      setCustomerAreaFields(prev => 
-        prev.map(f => 
-          f.field === field ? { ...f, visible: checked } : f
-        )
-      );
-
-      toast({
-        title: "Configuração salva",
-        description: `Campo ${field} ${checked ? 'será exibido' : 'será ocultado'} na área do cliente`,
-      });
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao salvar configuração",
-        description: error.message,
-      });
-    }
-  };
-
-  // Carregar todas as configurações ao montar o componente
   useEffect(() => {
     Promise.all([
       fetchStatuses(),
-      fetchFieldSettings(),
+      fetchClientFieldSettings(),
+      fetchCustomerAreaSettings(),
       fetchNFConfigs(),
       fetchFiscalConfig(),
-      fetchServiceCodes(),
-      fetchCustomerAreaSettings()
+      fetchServiceCodes()
     ]);
   }, []);
-
-  const filteredServiceCodes = useMemo(() => {
-    return serviceCodeSearch === "" 
-      ? serviceCodes 
-      : serviceCodes.filter((item) => {
-          const search = serviceCodeSearch.toLowerCase();
-          return (
-            item.code.toLowerCase().includes(search) ||
-            item.description.toLowerCase().includes(search)
-          );
-        });
-  }, [serviceCodes, serviceCodeSearch]);
 
   return (
     <div className="space-y-4">
@@ -671,378 +570,60 @@ const ServiceOrderSettings = () => {
           </TabsList>
 
           <TabsContent value="status" className="mt-6">
-            <div className="space-y-6">
-              <div>
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold">Status</h3>
-                  <Button onClick={() => {
-                    setEditingStatus(null);
-                    setFormData({ name: "", color: "#000000", description: "" });
-                    setDialogOpen(true);
-                  }}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Novo Status
-                  </Button>
-                </div>
-
-                <div className="border rounded-lg">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nome</TableHead>
-                        <TableHead>Cor</TableHead>
-                        <TableHead>Descrição</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {loading ? (
-                        <TableRow>
-                          <TableCell colSpan={5} className="text-center">
-                            Carregando...
-                          </TableCell>
-                        </TableRow>
-                      ) : statuses.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={5} className="text-center">
-                            Nenhum status encontrado
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        statuses.map((status) => (
-                          <TableRow key={status.id}>
-                            <TableCell className="font-medium">{status.name}</TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <div
-                                  className="w-6 h-6 rounded border"
-                                  style={{ backgroundColor: status.color }}
-                                />
-                                {status.color}
-                              </div>
-                            </TableCell>
-                            <TableCell>{status.description}</TableCell>
-                            <TableCell>
-                              {status.is_active ? (
-                                <span className="text-green-600">Ativo</span>
-                              ) : (
-                                <span className="text-red-600">Inativo</span>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={() => handleEdit(status)}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="destructive"
-                                  size="icon"
-                                  onClick={() => handleDelete(status.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            </div>
+            <StatusTab
+              statuses={statuses}
+              loading={loading}
+              onDelete={handleStatusDelete}
+              onSave={handleStatusSave}
+            />
           </TabsContent>
 
           <TabsContent value="clients" className="mt-6">
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Campos Visíveis na Listagem de Clientes</h3>
-                <div className="border rounded-lg p-4">
-                  <div className="grid grid-cols-3 gap-4">
-                    {defaultClientFields.map((field) => (
-                      <div key={field.id} className="flex items-center space-x-2">
-                        <Checkbox 
-                          id={field.id}
-                          checked={clientFields.find(f => f.field === field.field)?.visible ?? field.visible}
-                          onCheckedChange={(checked) => 
-                            handleFieldVisibilityChange(field.field, checked as boolean)
-                          }
-                        />
-                        <Label htmlFor={field.id}>{field.label}</Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Selecione os campos que deseja exibir na listagem de clientes. As alterações serão salvas automaticamente.
-                </p>
-              </div>
-            </div>
+            <ClientTab
+              clientFields={clientFields}
+              onFieldVisibilityChange={handleClientFieldVisibilityChange}
+            />
           </TabsContent>
 
           <TabsContent value="customer_area" className="mt-6">
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Campos Visíveis na Área do Cliente</h3>
-                <div className="border rounded-lg p-4">
-                  <div className="grid grid-cols-3 gap-4">
-                    {customerAreaFields.map((field) => (
-                      <div key={field.id} className="flex items-center space-x-2">
-                        <Checkbox 
-                          id={field.id}
-                          checked={customerAreaFields.find(f => f.field === field.field)?.visible ?? field.visible}
-                          onCheckedChange={(checked) => 
-                            handleCustomerAreaFieldVisibilityChange(field.field, checked as boolean)
-                          }
-                        />
-                        <Label htmlFor={field.id}>{field.label}</Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Selecione os campos que deseja exibir na área do cliente. As alterações serão salvas automaticamente.
-                </p>
-              </div>
-            </div>
+            <CustomerAreaTab
+              customerAreaFields={customerAreaFields}
+              onFieldVisibilityChange={handleCustomerAreaFieldVisibilityChange}
+            />
           </TabsContent>
 
           <TabsContent value="fiscal" className="mt-6">
-            <div className="space-y-8">
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Configurações NFC-e</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Certificado Digital (Base64)</Label>
-                    <Textarea
-                      value={nfceConfig.certificado_digital}
-                      onChange={(e) => setNfceConfig(prev => ({ ...prev, certificado_digital: e.target.value }))}
-                      placeholder="Cole aqui o certificado em base64"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Senha do Certificado</Label>
-                    <Input
-                      type="password"
-                      value={nfceConfig.senha_certificado}
-                      onChange={(e) => setNfceConfig(prev => ({ ...prev, senha_certificado: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Ambiente</Label>
-                    <Select
-                      value={nfceConfig.ambiente}
-                      onValueChange={(value) => setNfceConfig(prev => ({ ...prev, ambiente: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="homologacao">Homologação</SelectItem>
-                        <SelectItem value="producao">Produção</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Token IBPT</Label>
-                    <Input
-                      value={nfceConfig.token_ibpt}
-                      onChange={(e) => setNfceConfig(prev => ({ ...prev, token_ibpt: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>CSC ID</Label>
-                    <Input
-                      value={nfceConfig.csc_id}
-                      onChange={(e) => setNfceConfig(prev => ({ ...prev, csc_id: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Token CSC</Label>
-                    <Input
-                      value={nfceConfig.csc_token}
-                      onChange={(e) => setNfceConfig(prev => ({ ...prev, csc_token: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Inscrição Estadual</Label>
-                    <Input
-                      value={nfceConfig.inscricao_estadual}
-                      onChange={(e) => setNfceConfig(prev => ({ ...prev, inscricao_estadual: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Regime Tributário</Label>
-                    <Select
-                      value={nfceConfig.regime_tributario}
-                      onValueChange={(value) => setNfceConfig(prev => ({ ...prev, regime_tributario: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="simples">Simples Nacional</SelectItem>
-                        <SelectItem value="presumido">Lucro Presumido</SelectItem>
-                        <SelectItem value="real">Lucro Real</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <Button onClick={handleNFCeConfigSave}>Salvar Configurações NFC-e</Button>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Configurações NFS-e</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Certificado Digital (Base64)</Label>
-                    <Textarea
-                      value={nfseConfig.certificado_digital}
-                      onChange={(e) => setNfseConfig(prev => ({ ...prev, certificado_digital: e.target.value }))}
-                      placeholder="Cole aqui o certificado em base64"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Senha do Certificado</Label>
-                    <Input
-                      type="password"
-                      value={nfseConfig.senha_certificado}
-                      onChange={(e) => setNfseConfig(prev => ({ ...prev, senha_certificado: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Ambiente</Label>
-                    <Select
-                      value={nfseConfig.ambiente}
-                      onValueChange={(value) => setNfseConfig(prev => ({ ...prev, ambiente: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="homologacao">Homologação</SelectItem>
-                        <SelectItem value="producao">Produção</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Inscrição Municipal</Label>
-                    <Input
-                      value={nfseConfig.inscricao_municipal}
-                      onChange={(e) => setNfseConfig(prev => ({ ...prev, inscricao_municipal: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Código do Município</Label>
-                    <Input
-                      value={nfseConfig.codigo_municipio}
-                      onChange={(e) => setNfseConfig(prev => ({ ...prev, codigo_municipio: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Regime Tributário</Label>
-                    <Select
-                      value={nfseConfig.regime_tributario}
-                      onValueChange={(value) => setNfseConfig(prev => ({ ...prev, regime_tributario: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="simples">Simples Nacional</SelectItem>
-                        <SelectItem value="presumido">Lucro Presumido</SelectItem>
-                        <SelectItem value="real">Lucro Real</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Regime Especial</Label>
-                    <Input
-                      value={nfseConfig.regime_especial}
-                      onChange={(e) => setNfseConfig(prev => ({ ...prev, regime_especial: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Incentivo Fiscal</Label>
-                    <Checkbox
-                      checked={nfseConfig.incentivo_fiscal}
-                      onCheckedChange={(checked) => 
-                        setNfseConfig(prev => ({ ...prev, incentivo_fiscal: checked }))
-                      }
-                    />
-                  </div>
-                </div>
-                <Button onClick={handleNFSeConfigSave}>Salvar Configurações NFS-e</Button>
-              </div>
-            </div>
+            <FiscalTab
+              nfceConfig={nfceConfig}
+              nfseConfig={nfseConfig}
+              fiscalConfig={fiscalConfig}
+              serviceCodes={serviceCodes}
+              serviceCodeSearch={serviceCodeSearch}
+              setServiceCodeSearch={setServiceCodeSearch}
+              setNfceConfig={setNfceConfig}
+              setNfseConfig={setNfseConfig}
+              setFiscalConfig={setFiscalConfig}
+              fetchServiceCodes={fetchServiceCodes}
+              handleNFCeConfigSave={handleNFCeConfigSave}
+              handleNFSeConfigSave={handleNFSeConfigSave}
+              handleFiscalConfigSave={handleFiscalConfigSave}
+              handleSaveAllConfigs={handleSaveAllConfigs}
+            />
           </TabsContent>
 
           <TabsContent value="sefaz" className="mt-6">
-            <div className="space-y-6">
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Configuração SEFAZ</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  {/* ... keep existing code (SEFAZ config fields) */}
-                </div>
-                <Button onClick={handleSaveAllConfigs}>Salvar Todas as Configurações</Button>
-              </div>
-            </div>
+            <SEFAZTab
+              nfceConfig={nfceConfig}
+              nfseConfig={nfseConfig}
+              fiscalConfig={fiscalConfig}
+              setNfceConfig={setNfceConfig}
+              setNfseConfig={setNfseConfig}
+              setFiscalConfig={setFiscalConfig}
+              handleSaveAllConfigs={handleSaveAllConfigs}
+            />
           </TabsContent>
         </Tabs>
       </div>
-
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {editingStatus ? "Editar Status" : "Novo Status"}
-            </DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="color">Cor</Label>
-                <Input
-                  id="color"
-                  name="color"
-                  type="color"
-                  value={formData.color}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Descrição</Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </div>
-            <DialogFooter className="mt-4">
-              <Button type="submit">
-                {editingStatus ? "Atualizar" : "Criar"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
