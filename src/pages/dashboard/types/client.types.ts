@@ -1,43 +1,77 @@
 
 export interface ContactPerson {
   name: string;
-  email?: string;
-  phone?: string;
-  role?: string;
+  email: string;
+  phone: string;
+  role: string;
+}
+
+export interface Store {
+  id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClientFormData {
+  id?: string;
+  name: string;
+  fantasy_name: string;
+  document: string;
+  person_type: string;
+  state_registration: string;
+  state_registration_exempt: boolean;
+  municipal_registration: string;
+  store_id: string;
+  zip_code: string;
+  street: string;
+  street_number: string;
+  complement: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  phone_landline: string;
+  mobile_phone: string;
+  phone_carrier: string;
+  email: string;
+  nfe_email: string;
+  website: string;
+  client_login: string;
+  client_password: string;
+  contact_persons: ContactPerson[];
+}
+
+export interface DeleteDialogState {
+  isOpen: boolean;
+  clientId: string | null;
 }
 
 export interface Client {
   id: string;
   name: string;
-  email?: string;
-  phone?: string;
-  document?: string;
-  street?: string;
-  street_number?: string;
-  complement?: string;
-  neighborhood?: string;
-  city?: string;
-  state?: string;
-  zip_code?: string;
-  contact_persons?: ContactPerson[];
-  contact_info?: string;
-  fantasy_name?: string;
-  person_type?: string;
-  state_registration?: string;
-  municipal_registration?: string;
-  state_registration_exempt?: boolean;
-  website?: string;
-  phone_landline?: string;
-  phone_carrier?: string;
-  mobile_phone?: string;
-  fax?: string;
-  nfe_email?: string;
-  client_login?: string;
-  client_password?: string;
+  fantasy_name: string;
+  document: string;
+  person_type: string;
+  state_registration: string;
+  state_registration_exempt: boolean;
+  municipal_registration: string;
+  store_id: string;
+  zip_code: string;
+  street: string;
+  street_number: string;
+  complement: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  phone_landline: string;
+  mobile_phone: string;
+  phone_carrier: string;
+  email: string;
+  nfe_email: string;
+  website: string;
+  client_login: string;
+  client_password: string;
+  contact_persons: ContactPerson[];
   created_at: string;
   updated_at: string;
-}
-
-export interface ClientTableItem extends Client {
-  contact_persons_display?: React.ReactNode;
 }

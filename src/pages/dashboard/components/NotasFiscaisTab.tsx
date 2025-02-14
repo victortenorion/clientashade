@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,75 +11,40 @@ import { useToast } from "@/components/ui/use-toast";
 export const NotasFiscaisTab = () => {
   const { toast } = useToast();
   const [fiscalConfig, setFiscalConfig] = useState({
-    id: "",
-    service_code: "",
-    cnae: "",
-    tax_regime: ""
+    service_code: '',
+    cnae: '',
+    tax_regime: ''
   });
 
   const loadFiscalConfig = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('fiscal_config')
-        .select('*')
-        .single();
+    const { data, error } = await supabase
+      .from('fiscal_config')
+      .select('*')
+      .eq('type', 'general')
+      .single();
 
-      if (error) throw error;
+    if (error) {
+      console.error('Erro ao carregar configurações fiscais:', error);
+      return;
+    }
 
-      if (data) {
-        setFiscalConfig(data);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar configurações:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar as configurações fiscais.",
-        variant: "destructive"
-      });
+    if (data?.config) {
+      setFiscalConfig(data.config as any);
     }
   };
 
-  const handleSaveConfig = async () => {
-    try {
-      let query;
-      if (fiscalConfig.id) {
-        // Update
-        query = supabase
-          .from('fiscal_config')
-          .update({
-            service_code: fiscalConfig.service_code,
-            cnae: fiscalConfig.cnae,
-            tax_regime: fiscalConfig.tax_regime
-          })
-          .eq('id', fiscalConfig.id);
-      } else {
-        // Insert
-        query = supabase
-          .from('fiscal_config')
-          .insert([{
-            service_code: fiscalConfig.service_code,
-            cnae: fiscalConfig.cnae,
-            tax_regime: fiscalConfig.tax_regime
-          }]);
-      }
-
-      const { error } = await query;
-      if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: "Configurações fiscais salvas com sucesso.",
+  const handleSaveFiscalConfig = async () => {
+    const { error } = await supabase
+      .from('fiscal_config')
+      .upsert({
+        type: 'general',
+        config: fiscalConfig
+      }, {
+        onConflict: 'type'
       });
 
-      // Recarrega os dados após salvar
-      loadFiscalConfig();
-    } catch (error) {
-      console.error('Erro ao salvar configurações:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível salvar as configurações fiscais.",
-        variant: "destructive"
-      });
+    if (error) {
+      console.error('Erro ao salvar configurações fiscais:', error);
     }
   };
 
@@ -141,7 +105,7 @@ export const NotasFiscaisTab = () => {
           <Separator />
 
           <div className="flex justify-end">
-            <Button onClick={handleSaveConfig}>
+            <Button onClick={handleSaveFiscalConfig}>
               Salvar Configurações
             </Button>
           </div>
