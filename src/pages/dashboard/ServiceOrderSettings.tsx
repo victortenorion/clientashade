@@ -6,12 +6,11 @@ import { SEFAZTab } from "./components/SEFAZTab";
 import { ClientTab } from "./components/ClientTab";
 import { useLocation } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
-import { CustomerAreaField } from "./types/service-order-settings.types";
+import { ClientField } from "./types/service-order-settings.types";
 
 const ServiceOrderSettings = () => {
   const location = useLocation();
 
-  // Estados necessários para os componentes
   const [nfceConfig, setNfceConfig] = useState({
     certificado_digital: "",
     senha_certificado: "",
@@ -40,7 +39,7 @@ const ServiceOrderSettings = () => {
     tax_regime: ""
   });
 
-  const [clientFields, setClientFields] = useState<CustomerAreaField[]>([
+  const [clientFields, setClientFields] = useState<ClientField[]>([
     { id: "1", field_name: "Nome", visible: true },
     { id: "2", field_name: "Email", visible: true },
     { id: "3", field_name: "Telefone", visible: true }
@@ -83,7 +82,6 @@ const ServiceOrderSettings = () => {
           setNfceConfig={setNfceConfig}
           setNfseConfig={setNfseConfig}
           setFiscalConfig={setFiscalConfig}
-          loading={false}
         />
       </TabsContent>
       <TabsContent value="sefaz">
@@ -94,7 +92,6 @@ const ServiceOrderSettings = () => {
           setNfceConfig={setNfceConfig}
           setNfseConfig={setNfseConfig}
           setFiscalConfig={setFiscalConfig}
-          loading={false}
         />
       </TabsContent>
       <TabsContent value="area-cliente">

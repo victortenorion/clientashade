@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -26,7 +25,7 @@ import { ClientProtectedRoute } from "./components/ClientProtectedRoute";
 
 const queryClient = new QueryClient();
 
-const App: React.FC = () => {
+function App() {
   return (
     <React.StrictMode>
       <QueryClientProvider client={queryClient}>
@@ -39,7 +38,6 @@ const App: React.FC = () => {
                 <Route path="/" element={<Index />} />
                 <Route path="/client-login" element={<ClientLogin />} />
                 <Route path="/auth" element={<LoginForm />} />
-                {/* Área administrativa */}
                 <Route path="/dashboard" element={<Dashboard />}>
                   <Route index element={<DashboardHome />} />
                   <Route path="clients" element={<Clients />} />
@@ -47,13 +45,12 @@ const App: React.FC = () => {
                   <Route path="users" element={<Users />} />
                   <Route path="stores" element={<Stores />} />
                   <Route path="service-orders" element={<ServiceOrders />} />
-                  <Route path="service-order-settings" element={<ServiceOrderSettings />} />
+                  <Route path="service-order-settings/*" element={<ServiceOrderSettings />} />
                   <Route path="customer-area" element={<CustomerArea />} />
                   <Route path="nfse" element={<NFSe />} />
                   <Route path="nfse/from-service-order/:id" element={<NFSeFromServiceOrder />} />
                   <Route path="nfce" element={<NFCe />} />
                 </Route>
-                {/* Área do cliente usando o mesmo componente CustomerArea */}
                 <Route 
                   path="/customer-area" 
                   element={
@@ -70,6 +67,6 @@ const App: React.FC = () => {
       </QueryClientProvider>
     </React.StrictMode>
   );
-};
+}
 
 export default App;

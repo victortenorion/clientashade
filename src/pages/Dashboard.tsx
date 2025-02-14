@@ -311,7 +311,7 @@ const Dashboard = () => {
                     <SidebarMenu>
                       <SidebarMenuItem>
                         <SidebarMenuButton
-                          onClick={() => navigate("/dashboard/service-order-settings/status")}
+                          onClick={() => navigate("/dashboard/service-order-settings")}
                           isActive={location.pathname.includes("/dashboard/service-order-settings/status")}
                         >
                           <Database className="h-4 w-4" />
