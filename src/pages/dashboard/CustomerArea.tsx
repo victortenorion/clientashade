@@ -380,12 +380,6 @@ const CustomerArea = () => {
               <span className="text-sm font-medium">{clientName}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Button 
-                onClick={() => {}}
-                className="bg-[#000000e6] hover:bg-[#000000cc]"
-              >
-                Alterar Senha
-              </Button>
               {allowCreateOrders && (
                 <Button 
                   onClick={() => setCreateOrderDialogOpen(true)}
