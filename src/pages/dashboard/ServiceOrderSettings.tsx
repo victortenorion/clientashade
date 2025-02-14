@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { StatusTab } from "./components/StatusTab";
 import { SEFAZTab } from "./components/SEFAZTab";
 import { ClientTab } from "./components/ClientTab";
@@ -8,6 +8,7 @@ import { CompanyInfoTab } from "./components/CompanyInfoTab";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { FiscalTab } from "./components/FiscalTab";
 
 const ServiceOrderSettings = () => {
   const location = useLocation();
@@ -41,15 +42,100 @@ const ServiceOrderSettings = () => {
     tax_regime: ""
   });
 
+  useEffect(() => {
+    loadConfigurations();
+  }, []);
+
+  const loadConfigurations = async () => {
+    try {
+      const { data: nfceData, error: nfceError } = await supabase
+        .from('fiscal_config')
+        .select('*')
+        .eq('type', 'nfce')
+        .single();
+
+      if (nfceError && nfceError.code !== 'PGRST116') {
+        console.error('Erro ao carregar configurações NFC-e:', nfceError);
+      }
+
+      const { data: nfseData, error: nfseError } = await supabase
+        .from('fiscal_config')
+        .select('*')
+        .eq('type', 'nfse')
+        .single();
+
+      if (nfseError && nfseError.code !== 'PGRST116') {
+        console.error('Erro ao carregar configurações NFS-e:', nfseError);
+      }
+
+      if (nfceData) {
+        setNfceConfig({
+          ...nfceConfig,
+          ...nfceData.config,
+        });
+      }
+
+      if (nfseData) {
+        setNfseConfig({
+          ...nfseConfig,
+          ...nfseData.config,
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao carregar configurações:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar as configurações",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleSaveAllConfigs = async () => {
     try {
-      // Implementar a lógica de salvar as configurações
-      console.log("Salvando configurações...");
+      // Salvar configurações NFC-e
+      const { error: nfceError } = await supabase
+        .from('fiscal_config')
+        .upsert({
+          type: 'nfce',
+          config: nfceConfig
+        }, {
+          onConflict: 'type'
+        });
+
+      if (nfceError) throw nfceError;
+
+      // Salvar configurações NFS-e
+      const { error: nfseError } = await supabase
+        .from('fiscal_config')
+        .upsert({
+          type: 'nfse',
+          config: nfseConfig
+        }, {
+          onConflict: 'type'
+        });
+
+      if (nfseError) throw nfseError;
+
+      // Salvar configurações fiscais gerais
+      const { error: fiscalError } = await supabase
+        .from('fiscal_config')
+        .upsert({
+          type: 'general',
+          config: fiscalConfig
+        }, {
+          onConflict: 'type'
+        });
+
+      if (fiscalError) throw fiscalError;
       
       toast({
         title: "Sucesso",
         description: "Configurações salvas com sucesso",
       });
+
+      // Recarregar as configurações após salvar
+      await loadConfigurations();
     } catch (error) {
       console.error('Erro ao salvar configurações:', error);
       toast({
@@ -62,14 +148,10 @@ const ServiceOrderSettings = () => {
 
   const renderContent = () => {
     if (location.pathname.includes("/notas-fiscais")) {
-      return (
-        <NotasFiscaisTab />
-      );
+      return <NotasFiscaisTab />;
     }
     if (location.pathname.includes("/dados-empresa")) {
-      return (
-        <CompanyInfoTab />
-      );
+      return <CompanyInfoTab />;
     }
     if (location.pathname.includes("/sefaz")) {
       return (
