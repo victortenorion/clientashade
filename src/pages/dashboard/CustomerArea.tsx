@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -123,22 +122,19 @@ const CustomerArea = () => {
           expected_date,
           completion_date,
           exit_date,
-          status:service_order_statuses(name, color)
+          status:service_order_statuses!service_orders_status_id_fkey(name, color)
         `)
         .eq('client_id', clientId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // Transformar os dados para corresponder à interface ServiceOrder
       const typedData = (data || []).map(order => ({
         ...order,
-        status: order.status && Array.isArray(order.status) && order.status.length > 0
-          ? {
-              name: order.status[0].name || '',
-              color: order.status[0].color || ''
-            }
-          : null
+        status: order.status ? {
+          name: order.status.name || '',
+          color: order.status.color || ''
+        } : null
       })) as ServiceOrder[];
 
       setOrders(typedData);
