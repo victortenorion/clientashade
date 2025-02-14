@@ -6,8 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase";
-import { CustomerAreaSettings, CustomerAreaSettingsFormData } from "../types/customer-area.types";
+import { supabase } from "@/integrations/supabase/client";
+import type { CustomerAreaSettingsFormData } from "../types/customer-area.types";
 
 export const CustomerAreaSettingsForm = () => {
   const { toast } = useToast();
@@ -41,15 +41,21 @@ export const CustomerAreaSettingsForm = () => {
           .eq("store_id", storeData.store_id)
           .maybeSingle();
 
-        if (error && error.code !== 'PGRST116') throw error;
+        if (error) {
+          // Ignore PGRST116 error as it just means no settings exist yet
+          if (error.code !== 'PGRST116') {
+            throw error;
+          }
+          return; // Use default settings if no data exists
+        }
 
         if (data) {
           setSettings({
             title: data.title,
             description: data.description || "",
             logo_url: data.logo_url || "",
-            primary_color: data.primary_color,
-            secondary_color: data.secondary_color
+            primary_color: data.primary_color || "#000000",
+            secondary_color: data.secondary_color || "#ffffff"
           });
         }
       }
@@ -80,14 +86,12 @@ export const CustomerAreaSettingsForm = () => {
         throw new Error("Nenhuma loja encontrada para o usuário");
       }
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("customer_area_settings")
         .upsert({
           store_id: storeData.store_id,
           ...settings
-        })
-        .select()
-        .single();
+        });
 
       if (error) throw error;
 
@@ -95,6 +99,9 @@ export const CustomerAreaSettingsForm = () => {
         title: "Configurações salvas",
         description: "As configurações da área do cliente foram atualizadas com sucesso."
       });
+      
+      // Reload settings after saving
+      await fetchSettings();
     } catch (error: any) {
       console.error("Erro ao salvar configurações:", error);
       toast({
