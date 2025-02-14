@@ -171,6 +171,7 @@ export type Database = {
         Row: {
           cnae: string | null
           cnpj: string
+          codigo_servico: string | null
           created_at: string
           email: string | null
           endereco_bairro: string | null
@@ -193,6 +194,7 @@ export type Database = {
         Insert: {
           cnae?: string | null
           cnpj: string
+          codigo_servico?: string | null
           created_at?: string
           email?: string | null
           endereco_bairro?: string | null
@@ -215,6 +217,7 @@ export type Database = {
         Update: {
           cnae?: string | null
           cnpj?: string
+          codigo_servico?: string | null
           created_at?: string
           email?: string | null
           endereco_bairro?: string | null
