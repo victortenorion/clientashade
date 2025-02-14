@@ -84,7 +84,7 @@ export const CompanyInfoTab = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY}`,
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVyb3FneHBqaXFtZnRrZ3F5dW5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk0MTUyNjUsImV4cCI6MjA1NDk5MTI2NX0.XiXzmlcwblXg0qmTrhcHgCeQKTcdGxOnbtILa2eHAtQ`,
         },
         body: JSON.stringify({ document: cnpj })
       });
