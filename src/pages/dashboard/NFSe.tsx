@@ -308,37 +308,45 @@ const NFSePage = () => {
     try {
       const { data: nfse, error: nfseError } = await supabase
         .from("nfse")
-        .select("status_sefaz")
+        .select("status_sefaz, cancelada")
         .eq("id", nfseId)
         .single();
 
       if (nfseError) throw nfseError;
 
-      if (nfse.status_sefaz !== "pendente") {
+      // Permitir exclusão apenas se estiver pendente ou cancelada
+      if (nfse.status_sefaz !== "pendente" && !nfse.cancelada) {
         toast({
           variant: "destructive",
           title: "Erro ao excluir NFS-e",
-          description: "Apenas NFS-e pendentes podem ser excluídas",
+          description: "Apenas NFS-e pendentes ou canceladas podem ser excluídas",
         });
         return;
       }
 
-      await supabase
-        .from("nfse_eventos")
-        .delete()
-        .eq("nfse_id", nfseId);
+      // Deletar registros relacionados primeiro
+      const promises = [
+        supabase
+          .from("nfse_eventos")
+          .delete()
+          .eq("nfse_id", nfseId),
+        
+        supabase
+          .from("nfse_sefaz_logs")
+          .delete()
+          .eq("nfse_id", nfseId),
+        
+        supabase
+          .from("sefaz_transmission_queue")
+          .delete()
+          .eq("documento_id", nfseId)
+          .eq("tipo", "nfse")
+      ];
 
-      await supabase
-        .from("nfse_sefaz_logs")
-        .delete()
-        .eq("nfse_id", nfseId);
+      // Aguardar todas as deleções relacionadas
+      await Promise.all(promises);
 
-      await supabase
-        .from("sefaz_transmission_queue")
-        .delete()
-        .eq("documento_id", nfseId)
-        .eq("tipo", "nfse");
-
+      // Finalmente, deletar a NFS-e
       const { error: deleteError } = await supabase
         .from("nfse")
         .delete()
@@ -352,6 +360,7 @@ const NFSePage = () => {
 
       refetch();
     } catch (error: any) {
+      console.error('Erro ao excluir NFS-e:', error);
       toast({
         variant: "destructive",
         title: "Erro ao excluir NFS-e",
@@ -541,6 +550,17 @@ const NFSePage = () => {
                             <XCircle className="h-4 w-4" />
                           </Button>
                         </>
+                      )}
+
+                      {nota.cancelada && (
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleDeleteNFSe(nota.id)}
+                          title="Excluir NFS-e cancelada"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       )}
 
                       <Button
