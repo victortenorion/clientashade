@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -11,7 +12,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, LogOut, ArrowLeft } from "lucide-react";
+import { LogOut, ArrowLeft } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -22,16 +23,14 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 
-interface Status {
-  name: string;
-  color: string;
-}
-
 interface ServiceOrder {
   id: string;
   description: string;
   status_id: string | null;
-  status: Status | null;
+  status: {
+    name: string;
+    color: string;
+  } | null;
   total_price: number;
   created_at: string;
   order_number: number;
@@ -44,14 +43,14 @@ interface ServiceOrder {
   exit_date: string | null;
 }
 
-interface ServiceOrderFormData {
-  description: string;
-  total_price: number;
-}
-
 interface CustomerAreaField {
   field: string;
   visible: boolean;
+}
+
+interface ServiceOrderFormData {
+  description: string;
+  total_price: number;
 }
 
 const defaultFormData: ServiceOrderFormData = {
@@ -129,22 +128,14 @@ const CustomerArea = () => {
           expected_date,
           completion_date,
           exit_date,
-          status:service_order_statuses!service_orders_status_id_fkey(name, color)
+          status:service_order_statuses(name, color)
         `)
         .eq('client_id', clientId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      const typedData: ServiceOrder[] = (data || []).map(order => ({
-        ...order,
-        status: order.status ? {
-          name: order.status.name as string,
-          color: order.status.color as string
-        } : null
-      }));
-
-      setOrders(typedData);
+      setOrders(data || []);
     } catch (error: any) {
       console.error("Erro completo:", error);
       toast({
@@ -229,7 +220,7 @@ const CustomerArea = () => {
   const getFieldValue = (order: ServiceOrder, field: string) => {
     switch (field) {
       case 'order_number':
-        return order.order_number;
+        return String(order.order_number).padStart(6, '0');
       case 'created_at':
         return formatDate(order.created_at);
       case 'status':
@@ -279,17 +270,12 @@ const CustomerArea = () => {
           </Button>
           <h2 className="text-xl font-bold">Minhas Ordens de Serviço</h2>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleLogout}>
-            <LogOut className="mr-2 h-4 w-4" />
-            Sair
-          </Button>
-          <Button onClick={handleNewOrder}>
-            <PlusCircle className="mr-2" />
-            Nova Ordem de Serviço
-          </Button>
-        </div>
+        <Button variant="outline" onClick={handleLogout}>
+          <LogOut className="mr-2 h-4 w-4" />
+          Sair
+        </Button>
       </div>
+
       <div className="border rounded-lg">
         <Table>
           <TableHeader>
