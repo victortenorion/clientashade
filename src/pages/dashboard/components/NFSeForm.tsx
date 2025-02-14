@@ -37,7 +37,7 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
     data_competencia: new Date().toISOString().split("T")[0],
     deducoes: 0,
     observacoes: "",
-    natureza_operacao: "",
+    natureza_operacao: "1",
     municipio_prestacao: "",
     cnae: "",
     retencao_ir: false,
@@ -56,7 +56,10 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
 
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData);
+      setFormData({
+        ...initialData,
+        natureza_operacao: "1"
+      });
     }
   }, [initialData]);
 
@@ -212,9 +215,10 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
             <div className="space-y-2">
               <Label htmlFor="natureza_operacao">Natureza da Operação *</Label>
               <Select
-                value={formData.natureza_operacao}
+                value="1"
                 onValueChange={(value) => setFormData(prev => ({ ...prev, natureza_operacao: value }))}
                 required
+                disabled
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione a natureza da operação" />
