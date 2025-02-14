@@ -244,14 +244,19 @@ const CustomerArea = () => {
           expected_date,
           completion_date,
           exit_date,
-          status:service_order_statuses!fk_service_order_status(name, color)
+          status:service_order_statuses(name, color)
         `)
         .eq('client_id', clientId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      setOrders(data || []);
+      const typedOrders: ServiceOrder[] = (data || []).map(order => ({
+        ...order,
+        status: order.status ? order.status[0] : null
+      }));
+
+      setOrders(typedOrders);
     } catch (error: any) {
       console.error("Erro completo:", error);
       toast({
@@ -348,17 +353,18 @@ const CustomerArea = () => {
               <User className="h-4 w-4" />
               <span className="text-sm font-medium">{clientName}</span>
             </div>
-            <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <Button 
+                onClick={() => setCreateOrderDialogOpen(true)}
+                className="bg-[#ea384c] hover:bg-[#ea384c]/90"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Incluir Ordem de Serviço
+              </Button>
               <Button variant="outline" onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Sair
               </Button>
-              {allowCreateOrders && (
-                <Button onClick={() => setCreateOrderDialogOpen(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Nova Ordem de Serviço
-                </Button>
-              )}
             </div>
           </div>
         </div>
