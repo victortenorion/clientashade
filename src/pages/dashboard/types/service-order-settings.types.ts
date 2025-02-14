@@ -37,11 +37,13 @@ export interface SEFAZTabProps {
   setNfceConfig: (config: any) => void;
   setNfseConfig: (config: any) => void;
   setFiscalConfig: (config: any) => void;
+  handleSaveAllConfigs: () => void;
 }
 
 export interface ClientField {
   id: string;
-  field_name: string;
+  label: string;
+  field: string;
   visible: boolean;
 }
 

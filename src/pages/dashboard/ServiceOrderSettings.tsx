@@ -39,10 +39,10 @@ const ServiceOrderSettings = () => {
     tax_regime: ""
   });
 
-  const [clientFields, setClientFields] = useState<ClientField[]>([
-    { id: "1", field_name: "Nome", visible: true },
-    { id: "2", field_name: "Email", visible: true },
-    { id: "3", field_name: "Telefone", visible: true }
+  const [clientFields, setClientFields] = useState([
+    { id: "1", label: "Nome", field: "name", visible: true },
+    { id: "2", label: "Email", field: "email", visible: true },
+    { id: "3", label: "Telefone", field: "phone", visible: true }
   ]);
 
   const handleFieldVisibilityChange = (fieldId: string, visible: boolean) => {
@@ -51,6 +51,11 @@ const ServiceOrderSettings = () => {
         field.id === fieldId ? { ...field, visible } : field
       )
     );
+  };
+
+  const handleSaveAllConfigs = async () => {
+    // Implementar a lógica de salvar as configurações
+    console.log("Salvando configurações...");
   };
 
   const getDefaultTab = () => {
@@ -82,6 +87,7 @@ const ServiceOrderSettings = () => {
           setNfceConfig={setNfceConfig}
           setNfseConfig={setNfseConfig}
           setFiscalConfig={setFiscalConfig}
+          handleSaveAllConfigs={handleSaveAllConfigs}
         />
       </TabsContent>
       <TabsContent value="sefaz">
@@ -92,6 +98,7 @@ const ServiceOrderSettings = () => {
           setNfceConfig={setNfceConfig}
           setNfseConfig={setNfseConfig}
           setFiscalConfig={setFiscalConfig}
+          handleSaveAllConfigs={handleSaveAllConfigs}
         />
       </TabsContent>
       <TabsContent value="area-cliente">
