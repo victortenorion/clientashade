@@ -328,17 +328,9 @@ const ServiceOrders = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao processar ordem de serviço",
-        description: "Usuário não está autenticado",
-      });
-      return;
-    }
 
     try {
-      let orderData = {
+      let serviceOrderData = {
         client_id: formData.client_id,
         description: formData.description,
         status_id: formData.status_id,
@@ -360,7 +352,7 @@ const ServiceOrders = () => {
         // Atualiza a ordem existente
         const { error: orderError } = await supabase
           .from("service_orders")
-          .update(orderData)
+          .update(serviceOrderData)
           .eq('id', formData.id);
 
         if (orderError) throw orderError;
@@ -393,9 +385,9 @@ const ServiceOrders = () => {
         });
       } else {
         // Cria uma nova ordem
-        const { data: orderData, error: orderError } = await supabase
+        const { data: newOrder, error: orderError } = await supabase
           .from("service_orders")
-          .insert(orderData)
+          .insert(serviceOrderData)
           .select()
           .single();
 
@@ -406,7 +398,7 @@ const ServiceOrders = () => {
             .from("service_order_items")
             .insert(
               formData.items.map(item => ({
-                service_order_id: orderData.id,
+                service_order_id: newOrder.id,
                 description: item.description,
                 price: item.price
               }))
