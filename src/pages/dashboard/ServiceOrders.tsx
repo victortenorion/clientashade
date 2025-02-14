@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import { Checkbox } from "@/components/ui/checkbox";
+import * as Checkbox from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
   Table,
@@ -680,11 +679,13 @@ const ServiceOrders = () => {
           />
         </div>
         <div className="flex items-center gap-2">
-          <Checkbox
+          <Checkbox.Root
             id="serialSearch"
             checked={isSerialSearch}
             onCheckedChange={(checked) => setIsSerialSearch(checked as boolean)}
-          />
+          >
+            <Checkbox.Indicator />
+          </Checkbox.Root>
           <Label htmlFor="serialSearch">Buscar por N° Série</Label>
         </div>
       </div>
