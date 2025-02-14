@@ -122,6 +122,7 @@ const ServiceOrders = () => {
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isSerialSearch, setIsSerialSearch] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
@@ -172,41 +173,41 @@ const ServiceOrders = () => {
         return;
       }
 
-      if (!isNaN(Number(searchTerm))) {
-        const orderNumber = Number(searchTerm);
-        
-        if (orderNumber > 999999) {
-          const { data: serialData, error: serialError } = await supabase
-            .from("service_orders")
-            .select(`
-              id,
-              client_id,
-              description,
-              status_id,
-              total_price,
-              created_at,
-              created_by_type,
-              seller_id,
-              store_id,
-              equipment,
-              equipment_serial_number,
-              problem,
-              reception_notes,
-              internal_notes,
-              order_number,
-              expected_date,
-              completion_date,
-              exit_date,
-              client:clients(name),
-              status:service_order_statuses!service_orders_status_id_fkey(name, color),
-              items:service_order_items(id, description, price)
-            `)
-            .eq('equipment_serial_number', searchTerm);
+      if (isSerialSearch) {
+        const { data: serialData, error: serialError } = await supabase
+          .from("service_orders")
+          .select(`
+            id,
+            client_id,
+            description,
+            status_id,
+            total_price,
+            created_at,
+            created_by_type,
+            seller_id,
+            store_id,
+            equipment,
+            equipment_serial_number,
+            problem,
+            reception_notes,
+            internal_notes,
+            order_number,
+            expected_date,
+            completion_date,
+            exit_date,
+            client:clients(name),
+            status:service_order_statuses!service_orders_status_id_fkey(name, color),
+            items:service_order_items(id, description, price)
+          `)
+          .eq('equipment_serial_number', searchTerm);
 
-          if (serialError) throw serialError;
-          setOrders(serialData as ServiceOrder[]);
-          return;
-        }
+        if (serialError) throw serialError;
+        setOrders(serialData as ServiceOrder[]);
+        return;
+      }
+
+      if (!isSerialSearch && !isNaN(Number(searchTerm))) {
+        const orderNumber = Number(searchTerm);
         
         if (orderNumber > 2147483647 || orderNumber < -2147483648) {
           toast({
@@ -668,13 +669,22 @@ const ServiceOrders = () => {
           Nova Ordem
         </Button>
       </div>
-      <div className="flex gap-2">
-        <Input
-          placeholder="Buscar ordens..."
-          className="max-w-sm"
-          value={searchTerm}
-          onChange={handleSearch}
-        />
+      <div className="flex gap-4 items-center">
+        <div className="flex-1">
+          <Input
+            placeholder="Buscar ordens..."
+            value={searchTerm}
+            onChange={handleSearch}
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="serialSearch"
+            checked={isSerialSearch}
+            onCheckedChange={(checked) => setIsSerialSearch(checked as boolean)}
+          />
+          <Label htmlFor="serialSearch">Buscar por N° Série</Label>
+        </div>
       </div>
       <div className="border rounded-lg">
         <Table>
