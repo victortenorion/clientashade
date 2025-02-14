@@ -708,6 +708,44 @@ export type Database = {
           },
         ]
       }
+      nfse_sefaz_logs: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          nfse_id: string
+          request_payload: Json | null
+          response_payload: Json | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          nfse_id: string
+          request_payload?: Json | null
+          response_payload?: Json | null
+          status: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          nfse_id?: string
+          request_payload?: Json | null
+          response_payload?: Json | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nfse_sefaz_logs_nfse_id_fkey"
+            columns: ["nfse_id"]
+            isOneToOne: false
+            referencedRelation: "nfse"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nfse_servicos: {
         Row: {
           aliquota_iss: number | null

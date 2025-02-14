@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { NFSe, NFSeFormData } from "./types/nfse.types";
 import { format } from "date-fns";
-import { Plus, Pencil, Trash2, Send, XCircle, Printer } from "lucide-react";
+import { Plus, Pencil, Trash2, Send, XCircle, Printer, List } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import {
   Dialog,
@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { NFSeForm } from "./components/NFSeForm";
 import { NFSeView } from "./components/NFSeView";
+import { NFSeSefazLogs } from "./components/NFSeSefazLogs";
 import { Alert } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -38,6 +39,8 @@ const NFSePage = () => {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [motivoCancelamento, setMotivoCancelamento] = useState("");
   const [nfseCancelamento, setNfseCancelamento] = useState<string | null>(null);
+  const [showLogsDialog, setShowLogsDialog] = useState(false);
+  const [selectedNFSeIdForLogs, setSelectedNFSeIdForLogs] = useState<string | null>(null);
 
   const { data: notas, isLoading, refetch } = useQuery({
     queryKey: ["nfse", searchTerm],
@@ -215,6 +218,13 @@ const NFSePage = () => {
 
   const handleSendToSefaz = async (nfseId: string) => {
     try {
+      // Registrar o início do processamento
+      await supabase.from("nfse_sefaz_logs").insert({
+        nfse_id: nfseId,
+        status: "processing",
+        message: "Iniciando envio para SEFAZ",
+      });
+
       const { error } = await supabase
         .from("nfse")
         .update({ status_sefaz: "enviando" })
@@ -222,13 +232,31 @@ const NFSePage = () => {
 
       if (error) throw error;
 
+      // Registrar o sucesso
+      await supabase.from("nfse_sefaz_logs").insert({
+        nfse_id: nfseId,
+        status: "success",
+        message: "NFS-e enviada para processamento com sucesso",
+      });
+
       toast({
         title: "NFS-e enviada para processamento",
         description: "Em breve o status será atualizado.",
       });
 
+      // Abrir automaticamente os logs após o envio
+      setSelectedNFSeIdForLogs(nfseId);
+      setShowLogsDialog(true);
+
       refetch();
     } catch (error: any) {
+      // Registrar o erro
+      await supabase.from("nfse_sefaz_logs").insert({
+        nfse_id: nfseId,
+        status: "error",
+        message: error.message,
+      });
+
       toast({
         title: "Erro ao enviar para SEFAZ",
         description: error.message,
@@ -314,7 +342,6 @@ const NFSePage = () => {
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <div className="flex gap-2">
-                      {/* Botões de ação baseados no status */}
                       {nota.status_sefaz === "pendente" && (
                         <>
                           <Button
@@ -367,6 +394,18 @@ const NFSePage = () => {
                           </Button>
                         </>
                       )}
+                      
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          setSelectedNFSeIdForLogs(nota.id);
+                          setShowLogsDialog(true);
+                        }}
+                        title="Ver Logs"
+                      >
+                        <List className="h-4 w-4" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -432,6 +471,15 @@ const NFSePage = () => {
       <NFSeView
         nfseId={selectedNFSeId}
         onClose={() => setSelectedNFSeId(null)}
+      />
+
+      <NFSeSefazLogs
+        nfseId={selectedNFSeIdForLogs}
+        isOpen={showLogsDialog}
+        onClose={() => {
+          setShowLogsDialog(false);
+          setSelectedNFSeIdForLogs(null);
+        }}
       />
     </div>
   );
