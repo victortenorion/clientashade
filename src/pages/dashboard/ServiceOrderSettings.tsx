@@ -71,11 +71,7 @@ const ServiceOrderSettings = () => {
         <PersonalizarTab />
       </TabsContent>
       <TabsContent value="notas-fiscais">
-        <NotasFiscaisTab 
-          fiscalConfig={fiscalConfig}
-          setFiscalConfig={setFiscalConfig}
-          handleSaveAllConfigs={handleSaveAllConfigs}
-        />
+        <NotasFiscaisTab />
       </TabsContent>
       <TabsContent value="sefaz">
         <SEFAZTab 
