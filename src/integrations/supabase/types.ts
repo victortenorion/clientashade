@@ -142,6 +142,7 @@ export type Database = {
       }
       customer_area_settings: {
         Row: {
+          allow_create_orders: boolean | null
           created_at: string
           description: string | null
           id: string
@@ -153,6 +154,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          allow_create_orders?: boolean | null
           created_at?: string
           description?: string | null
           id?: string
@@ -164,6 +166,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          allow_create_orders?: boolean | null
           created_at?: string
           description?: string | null
           id?: string
