@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -67,7 +68,6 @@ const CustomerArea = () => {
   const [clientName, setClientName] = useState<string>("");
   const [allowCreateOrders, setAllowCreateOrders] = useState(false);
   const [createOrderDialogOpen, setCreateOrderDialogOpen] = useState(false);
-  const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
   const [formData, setFormData] = useState<NewOrderForm>({
     equipment: "",
     equipment_serial_number: "",
@@ -126,31 +126,17 @@ const CustomerArea = () => {
         tracking_code: formData.tracking_code
       };
 
-      let error;
-
-      if (editingOrderId) {
-        // Atualizar ordem existente
-        ({ error } = await supabase
-          .from("service_orders")
-          .update(orderData)
-          .eq('id', editingOrderId));
-      } else {
-        // Criar nova ordem
-        ({ error } = await supabase
-          .from("service_orders")
-          .insert(orderData));
-      }
+      const { error } = await supabase
+        .from("service_orders")
+        .insert(orderData);
 
       if (error) throw error;
 
       toast({
-        title: editingOrderId 
-          ? "Ordem de serviço atualizada com sucesso"
-          : "Ordem de serviço criada com sucesso",
+        title: "Ordem de serviço criada com sucesso",
       });
       
       setCreateOrderDialogOpen(false);
-      setEditingOrderId(null);
       setFormData({
         equipment: "",
         equipment_serial_number: "",
@@ -169,21 +155,6 @@ const CustomerArea = () => {
         description: error.message
       });
     }
-  };
-
-  const handleEditOrder = (order: ServiceOrder) => {
-    setEditingOrderId(order.id);
-    setFormData({
-      equipment: order.equipment || "",
-      equipment_serial_number: order.equipment_serial_number || "",
-      problem: order.problem || "",
-      description: order.description || "",
-      invoice_number: "", // Mantendo campos vazios pois não fazem parte da ServiceOrder
-      invoice_key: "",
-      shipping_company: "",
-      tracking_code: "",
-    });
-    setCreateOrderDialogOpen(true);
   };
 
   const handleInputChange = (
@@ -227,16 +198,12 @@ const CustomerArea = () => {
 
   const fetchCustomerAreaSettings = async () => {
     try {
-      console.log("Buscando configurações da área do cliente...");
       const { data, error } = await supabase
         .from('customer_area_settings')
         .select('allow_create_orders')
         .single();
 
-      if (error) {
-        console.error("Erro ao buscar configurações:", error);
-        throw error;
-      }
+      if (error) throw error;
       
       if (data) {
         setAllowCreateOrders(data.allow_create_orders || false);
@@ -292,7 +259,6 @@ const CustomerArea = () => {
         return;
       }
 
-      console.log("Buscando ordens para o cliente:", clientId);
       const { data, error } = await supabase
         .from("service_orders")
         .select(`
@@ -319,7 +285,6 @@ const CustomerArea = () => {
 
       if (error) throw error;
       
-      console.log("Ordens recebidas:", data);
       if (data) {
         setOrders(data as ServiceOrder[]);
       }
@@ -417,20 +382,7 @@ const CustomerArea = () => {
             </Button>
             <div className="flex flex-col gap-2">
               <Button 
-                onClick={() => {
-                  setEditingOrderId(null);
-                  setFormData({
-                    equipment: "",
-                    equipment_serial_number: "",
-                    problem: "",
-                    description: "",
-                    invoice_number: "",
-                    invoice_key: "",
-                    shipping_company: "",
-                    tracking_code: "",
-                  });
-                  setCreateOrderDialogOpen(true);
-                }}
+                onClick={() => setCreateOrderDialogOpen(true)}
                 className="bg-[#ea384c] hover:bg-[#ea384c]/90 whitespace-nowrap"
               >
                 <Plus className="mr-2 h-4 w-4" />
@@ -472,19 +424,18 @@ const CustomerArea = () => {
                         {field.field_name === 'total_price' && 'Valor Total'}
                       </TableHead>
                     ))}
-                    <TableHead>Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={visibleFields.length + 1} className="text-center">
+                      <TableCell colSpan={visibleFields.length} className="text-center">
                         Carregando...
                       </TableCell>
                     </TableRow>
                   ) : orders.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={visibleFields.length + 1} className="text-center">
+                      <TableCell colSpan={visibleFields.length} className="text-center">
                         Nenhuma ordem de serviço encontrada
                       </TableCell>
                     </TableRow>
@@ -496,15 +447,6 @@ const CustomerArea = () => {
                             {getFieldValue(order, field.field_name)}
                           </TableCell>
                         ))}
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditOrder(order)}
-                          >
-                            Editar
-                          </Button>
-                        </TableCell>
                       </TableRow>
                     ))
                   )}
@@ -518,9 +460,7 @@ const CustomerArea = () => {
       <Dialog open={createOrderDialogOpen} onOpenChange={setCreateOrderDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>
-              {editingOrderId ? 'Editar Ordem de Serviço' : 'Nova Ordem de Serviço'}
-            </DialogTitle>
+            <DialogTitle>Nova Ordem de Serviço</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmitOrder} className="space-y-4">
             <div className="space-y-2">
@@ -602,7 +542,7 @@ const CustomerArea = () => {
                 Cancelar
               </Button>
               <Button type="submit">
-                {editingOrderId ? 'Salvar' : 'Criar Ordem'}
+                Criar Ordem
               </Button>
             </DialogFooter>
           </form>
