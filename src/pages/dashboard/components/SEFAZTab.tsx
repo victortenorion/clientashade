@@ -93,6 +93,26 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
     loadCompanyInfo();
   }, []);
 
+  const handleFileUpload = (file: File, isNFCe: boolean) => {
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = () => {
+        if (reader.result && typeof reader.result === 'string') {
+          resolve(reader.result);
+        } else {
+          reject(new Error('Falha ao ler o arquivo'));
+        }
+      };
+      
+      reader.onerror = () => {
+        reject(reader.error);
+      };
+      
+      reader.readAsDataURL(file);
+    });
+  };
+
   const validateCertificate = async (certificado: string, senha: string) => {
     try {
       const { data, error } = await supabase.functions.invoke('validate-certificate', {
@@ -114,21 +134,31 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
     // Validar certificado NFC-e
     if (nfceConfig.certificado_digital && nfceConfig.senha_certificado) {
       setIsValidatingNFCe(true);
-      const nfceValidation = await validateCertificate(
-        nfceConfig.certificado_digital,
-        nfceConfig.senha_certificado
-      );
+      try {
+        const nfceValidation = await validateCertificate(
+          nfceConfig.certificado_digital,
+          nfceConfig.senha_certificado
+        );
 
-      setNfceConfig({
-        ...nfceConfig,
-        certificado_valido: nfceValidation.valid,
-        certificado_validade: nfceValidation.validUntil,
-      });
+        setNfceConfig({
+          ...nfceConfig,
+          certificado_valido: nfceValidation.valid,
+          certificado_validade: nfceValidation.validUntil,
+        });
 
-      if (!nfceValidation.valid) {
+        if (!nfceValidation.valid) {
+          toast({
+            title: "Erro",
+            description: "Certificado ou senha da NFC-e inválidos",
+            variant: "destructive",
+          });
+          hasErrors = true;
+        }
+      } catch (error) {
+        console.error('Erro na validação do certificado NFC-e:', error);
         toast({
           title: "Erro",
-          description: "Certificado ou senha da NFC-e inválidos",
+          description: "Erro ao validar certificado NFC-e",
           variant: "destructive",
         });
         hasErrors = true;
@@ -139,21 +169,31 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
     // Validar certificado NFS-e
     if (nfseConfig.certificado_digital && nfseConfig.senha_certificado) {
       setIsValidatingNFSe(true);
-      const nfseValidation = await validateCertificate(
-        nfseConfig.certificado_digital,
-        nfseConfig.senha_certificado
-      );
+      try {
+        const nfseValidation = await validateCertificate(
+          nfseConfig.certificado_digital,
+          nfseConfig.senha_certificado
+        );
 
-      setNfseConfig({
-        ...nfseConfig,
-        certificado_valido: nfseValidation.valid,
-        certificado_validade: nfseValidation.validUntil,
-      });
+        setNfseConfig({
+          ...nfseConfig,
+          certificado_valido: nfseValidation.valid,
+          certificado_validade: nfseValidation.validUntil,
+        });
 
-      if (!nfseValidation.valid) {
+        if (!nfseValidation.valid) {
+          toast({
+            title: "Erro",
+            description: "Certificado ou senha da NFS-e inválidos",
+            variant: "destructive",
+          });
+          hasErrors = true;
+        }
+      } catch (error) {
+        console.error('Erro na validação do certificado NFS-e:', error);
         toast({
           title: "Erro",
-          description: "Certificado ou senha da NFS-e inválidos",
+          description: "Erro ao validar certificado NFS-e",
           variant: "destructive",
         });
         hasErrors = true;
@@ -213,21 +253,25 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                 <Input
                   type="file"
                   accept=".pfx"
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (file) {
-                      const reader = new FileReader();
-                      reader.onload = (event) => {
-                        if (event.target?.result) {
-                          setNfceConfig({
-                            ...nfceConfig,
-                            certificado_digital: event.target.result as string,
-                            certificado_valido: undefined,
-                            certificado_validade: undefined,
-                          });
-                        }
-                      };
-                      reader.readAsDataURL(file);
+                      try {
+                        const fileData = await handleFileUpload(file, true);
+                        setNfceConfig({
+                          ...nfceConfig,
+                          certificado_digital: fileData,
+                          certificado_valido: undefined,
+                          certificado_validade: undefined,
+                        });
+                      } catch (error) {
+                        console.error('Erro ao carregar arquivo:', error);
+                        toast({
+                          title: "Erro",
+                          description: "Erro ao carregar o certificado",
+                          variant: "destructive",
+                        });
+                      }
                     }
                   }}
                   disabled={isValidatingNFCe}
@@ -316,21 +360,25 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                 <Input
                   type="file"
                   accept=".pfx"
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (file) {
-                      const reader = new FileReader();
-                      reader.onload = (event) => {
-                        if (event.target?.result) {
-                          setNfseConfig({
-                            ...nfseConfig,
-                            certificado_digital: event.target.result as string,
-                            certificado_valido: undefined,
-                            certificado_validade: undefined,
-                          });
-                        }
-                      };
-                      reader.readAsDataURL(file);
+                      try {
+                        const fileData = await handleFileUpload(file, false);
+                        setNfseConfig({
+                          ...nfseConfig,
+                          certificado_digital: fileData,
+                          certificado_valido: undefined,
+                          certificado_validade: undefined,
+                        });
+                      } catch (error) {
+                        console.error('Erro ao carregar arquivo:', error);
+                        toast({
+                          title: "Erro",
+                          description: "Erro ao carregar o certificado",
+                          variant: "destructive",
+                        });
+                      }
                     }
                   }}
                   disabled={isValidatingNFSe}
