@@ -21,7 +21,9 @@ const ServiceOrderSettings = () => {
     inscricao_estadual: "",
     token_ibpt: "",
     csc_token: "",
-    csc_id: ""
+    csc_id: "",
+    certificado_valido: false,
+    certificado_validade: undefined
   });
 
   const [nfseConfig, setNfseConfig] = useState({
@@ -32,7 +34,16 @@ const ServiceOrderSettings = () => {
     regime_especial: "",
     inscricao_municipal: "",
     codigo_municipio: "",
-    incentivo_fiscal: false
+    incentivo_fiscal: false,
+    certificado_valido: false,
+    certificado_validade: undefined,
+    numero_inicial_rps: 1,
+    aliquota_servico: 0,
+    versao_schema: "",
+    lote_rps_numero: 1,
+    operacao_tributacao: "",
+    codigo_regime_tributario: "",
+    tipo_regime_especial: ""
   });
 
   const [fiscalConfig, setFiscalConfig] = useState({
