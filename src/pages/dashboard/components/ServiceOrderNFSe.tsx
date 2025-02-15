@@ -137,7 +137,8 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
     intermediario_servico: false,
     codigo_regime_especial_tributacao: null,
     observacoes: "",
-    cnae: ""
+    cnae: "",
+    valor_total: 0
   });
   
   const { toast } = useToast();

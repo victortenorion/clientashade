@@ -214,30 +214,7 @@ const NFSePage = () => {
       if (nfseToEdit) {
         const { error: updateError } = await supabase
           .from("nfse")
-          .update({
-            client_id: formData.client_id,
-            codigo_servico: formData.codigo_servico,
-            discriminacao_servicos: formData.discriminacao_servicos,
-            valor_servicos: formData.valor_servicos,
-            data_competencia: formData.data_competencia,
-            observacoes: formData.observacoes,
-            deducoes: formData.deducoes || 0,
-            natureza_operacao: formData.natureza_operacao,
-            municipio_prestacao: formData.municipio_prestacao,
-            cnae: formData.cnae,
-            retencao_ir: formData.retencao_ir,
-            percentual_ir: formData.percentual_ir,
-            retencao_iss: formData.retencao_iss,
-            desconto_iss: formData.desconto_iss,
-            retencao_inss: formData.retencao_inss,
-            retencao_pis_cofins_csll: formData.retencao_pis_cofins_csll,
-            percentual_tributos_ibpt: formData.percentual_tributos_ibpt,
-            desconto_incondicional: formData.desconto_incondicional,
-            vendedor_id: formData.vendedor_id,
-            comissao_percentual: formData.comissao_percentual,
-            numero_rps: formData.numero_rps,
-            serie_rps: formData.serie_rps,
-          })
+          .update(formData)
           .eq("id", nfseToEdit.id);
 
         if (updateError) throw updateError;
@@ -272,18 +249,7 @@ const NFSePage = () => {
 
         const { data: nfse, error: nfseError } = await supabase
           .from("nfse")
-          .insert({
-            client_id: formData.client_id,
-            codigo_servico: formData.codigo_servico,
-            discriminacao_servicos: formData.discriminacao_servicos,
-            valor_servicos: formData.valor_servicos,
-            data_competencia: formData.data_competencia,
-            observacoes: formData.observacoes,
-            deducoes: formData.deducoes || 0,
-            aliquota_iss: servico?.aliquota_iss,
-            ambiente: config.ambiente,
-            status_sefaz: "pendente",
-          })
+          .insert(formData)
           .select()
           .single();
 
