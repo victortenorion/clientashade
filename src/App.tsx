@@ -15,7 +15,7 @@ import ServiceOrders from "./pages/dashboard/ServiceOrders";
 import { NFSeStandalone } from "./pages/dashboard/NFSeStandalone";
 import NFSeFromServiceOrder from "./pages/dashboard/NFSeFromServiceOrder";
 
-function App() {
+function AppRoutes() {
   return (
     <Routes>
       <Route
@@ -35,6 +35,14 @@ function App() {
         <Route path="nfse/new" element={<NFSeStandalone />} />
       </Route>
     </Routes>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppRoutes />
+    </Router>
   );
 }
 
