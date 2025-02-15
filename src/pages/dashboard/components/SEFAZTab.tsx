@@ -82,14 +82,23 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
   const handleValidateCertificate = async () => {
     setIsValidating(true);
     try {
+      console.log("Enviando certificado para validação...");
+      const certBase64 = selectedTab === 'nfse' ? nfseConfig.certificado_digital : nfceConfig.certificado_digital;
+      const senha = selectedTab === 'nfse' ? nfseConfig.senha_certificado : nfceConfig.senha_certificado;
+
       const { data, error } = await supabase.functions.invoke('validate-certificate', {
         body: {
-          certificado: selectedTab === 'nfse' ? nfseConfig.certificado_digital : nfceConfig.certificado_digital,
-          senha: selectedTab === 'nfse' ? nfseConfig.senha_certificado : nfceConfig.senha_certificado,
+          certificado: certBase64,
+          senha: senha,
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro na chamada da função:", error);
+        throw error;
+      }
+
+      console.log("Resposta da validação:", data);
 
       if (data.success) {
         if (selectedTab === 'nfse') {
@@ -131,7 +140,7 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
 
       toast({
         title: "Erro",
-        description: "Certificado digital inválido",
+        description: error.message || "Certificado digital inválido",
         variant: "destructive",
       });
     } finally {

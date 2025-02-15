@@ -32,11 +32,15 @@ serve(async (req) => {
     }
 
     try {
-      // Log para debug
-      console.log("Recebido certificado de tamanho:", certificado.length)
+      // Remove o prefixo "data:application/x-pkcs12;base64," se existir
+      const base64Certificate = certificado.includes('base64,') 
+        ? certificado.split('base64,')[1] 
+        : certificado;
+
+      console.log("Recebido certificado de tamanho:", base64Certificate.length)
       
       // Decodifica o certificado base64
-      const certificateBuffer = Uint8Array.from(atob(certificado), c => c.charCodeAt(0))
+      const certificateBuffer = Uint8Array.from(atob(base64Certificate), c => c.charCodeAt(0))
       
       console.log("Tamanho do buffer do certificado:", certificateBuffer.length)
 
