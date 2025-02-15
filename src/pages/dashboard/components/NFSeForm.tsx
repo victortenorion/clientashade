@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -56,7 +57,6 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
     serie_rps: "1",
     responsavel_retencao: "cliente",
     local_servico: "tomador",
-    optante_mei: false,
     prestador_incentivador_cultural: false,
     tributacao_rps: "T",
     enviar_email_tomador: true,
@@ -66,7 +66,27 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
     aliquota_cofins: 0,
     aliquota_csll: 0,
     outras_retencoes: 0,
-    codigo_regime_especial_tributacao: null
+    tipo_rps: "RPS",
+    tipo_documento_prestador: "2",
+    tipo_endereco_prestador: "R",
+    tipo_documento_tomador: "2",
+    tipo_endereco_tomador: "R",
+    iss_retido: "N",
+    situacao_nota: "T",
+    opcao_simples: "4",
+    status_sefaz: "pendente",
+    status_transmissao: "pendente",
+    valor_total: 0,
+    valor_iss: 0,
+    aliquota_iss: 0,
+    valor_deducoes: 0,
+    valor_pis: 0,
+    valor_cofins: 0,
+    valor_inss: 0,
+    valor_ir: 0,
+    valor_csll: 0,
+    valor_carga_tributaria: 0,
+    percentual_carga_tributaria: 0
   });
 
   useEffect(() => {
