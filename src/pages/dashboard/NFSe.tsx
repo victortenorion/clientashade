@@ -139,7 +139,47 @@ const NFSePage = () => {
         .single();
 
       if (error) throw error;
-      setNfseToEdit(data);
+
+      // Transform NFSe into NFSeFormData by providing default values
+      const formData: NFSeFormData = {
+        client_id: data.client_id,
+        codigo_servico: data.codigo_servico,
+        discriminacao_servicos: data.discriminacao_servicos,
+        valor_servicos: data.valor_servicos,
+        data_competencia: data.data_competencia,
+        deducoes: data.deducoes || 0,
+        observacoes: data.observacoes || "",
+        natureza_operacao: data.natureza_operacao || "1",
+        municipio_prestacao: data.municipio_prestacao || "",
+        cnae: data.cnae || "",
+        retencao_ir: data.retencao_ir || false,
+        percentual_ir: data.percentual_ir || 0,
+        retencao_iss: data.retencao_iss || false,
+        desconto_iss: data.desconto_iss || false,
+        retencao_inss: data.retencao_inss || false,
+        retencao_pis_cofins_csll: data.retencao_pis_cofins_csll || false,
+        percentual_tributos_ibpt: data.percentual_tributos_ibpt || 0,
+        desconto_incondicional: data.desconto_incondicional || 0,
+        vendedor_id: data.vendedor_id || "",
+        comissao_percentual: data.comissao_percentual || 0,
+        numero_rps: data.numero_rps || "",
+        serie_rps: data.serie_rps || "1",
+        responsavel_retencao: data.responsavel_retencao || "cliente",
+        local_servico: data.local_servico || "tomador",
+        optante_mei: data.optante_mei || false,
+        prestador_incentivador_cultural: data.prestador_incentivador_cultural || false,
+        tributacao_rps: data.tributacao_rps || "T",
+        enviar_email_tomador: data.enviar_email_tomador || true,
+        enviar_email_intermediario: data.enviar_email_intermediario || false,
+        intermediario_servico: data.intermediario_servico || false,
+        aliquota_pis: data.aliquota_pis || 0,
+        aliquota_cofins: data.aliquota_cofins || 0,
+        aliquota_csll: data.aliquota_csll || 0,
+        outras_retencoes: data.outras_retencoes || 0,
+        codigo_regime_especial_tributacao: data.codigo_regime_especial_tributacao
+      };
+
+      setNfseToEdit(formData);
       setSelectedNFSeId(null);
     } catch (error: any) {
       toast({
