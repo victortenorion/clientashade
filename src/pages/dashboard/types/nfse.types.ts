@@ -1,3 +1,4 @@
+
 export interface NFSe {
   id: string;
   tipo_registro?: string;
@@ -188,6 +189,9 @@ export interface NFSeFormData {
   responsavel_retencao: string;
   local_servico: string;
   optante_mei?: boolean;
+  tributacao_rps: string;
+  tipo_servico?: string;
+  regime_especial_tributacao?: string;
   prestador_incentivador_cultural?: boolean;
 }
 
