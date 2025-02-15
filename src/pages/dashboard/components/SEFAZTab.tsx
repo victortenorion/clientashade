@@ -94,14 +94,12 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
         .maybeSingle();
 
       if (error) {
-        if (error.code !== 'PGRST116') { // Não encontrado
-          console.error('Erro ao carregar certificado:', error);
-          toast({
-            title: "Erro",
-            description: "Erro ao carregar certificado do banco de dados",
-            variant: "destructive"
-          });
-        }
+        console.error('Erro ao carregar certificado:', error);
+        toast({
+          title: "Erro",
+          description: "Erro ao carregar certificado do banco de dados",
+          variant: "destructive"
+        });
         return;
       }
 
@@ -180,7 +178,7 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
 
   const handleValidateCertificate = async () => {
     setIsValidating(true);
-    const currentConfig = selectedTab === 'nfse' ? nfseConfig : nfceConfig; // Definimos config aqui
+    const currentConfig = selectedTab === 'nfse' ? nfseConfig : nfceConfig;
     
     try {
       console.log("Iniciando validação do certificado...");
@@ -190,6 +188,7 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
       }
 
       console.log("Enviando certificado para validação...");
+      console.log("Senha sendo enviada:", currentConfig.senha_certificado);
 
       const { data, error } = await supabase.functions.invoke('validate-certificate', {
         body: {
@@ -290,55 +289,6 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
     }
   };
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      const { data: currentConfig, error: configError } = await supabase
-        .from('nfse_config')
-        .select('*')
-        .limit(1)
-        .single();
-
-      if (configError && configError.code !== 'PGRST116') {
-        throw configError;
-      }
-
-      // Se já existe uma configuração, atualiza. Se não, insere.
-      const { error: saveError } = await supabase
-        .from('nfse_config')
-        .upsert({
-          id: currentConfig?.id,
-          certificado_digital: nfseConfig.certificado_digital,
-          senha_certificado: nfseConfig.senha_certificado,
-          ambiente: nfseConfig.ambiente,
-          inscricao_municipal: nfseConfig.inscricao_municipal,
-          regime_tributario: nfseConfig.regime_tributario,
-          regime_especial: nfseConfig.regime_especial,
-          incentivo_fiscal: nfseConfig.incentivo_fiscal,
-          certificado_valido: nfseConfig.certificado_valido,
-          certificado_validade: nfseConfig.certificado_validade
-        });
-
-      if (saveError) throw saveError;
-
-      await handleSaveAllConfigs();
-
-      toast({
-        title: "Sucesso",
-        description: "Configurações salvas com sucesso",
-      });
-    } catch (error: any) {
-      console.error('Erro ao salvar:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao salvar as configurações",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
@@ -383,10 +333,10 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                     />
                   </div>
 
-                  {nfseConfig.certificado_digital && nfseConfig.senha_certificado && (
+                  {nfseConfig.certificado_digital && (
                     <Button
                       onClick={handleValidateCertificate}
-                      disabled={isValidating}
+                      disabled={isValidating || !nfseConfig.senha_certificado}
                     >
                       {isValidating ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -554,7 +504,7 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
       </Tabs>
 
       <div className="flex justify-end space-x-2">
-        <Button onClick={handleSave} disabled={isSaving}>
+        <Button onClick={handleSaveAllConfigs} disabled={isSaving}>
           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Salvar Configurações
         </Button>
