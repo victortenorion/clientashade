@@ -1,4 +1,3 @@
-
 export interface NFSe {
   id: string;
   numero_nfse: number;
@@ -41,30 +40,18 @@ export interface NFSe {
   vendedor_id: string | null;
   comissao_percentual: number;
   valor_comissao: number;
-  // Campos específicos para São Paulo
-  responsavel_retencao: string;
-  local_servico: string;
-  codigo_atividade: string | null;
-  codigo_tributacao_municipio: string | null;
-  optante_mei: boolean;
-  prestador_incentivador_cultural: boolean;
-  tributacao_rps: string;
-  enviar_email_tomador: boolean;
-  enviar_email_intermediario: boolean;
-  situacao_nota: string;
-  data_emissao_rps: string;
-  status_processamento: string;
-  codigo_verificacao: string | null;
-  codigo_regime_especial_tributacao: string | null;
-  tipo_servico: string;
-  intermediario_servico: boolean;
-  valor_pis: number;
-  valor_cofins: number;
-  valor_csll: number;
-  outras_retencoes: number;
-  aliquota_pis: number;
-  aliquota_cofins: number;
-  aliquota_csll: number;
+  clients?: {
+    name: string;
+    document: string;
+    email?: string;
+    street?: string;
+    street_number?: string;
+    complement?: string;
+    neighborhood?: string;
+    city?: string;
+    state?: string;
+    zip_code?: string;
+  };
 }
 
 export interface NFSeEvento {
@@ -148,7 +135,6 @@ export interface NFSeFormData {
   comissao_percentual?: number;
   numero_rps?: string;
   serie_rps?: string;
-  // Campos específicos para São Paulo
   responsavel_retencao?: string;
   local_servico?: string;
   codigo_atividade?: string;
