@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -92,7 +91,7 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
         .eq('type', selectedTab)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (error) {
         if (error.code !== 'PGRST116') { // Não encontrado
@@ -181,11 +180,12 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
 
   const handleValidateCertificate = async () => {
     setIsValidating(true);
+    const currentConfig = selectedTab === 'nfse' ? nfseConfig : nfceConfig; // Definimos config aqui
+    
     try {
       console.log("Iniciando validação do certificado...");
-      const config = selectedTab === 'nfse' ? nfseConfig : nfceConfig;
       
-      if (!config.certificado_digital || !config.senha_certificado) {
+      if (!currentConfig.certificado_digital || !currentConfig.senha_certificado) {
         throw new Error("Certificado e senha são obrigatórios");
       }
 
@@ -193,8 +193,8 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
 
       const { data, error } = await supabase.functions.invoke('validate-certificate', {
         body: {
-          certificado: config.certificado_digital,
-          senha: config.senha_certificado,
+          certificado: currentConfig.certificado_digital,
+          senha: currentConfig.senha_certificado,
         }
       });
 
@@ -211,8 +211,8 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
           .from('certificates')
           .upsert({
             type: selectedTab,
-            certificate_data: config.certificado_digital,
-            certificate_password: config.senha_certificado,
+            certificate_data: currentConfig.certificado_digital,
+            certificate_password: currentConfig.senha_certificado,
             valid_until: data.validade,
             is_valid: true
           });
@@ -225,16 +225,16 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
         if (selectedTab === 'nfse') {
           setNfseConfig({
             ...nfseConfig,
-            certificado_digital: config.certificado_digital,
-            senha_certificado: config.senha_certificado,
+            certificado_digital: currentConfig.certificado_digital,
+            senha_certificado: currentConfig.senha_certificado,
             certificado_valido: true,
             certificado_validade: data.validade
           });
         } else {
           setNfceConfig({
             ...nfceConfig,
-            certificado_digital: config.certificado_digital,
-            senha_certificado: config.senha_certificado,
+            certificado_digital: currentConfig.certificado_digital,
+            senha_certificado: currentConfig.senha_certificado,
             certificado_valido: true,
             certificado_validade: data.validade
           });
@@ -257,8 +257,8 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
           .from('certificates')
           .upsert({
             type: selectedTab,
-            certificate_data: config.certificado_digital,
-            certificate_password: config.senha_certificado,
+            certificate_data: currentConfig.certificado_digital,
+            certificate_password: currentConfig.senha_certificado,
             is_valid: false,
             valid_until: null
           });
