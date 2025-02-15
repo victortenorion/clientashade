@@ -684,7 +684,7 @@ export type Database = {
           created_at: string | null
           data_cancelamento: string | null
           data_competencia: string
-          data_emissao: string | null
+          data_emissao: string
           data_emissao_rps: string | null
           data_exclusao: string | null
           data_hora_nfe: string | null
@@ -716,6 +716,7 @@ export type Database = {
           intermediario_servico: boolean | null
           iss_a_pagar: number | null
           iss_pago: number | null
+          iss_retido: string | null
           local_servico: string | null
           matricula_obra: string | null
           motivo_cancelamento: string | null
@@ -727,7 +728,7 @@ export type Database = {
           numero_endereco_tomador: string | null
           numero_guia: string | null
           numero_nfse: number
-          numero_rps: string | null
+          numero_rps: string
           observacoes: string | null
           opcao_simples: string | null
           optante_mei: boolean | null
@@ -740,13 +741,14 @@ export type Database = {
           razao_social_prestador: string | null
           razao_social_tomador: string | null
           regime_especial: string | null
+          regime_especial_tributacao: string | null
           repasse_plano_saude: number | null
           responsavel_retencao: string | null
           retencao_inss: boolean | null
           retencao_ir: boolean | null
           retencao_iss: boolean | null
           retencao_pis_cofins_csll: boolean | null
-          serie_rps: string | null
+          serie_rps: string
           service_order_id: string | null
           situacao_aceite: string | null
           situacao_nota: string | null
@@ -764,7 +766,7 @@ export type Database = {
           tipo_endereco_tomador: string | null
           tipo_regime_especial: string | null
           tipo_registro: string | null
-          tipo_rps: string | null
+          tipo_rps: string
           tipo_servico: string | null
           tributacao_rps: string | null
           uf_prestador: string | null
@@ -819,7 +821,7 @@ export type Database = {
           created_at?: string | null
           data_cancelamento?: string | null
           data_competencia: string
-          data_emissao?: string | null
+          data_emissao?: string
           data_emissao_rps?: string | null
           data_exclusao?: string | null
           data_hora_nfe?: string | null
@@ -851,6 +853,7 @@ export type Database = {
           intermediario_servico?: boolean | null
           iss_a_pagar?: number | null
           iss_pago?: number | null
+          iss_retido?: string | null
           local_servico?: string | null
           matricula_obra?: string | null
           motivo_cancelamento?: string | null
@@ -862,7 +865,7 @@ export type Database = {
           numero_endereco_tomador?: string | null
           numero_guia?: string | null
           numero_nfse?: number
-          numero_rps?: string | null
+          numero_rps: string
           observacoes?: string | null
           opcao_simples?: string | null
           optante_mei?: boolean | null
@@ -875,13 +878,14 @@ export type Database = {
           razao_social_prestador?: string | null
           razao_social_tomador?: string | null
           regime_especial?: string | null
+          regime_especial_tributacao?: string | null
           repasse_plano_saude?: number | null
           responsavel_retencao?: string | null
           retencao_inss?: boolean | null
           retencao_ir?: boolean | null
           retencao_iss?: boolean | null
           retencao_pis_cofins_csll?: boolean | null
-          serie_rps?: string | null
+          serie_rps: string
           service_order_id?: string | null
           situacao_aceite?: string | null
           situacao_nota?: string | null
@@ -899,7 +903,7 @@ export type Database = {
           tipo_endereco_tomador?: string | null
           tipo_regime_especial?: string | null
           tipo_registro?: string | null
-          tipo_rps?: string | null
+          tipo_rps?: string
           tipo_servico?: string | null
           tributacao_rps?: string | null
           uf_prestador?: string | null
@@ -954,7 +958,7 @@ export type Database = {
           created_at?: string | null
           data_cancelamento?: string | null
           data_competencia?: string
-          data_emissao?: string | null
+          data_emissao?: string
           data_emissao_rps?: string | null
           data_exclusao?: string | null
           data_hora_nfe?: string | null
@@ -986,6 +990,7 @@ export type Database = {
           intermediario_servico?: boolean | null
           iss_a_pagar?: number | null
           iss_pago?: number | null
+          iss_retido?: string | null
           local_servico?: string | null
           matricula_obra?: string | null
           motivo_cancelamento?: string | null
@@ -997,7 +1002,7 @@ export type Database = {
           numero_endereco_tomador?: string | null
           numero_guia?: string | null
           numero_nfse?: number
-          numero_rps?: string | null
+          numero_rps?: string
           observacoes?: string | null
           opcao_simples?: string | null
           optante_mei?: boolean | null
@@ -1010,13 +1015,14 @@ export type Database = {
           razao_social_prestador?: string | null
           razao_social_tomador?: string | null
           regime_especial?: string | null
+          regime_especial_tributacao?: string | null
           repasse_plano_saude?: number | null
           responsavel_retencao?: string | null
           retencao_inss?: boolean | null
           retencao_ir?: boolean | null
           retencao_iss?: boolean | null
           retencao_pis_cofins_csll?: boolean | null
-          serie_rps?: string | null
+          serie_rps?: string
           service_order_id?: string | null
           situacao_aceite?: string | null
           situacao_nota?: string | null
@@ -1034,7 +1040,7 @@ export type Database = {
           tipo_endereco_tomador?: string | null
           tipo_regime_especial?: string | null
           tipo_registro?: string | null
-          tipo_rps?: string | null
+          tipo_rps?: string
           tipo_servico?: string | null
           tributacao_rps?: string | null
           uf_prestador?: string | null
