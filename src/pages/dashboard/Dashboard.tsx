@@ -55,15 +55,22 @@ const Dashboard = () => {
   const hasAllPermissions = userPermissions.includes("all");
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw error;
+      }
+      
+      // Limpar o refresh token ao fazer logout
+      localStorage.removeItem('supabase.refresh-token');
+      
+      navigate("/");
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Erro ao sair",
         description: "Tente novamente em alguns instantes.",
       });
-    } else {
-      navigate("/");
     }
   };
 
@@ -126,10 +133,26 @@ const Dashboard = () => {
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate("/");
-      } else {
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error("Erro ao verificar sessão:", sessionError);
+          navigate("/");
+          return;
+        }
+
+        if (!session) {
+          navigate("/");
+          return;
+        }
+
+        // Verificar e atualizar o refresh token
+        const storedRefreshToken = localStorage.getItem('supabase.refresh-token');
+        if (!storedRefreshToken || storedRefreshToken !== session.refresh_token) {
+          localStorage.setItem('supabase.refresh-token', session.refresh_token || '');
+        }
+
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("username")
@@ -162,12 +185,16 @@ const Dashboard = () => {
         } else if (storeData) {
           console.log("Loja do usuário:", storeData.store_id);
         }
+      } catch (error) {
+        console.error("Erro ao verificar usuário:", error);
+        navigate("/");
       }
     };
     
     checkUser();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed in Dashboard:", event);
       if (!session) {
         navigate("/");
       }

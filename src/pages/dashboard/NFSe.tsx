@@ -45,7 +45,7 @@ const NFSePage = () => {
   const [selectedNFSeId, setSelectedNFSeId] = useState<string | null>(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [motivoCancelamento, setMotivoCancelamento] = useState("");
-  const [nfseCancelamento, setNfseCancelamento] = useState<string | null>(null);
+  const [nfceCancelamento, setNfceCancelamento] = useState<string | null>(null);
   const [showLogsDialog, setShowLogsDialog] = useState(false);
   const [selectedNFSeIdForLogs, setSelectedNFSeIdForLogs] = useState<string | null>(null);
   const [nfseToEdit, setNfseToEdit] = useState<NFSe | null>(null);
@@ -86,8 +86,12 @@ const NFSePage = () => {
 
       return data as NFSe[];
     },
-    refetchInterval: 5000 // Atualiza a cada 5 segundos quando houver notas em processamento
+    refetchInterval: 5000
   });
+
+  const refreshData = () => {
+    queryClient.invalidateQueries({ queryKey: ["nfse"] });
+  };
 
   const handleSendToSefaz = async (nfseId: string) => {
     try {
@@ -108,7 +112,7 @@ const NFSePage = () => {
         description: "Acompanhe o status do processamento nos logs.",
       });
 
-      queryClient.invalidateQueries({ queryKey: ["nfse"] });
+      refreshData();
       setSelectedNFSeIdForLogs(nfseId);
       setShowLogsDialog(true);
     } catch (error: any) {
@@ -233,7 +237,7 @@ const NFSePage = () => {
 
       setNfseToEdit(null);
       setShowEmissaoDialog(false);
-      refetch();
+      refreshData();
     } catch (error: any) {
       toast({
         title: "Erro ao salvar NFS-e",
@@ -246,7 +250,7 @@ const NFSePage = () => {
   };
 
   const handleCancelarNFSe = async () => {
-    if (!nfseCancelamento || !motivoCancelamento) return;
+    if (!nfceCancelamento || !motivoCancelamento) return;
 
     try {
       const { error } = await supabase
@@ -257,12 +261,12 @@ const NFSePage = () => {
           data_cancelamento: new Date().toISOString(),
           status_sefaz: "cancelada"
         })
-        .eq("id", nfseCancelamento);
+        .eq("id", nfceCancelamento);
 
       if (error) throw error;
 
       await supabase.from("nfse_eventos").insert({
-        nfse_id: nfseCancelamento,
+        nfse_id: nfceCancelamento,
         tipo_evento: "cancelamento",
         descricao: motivoCancelamento,
         status: "concluido"
@@ -274,8 +278,8 @@ const NFSePage = () => {
 
       setShowCancelDialog(false);
       setMotivoCancelamento("");
-      setNfseCancelamento(null);
-      refetch();
+      setNfceCancelamento(null);
+      refreshData();
     } catch (error: any) {
       toast({
         title: "Erro ao cancelar NFS-e",
@@ -314,7 +318,7 @@ const NFSePage = () => {
         title: "Envio cancelado com sucesso",
       });
 
-      refetch();
+      refreshData();
     } catch (error: any) {
       toast({
         title: "Erro ao cancelar envio",
@@ -438,7 +442,7 @@ const NFSePage = () => {
                             variant="outline"
                             size="icon"
                             onClick={() => {
-                              setNfseCancelamento(nota.id);
+                              setNfceCancelamento(nota.id);
                               setShowCancelDialog(true);
                             }}
                             title="Cancelar NFS-e"
@@ -507,7 +511,7 @@ const NFSePage = () => {
               onClick={() => {
                 setShowCancelDialog(false);
                 setMotivoCancelamento("");
-                setNfseCancelamento(null);
+                setNfceCancelamento(null);
               }}
             >
               Cancelar

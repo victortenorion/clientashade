@@ -16,14 +16,39 @@ export function LoginForm() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate("/dashboard");
+    const checkSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Erro ao verificar sessão:", error);
+          return;
+        }
+
+        if (session) {
+          navigate("/dashboard");
+        }
+      } catch (error) {
+        console.error("Erro ao verificar sessão:", error);
       }
     };
-    
-    checkUser();
+
+    checkSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, session);
+      if (event === 'SIGNED_IN' && session) {
+        navigate("/dashboard");
+      } else if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+        console.log("Token refreshed or signed out");
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,7 +64,6 @@ export function LoginForm() {
 
       if (signInError) {
         console.error("Erro de login:", signInError);
-        // Mensagem mais específica baseada no erro
         if (signInError.message.includes("Invalid login credentials")) {
           throw new Error("Email ou senha incorretos");
         }
@@ -48,11 +72,22 @@ export function LoginForm() {
 
       if (data.session) {
         console.log("Login bem-sucedido:", data.session.user.id);
-        toast({
-          title: "Login realizado com sucesso!",
-          description: "Bem-vindo ao sistema.",
-        });
-        navigate("/dashboard");
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          throw sessionError;
+        }
+
+        if (session) {
+          // Armazenar o refresh token
+          localStorage.setItem('supabase.refresh-token', session.refresh_token || '');
+          
+          toast({
+            title: "Login realizado com sucesso!",
+            description: "Bem-vindo ao sistema.",
+          });
+          navigate("/dashboard");
+        }
       }
     } catch (error: any) {
       console.error("Erro completo:", error);
@@ -124,3 +159,4 @@ export function LoginForm() {
     </div>
   );
 }
+
