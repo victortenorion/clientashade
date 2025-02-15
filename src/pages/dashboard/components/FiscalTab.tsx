@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -12,6 +11,8 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/lib/supabase";
 
 interface FiscalConfig {
   service_code: string;
@@ -79,6 +80,40 @@ export const FiscalTab: React.FC<FiscalTabProps> = ({
   handleFiscalConfigSave,
   handleSaveAllConfigs,
 }) => {
+  const { toast } = useToast();
+  const [isValidating, setIsValidating] = useState(false);
+
+  const handleValidateNFSeSP = async () => {
+    setIsValidating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('validate-nfse-sp');
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast({
+          title: "Sucesso",
+          description: "Configurações da NFS-e SP válidas",
+        });
+      } else {
+        toast({
+          title: "Atenção",
+          description: data.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      console.error('Erro na validação:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao validar configurações da NFS-e SP",
+        variant: "destructive",
+      });
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
   const filteredServiceCodes = serviceCodes.filter(
     (code) =>
       code.code.toLowerCase().includes(serviceCodeSearch.toLowerCase()) ||
@@ -90,7 +125,16 @@ export const FiscalTab: React.FC<FiscalTabProps> = ({
       <Card>
         <CardContent className="pt-6">
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Configurações Fiscais</h3>
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold">Configurações Fiscais</h3>
+              <Button 
+                variant="outline" 
+                onClick={handleValidateNFSeSP}
+                disabled={isValidating}
+              >
+                {isValidating ? "Validando..." : "Validar Configurações NFS-e SP"}
+              </Button>
+            </div>
 
             <div className="grid gap-4">
               <div className="space-y-2">

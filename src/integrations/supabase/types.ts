@@ -1051,6 +1051,7 @@ export type Database = {
       nfse_sp_settings: {
         Row: {
           codigo_regime_tributario: string | null
+          config_status: string | null
           cpf_responsavel: string | null
           created_at: string
           id: string
@@ -1060,6 +1061,7 @@ export type Database = {
           intermediario_inscricao_municipal: string | null
           iss_retido_intermediario: boolean | null
           lote_rps_numero: number | null
+          mensagem_verificacao: string | null
           operacao_tributacao: string | null
           producao_intermediario: boolean | null
           proxy_host: string | null
@@ -1080,6 +1082,7 @@ export type Database = {
           servico_valor_item: number | null
           tipo_documento: string | null
           tipo_regime_especial: string | null
+          ultima_verificacao: string | null
           updated_at: string
           versao_schema: string | null
           wsdl_homologacao_url: string | null
@@ -1087,6 +1090,7 @@ export type Database = {
         }
         Insert: {
           codigo_regime_tributario?: string | null
+          config_status?: string | null
           cpf_responsavel?: string | null
           created_at?: string
           id?: string
@@ -1096,6 +1100,7 @@ export type Database = {
           intermediario_inscricao_municipal?: string | null
           iss_retido_intermediario?: boolean | null
           lote_rps_numero?: number | null
+          mensagem_verificacao?: string | null
           operacao_tributacao?: string | null
           producao_intermediario?: boolean | null
           proxy_host?: string | null
@@ -1116,6 +1121,7 @@ export type Database = {
           servico_valor_item?: number | null
           tipo_documento?: string | null
           tipo_regime_especial?: string | null
+          ultima_verificacao?: string | null
           updated_at?: string
           versao_schema?: string | null
           wsdl_homologacao_url?: string | null
@@ -1123,6 +1129,7 @@ export type Database = {
         }
         Update: {
           codigo_regime_tributario?: string | null
+          config_status?: string | null
           cpf_responsavel?: string | null
           created_at?: string
           id?: string
@@ -1132,6 +1139,7 @@ export type Database = {
           intermediario_inscricao_municipal?: string | null
           iss_retido_intermediario?: boolean | null
           lote_rps_numero?: number | null
+          mensagem_verificacao?: string | null
           operacao_tributacao?: string | null
           producao_intermediario?: boolean | null
           proxy_host?: string | null
@@ -1152,6 +1160,7 @@ export type Database = {
           servico_valor_item?: number | null
           tipo_documento?: string | null
           tipo_regime_especial?: string | null
+          ultima_verificacao?: string | null
           updated_at?: string
           versao_schema?: string | null
           wsdl_homologacao_url?: string | null
@@ -1243,6 +1252,33 @@ export type Database = {
           tipo?: string
           ultima_tentativa?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      service_codes: {
+        Row: {
+          aliquota_iss: number | null
+          code: string
+          created_at: string
+          description: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          aliquota_iss?: number | null
+          code: string
+          created_at?: string
+          description: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          aliquota_iss?: number | null
+          code?: string
+          created_at?: string
+          description?: string
+          id?: string
+          updated_at?: string
         }
         Relationships: []
       }
