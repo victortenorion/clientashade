@@ -44,7 +44,7 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
     data_competencia: new Date().toISOString().split("T")[0],
     deducoes: 0,
     observacoes: "",
-    natureza_operacao: "1",
+    natureza_operacao: "1", // 1 = Tributação no município de São Paulo
     municipio_prestacao: "",
     cnae: "",
     retencao_ir: false,
@@ -63,7 +63,7 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
     local_servico: "tomador",
     optante_mei: false,
     prestador_incentivador_cultural: false,
-    tributacao_rps: "T",
+    tributacao_rps: "T", // T = Tributado em São Paulo
     enviar_email_tomador: true,
     enviar_email_intermediario: false,
     intermediario_servico: false,
@@ -72,7 +72,6 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
     aliquota_csll: 0,
     outras_retencoes: 0,
     codigo_regime_especial_tributacao: null,
-    data_emissao: new Date().toISOString().split("T")[0],
     status_transmissao: "pendente",
     status_sefaz: "pendente",
     aliquota_iss: 0,
@@ -85,6 +84,7 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
     valor_csll: 0,
     valor_total: 0
   });
+  
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -153,9 +153,9 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
           const valor_servicos = typedServiceOrder.total_price;
           const aliquota_iss = spSettings?.servico_aliquota || 0;
           const valor_iss = (valor_servicos * aliquota_iss) / 100;
-          const deducoes = 0; // Valor inicial das deduções
+          const deducoes = 0;
           const base_calculo = valor_servicos - deducoes;
-          const valor_total = valor_servicos - deducoes; // Valor total inicial é igual ao valor dos serviços menos deduções
+          const valor_total = base_calculo;
 
           setFormData(prevData => ({
             ...prevData,
@@ -163,7 +163,7 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
             codigo_servico: companyInfo?.codigo_servico || "",
             discriminacao_servicos: servicesDescription,
             valor_servicos: typedServiceOrder.total_price,
-            valor_total, // Definindo o valor total inicial
+            valor_total,
             base_calculo,
             deducoes,
             observacoes: `Ordem de Serviço #${typedServiceOrder.order_number}`,
@@ -175,7 +175,11 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
             aliquota_iss,
             valor_iss,
             status_transmissao: "pendente",
-            status_sefaz: "pendente"
+            status_sefaz: "pendente",
+            natureza_operacao: "1", // Tributação no município
+            tributacao_rps: "T", // Tributado em São Paulo
+            responsavel_retencao: "cliente",
+            local_servico: "tomador"
           }));
         }
       } catch (error: any) {

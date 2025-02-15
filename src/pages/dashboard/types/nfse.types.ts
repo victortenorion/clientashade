@@ -50,7 +50,7 @@ export interface NFSeEvento {
 }
 
 export interface NFSeFormData {
-  id?: string; // Added this field
+  id?: string;
   client_id: string;
   codigo_servico: string;
   discriminacao_servicos: string;
@@ -86,6 +86,17 @@ export interface NFSeFormData {
   aliquota_csll: number;
   outras_retencoes: number;
   codigo_regime_especial_tributacao: string | null;
+  aliquota_iss: number;
+  valor_iss: number;
+  base_calculo: number;
+  valor_pis: number;
+  valor_cofins: number;
+  valor_inss: number;
+  valor_ir: number;
+  valor_csll: number;
+  valor_total: number;
+  status_transmissao: string;
+  status_sefaz: string;
 }
 
 export interface RPSResponse {
@@ -93,4 +104,3 @@ export interface RPSResponse {
   serie_rps_padrao: string;
   tipo_rps: string;
 }
-
