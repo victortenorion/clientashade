@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { NFSe, NFSeFormData, RPSResponse } from "./types/nfse.types";
+import { NFSe, NFSeFormData } from "./types/nfse.types";
 import { format } from "date-fns";
 import { Plus, Pencil, Trash2, Send, XCircle, Printer, List, FileDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";

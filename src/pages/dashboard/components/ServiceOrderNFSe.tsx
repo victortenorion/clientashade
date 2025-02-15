@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { NFSeForm } from "./NFSeForm";
@@ -85,6 +84,7 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
     razao_social_tomador: "",
     inscricao_municipal_tomador: "",
     inscricao_estadual_tomador: "",
+    tipo_endereco_tomador: "R",
     endereco_tomador: "",
     numero_endereco_tomador: "",
     complemento_endereco_tomador: "",
@@ -118,10 +118,9 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
     comissao_percentual: 0,
     responsavel_retencao: "tomador",
     local_servico: "tomador",
-    tipo_documento_intermediario: "3",
-    municipio_prestacao_codigo: "",
-    municipio_prestacao: "",
-    observacoes: ""
+    aliquota_pis: 0,
+    aliquota_cofins: 0,
+    aliquota_csll: 0
   });
   
   const { toast } = useToast();

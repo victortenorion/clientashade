@@ -100,6 +100,10 @@ export interface NFSe {
   comissao_percentual: number;
   responsavel_retencao: string;
   local_servico: string;
+  base_calculo?: number;
+  aliquota_pis?: number;
+  aliquota_cofins?: number;
+  aliquota_csll?: number;
   clients?: {
     name: string;
     document: string;
@@ -193,4 +197,17 @@ export interface NFSeFormData {
   observacoes?: string;
   responsavel_retencao: string;
   local_servico: string;
+  aliquota_pis?: number;
+  aliquota_cofins?: number;
+  aliquota_csll?: number;
+}
+
+export interface NFSeEvento {
+  id: string;
+  nfse_id: string;
+  tipo_evento: string;
+  descricao: string;
+  data_evento: string;
+  status: string;
+  mensagem_sefaz?: string;
 }
