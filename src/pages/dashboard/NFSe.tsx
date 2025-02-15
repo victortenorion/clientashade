@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { NFSe, NFSeFormData } from "./types/nfse.types";
+import { NFSe, NFSeFormData, RPSResponse } from "./types/nfse.types";
 import { format } from "date-fns";
 import { Plus, Pencil, Trash2, Send, XCircle, Printer, List, FileDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -30,7 +30,6 @@ import { NFSeSefazLogs } from "./components/NFSeSefazLogs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
-import { formatMoney } from "@/lib/format";
 
 interface ProcessNFSeResponse {
   success: boolean;
@@ -184,71 +183,17 @@ const NFSePage = () => {
         serie_rps: data.serie_rps || "1",
         responsavel_retencao: data.responsavel_retencao || "cliente",
         local_servico: data.local_servico || "tomador",
+        optante_mei: data.optante_mei || false,
+        prestador_incentivador_cultural: data.prestador_incentivador_cultural || false,
         tributacao_rps: data.tributacao_rps || "T",
-        enviar_email_tomador: data.enviar_email_tomador ?? true,
-        enviar_email_intermediario: data.enviar_email_intermediario ?? false,
-        intermediario_servico: data.intermediario_servico ?? false,
+        enviar_email_tomador: data.enviar_email_tomador || true,
+        enviar_email_intermediario: data.enviar_email_intermediario || false,
+        intermediario_servico: data.intermediario_servico || false,
         aliquota_pis: data.aliquota_pis || 0,
         aliquota_cofins: data.aliquota_cofins || 0,
         aliquota_csll: data.aliquota_csll || 0,
         outras_retencoes: data.outras_retencoes || 0,
-        tipo_rps: data.tipo_rps || "RPS",
-        tipo_documento_prestador: data.tipo_documento_prestador || "2",
-        tipo_endereco_prestador: data.tipo_endereco_prestador || "R",
-        tipo_documento_tomador: data.tipo_documento_tomador || "2",
-        tipo_endereco_tomador: data.tipo_endereco_tomador || "R",
-        iss_retido: data.iss_retido || "N",
-        situacao_nota: data.situacao_nota || "T",
-        opcao_simples: data.opcao_simples || "4",
-        status_sefaz: data.status_sefaz || "pendente",
-        status_transmissao: data.status_transmissao || "pendente",
-        valor_total: data.valor_total || 0,
-        valor_iss: data.valor_iss || 0,
-        aliquota_iss: data.aliquota_iss || 0,
-        valor_deducoes: data.valor_deducoes || 0,
-        valor_pis: data.valor_pis || 0,
-        valor_cofins: data.valor_cofins || 0,
-        valor_inss: data.valor_inss || 0,
-        valor_ir: data.valor_ir || 0,
-        valor_csll: data.valor_csll || 0,
-        valor_carga_tributaria: data.valor_carga_tributaria || 0,
-        percentual_carga_tributaria: data.percentual_carga_tributaria || 0,
-        data_emissao: data.data_emissao || new Date().toISOString().split("T")[0],
-        data_fato_gerador: data.data_fato_gerador || new Date().toISOString().split("T")[0],
-        inscricao_prestador: data.inscricao_prestador || "",
-        documento_prestador: data.documento_prestador || "",
-        razao_social_prestador: data.razao_social_prestador || "",
-        endereco_prestador: data.endereco_prestador || "",
-        numero_endereco_prestador: data.numero_endereco_prestador || "",
-        complemento_endereco_prestador: data.complemento_endereco_prestador || "",
-        bairro_prestador: data.bairro_prestador || "",
-        cidade_prestador: data.cidade_prestador || "",
-        uf_prestador: data.uf_prestador || "",
-        cep_prestador: data.cep_prestador || "",
-        email_prestador: data.email_prestador || "",
-        documento_tomador: data.documento_tomador || "",
-        razao_social_tomador: data.razao_social_tomador || "",
-        endereco_tomador: data.endereco_tomador || "",
-        numero_endereco_tomador: data.numero_endereco_tomador || "",
-        complemento_endereco_tomador: data.complemento_endereco_tomador || "",
-        bairro_tomador: data.bairro_tomador || "",
-        cidade_tomador: data.cidade_tomador || "",
-        uf_tomador: data.uf_tomador || "",
-        cep_tomador: data.cep_tomador || "",
-        email_tomador: data.email_tomador || "",
-        codigo_regime_especial_tributacao: data.codigo_regime_especial_tributacao || "",
-        tipo_regime_especial: data.tipo_regime_especial || "",
-        codigo_servico_municipio: data.codigo_servico_municipio || "",
-        unidade_codigo: data.unidade_codigo || "",
-        codigo_tributacao_municipio: data.codigo_tributacao_municipio || "",
-        codigo_proprio: data.codigo_proprio || "",
-        inscricao_estadual_prestador: data.inscricao_estadual_prestador || "",
-        inscricao_municipal_prestador: data.inscricao_municipal_prestador || "",
-        codigo_pais_prestador: data.codigo_pais_prestador || "1058",
-        codigo_pais_tomador: data.codigo_pais_tomador || "1058",
-        regime_especial: data.regime_especial || "",
-        fonte_tributos: data.fonte_tributos || "I",
-        tipo_servico: data.tipo_servico || "P"
+        codigo_regime_especial_tributacao: data.codigo_regime_especial_tributacao
       };
 
       setNfseToEdit(formData);
@@ -266,44 +211,89 @@ const NFSePage = () => {
     try {
       setIsEmitindo(true);
 
-      if (!formData.client_id) {
-        throw new Error("ID do cliente é obrigatório");
+      if (nfseToEdit) {
+        const { error: updateError } = await supabase
+          .from("nfse")
+          .update({
+            client_id: formData.client_id,
+            codigo_servico: formData.codigo_servico,
+            discriminacao_servicos: formData.discriminacao_servicos,
+            valor_servicos: formData.valor_servicos,
+            data_competencia: formData.data_competencia,
+            observacoes: formData.observacoes,
+            deducoes: formData.deducoes || 0,
+            natureza_operacao: formData.natureza_operacao,
+            municipio_prestacao: formData.municipio_prestacao,
+            cnae: formData.cnae,
+            retencao_ir: formData.retencao_ir,
+            percentual_ir: formData.percentual_ir,
+            retencao_iss: formData.retencao_iss,
+            desconto_iss: formData.desconto_iss,
+            retencao_inss: formData.retencao_inss,
+            retencao_pis_cofins_csll: formData.retencao_pis_cofins_csll,
+            percentual_tributos_ibpt: formData.percentual_tributos_ibpt,
+            desconto_incondicional: formData.desconto_incondicional,
+            vendedor_id: formData.vendedor_id,
+            comissao_percentual: formData.comissao_percentual,
+            numero_rps: formData.numero_rps,
+            serie_rps: formData.serie_rps,
+          })
+          .eq("id", nfseToEdit.id);
+
+        if (updateError) throw updateError;
+
+        toast({
+          title: "NFS-e atualizada com sucesso",
+        });
+      } else {
+        const { data: config, error: configError } = await supabase
+          .from("nfse_config")
+          .select("*")
+          .maybeSingle();
+
+        if (configError) throw configError;
+
+        if (!config || !config.certificado_digital) {
+          toast({
+            title: "Erro ao emitir NFS-e",
+            description: "Configure o certificado digital antes de emitir notas fiscais.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const { data: servico, error: servicoError } = await supabase
+          .from("nfse_servicos")
+          .select("*")
+          .eq("codigo", formData.codigo_servico)
+          .maybeSingle();
+
+        if (servicoError) throw servicoError;
+
+        const { data: nfse, error: nfseError } = await supabase
+          .from("nfse")
+          .insert({
+            client_id: formData.client_id,
+            codigo_servico: formData.codigo_servico,
+            discriminacao_servicos: formData.discriminacao_servicos,
+            valor_servicos: formData.valor_servicos,
+            data_competencia: formData.data_competencia,
+            observacoes: formData.observacoes,
+            deducoes: formData.deducoes || 0,
+            aliquota_iss: servico?.aliquota_iss,
+            ambiente: config.ambiente,
+            status_sefaz: "pendente",
+          })
+          .select()
+          .single();
+
+        if (nfseError) throw nfseError;
+
+        toast({
+          title: "NFS-e gerada com sucesso",
+          description: `NFS-e número ${nfse.numero_nfse} foi gerada e está aguardando processamento.`,
+        });
       }
-
-      const { data: servico, error: servicoError } = await supabase
-        .from("nfse_servicos")
-        .select("*")
-        .eq("codigo", formData.codigo_servico)
-        .maybeSingle();
-
-      if (servicoError) throw servicoError;
-
-      const { data: nfseConfig, error: configError } = await supabase
-        .from("nfse_config")
-        .select("ambiente")
-        .single();
-
-      if (configError) throw configError;
-
-      const nfseData = {
-        ...formData,
-        ambiente: nfseConfig.ambiente,
-        status_sefaz: "pendente",
-        aliquota_iss: servico?.aliquota_iss
-      };
-
-      const { data: nfse, error: nfseError } = await supabase
-        .from("nfse")
-        .insert(nfseData)
-        .select()
-        .single();
-
-      if (nfseError) throw nfseError;
-
-      toast({
-        title: "NFS-e gerada com sucesso",
-        description: `NFS-e número ${nfse.numero_nfse} foi gerada e está aguardando processamento.`,
-      });
 
       setNfseToEdit(null);
       setShowEmissaoDialog(false);
@@ -449,14 +439,13 @@ const NFSePage = () => {
 
     const headers = [
       "Tipo de Registro",
-      "Data de Emissão",
+      "Nº NFS-e",
+      "Data Hora NFE",
+      "Código de Verificação da NFS-e",
       "Tipo de RPS",
       "Série do RPS",
       "Número do RPS",
-      "Situação do RPS",
-      "Número da NFS-e",
-      "Data de Emissão da NFS-e",
-      "Código de Verificação",
+      "Data do Fato Gerador",
       "Inscrição Municipal do Prestador",
       "Indicador de CPF/CNPJ do Prestador",
       "CPF/CNPJ do Prestador",
@@ -470,14 +459,18 @@ const NFSePage = () => {
       "UF do Prestador",
       "CEP do Prestador",
       "Email do Prestador",
-      "Regime Especial",
-      "Opção Simples",
-      "Código do Serviço Municipal",
-      "Discriminação dos Serviços",
+      "Opção Pelo Simples",
+      "Situação da Nota Fiscal",
+      "Data de Cancelamento",
+      "Nº da Guia",
+      "Data de Quitação da Guia Vinculada a Nota Fiscal",
       "Valor dos Serviços",
       "Valor das Deduções",
-      "Código do Município da Prestação",
-      "Código da Tributação",
+      "Código do Serviço Prestado na Nota Fiscal",
+      "Alíquota",
+      "ISS devido",
+      "Valor do Crédito",
+      "ISS Retido",
       "Indicador de CPF/CNPJ do Tomador",
       "CPF/CNPJ do Tomador",
       "Inscrição Municipal do Tomador",
@@ -492,89 +485,155 @@ const NFSePage = () => {
       "UF do Tomador",
       "CEP do Tomador",
       "Email do Tomador",
-      "Situação da Nota Fiscal",
-      "ISS Retido",
-      "Valor do ISS",
-      "Alíquota do ISS",
-      "Base de Cálculo",
-      "Valor do PIS",
-      "Valor do COFINS",
-      "Valor do INSS",
-      "Valor do IR",
-      "Valor do CSLL",
-      "Fonte de Tributos",
-      "Código do País do Prestador",
-      "Código do País do Tomador"
+      "Nº NFS-e Substituta",
+      "ISS pago",
+      "ISS a pagar",
+      "Indicador de CPF/CNPJ do Intermediário",
+      "CPF/CNPJ do Intermediário",
+      "Inscrição Municipal do Intermediário",
+      "Razão Social do Intermediário",
+      "Repasse do Plano de Saúde",
+      "PIS/PASEP",
+      "COFINS",
+      "INSS",
+      "IR",
+      "CSLL",
+      "Carga tributária: Valor",
+      "Carga tributária: Porcentagem",
+      "Carga tributária: Fonte",
+      "CEI",
+      "Matrícula da Obra",
+      "Município Prestação - cód. IBGE",
+      "Situação do Aceite",
+      "Encapsulamento",
+      "Valor Total Recebido",
+      "Tipo de Consolidação",
+      "Nº NFS-e Consolidada",
+      "Campo Reservado",
+      "Discriminação dos Serviços"
     ];
 
     const csvData = notas
       .filter(nota => !nota.excluida)
       .map((nota) => [
         nota.tipo_registro || "2",
-        format(new Date(nota.data_emissao), "dd/MM/yyyy"),
+        nota.numero_nfse,
+        format(new Date(nota.data_hora_nfe || nota.data_emissao), "dd/MM/yyyy HH:mm:ss"),
+        nota.codigo_verificacao,
         nota.tipo_rps || "RPS",
-        nota.serie_rps || "1",
-        nota.numero_rps || "",
-        nota.situacao_nota || "N",
-        nota.numero_nfse || "",
-        nota.data_hora_nfe ? format(new Date(nota.data_hora_nfe), "dd/MM/yyyy HH:mm:ss") : "",
-        nota.codigo_verificacao || "",
-        nota.inscricao_municipal_prestador || "",
-        nota.tipo_documento_prestador || "2",
-        nota.documento_prestador || "",
-        nota.razao_social_prestador || "",
+        nota.serie_rps,
+        nota.numero_rps,
+        format(new Date(nota.data_fato_gerador || nota.data_emissao), "dd/MM/yyyy"),
+        nota.inscricao_prestador,
+        nota.tipo_documento_prestador,
+        nota.documento_prestador,
+        nota.razao_social_prestador,
         nota.tipo_endereco_prestador || "R",
-        nota.endereco_prestador || "",
-        nota.numero_endereco_prestador || "",
+        nota.endereco_prestador,
+        nota.numero_endereco_prestador,
         nota.complemento_endereco_prestador || "",
-        nota.bairro_prestador || "",
-        nota.cidade_prestador || "",
-        nota.uf_prestador || "",
-        nota.cep_prestador || "",
-        nota.email_prestador || "",
-        nota.regime_especial || "",
-        nota.opcao_simples || "4",
-        nota.codigo_servico_municipio || "",
-        nota.discriminacao_servicos || "",
-        formatMoney(nota.valor_servicos || 0).replace("R$", "").trim(),
+        nota.bairro_prestador,
+        nota.cidade_prestador,
+        nota.uf_prestador,
+        nota.cep_prestador,
+        nota.email_prestador,
+        nota.opcao_simples,
+        nota.cancelada ? "C" : "T",
+        nota.data_cancelamento ? format(new Date(nota.data_cancelamento), "dd/MM/yyyy") : "",
+        nota.numero_guia || "",
+        nota.data_quitacao_guia ? format(new Date(nota.data_quitacao_guia), "dd/MM/yyyy") : "",
+        formatMoney(nota.valor_servicos).replace("R$", "").trim(),
         formatMoney(nota.valor_deducoes || 0).replace("R$", "").trim(),
-        nota.municipio_prestacao_codigo || "",
-        nota.codigo_tributacao_municipio || "",
-        nota.tipo_documento_tomador || "2",
-        nota.documento_tomador || "",
+        nota.codigo_servico,
+        nota.aliquota_iss ? `${nota.aliquota_iss}` : "0,00",
+        formatMoney(nota.valor_iss || 0).replace("R$", "").trim(),
+        formatMoney(nota.valor_credito || 0).replace("R$", "").trim(),
+        nota.iss_retido || "N",
+        nota.tipo_documento_tomador,
+        nota.documento_tomador,
         nota.inscricao_municipal_tomador || "",
         nota.inscricao_estadual_tomador || "",
-        nota.razao_social_tomador || "",
-        nota.tipo_endereco_tomador || "R",
-        nota.endereco_tomador || "",
-        nota.numero_endereco_tomador || "",
+        nota.razao_social_tomador,
+        nota.tipo_endereco_tomador || "",
+        nota.endereco_tomador,
+        nota.numero_endereco_tomador,
         nota.complemento_endereco_tomador || "",
-        nota.bairro_tomador || "",
-        nota.cidade_tomador || "",
-        nota.uf_tomador || "",
-        nota.cep_tomador || "",
-        nota.email_tomador || "",
-        nota.situacao_nota || "N",
-        nota.iss_retido || "N",
-        formatMoney(nota.valor_iss || 0).replace("R$", "").trim(),
-        nota.aliquota_iss ? `${nota.aliquota_iss}` : "0,00",
-        formatMoney(nota.base_calculo || 0).replace("R$", "").trim(),
+        nota.bairro_tomador,
+        nota.cidade_tomador,
+        nota.uf_tomador,
+        nota.cep_tomador,
+        nota.email_tomador,
+        nota.nfse_substituta || "",
+        formatMoney(nota.iss_pago || 0).replace("R$", "").trim(),
+        formatMoney(nota.iss_a_pagar || 0).replace("R$", "").trim(),
+        nota.tipo_documento_intermediario || "",
+        nota.documento_intermediario || "",
+        nota.inscricao_municipal_intermediario || "",
+        nota.razao_social_intermediario || "",
+        formatMoney(nota.repasse_plano_saude || 0).replace("R$", "").trim(),
         formatMoney(nota.valor_pis || 0).replace("R$", "").trim(),
         formatMoney(nota.valor_cofins || 0).replace("R$", "").trim(),
         formatMoney(nota.valor_inss || 0).replace("R$", "").trim(),
         formatMoney(nota.valor_ir || 0).replace("R$", "").trim(),
         formatMoney(nota.valor_csll || 0).replace("R$", "").trim(),
-        nota.fonte_tributos || "I",
-        nota.codigo_pais_prestador || "1058",
-        nota.codigo_pais_tomador || "1058"
+        formatMoney(nota.valor_carga_tributaria || 0).replace("R$", "").trim(),
+        nota.percentual_carga_tributaria ? `${nota.percentual_carga_tributaria}` : "0,00",
+        nota.fonte_carga_tributaria || "",
+        nota.cei || "",
+        nota.matricula_obra || "",
+        nota.municipio_prestacao_codigo || "",
+        nota.situacao_aceite || "",
+        nota.encapsulamento || "",
+        formatMoney(nota.valor_total_recebido || 0).replace("R$", "").trim(),
+        nota.tipo_consolidacao || "",
+        nota.nfse_consolidada || "",
+        "", // Campo Reservado
+        nota.discriminacao_servicos?.replace(/"/g, '""') || ""
       ]);
 
     // Adiciona linha de total
     const totalRow = [
       "Total",
-      notas.length.toString(), // Quantidade de notas
-      // Preenche o restante das colunas com valores vazios
-      ...Array(headers.length - 2).fill("")
+      "1", // Quantidade de notas
+      "", // Campos vazios
+      "", "",
+      "", "",
+      "", "",
+      "", "",
+      "", "",
+      "", "",
+      "", "",
+      "", "",
+      "", "",
+      "", "",
+      "", "",
+      "", "",
+      formatMoney(notas.reduce((acc, nota) => acc + (nota.valor_servicos || 0), 0)).replace("R$", "").trim(),
+      formatMoney(notas.reduce((acc, nota) => acc + (nota.valor_deducoes || 0), 0)).replace("R$", "").trim(),
+      "", "",
+      formatMoney(notas.reduce((acc, nota) => acc + (nota.valor_iss || 0), 0)).replace("R$", "").trim(),
+      "0,00", // Valor do Crédito
+      "", "",
+      "", "",
+      "", "",
+      "", "",
+      "", "",
+      "", "",
+      "", "",
+      "", "",
+      "", "",
+      "", "",
+      "", "",
+      "", "",
+      "", "",
+      "", "",
+      "", "",
+      "", "",
+      "", "",
+      "", "",
+      "", "",
+      "", "",
+      "", ""
     ];
 
     // Adiciona BOM para Excel reconhecer caracteres especiais
@@ -873,24 +932,27 @@ const NFSePage = () => {
       <NFSeView
         nfseId={selectedNFSeId}
         onClose={() => setSelectedNFSeId(null)}
+        onEdit={handleEditNFSe}
       />
 
-      <Dialog open={showLogsDialog} onOpenChange={setShowLogsDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Logs de Processamento</DialogTitle>
-          </DialogHeader>
-          <NFSeSefazLogs
-            nfseId={selectedNFSeIdForLogs}
-            onClose={() => {
-              setShowLogsDialog(false);
-              setSelectedNFSeIdForLogs(null);
-            }}
-          />
-        </DialogContent>
-      </Dialog>
+      <NFSeSefazLogs
+        nfseId={selectedNFSeIdForLogs}
+        isOpen={showLogsDialog}
+        onClose={() => {
+          setShowLogsDialog(false);
+          setSelectedNFSeIdForLogs(null);
+        }}
+      />
     </div>
   );
+};
+
+const formatMoney = (value: number | null) => {
+  if (value === null) return "R$ 0,00";
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(value);
 };
 
 export default NFSePage;
