@@ -79,17 +79,76 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
   const [selectedTab, setSelectedTab] = useState("nfse");
   const [isSaving, setIsSaving] = useState(false);
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'application/x-pkcs12' && !file.name.endsWith('.pfx')) {
+      toast({
+        title: "Erro",
+        description: "Por favor, selecione um arquivo de certificado digital válido (.pfx)",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const binaryStr = e.target?.result;
+        if (!binaryStr) return;
+
+        // Converte para base64 diretamente
+        const base64 = btoa(
+          new Uint8Array(binaryStr as ArrayBuffer)
+            .reduce((data, byte) => data + String.fromCharCode(byte), '')
+        );
+
+        console.log("Tamanho do certificado em base64:", base64.length);
+
+        if (selectedTab === 'nfse') {
+          setNfseConfig({
+            ...nfseConfig,
+            certificado_digital: base64,
+            certificado_valido: false,
+            certificado_validade: undefined
+          });
+        } else {
+          setNfceConfig({
+            ...nfceConfig,
+            certificado_digital: base64,
+            certificado_valido: false,
+            certificado_validade: undefined
+          });
+        }
+      };
+      reader.readAsArrayBuffer(file); // Lê como ArrayBuffer em vez de DataURL
+    } catch (error) {
+      console.error('Erro ao processar arquivo:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao processar o arquivo do certificado",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleValidateCertificate = async () => {
     setIsValidating(true);
     try {
+      console.log("Iniciando validação do certificado...");
+      const config = selectedTab === 'nfse' ? nfseConfig : nfceConfig;
+      
+      if (!config.certificado_digital || !config.senha_certificado) {
+        throw new Error("Certificado e senha são obrigatórios");
+      }
+
       console.log("Enviando certificado para validação...");
-      const certBase64 = selectedTab === 'nfse' ? nfseConfig.certificado_digital : nfceConfig.certificado_digital;
-      const senha = selectedTab === 'nfse' ? nfseConfig.senha_certificado : nfceConfig.senha_certificado;
 
       const { data, error } = await supabase.functions.invoke('validate-certificate', {
         body: {
-          certificado: certBase64,
-          senha: senha,
+          certificado: config.certificado_digital,
+          senha: config.senha_certificado,
         }
       });
 
@@ -101,45 +160,42 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
       console.log("Resposta da validação:", data);
 
       if (data.success) {
+        const newConfig = {
+          ...(selectedTab === 'nfse' ? nfseConfig : nfceConfig),
+          certificado_valido: true,
+          certificado_validade: data.validade,
+        };
+
         if (selectedTab === 'nfse') {
-          setNfseConfig({
-            ...nfseConfig,
-            certificado_valido: true,
-            certificado_validade: data.validade,
-          });
+          setNfseConfig(newConfig);
         } else {
-          setNfceConfig({
-            ...nfceConfig,
-            certificado_valido: true,
-            certificado_validade: data.validade,
-          });
+          setNfceConfig(newConfig);
         }
 
         toast({
           title: "Sucesso",
-          description: "Certificado digital válido",
+          description: "Certificado digital válido até " + 
+            new Date(data.validade).toLocaleDateString(),
         });
       } else {
         throw new Error(data.message || 'Certificado inválido');
       }
     } catch (error: any) {
       console.error('Erro na validação:', error);
+      const newConfig = {
+        ...(selectedTab === 'nfse' ? nfseConfig : nfceConfig),
+        certificado_valido: false,
+        certificado_validade: undefined,
+      };
+
       if (selectedTab === 'nfse') {
-        setNfseConfig({
-          ...nfseConfig,
-          certificado_valido: false,
-          certificado_validade: undefined,
-        });
+        setNfseConfig(newConfig);
       } else {
-        setNfceConfig({
-          ...nfceConfig,
-          certificado_valido: false,
-          certificado_validade: undefined,
-        });
+        setNfceConfig(newConfig);
       }
 
       toast({
-        title: "Erro",
+        title: "Erro na validação",
         description: error.message || "Certificado digital inválido",
         variant: "destructive",
       });
@@ -216,25 +272,13 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                     <Input
                       type="file"
                       accept=".pfx"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onload = (event) => {
-                            const base64 = event.target?.result?.toString().split(',')[1];
-                            if (base64) {
-                              setNfseConfig({
-                                ...nfseConfig,
-                                certificado_digital: base64,
-                                certificado_valido: false,
-                                certificado_validade: undefined
-                              });
-                            }
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }}
+                      onChange={handleFileUpload}
                     />
+                    {nfseConfig.certificado_digital && (
+                      <p className="text-sm text-gray-500">
+                        Certificado carregado
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">

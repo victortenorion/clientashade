@@ -32,37 +32,35 @@ serve(async (req) => {
     }
 
     try {
-      // Remove o prefixo "data:application/x-pkcs12;base64," se existir
-      const base64Certificate = certificado.includes('base64,') 
-        ? certificado.split('base64,')[1] 
-        : certificado;
-
-      console.log("Recebido certificado de tamanho:", base64Certificate.length)
+      console.log("Recebido certificado de tamanho:", certificado.length)
       
-      // Decodifica o certificado base64
-      const certificateBuffer = Uint8Array.from(atob(base64Certificate), c => c.charCodeAt(0))
-      
-      console.log("Tamanho do buffer do certificado:", certificateBuffer.length)
-
-      // Tenta parsear o certificado PKCS#12
-      const result = await pkcs12.parse(certificateBuffer, senha)
-      
-      if (!result) {
-        throw new Error("Falha ao parsear o certificado")
+      // Decodifica o certificado base64 para um buffer
+      let certificateBuffer;
+      try {
+        certificateBuffer = Uint8Array.from(atob(certificado), c => c.charCodeAt(0));
+        console.log("Certificado decodificado com sucesso, tamanho:", certificateBuffer.length);
+      } catch (decodeError) {
+        console.error("Erro ao decodificar certificado:", decodeError);
+        throw new Error("Erro ao decodificar o certificado. Verifique se o arquivo é válido.");
       }
-
-      console.log("Certificado parseado com sucesso")
-
-      // Extrai informações do certificado
-      const cert = result.cert
       
-      if (!cert) {
-        throw new Error("Certificado não encontrado no arquivo")
+      // Tenta parsear o certificado PKCS#12
+      let result;
+      try {
+        result = await pkcs12.parse(certificateBuffer, senha);
+        console.log("Certificado parseado com sucesso");
+      } catch (parseError) {
+        console.error("Erro ao parsear certificado:", parseError);
+        throw new Error("Senha incorreta ou certificado inválido");
+      }
+      
+      if (!result || !result.cert) {
+        throw new Error("Certificado não encontrado no arquivo");
       }
 
       // Verifica a validade do certificado
-      const notBefore = new Date(cert.notBefore)
-      const notAfter = new Date(cert.notAfter)
+      const notBefore = new Date(result.cert.notBefore)
+      const notAfter = new Date(result.cert.notAfter)
       const now = new Date()
 
       if (now < notBefore || now > notAfter) {
@@ -99,7 +97,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          message: 'Certificado ou senha inválidos. Detalhes: ' + error.message 
+          message: error.message || 'Erro ao validar certificado'
         }),
         { 
           headers: { 
