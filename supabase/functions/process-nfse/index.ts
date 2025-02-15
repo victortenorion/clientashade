@@ -36,12 +36,12 @@ serve(async (req) => {
 
       console.log("Cliente Supabase criado, atualizando status...")
 
-      // Atualizar status inicial para 'aguardando'
+      // Atualizar status inicial para 'processando'
       const { error: statusError } = await supabaseClient
         .from('nfse')
         .update({ 
-          status_transmissao: 'pendente',
-          status_sefaz: 'aguardando'
+          status_transmissao: 'processando',
+          status_sefaz: 'processando'
         })
         .eq('id', nfseId)
 
@@ -233,7 +233,7 @@ serve(async (req) => {
   </RPS>
 </PedidoEnvioLoteRPS>`
 
-      // Salvar XML de envio e atualizar status para 'processando'
+      // Salvar XML de envio e manter status como 'processando'
       console.log("Salvando XML de envio...")
       const { error: xmlError } = await supabaseClient
         .from('nfse')
@@ -252,17 +252,17 @@ serve(async (req) => {
         .insert({
           tipo: 'nfse',
           documento_id: nfseId,
-          status: 'pendente'
+          status: 'processando'
         })
 
       if (queueError) throw queueError
 
-      // Atualizar status para 'pendente' após registrar na fila
+      // Manter status como 'processando' após registrar na fila
       const { error: finalError } = await supabaseClient
         .from('nfse')
         .update({ 
-          status_transmissao: 'pendente',
-          status_sefaz: 'pendente'
+          status_transmissao: 'processando',
+          status_sefaz: 'processando'
         })
         .eq('id', nfseId)
 
