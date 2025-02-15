@@ -35,9 +35,11 @@ serve(async (req) => {
 
     try {
       // Verificar se o certificado base64 é válido
+      let validBase64 = true;
       try {
         atob(certificado);
       } catch (e) {
+        validBase64 = false;
         console.error("Certificado base64 inválido:", e);
         return new Response(
           JSON.stringify({ 
@@ -65,9 +67,14 @@ serve(async (req) => {
       let result;
       try {
         result = await pkcs12.parse(certificateBytes, senhaLimpa);
-        console.log("Parse do certificado bem sucedido");
+        console.log("Parse do certificado bem sucedido:", result);
       } catch (error) {
-        console.error("Erro no parse do certificado:", error);
+        console.error("Erro detalhado no parse do certificado:", {
+          message: error.message,
+          name: error.name,
+          stack: error.stack
+        });
+        
         const errorMessage = error.message?.toLowerCase() || '';
         
         if (errorMessage.includes('mac verify failure') || 
@@ -179,7 +186,11 @@ serve(async (req) => {
       );
 
     } catch (error) {
-      console.error("Erro ao validar certificado:", error);
+      console.error("Erro detalhado na validação:", {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      });
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -190,7 +201,11 @@ serve(async (req) => {
       );
     }
   } catch (error) {
-    console.error("Erro geral na requisição:", error);
+    console.error("Erro detalhado na requisição:", {
+      message: error.message,
+      name: error.name,
+      stack: error.stack
+    });
     return new Response(
       JSON.stringify({ 
         success: false, 
