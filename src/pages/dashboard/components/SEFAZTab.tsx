@@ -83,21 +83,15 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
   const handleValidateCertificate = async () => {
     setIsValidating(true);
     try {
-      const response = await fetch('https://eroqgxpjiqmftkgqyunj.supabase.co/functions/v1/validate-certificate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('validate-certificate', {
+        body: {
           certificado: selectedTab === 'nfse' ? nfseConfig.certificado_digital : nfceConfig.certificado_digital,
           senha: selectedTab === 'nfse' ? nfseConfig.senha_certificado : nfceConfig.senha_certificado,
-        }),
+        }
       });
 
-      const data = await response.json();
-
-      if (data.error) {
-        throw new Error(data.error);
+      if (error) {
+        throw error;
       }
 
       if (selectedTab === 'nfse') {
@@ -118,7 +112,7 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
         title: "Sucesso",
         description: "Certificado digital válido",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro na validação:', error);
       if (selectedTab === 'nfse') {
         setNfseConfig({
