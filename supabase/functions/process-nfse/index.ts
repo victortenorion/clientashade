@@ -28,7 +28,33 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    // Primeiro, buscar configurações do certificado
+    console.log("Buscando configurações do certificado...")
+    const { data: nfseConfig, error: configError } = await supabaseClient
+      .from('nfse_config')
+      .select('*')
+      .limit(1)
+      .maybeSingle()
+
+    if (configError) {
+      console.error("Erro ao buscar configurações do certificado:", configError)
+      throw new Error('Erro ao buscar configurações do certificado: ' + configError.message)
+    }
+    
+    if (!nfseConfig) {
+      throw new Error('Configurações da NFS-e não encontradas. Configure o certificado digital primeiro.')
+    }
+
+    if (!nfseConfig.certificado_digital) {
+      throw new Error('Certificado digital não encontrado. Faça o upload do certificado.')
+    }
+
+    if (!nfseConfig.senha_certificado) {
+      throw new Error('Senha do certificado não configurada.')
+    }
+
     // Buscar dados da NFS-e
+    console.log("Buscando dados da NFS-e...")
     const { data: nfse, error: nfseError } = await supabaseClient
       .from('nfse')
       .select(`
@@ -49,19 +75,27 @@ serve(async (req) => {
       .eq('id', nfseId)
       .maybeSingle()
 
-    if (nfseError) throw nfseError
+    if (nfseError) {
+      console.error("Erro ao buscar NFS-e:", nfseError)
+      throw nfseError
+    }
     if (!nfse) throw new Error('NFS-e não encontrada')
 
     // Buscar configurações da NFS-e SP
+    console.log("Buscando configurações da NFS-e SP...")
     const { data: spSettings, error: spError } = await supabaseClient
       .from('nfse_sp_settings')
       .select('*')
       .limit(1)
       .maybeSingle()
 
-    if (spError) throw spError
+    if (spError) {
+      console.error("Erro ao buscar configurações SP:", spError)
+      throw spError
+    }
+
     if (!spSettings) {
-      // Se não encontrar configurações, criar configurações padrão
+      console.log("Criando configurações padrão da NFS-e SP...")
       const { data: newSettings, error: newSettingsError } = await supabaseClient
         .from('nfse_sp_settings')
         .insert({
@@ -78,24 +112,20 @@ serve(async (req) => {
       if (!newSettings) throw new Error('Erro ao criar configurações padrão da NFS-e SP')
     }
 
-    // Buscar certificado digital
-    const { data: nfseConfig, error: configError } = await supabaseClient
-      .from('nfse_config')
-      .select('*')
-      .limit(1)
-      .maybeSingle()
-
-    if (configError) throw configError
-    if (!nfseConfig) throw new Error('Configurações da NFS-e não encontradas. Configure o certificado digital primeiro.')
-
-    if (!nfseConfig.certificado_digital || !nfseConfig.senha_certificado) {
-      throw new Error('Certificado digital não configurado')
+    // Validar certificado
+    try {
+      console.log("Validando certificado digital...")
+      const certBuffer = Buffer.from(nfseConfig.certificado_digital, 'base64')
+      if (!certBuffer || certBuffer.length === 0) {
+        throw new Error('Certificado digital inválido')
+      }
+    } catch (certError) {
+      console.error("Erro na validação do certificado:", certError)
+      throw new Error('Erro ao validar certificado digital: ' + certError.message)
     }
 
-    // Decodificar certificado
-    const certBuffer = Buffer.from(nfseConfig.certificado_digital, 'base64')
-
     // Registrar evento de início do processamento
+    console.log("Registrando evento de processamento...")
     const { error: eventError } = await supabaseClient
       .from('nfse_eventos')
       .insert({
@@ -108,6 +138,7 @@ serve(async (req) => {
     if (eventError) throw eventError
 
     // Atualizar status da NFS-e
+    console.log("Atualizando status da NFS-e...")
     const { error: updateError } = await supabaseClient
       .from('nfse')
       .update({ status_sefaz: 'processando' })
@@ -116,6 +147,7 @@ serve(async (req) => {
     if (updateError) throw updateError
 
     // Montar XML de envio
+    console.log("Montando XML de envio...")
     const xmlEnvio = `<?xml version="1.0" encoding="UTF-8"?>
 <PedidoEnvioLoteRPS xmlns="http://www.prefeitura.sp.gov.br/nfe">
   <Cabecalho xmlns="" Versao="${spSettings?.versao_schema || '2.00'}">
@@ -170,6 +202,7 @@ serve(async (req) => {
 </PedidoEnvioLoteRPS>`
 
     // Salvar XML de envio
+    console.log("Salvando XML de envio...")
     const { error: xmlError } = await supabaseClient
       .from('nfse')
       .update({ 
@@ -181,6 +214,7 @@ serve(async (req) => {
     if (xmlError) throw xmlError
 
     // Registrar na fila de transmissão
+    console.log("Registrando na fila de transmissão...")
     const { error: queueError } = await supabaseClient
       .from('sefaz_transmission_queue')
       .insert({
@@ -191,6 +225,7 @@ serve(async (req) => {
 
     if (queueError) throw queueError
 
+    console.log("Processamento concluído com sucesso")
     return new Response(
       JSON.stringify({
         success: true,
