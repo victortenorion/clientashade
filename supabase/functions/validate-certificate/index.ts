@@ -8,13 +8,15 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
     const { certificado, senha } = await req.json()
+    
+    console.log("Recebido certificado e senha");
+    console.log("Senha recebida:", senha);
     
     if (!certificado || !senha) {
       return new Response(
@@ -23,7 +25,6 @@ serve(async (req) => {
           message: 'Certificado e senha são obrigatórios' 
         }),
         { 
-          status: 400, 
           headers: { 
             'Content-Type': 'application/json',
             ...corsHeaders 
@@ -33,47 +34,23 @@ serve(async (req) => {
     }
 
     try {
-      console.log("Recebido certificado de tamanho:", certificado.length)
-      
-      // Limpa e valida o base64 antes de decodificar
-      const base64Clean = certificado.replace(/\s/g, '');
-      if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64Clean)) {
-        throw new Error("Certificado não está em formato base64 válido");
-      }
-      
       // Decodifica o certificado base64 para um buffer
-      let certificateBuffer;
-      try {
-        certificateBuffer = Uint8Array.from(atob(base64Clean), c => c.charCodeAt(0));
-        console.log("Certificado decodificado com sucesso, tamanho:", certificateBuffer.length);
-      } catch (decodeError) {
-        console.error("Erro ao decodificar certificado:", decodeError);
-        throw new Error("Erro ao decodificar o certificado. Verifique se o arquivo é válido.");
+      const binaryString = atob(certificado);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
       }
+
+      console.log("Certificado decodificado, tentando parsear...");
       
       // Tenta parsear o certificado PKCS#12
-      let result;
-      try {
-        result = await pkcs12.parse(certificateBuffer, senha);
-        console.log("Certificado parseado com sucesso");
-      } catch (parseError) {
-        console.error("Erro ao parsear certificado:", parseError);
-        throw new Error("Senha incorreta ou certificado inválido");
-      }
+      const result = await pkcs12.parse(bytes, senha);
       
       if (!result || !result.cert) {
         throw new Error("Certificado não encontrado no arquivo");
       }
 
-      // Verifica informações específicas para NFS-e SP
       const cert = result.cert;
-      
-      // Verifica se é um certificado tipo A1
-      if (cert.keyUsage && !cert.keyUsage.includes('digitalSignature')) {
-        throw new Error("O certificado deve ser do tipo A1 com permissão para assinatura digital");
-      }
-
-      // Verifica a validade do certificado
       const notBefore = new Date(cert.notBefore);
       const notAfter = new Date(cert.notAfter);
       const now = new Date();
@@ -93,7 +70,6 @@ serve(async (req) => {
         );
       }
 
-      // Certificado válido
       return new Response(
         JSON.stringify({
           success: true,
@@ -112,7 +88,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          message: error.message || 'Erro ao validar certificado'
+          message: 'Senha incorreta ou certificado inválido' 
         }),
         { 
           headers: { 
@@ -127,7 +103,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        message: 'Erro interno: ' + error.message 
+        message: 'Erro interno do servidor' 
       }),
       { 
         status: 500, 
