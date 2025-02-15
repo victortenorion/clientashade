@@ -502,14 +502,23 @@ const NFSePage = () => {
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <div className="flex gap-2">
-                      {(nota.status_sefaz === "pendente" || nota.cancelada) && (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleEditNFSe(nota.id)}
+                        title="Editar"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+
+                      {nota.status_sefaz === "pendente" && (
                         <Button
                           variant="outline"
                           size="icon"
-                          onClick={() => handleDeleteNFSe(nota.id)}
-                          title="Excluir"
+                          onClick={() => handleSendToSefaz(nota.id)}
+                          title="Enviar NFS-e"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Send className="h-4 w-4" />
                         </Button>
                       )}
 
@@ -548,12 +557,12 @@ const NFSePage = () => {
                         </>
                       )}
 
-                      {nota.cancelada && (
+                      {(nota.status_sefaz === "pendente" || nota.cancelada) && (
                         <Button
                           variant="outline"
                           size="icon"
                           onClick={() => handleDeleteNFSe(nota.id)}
-                          title="Excluir NFS-e cancelada"
+                          title="Excluir"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
