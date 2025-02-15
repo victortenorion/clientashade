@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import { Buffer } from "https://deno.land/std@0.168.0/node/buffer.ts";
@@ -28,22 +27,28 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Primeiro, buscar configurações do certificado
+    // Primeiro, buscar e validar configurações do certificado
     console.log("Buscando configurações do certificado...")
-    const { data: nfseConfig, error: configError } = await supabaseClient
+    const { data: configs, error: configsError } = await supabaseClient
       .from('nfse_config')
       .select('*')
-      .limit(1)
-      .maybeSingle()
 
-    if (configError) {
-      console.error("Erro ao buscar configurações do certificado:", configError)
-      throw new Error('Erro ao buscar configurações do certificado: ' + configError.message)
+    if (configsError) {
+      console.error("Erro ao buscar configurações do certificado:", configsError)
+      throw new Error('Erro ao buscar configurações do certificado: ' + configsError.message)
     }
+
+    console.log("Configurações encontradas:", configs?.length || 0)
     
+    const nfseConfig = configs?.[0]
+
     if (!nfseConfig) {
+      console.error("Nenhuma configuração encontrada")
       throw new Error('Configurações da NFS-e não encontradas. Configure o certificado digital primeiro.')
     }
+
+    console.log("Certificado digital presente:", !!nfseConfig.certificado_digital)
+    console.log("Senha do certificado presente:", !!nfseConfig.senha_certificado)
 
     if (!nfseConfig.certificado_digital) {
       throw new Error('Certificado digital não encontrado. Faça o upload do certificado.')
@@ -51,6 +56,19 @@ serve(async (req) => {
 
     if (!nfseConfig.senha_certificado) {
       throw new Error('Senha do certificado não configurada.')
+    }
+
+    // Validar certificado
+    try {
+      console.log("Validando certificado digital...")
+      const certBuffer = Buffer.from(nfseConfig.certificado_digital, 'base64')
+      if (!certBuffer || certBuffer.length === 0) {
+        throw new Error('Certificado digital inválido ou vazio')
+      }
+      console.log("Tamanho do certificado:", certBuffer.length, "bytes")
+    } catch (certError) {
+      console.error("Erro na validação do certificado:", certError)
+      throw new Error('Erro ao validar certificado digital: ' + certError.message)
     }
 
     // Buscar dados da NFS-e
@@ -110,18 +128,6 @@ serve(async (req) => {
 
       if (newSettingsError) throw newSettingsError
       if (!newSettings) throw new Error('Erro ao criar configurações padrão da NFS-e SP')
-    }
-
-    // Validar certificado
-    try {
-      console.log("Validando certificado digital...")
-      const certBuffer = Buffer.from(nfseConfig.certificado_digital, 'base64')
-      if (!certBuffer || certBuffer.length === 0) {
-        throw new Error('Certificado digital inválido')
-      }
-    } catch (certError) {
-      console.error("Erro na validação do certificado:", certError)
-      throw new Error('Erro ao validar certificado digital: ' + certError.message)
     }
 
     // Registrar evento de início do processamento
