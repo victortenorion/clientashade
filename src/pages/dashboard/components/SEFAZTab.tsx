@@ -9,45 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
-
-interface NFCeConfig {
-  certificado_digital: string;
-  senha_certificado: string;
-  ambiente: string;
-  token_ibpt: string;
-  csc_id: string;
-  csc_token: string;
-  inscricao_estadual: string;
-  regime_tributario: string;
-  certificado_valido?: boolean;
-  certificado_validade?: string;
-}
-
-interface NFSeConfig {
-  certificado_digital: string;
-  senha_certificado: string;
-  ambiente: string;
-  inscricao_municipal: string;
-  codigo_municipio: string;
-  regime_tributario: string;
-  regime_especial: string;
-  incentivo_fiscal: boolean;
-  certificado_valido?: boolean;
-  certificado_validade?: string;
-  numero_inicial_rps?: number;
-  aliquota_servico?: number;
-  versao_schema?: string;
-  lote_rps_numero?: number;
-  operacao_tributacao?: string;
-  codigo_regime_tributario?: string;
-  tipo_regime_especial?: string;
-}
-
-interface FiscalConfig {
-  service_code: string;
-  cnae: string;
-  tax_regime: string;
-}
+import { NFCeConfig, NFSeConfig, FiscalConfig, ValidateCertificateResponse } from "../types/config.types";
 
 interface SEFAZTabProps {
   nfceConfig: NFCeConfig;
@@ -230,7 +192,9 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
 
         const { error: saveError } = await supabase
           .from('certificates')
-          .upsert(certificateData);
+          .upsert(certificateData, {
+            onConflict: 'type'
+          });
 
         if (saveError) throw new Error("Erro ao salvar certificado no banco de dados");
 
@@ -250,8 +214,9 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
 
         toast({
           title: "Sucesso",
-          description: "Certificado digital válido até " + 
-            new Date(data.validade!).toLocaleDateString(),
+          description: data.validade ? 
+            `Certificado digital válido até ${new Date(data.validade).toLocaleDateString()}` :
+            "Certificado digital válido",
         });
       } else {
         throw new Error(data.message || "Certificado inválido");
@@ -269,6 +234,8 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
             certificate_password: currentConfig.senha_certificado,
             is_valid: false,
             valid_until: null
+          }, {
+            onConflict: 'type'
           });
       } catch (dbError) {
         console.error('Erro ao atualizar status do certificado:', dbError);
