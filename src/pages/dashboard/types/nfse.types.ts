@@ -1,4 +1,3 @@
-
 export interface NFSe {
   id: string;
   numero_nfse: number;
@@ -55,36 +54,36 @@ export interface NFSeFormData {
   discriminacao_servicos: string;
   valor_servicos: number;
   data_competencia: string;
-  deducoes?: number;
-  observacoes?: string;
-  natureza_operacao?: string;
-  municipio_prestacao?: string;
-  cnae?: string;
-  retencao_ir?: boolean;
-  percentual_ir?: number;
-  retencao_iss?: boolean;
-  desconto_iss?: boolean;
-  retencao_inss?: boolean;
-  retencao_pis_cofins_csll?: boolean;
-  percentual_tributos_ibpt?: number;
-  desconto_incondicional?: number;
-  vendedor_id?: string;
-  comissao_percentual?: number;
-  numero_rps?: string;
-  serie_rps?: string;
-  responsavel_retencao?: string;
-  local_servico?: string;
-  optante_mei?: boolean;
-  prestador_incentivador_cultural?: boolean;
-  tributacao_rps?: string;
-  enviar_email_tomador?: boolean;
-  enviar_email_intermediario?: boolean;
-  intermediario_servico?: boolean;
-  aliquota_pis?: number;
-  aliquota_cofins?: number;
-  aliquota_csll?: number;
-  outras_retencoes?: number;
-  codigo_regime_especial_tributacao?: string | null;
+  deducoes: number;
+  observacoes: string;
+  natureza_operacao: string;
+  municipio_prestacao: string;
+  cnae: string;
+  retencao_ir: boolean;
+  percentual_ir: number;
+  retencao_iss: boolean;
+  desconto_iss: boolean;
+  retencao_inss: boolean;
+  retencao_pis_cofins_csll: boolean;
+  percentual_tributos_ibpt: number;
+  desconto_incondicional: number;
+  vendedor_id: string;
+  comissao_percentual: number;
+  numero_rps: string;
+  serie_rps: string;
+  responsavel_retencao: string;
+  local_servico: string;
+  optante_mei: boolean;
+  prestador_incentivador_cultural: boolean;
+  tributacao_rps: string;
+  enviar_email_tomador: boolean;
+  enviar_email_intermediario: boolean;
+  intermediario_servico: boolean;
+  aliquota_pis: number;
+  aliquota_cofins: number;
+  aliquota_csll: number;
+  outras_retencoes: number;
+  codigo_regime_especial_tributacao: string | null;
 }
 
 export interface RPSResponse {

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { NFSeForm } from "./NFSeForm";
@@ -55,7 +54,7 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
     retencao_pis_cofins_csll: false,
     percentual_tributos_ibpt: 0,
     desconto_incondicional: 0,
-    vendedor_id: null, // Alterado para null em vez de string vazia
+    vendedor_id: "", // Alterado para string vazia
     comissao_percentual: 0,
     numero_rps: "",
     serie_rps: "1",
@@ -169,10 +168,10 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
     try {
       setIsLoading(true);
 
-      // Remover campos UUID vazios ou undefined antes de enviar
+      // Preparar dados para envio, convertendo string vazia para null quando necessário
       const cleanedData = {
         ...data,
-        vendedor_id: data.vendedor_id || null,
+        vendedor_id: data.vendedor_id || null, // Converter string vazia para null apenas no envio
         service_order_id: serviceOrderId,
         status_sefaz: "pendente",
         status_transmissao: "pendente"
