@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import * as pkcs12 from "https://deno.land/x/pkcs12@v0.1.0/mod.ts";
+import { parse } from "npm:@digitalbazaar/pkcs12@2.1.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -71,7 +71,10 @@ serve(async (req) => {
       console.log("Tentando parsear o certificado PKCS#12...");
       let result;
       try {
-        result = await pkcs12.parse(certificateBytes, senhaLimpa);
+        result = await parse({
+          pkcs12Der: certificateBytes,
+          password: senhaLimpa
+        });
         console.log("Parse do certificado bem sucedido");
       } catch (error: any) {
         console.error("Erro detalhado no parse do certificado:", {
@@ -101,7 +104,7 @@ serve(async (req) => {
         );
       }
 
-      if (!result || !result.cert) {
+      if (!result || !result.certInfos || result.certInfos.length === 0) {
         console.log("Certificado não encontrado no arquivo");
         return new Response(
           JSON.stringify({ 
@@ -113,9 +116,9 @@ serve(async (req) => {
       }
 
       // Extrair informações do certificado
-      const cert = result.cert;
-      const notBefore = new Date(cert.notBefore);
-      const notAfter = new Date(cert.notAfter);
+      const cert = result.certInfos[0];
+      const notBefore = new Date(cert.validity.notBefore);
+      const notAfter = new Date(cert.validity.notAfter);
       const now = new Date();
 
       // Verificar validade do certificado
@@ -133,7 +136,7 @@ serve(async (req) => {
       }
 
       // Verificar chave privada
-      if (!result.key) {
+      if (!result.keyInfo) {
         console.log("Chave privada não encontrada");
         return new Response(
           JSON.stringify({ 
