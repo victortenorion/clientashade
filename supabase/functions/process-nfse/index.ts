@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import { Buffer } from "https://deno.land/std@0.168.0/node/buffer.ts";
@@ -7,6 +8,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Request-Headers': '*'
+}
+
+function formatDate(date: string) {
+  return date.split('T')[0].replace(/-/g, '');
+}
+
+function cleanDocument(doc: string) {
+  return doc.replace(/\D/g, '');
 }
 
 console.log("Função de processamento de NFS-e iniciada")
@@ -68,42 +77,41 @@ serve(async (req) => {
 
       if (!certificate || !certificate.certificate_data) {
         console.error("Nenhum certificado válido encontrado")
-        throw new Error('Certificado digital não encontrado. Faça o upload do certificado.')
+        throw new Error('Certificado digital não encontrado ou inválido')
       }
 
-      console.log("Certificado digital encontrado e válido")
-
-      // Buscar e validar configurações do certificado
-      console.log("Buscando configurações do certificado...")
-      const { data: configs, error: configsError } = await supabaseClient
-        .from('nfse_config')
+      // Buscar configurações da NFS-e SP
+      console.log("Buscando configurações da NFS-e SP...")
+      const { data: spSettings, error: spError } = await supabaseClient
+        .from('nfse_sp_settings')
         .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
 
-      if (configsError) {
-        console.error("Erro ao buscar configurações do certificado:", configsError)
-        throw new Error('Erro ao buscar configurações do certificado: ' + configsError.message)
+      if (spError) {
+        console.error("Erro ao buscar configurações SP:", spError)
+        throw spError
       }
 
-      console.log("Configurações encontradas:", configs?.length || 0)
-      
-      const nfseConfig = configs?.[0]
-
-      if (!nfseConfig) {
-        console.error("Nenhuma configuração encontrada")
-        throw new Error('Configurações da NFS-e não encontradas. Configure o certificado digital primeiro.')
+      if (!spSettings) {
+        throw new Error('Configurações da NFS-e SP não encontradas')
       }
 
-      // Validar certificado
-      try {
-        console.log("Validando certificado digital...")
-        const certBuffer = Buffer.from(certificate.certificate_data, 'base64')
-        if (!certBuffer || certBuffer.length === 0) {
-          throw new Error('Certificado digital inválido ou vazio')
-        }
-        console.log("Tamanho do certificado:", certBuffer.length, "bytes")
-      } catch (certError) {
-        console.error("Erro na validação do certificado:", certError)
-        throw new Error('Erro ao validar certificado digital: ' + certError.message)
+      // Buscar configurações da empresa
+      console.log("Buscando configurações da empresa...")
+      const { data: companyInfo, error: companyError } = await supabaseClient
+        .from('company_info')
+        .select('*')
+        .single()
+
+      if (companyError) {
+        console.error("Erro ao buscar configurações da empresa:", companyError)
+        throw companyError
+      }
+
+      if (!companyInfo) {
+        throw new Error('Configurações da empresa não encontradas')
       }
 
       // Buscar dados da NFS-e
@@ -122,7 +130,8 @@ serve(async (req) => {
             neighborhood,
             city,
             state,
-            zip_code
+            zip_code,
+            person_type
           )
         `)
         .eq('id', nfseId)
@@ -134,89 +143,57 @@ serve(async (req) => {
       }
       if (!nfse) throw new Error('NFS-e não encontrada')
 
-      // Buscar configurações da NFS-e SP
-      console.log("Buscando configurações da NFS-e SP...")
-      const { data: spSettings, error: spError } = await supabaseClient
-        .from('nfse_sp_settings')
-        .select('*')
-        .limit(1)
-        .maybeSingle()
-
-      if (spError) {
-        console.error("Erro ao buscar configurações SP:", spError)
-        throw spError
-      }
-
-      if (!spSettings) {
-        console.log("Criando configurações padrão da NFS-e SP...")
-        const { data: newSettings, error: newSettingsError } = await supabaseClient
-          .from('nfse_sp_settings')
-          .insert({
-            versao_schema: '2.00',
-            rps_status: 'N',
-            servico_operacao: '1',
-            servico_exigibilidade: '1',
-            tipo_documento: 'CNPJ'
-          })
-          .select()
-          .single()
-
-        if (newSettingsError) throw newSettingsError
-        if (!newSettings) throw new Error('Erro ao criar configurações padrão da NFS-e SP')
-      }
-
-      // Registrar evento de início do processamento
-      console.log("Registrando evento de processamento...")
-      const { error: eventError } = await supabaseClient
-        .from('nfse_eventos')
-        .insert({
-          nfse_id: nfseId,
-          tipo_evento: 'processamento',
-          descricao: 'Iniciando processamento da NFS-e',
-          status: 'processando'
-        })
-
-      if (eventError) throw eventError
+      // Verificar campos obrigatórios
+      if (!nfse.clients.document) throw new Error('Documento do cliente não informado')
+      if (!nfse.clients.zip_code) throw new Error('CEP do cliente não informado')
+      if (!companyInfo.inscricao_municipal) throw new Error('Inscrição Municipal não configurada')
+      if (!nfse.valor_servicos) throw new Error('Valor dos serviços não informado')
+      if (!nfse.codigo_servico) throw new Error('Código do serviço não informado')
 
       // Montar XML de envio
       console.log("Montando XML de envio...")
+      const inscricaoMunicipal = companyInfo.inscricao_municipal.padStart(8, '0');
       const xmlEnvio = `<?xml version="1.0" encoding="UTF-8"?>
-<PedidoEnvioLoteRPS xmlns="http://www.prefeitura.sp.gov.br/nfe">
-  <Cabecalho xmlns="" Versao="${spSettings?.versao_schema || '2.00'}">
+<PedidoEnvioLoteRPS xmlns="http://www.prefeitura.sp.gov.br/nfe" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Cabecalho xmlns="" Versao="${spSettings.versao_schema || '2.00'}">
     <CPFCNPJRemetente>
-      <CNPJ>${nfse.clients.document.replace(/\D/g, '')}</CNPJ>
+      <CNPJ>${cleanDocument(companyInfo.cnpj)}</CNPJ>
     </CPFCNPJRemetente>
     <transacao>true</transacao>
-    <dtInicio>${nfse.data_competencia}</dtInicio>
-    <dtFim>${nfse.data_competencia}</dtFim>
+    <dtInicio>${formatDate(nfse.data_competencia)}</dtInicio>
+    <dtFim>${formatDate(nfse.data_competencia)}</dtFim>
     <QtdRPS>1</QtdRPS>
-    <ValorTotalServicos>${nfse.valor_servicos}</ValorTotalServicos>
-    <ValorTotalDeducoes>${nfse.deducoes}</ValorTotalDeducoes>
+    <ValorTotalServicos>${nfse.valor_servicos.toFixed(2)}</ValorTotalServicos>
+    <ValorTotalDeducoes>${(nfse.deducoes || 0).toFixed(2)}</ValorTotalDeducoes>
   </Cabecalho>
   <RPS xmlns="">
-    <Assinatura></Assinatura>
+    <Assinatura>${inscricaoMunicipal}${nfse.serie_rps || '1'}${nfse.numero_rps.padStart(12, '0')}${formatDate(nfse.data_emissao)}${(nfse.valor_servicos || 0).toFixed(2).replace('.', '')}${(nfse.deducoes || 0).toFixed(2).replace('.', '')}${cleanDocument(nfse.clients.document)}</Assinatura>
     <ChaveRPS>
-      <InscricaoPrestador>${nfseConfig.inscricao_municipal}</InscricaoPrestador>
+      <InscricaoPrestador>${inscricaoMunicipal}</InscricaoPrestador>
       <SerieRPS>${nfse.serie_rps || '1'}</SerieRPS>
       <NumeroRPS>${nfse.numero_rps}</NumeroRPS>
     </ChaveRPS>
     <TipoRPS>RPS</TipoRPS>
-    <DataEmissao>${nfse.data_emissao}</DataEmissao>
-    <StatusRPS>N</StatusRPS>
-    <TributacaoRPS>T</TributacaoRPS>
-    <ValorServicos>${nfse.valor_servicos}</ValorServicos>
-    <ValorDeducoes>${nfse.deducoes}</ValorDeducoes>
-    <ValorPIS>${nfse.valor_pis || 0}</ValorPIS>
-    <ValorCOFINS>${nfse.valor_cofins || 0}</ValorCOFINS>
-    <ValorINSS>${nfse.valor_inss || 0}</ValorINSS>
-    <ValorIR>${nfse.valor_ir || 0}</ValorIR>
-    <ValorCSLL>${nfse.valor_csll || 0}</ValorCSLL>
-    <CodigoServico>${nfse.codigo_servico}</CodigoServico>
-    <AliquotaServicos>${nfse.aliquota_iss || 0}</AliquotaServicos>
+    <DataEmissao>${formatDate(nfse.data_emissao)}</DataEmissao>
+    <StatusRPS>${spSettings.rps_status || 'N'}</StatusRPS>
+    <TributacaoRPS>${nfse.tributacao_rps || 'T'}</TributacaoRPS>
+    <ValorServicos>${nfse.valor_servicos.toFixed(2)}</ValorServicos>
+    <ValorDeducoes>${(nfse.deducoes || 0).toFixed(2)}</ValorDeducoes>
+    <ValorPIS>${(nfse.valor_pis || 0).toFixed(2)}</ValorPIS>
+    <ValorCOFINS>${(nfse.valor_cofins || 0).toFixed(2)}</ValorCOFINS>
+    <ValorINSS>${(nfse.valor_inss || 0).toFixed(2)}</ValorINSS>
+    <ValorIR>${(nfse.valor_ir || 0).toFixed(2)}</ValorIR>
+    <ValorCSLL>${(nfse.valor_csll || 0).toFixed(2)}</ValorCSLL>
+    <CodigoServico>${nfse.codigo_servico.padStart(5, '0')}</CodigoServico>
+    <AliquotaServicos>${(nfse.aliquota_iss || 0).toFixed(4)}</AliquotaServicos>
     <ISSRetido>${nfse.retencao_iss ? 'true' : 'false'}</ISSRetido>
+    ${nfse.clients.person_type === 'legal' ? `
     <CPFCNPJTomador>
-      <CNPJ>${nfse.clients.document.replace(/\D/g, '')}</CNPJ>
-    </CPFCNPJTomador>
+      <CNPJ>${cleanDocument(nfse.clients.document)}</CNPJ>
+    </CPFCNPJTomador>` : `
+    <CPFCNPJTomador>
+      <CPF>${cleanDocument(nfse.clients.document)}</CPF>
+    </CPFCNPJTomador>`}
     <RazaoSocialTomador>${nfse.clients.name}</RazaoSocialTomador>
     <EnderecoTomador>
       <TipoLogradouro>Rua</TipoLogradouro>
@@ -226,9 +203,9 @@ serve(async (req) => {
       <Bairro>${nfse.clients.neighborhood}</Bairro>
       <Cidade>${nfse.clients.city}</Cidade>
       <UF>${nfse.clients.state}</UF>
-      <CEP>${nfse.clients.zip_code?.replace(/\D/g, '')}</CEP>
+      <CEP>${cleanDocument(nfse.clients.zip_code)}</CEP>
     </EnderecoTomador>
-    <EmailTomador>${nfse.clients.email || ''}</EmailTomador>
+    ${nfse.clients.email ? `<EmailTomador>${nfse.clients.email}</EmailTomador>` : ''}
     <Discriminacao>${nfse.discriminacao_servicos}</Discriminacao>
   </RPS>
 </PedidoEnvioLoteRPS>`
