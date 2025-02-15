@@ -1629,6 +1629,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_service_order_status"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "service_order_statuses"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "service_orders_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
