@@ -1062,8 +1062,11 @@ export type Database = {
           lote_rps_numero: number | null
           operacao_tributacao: string | null
           producao_intermediario: boolean | null
+          proxy_host: string | null
           proxy_host_ssl: string | null
+          proxy_port: string | null
           proxy_port_ssl: string | null
+          rps_status: string | null
           servico_aliquota: number | null
           servico_codigo_item_lista: string | null
           servico_codigo_local_prestacao: string | null
@@ -1095,8 +1098,11 @@ export type Database = {
           lote_rps_numero?: number | null
           operacao_tributacao?: string | null
           producao_intermediario?: boolean | null
+          proxy_host?: string | null
           proxy_host_ssl?: string | null
+          proxy_port?: string | null
           proxy_port_ssl?: string | null
+          rps_status?: string | null
           servico_aliquota?: number | null
           servico_codigo_item_lista?: string | null
           servico_codigo_local_prestacao?: string | null
@@ -1128,8 +1134,11 @@ export type Database = {
           lote_rps_numero?: number | null
           operacao_tributacao?: string | null
           producao_intermediario?: boolean | null
+          proxy_host?: string | null
           proxy_host_ssl?: string | null
+          proxy_port?: string | null
           proxy_port_ssl?: string | null
+          rps_status?: string | null
           servico_aliquota?: number | null
           servico_codigo_item_lista?: string | null
           servico_codigo_local_prestacao?: string | null
