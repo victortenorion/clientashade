@@ -197,9 +197,14 @@ export interface NFSeFormData {
   observacoes?: string;
   responsavel_retencao: string;
   local_servico: string;
+  base_calculo?: number;
   aliquota_pis?: number;
   aliquota_cofins?: number;
   aliquota_csll?: number;
+  tributacao_rps?: string;
+  enviar_email_tomador?: boolean;
+  enviar_email_intermediario?: boolean;
+  intermediario_servico?: boolean;
 }
 
 export interface NFSeEvento {

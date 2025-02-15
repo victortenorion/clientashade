@@ -223,9 +223,16 @@ const NFSePage = () => {
 
       if (servicoError) throw servicoError;
 
+      const { data: nfseConfig, error: configError } = await supabase
+        .from("nfse_config")
+        .select("ambiente")
+        .single();
+
+      if (configError) throw configError;
+
       const nfseData = {
         ...formData,
-        ambiente: config.ambiente,
+        ambiente: nfseConfig.ambiente,
         status_sefaz: "pendente",
         aliquota_iss: servico?.aliquota_iss
       };
