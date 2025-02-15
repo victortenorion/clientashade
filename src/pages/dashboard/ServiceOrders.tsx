@@ -119,7 +119,7 @@ const defaultFormData: ServiceOrderFormData = {
   items: []
 };
 
-const ServiceOrders = () => {
+const ServiceOrdersPage = () => {
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -651,6 +651,10 @@ const ServiceOrders = () => {
     }
   };
 
+  const handleGenerateNFSeForm = () => {
+    navigate("/dashboard/nfse/new");
+  };
+
   useEffect(() => {
     fetchOrders();
   }, [searchTerm]);
@@ -664,27 +668,22 @@ const ServiceOrders = () => {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold">Ordens de Serviço</h2>
-        <Button onClick={handleNewOrder}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nova Ordem
-        </Button>
-      </div>
-      <div className="flex gap-4 items-center">
-        <div className="flex-1">
+        <div className="flex-1 max-w-sm">
           <Input
             placeholder="Buscar ordens..."
             value={searchTerm}
             onChange={handleSearch}
           />
         </div>
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id="serialSearch"
-            checked={isSerialSearch}
-            onCheckedChange={(checked) => setIsSerialSearch(checked as boolean)}
-          />
-          <Label htmlFor="serialSearch">Buscar por N° Série</Label>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleGenerateNFSeForm}>
+            <FileText className="h-4 w-4 mr-2" />
+            Gerar NFS-e
+          </Button>
+          <Button onClick={handleNewOrder}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nova Ordem
+          </Button>
         </div>
       </div>
       <div className="border rounded-lg">
@@ -1102,4 +1101,4 @@ const ServiceOrders = () => {
   );
 };
 
-export default ServiceOrders;
+export default ServiceOrdersPage;
