@@ -30,6 +30,7 @@ import { NFSeSefazLogs } from "./components/NFSeSefazLogs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
+import { navigate } from "react-router-dom";
 
 interface ProcessNFSeResponse {
   success: boolean;
@@ -665,7 +666,7 @@ const NFSePage = () => {
           />
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleDownloadCSV}>
+          <Button variant="outline" onClick={() => navigate("/dashboard/nfse/export")}>
             <FileDown className="h-4 w-4 mr-2" />
             Exportar CSV
           </Button>
