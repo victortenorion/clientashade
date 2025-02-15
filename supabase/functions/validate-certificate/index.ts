@@ -8,6 +8,7 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -34,10 +35,16 @@ serve(async (req) => {
     try {
       console.log("Recebido certificado de tamanho:", certificado.length)
       
+      // Limpa e valida o base64 antes de decodificar
+      const base64Clean = certificado.replace(/\s/g, '');
+      if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64Clean)) {
+        throw new Error("Certificado não está em formato base64 válido");
+      }
+      
       // Decodifica o certificado base64 para um buffer
       let certificateBuffer;
       try {
-        certificateBuffer = Uint8Array.from(atob(certificado), c => c.charCodeAt(0));
+        certificateBuffer = Uint8Array.from(atob(base64Clean), c => c.charCodeAt(0));
         console.log("Certificado decodificado com sucesso, tamanho:", certificateBuffer.length);
       } catch (decodeError) {
         console.error("Erro ao decodificar certificado:", decodeError);
@@ -67,9 +74,9 @@ serve(async (req) => {
       }
 
       // Verifica a validade do certificado
-      const notBefore = new Date(cert.notBefore)
-      const notAfter = new Date(cert.notAfter)
-      const now = new Date()
+      const notBefore = new Date(cert.notBefore);
+      const notAfter = new Date(cert.notAfter);
+      const now = new Date();
 
       if (now < notBefore || now > notAfter) {
         return new Response(
@@ -83,7 +90,7 @@ serve(async (req) => {
               ...corsHeaders 
             } 
           }
-        )
+        );
       }
 
       // Certificado válido
@@ -99,7 +106,7 @@ serve(async (req) => {
             ...corsHeaders 
           } 
         }
-      )
+      );
     } catch (error) {
       console.error('Erro ao validar certificado:', error);
       return new Response(
@@ -113,7 +120,7 @@ serve(async (req) => {
             ...corsHeaders 
           } 
         }
-      )
+      );
     }
   } catch (error) {
     console.error('Erro na requisição:', error);
@@ -129,6 +136,6 @@ serve(async (req) => {
           ...corsHeaders 
         } 
       }
-    )
+    );
   }
 })
