@@ -12,7 +12,7 @@ import { useSession, useSupabaseClient } from "@supabase/auth-helpers-react";
 import Dashboard from "./pages/Dashboard";
 import Clients from "./pages/dashboard/Clients";
 import ServiceOrders from "./pages/dashboard/ServiceOrders";
-import { NFSeForm } from "./pages/dashboard/components/NFSeForm";
+import { NFSeStandalone } from "./pages/dashboard/NFSeStandalone";
 import NFSeFromServiceOrder from "./pages/dashboard/NFSeFromServiceOrder";
 
 function App() {
@@ -32,7 +32,7 @@ function App() {
         <Route path="clients" element={<Clients />} />
         <Route path="service-orders" element={<ServiceOrders />} />
         <Route path="service-orders/:id/nfse" element={<NFSeFromServiceOrder />} />
-        <Route path="nfse/new" element={<NFSeForm />} />
+        <Route path="nfse/new" element={<NFSeStandalone />} />
       </Route>
     </Routes>
   );

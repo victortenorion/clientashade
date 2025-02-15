@@ -84,8 +84,8 @@ const ServiceOrdersPage = () => {
           status_id,
           notes,
           total_price,
-          status: status_id (id, name, color),
-          client: client_id (name, document)
+          status:status_id (id, name, color),
+          client:client_id (name, document)
         `
         )
         .order("created_at", { ascending: false });
@@ -102,7 +102,11 @@ const ServiceOrdersPage = () => {
         throw error;
       }
 
-      const typedData = data as unknown as ServiceOrder[];
+      const typedData = (data as any[]).map(item => ({
+        ...item,
+        status: Array.isArray(item.status) ? item.status[0] : item.status,
+        client: Array.isArray(item.client) ? item.client[0] : item.client
+      })) as ServiceOrder[];
       setServiceOrders(typedData);
     } catch (error: any) {
       toast({
