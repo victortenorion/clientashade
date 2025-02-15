@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -26,7 +27,6 @@ import {
 import { NFSeForm } from "./components/NFSeForm";
 import { NFSeView } from "./components/NFSeView";
 import { NFSeSefazLogs } from "./components/NFSeSefazLogs";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
@@ -42,7 +42,7 @@ const NFSePage = () => {
   const [nfseCancelamento, setNfseCancelamento] = useState<string | null>(null);
   const [showLogsDialog, setShowLogsDialog] = useState(false);
   const [selectedNFSeIdForLogs, setSelectedNFSeIdForLogs] = useState<string | null>(null);
-  const [nfseToEdit, setNfseToEdit] = useState<string | null>(null);
+  const [nfseToEdit, setNfseToEdit] = useState<NFSe | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -70,7 +70,7 @@ const NFSePage = () => {
         throw error;
       }
 
-      return data;
+      return data as NFSe[];
     }
   });
 
@@ -84,10 +84,10 @@ const NFSePage = () => {
         .from("nfse")
         .select(`
           *,
-          client:clients(
+          clients (
             name,
             document,
-            municipal_registration,
+            email,
             street,
             street_number,
             complement,
@@ -98,18 +98,15 @@ const NFSePage = () => {
           )
         `)
         .eq("id", nfseId)
-        .maybeSingle();
+        .single();
 
       if (nfseError) throw nfseError;
-      if (!nfse) {
-        throw new Error('NFS-e não encontrada');
-      }
 
       const { data: config, error: configError } = await supabase
         .from("nfse_config")
         .select("*")
         .limit(1)
-        .maybeSingle();
+        .single();
 
       if (configError) throw configError;
       if (!config) {
@@ -163,7 +160,7 @@ const NFSePage = () => {
             serie: rpsData.serie_rps_padrao,
             tipo: rpsData.tipo_rps
           },
-          cliente: nfse.client
+          cliente: nfse.clients
         },
         response_payload: null
       });
@@ -222,35 +219,28 @@ const NFSePage = () => {
     } catch (error: any) {
       console.error('Erro ao enviar NFSe:', error);
       
-      if (nfseId) {
-        await supabase.from("nfse_sefaz_logs").insert({
-          nfse_id: nfseId,
-          status: "error",
-          message: error.message,
-          request_payload: { nfseId },
-          response_payload: { error: error.message }
-        });
-
-        await supabase
-          .from("nfse")
-          .update({
-            status_sefaz: "erro"
-          })
-          .eq("id", nfseId);
-
-        await supabase
-          .from("sefaz_transmission_queue")
-          .update({ 
-            status: "erro",
-            erro_mensagem: error.message,
-            ultima_tentativa: new Date().toISOString()
-          })
-          .eq("documento_id", nfseId)
-          .eq("tipo", "nfse");
-      }
-
       toast({
-        title: "Erro ao enviar para SEFAZ",
+        title: "Erro ao enviar NFS-e",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditNFSe = async (nfseId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("nfse")
+        .select("*")
+        .eq("id", nfseId)
+        .single();
+
+      if (error) throw error;
+      setNfseToEdit(data);
+      setSelectedNFSeId(null);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao carregar NFS-e",
         description: error.message,
         variant: "destructive",
       });
@@ -288,7 +278,7 @@ const NFSePage = () => {
             numero_rps: formData.numero_rps,
             serie_rps: formData.serie_rps,
           })
-          .eq("id", nfseToEdit);
+          .eq("id", nfseToEdit.id);
 
         if (updateError) throw updateError;
 
@@ -335,7 +325,7 @@ const NFSePage = () => {
             status_sefaz: "pendente",
           })
           .select()
-          .maybeSingle();
+          .single();
 
         if (nfseError) throw nfseError;
 
@@ -406,51 +396,6 @@ const NFSePage = () => {
     });
   };
 
-  const handleEditNFSe = (nfseId: string) => {
-    setNfseToEdit(nfseId);
-    setSelectedNFSeId(null);
-  };
-
-  const handleCancelEnvio = async (nfseId: string) => {
-    try {
-      const { error: nfseError } = await supabase
-        .from("nfse")
-        .update({ status_sefaz: "pendente" })
-        .eq("id", nfseId);
-
-      if (nfseError) throw nfseError;
-
-      const { error: queueError } = await supabase
-        .from("sefaz_transmission_queue")
-        .delete()
-        .eq("documento_id", nfseId)
-        .eq("tipo", "nfse");
-
-      if (queueError) throw queueError;
-
-      toast({
-        title: "Envio cancelado",
-        description: "A NFS-e voltou para o status pendente.",
-      });
-
-      refetch();
-    } catch (error: any) {
-      toast({
-        title: "Erro ao cancelar envio",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const formatMoney = (value: number | null) => {
-    if (value === null) return "R$ 0,00";
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -493,7 +438,7 @@ const NFSePage = () => {
                 </TableCell>
               </TableRow>
             ) : (
-              notas?.map((nota: any) => (
+              notas?.map((nota: NFSe) => (
                 <TableRow 
                   key={nota.id} 
                   className="cursor-pointer hover:bg-muted/50"
@@ -575,17 +520,6 @@ const NFSePage = () => {
                         </>
                       )}
 
-                      {(nota.status_sefaz === "pendente" || nota.cancelada) && (
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleDeleteNFSe(nota.id)}
-                          title="Excluir"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-
                       <Button
                         variant="outline"
                         size="icon"
@@ -615,6 +549,7 @@ const NFSePage = () => {
             onSubmit={handleEmitirNFSe}
             onCancel={() => setShowEmissaoDialog(false)}
             isLoading={isEmitindo}
+            initialData={nfseToEdit}
           />
         </DialogContent>
       </Dialog>
@@ -665,44 +600,6 @@ const NFSePage = () => {
         onEdit={handleEditNFSe}
       />
 
-      <Dialog open={!!nfseToEdit} onOpenChange={() => setNfseToEdit(null)}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Editar NFS-e</DialogTitle>
-          </DialogHeader>
-          <NFSeForm
-            onSubmit={handleEmitirNFSe}
-            onCancel={() => setNfseToEdit(null)}
-            isLoading={isEmitindo}
-            submitButtonText="Salvar Alterações"
-            initialData={nfseToEditData ? {
-              client_id: nfseToEditData.client_id,
-              codigo_servico: nfseToEditData.codigo_servico,
-              discriminacao_servicos: nfseToEditData.discriminacao_servicos,
-              valor_servicos: nfseToEditData.valor_servicos,
-              data_competencia: nfseToEditData.data_competencia,
-              observacoes: nfseToEditData.observacoes || "",
-              deducoes: nfseToEditData.deducoes || 0,
-              natureza_operacao: nfseToEditData.natureza_operacao || "1",
-              municipio_prestacao: nfseToEditData.municipio_prestacao || "",
-              cnae: nfseToEditData.cnae || "",
-              retencao_ir: nfseToEditData.retencao_ir || false,
-              percentual_ir: nfseToEditData.percentual_ir || 0,
-              retencao_iss: nfseToEditData.retencao_iss || false,
-              desconto_iss: nfseToEditData.desconto_iss || false,
-              retencao_inss: nfseToEditData.retencao_inss || false,
-              retencao_pis_cofins_csll: nfseToEditData.retencao_pis_cofins_csll || false,
-              percentual_tributos_ibpt: nfseToEditData.percentual_tributos_ibpt || 0,
-              desconto_incondicional: nfseToEditData.desconto_incondicional || 0,
-              vendedor_id: nfseToEditData.vendedor_id || "",
-              comissao_percentual: nfseToEditData.comissao_percentual || 0,
-              numero_rps: nfseToEditData.numero_rps || "",
-              serie_rps: nfseToEditData.serie_rps || "1",
-            } : undefined}
-          />
-        </DialogContent>
-      </Dialog>
-
       <NFSeSefazLogs
         nfseId={selectedNFSeIdForLogs}
         isOpen={showLogsDialog}
@@ -713,6 +610,14 @@ const NFSePage = () => {
       />
     </div>
   );
+};
+
+const formatMoney = (value: number | null) => {
+  if (value === null) return "R$ 0,00";
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(value);
 };
 
 export default NFSePage;
