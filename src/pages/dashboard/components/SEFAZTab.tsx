@@ -40,6 +40,12 @@ interface NFSeConfig {
   certificado_valido?: boolean;
   certificado_validade?: string;
   numero_inicial_rps?: number;
+  aliquota_servico?: number;
+  versao_schema?: string;
+  lote_rps_numero?: number;
+  operacao_tributacao?: string;
+  codigo_regime_tributario?: string;
+  tipo_regime_especial?: string;
 }
 
 interface FiscalConfig {
@@ -90,22 +96,25 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
           });
         }
 
-        const { data: rpsConfig, error: rpsError } = await supabase
-          .from('nfse_sp_config')
+        const { data: spConfig, error: spError } = await supabase
+          .from('nfse_sp_settings')
           .select('*')
           .order('created_at', { ascending: false })
           .limit(1)
           .single();
 
-        if (rpsError) throw rpsError;
+        if (spError && spError.code !== 'PGRST116') throw spError;
 
-        if (rpsConfig) {
-          console.log('Configuração RPS carregada:', rpsConfig);
-          const updatedConfig = {
+        if (spConfig) {
+          setNfseConfig({
             ...nfseConfig,
-            numero_inicial_rps: rpsConfig.numero_inicial_rps
-          };
-          setNfseConfig(updatedConfig);
+            aliquota_servico: spConfig.aliquota_servico,
+            versao_schema: spConfig.versao_schema,
+            lote_rps_numero: spConfig.lote_rps_numero,
+            operacao_tributacao: spConfig.operacao_tributacao,
+            codigo_regime_tributario: spConfig.codigo_regime_tributario,
+            tipo_regime_especial: spConfig.tipo_regime_especial
+          });
         }
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
@@ -404,53 +413,119 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
       <Card>
         <CardContent className="pt-6">
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Configurações NFS-e</h3>
+            <h3 className="text-lg font-semibold">Configurações NFS-e São Paulo</h3>
 
             <div className="grid gap-4">
               <div className="space-y-2">
-                <Label>Ambiente</Label>
+                <Label>Versão do Schema</Label>
                 <Select
-                  value={nfseConfig.ambiente}
+                  value={nfseConfig.versao_schema || "2.00"}
                   onValueChange={(value) =>
-                    setNfseConfig({ ...nfseConfig, ambiente: value })
+                    setNfseConfig({ ...nfseConfig, versao_schema: value })
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione o ambiente" />
+                    <SelectValue placeholder="Selecione a versão" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="homologacao">Homologação</SelectItem>
-                    <SelectItem value="producao">Produção</SelectItem>
+                    <SelectItem value="2.00">2.00</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label>Inscrição Municipal</Label>
+                <Label>Alíquota de Serviço (%)</Label>
                 <Input
-                  value={nfseConfig.inscricao_municipal}
-                  disabled
-                  className="bg-muted"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Código do Município</Label>
-                <Input
-                  value={nfseConfig.codigo_municipio}
-                  disabled
-                  className="bg-muted"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Incentivo Fiscal</Label>
-                <Switch
-                  checked={nfseConfig.incentivo_fiscal}
-                  onCheckedChange={(checked) =>
+                  type="number"
+                  step="0.01"
+                  value={nfseConfig.aliquota_servico || 0}
+                  onChange={(e) =>
                     setNfseConfig({
                       ...nfseConfig,
-                      incentivo_fiscal: checked,
+                      aliquota_servico: parseFloat(e.target.value)
+                    })
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Código do Regime Tributário</Label>
+                <Select
+                  value={nfseConfig.codigo_regime_tributario || "1"}
+                  onValueChange={(value) =>
+                    setNfseConfig({
+                      ...nfseConfig,
+                      codigo_regime_tributario: value
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o regime tributário" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1 - Simples Nacional</SelectItem>
+                    <SelectItem value="2">2 - Lucro Presumido</SelectItem>
+                    <SelectItem value="3">3 - Lucro Real</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Regime Especial de Tributação</Label>
+                <Select
+                  value={nfseConfig.tipo_regime_especial || ""}
+                  onValueChange={(value) =>
+                    setNfseConfig({
+                      ...nfseConfig,
+                      tipo_regime_especial: value
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o regime especial" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Nenhum</SelectItem>
+                    <SelectItem value="1">1 - Microempresa Municipal</SelectItem>
+                    <SelectItem value="2">2 - Estimativa</SelectItem>
+                    <SelectItem value="3">3 - Sociedade de Profissionais</SelectItem>
+                    <SelectItem value="4">4 - Cooperativa</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Operação de Tributação</Label>
+                <Select
+                  value={nfseConfig.operacao_tributacao || "1"}
+                  onValueChange={(value) =>
+                    setNfseConfig({
+                      ...nfseConfig,
+                      operacao_tributacao: value
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a operação" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1 - Tributação no Município</SelectItem>
+                    <SelectItem value="2">2 - Tributação Fora do Município</SelectItem>
+                    <SelectItem value="3">3 - Isenção</SelectItem>
+                    <SelectItem value="4">4 - Imune</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Número do Lote RPS</Label>
+                <Input
+                  type="number"
+                  value={nfseConfig.lote_rps_numero || 1}
+                  onChange={(e) =>
+                    setNfseConfig({
+                      ...nfseConfig,
+                      lote_rps_numero: parseInt(e.target.value)
                     })
                   }
                 />
