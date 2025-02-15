@@ -79,20 +79,28 @@ export const CompanyInfoTab = () => {
         setCompanyInfo(data);
       }
 
-      const { data: rpsData, error: rpsError } = await supabase
+      const { data: lastNFSe, error: nfseError } = await supabase
+        .from('nfse')
+        .select('numero_rps')
+        .order('numero_rps', { ascending: false })
+        .limit(1)
+        .single();
+
+      const { data: spConfig, error: spConfigError } = await supabase
         .from('nfse_sp_config')
         .select('numero_inicial_rps')
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
 
-      if (rpsError && rpsError.code !== 'PGRST116') throw rpsError;
+      const nextRpsNumber = lastNFSe?.numero_rps 
+        ? parseInt(lastNFSe.numero_rps) + 1
+        : spConfig?.numero_inicial_rps || 0;
 
-      if (rpsData) {
-        setRpsConfig({
-          numero_inicial_rps: rpsData.numero_inicial_rps || 0
-        });
-      }
+      setRpsConfig({
+        numero_inicial_rps: nextRpsNumber
+      });
+
     } catch (error) {
       console.error('Erro ao carregar dados da empresa:', error);
       toast({
