@@ -48,7 +48,7 @@ const NFSePage = () => {
   const [nfceCancelamento, setNfceCancelamento] = useState<string | null>(null);
   const [showLogsDialog, setShowLogsDialog] = useState(false);
   const [selectedNFSeIdForLogs, setSelectedNFSeIdForLogs] = useState<string | null>(null);
-  const [nfseToEdit, setNfseToEdit] = useState<NFSe | null>(null);
+  const [nfseToEdit, setNfseToEdit] = useState<NFSeFormData | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [nfseToDelete, setNfseToDelete] = useState<string | null>(null);
   const [motivoExclusao, setMotivoExclusao] = useState("");
@@ -137,7 +137,21 @@ const NFSePage = () => {
     try {
       const { data, error } = await supabase
         .from("nfse")
-        .select("*")
+        .select(`
+          *,
+          clients (
+            name,
+            document,
+            email,
+            street,
+            street_number,
+            complement,
+            neighborhood,
+            city,
+            state,
+            zip_code
+          )
+        `)
         .eq("id", nfseId)
         .single();
 
@@ -591,7 +605,10 @@ const NFSePage = () => {
           </DialogHeader>
           <NFSeForm
             onSubmit={handleEmitirNFSe}
-            onCancel={() => setShowEmissaoDialog(false)}
+            onCancel={() => {
+              setShowEmissaoDialog(false);
+              setNfseToEdit(null);
+            }}
             isLoading={isEmitindo}
             initialData={nfseToEdit}
           />
