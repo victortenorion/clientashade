@@ -156,7 +156,7 @@ const NFSePage = () => {
         .from("nfse_config")
         .select("*")
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (configError) throw configError;
       if (!config) {
@@ -191,6 +191,8 @@ const NFSePage = () => {
         nfse_id: nfseId,
         status: "processing",
         message: "Iniciando envio para SEFAZ",
+        request_payload: { nfseId },
+        response_payload: null
       });
 
       const { error: updateError } = await supabase
@@ -200,21 +202,25 @@ const NFSePage = () => {
 
       if (updateError) throw updateError;
 
-      const { error: processError } = await supabase.functions.invoke('process-nfse', {
+      const { data: processResponse, error: processError } = await supabase.functions.invoke('process-nfse', {
         body: { nfseId }
       });
 
       if (processError) throw processError;
 
+      console.log('Resposta do processamento:', processResponse);
+
       await supabase.from("nfse_sefaz_logs").insert({
         nfse_id: nfseId,
         status: "success",
         message: "NFS-e enviada para processamento com sucesso",
+        request_payload: { nfseId },
+        response_payload: processResponse
       });
 
       toast({
         title: "NFS-e enviada para processamento",
-        description: "Em breve o status será atualizado.",
+        description: `RPS número ${processResponse?.rps?.numero} gerado com sucesso.`,
       });
 
       setSelectedNFSeIdForLogs(nfseId);
@@ -228,6 +234,8 @@ const NFSePage = () => {
         nfse_id: nfseId,
         status: "error",
         message: error.message,
+        request_payload: { nfseId },
+        response_payload: { error: error.message }
       });
 
       toast({
