@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { PostgrestError } from "@supabase/supabase-js";
@@ -31,6 +30,7 @@ import { NFSeSefazLogs } from "./components/NFSeSefazLogs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
+import { formatMoney } from "@/lib/format";
 
 interface ProcessNFSeResponse {
   success: boolean;

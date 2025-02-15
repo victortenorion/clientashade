@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import {
@@ -24,11 +23,15 @@ interface SefazLog {
 
 export interface NFSeSefazLogsProps {
   nfseId: string | null;
-  isOpen: boolean;
   onClose: () => void;
+  isOpen?: boolean;
 }
 
-export const NFSeSefazLogs: React.FC<NFSeSefazLogsProps> = ({ nfseId, isOpen, onClose }) => {
+export const NFSeSefazLogs: React.FC<NFSeSefazLogsProps> = ({
+  nfseId,
+  onClose,
+  isOpen = true
+}) => {
   const { data: logs, isLoading } = useQuery({
     queryKey: ['sefaz-logs', nfseId],
     queryFn: async () => {

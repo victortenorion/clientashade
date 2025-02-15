@@ -1,4 +1,3 @@
-
 export interface NFSe {
   id: string;
   tipo_registro?: string;
@@ -116,6 +115,13 @@ export interface NFSe {
     state: string;
     zip_code: string;
   };
+  inscricao_municipal_prestador?: string;
+  regime_especial?: string;
+  codigo_servico_municipio?: string;
+  codigo_tributacao_municipio?: string;
+  fonte_tributos?: string;
+  codigo_pais_prestador?: string;
+  codigo_pais_tomador?: string;
 }
 
 export interface NFSeFormData {
