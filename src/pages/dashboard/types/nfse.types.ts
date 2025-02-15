@@ -14,10 +14,38 @@ export interface NFSe {
   data_cancelamento: string | null;
   motivo_cancelamento: string | null;
   protocolo_cancelamento: string | null;
+  codigo_verificacao?: string;
+  inscricao_prestador?: string;
+  discriminacao_servicos: string;
+  data_competencia: string;
+  codigo_servico: string;
+  ambiente?: string;
+  deducoes?: number;
+  base_calculo?: number;
+  aliquota_iss?: number;
+  valor_iss?: number;
+  observacoes?: string;
   clients?: {
     name: string;
     document: string;
+    email?: string;
+    street?: string;
+    street_number?: string;
+    complement?: string;
+    neighborhood?: string;
+    city?: string;
+    state?: string;
+    zip_code?: string;
   };
+}
+
+export interface NFSeEvento {
+  id: string;
+  nfse_id: string;
+  tipo_evento: string;
+  status: string;
+  descricao: string;
+  data_evento: string;
 }
 
 export interface NFSeFormData {
@@ -43,6 +71,19 @@ export interface NFSeFormData {
   comissao_percentual?: number;
   numero_rps?: string;
   serie_rps?: string;
+  responsavel_retencao?: string;
+  local_servico?: string;
+  optante_mei?: boolean;
+  prestador_incentivador_cultural?: boolean;
+  tributacao_rps?: string;
+  enviar_email_tomador?: boolean;
+  enviar_email_intermediario?: boolean;
+  intermediario_servico?: boolean;
+  aliquota_pis?: number;
+  aliquota_cofins?: number;
+  aliquota_csll?: number;
+  outras_retencoes?: number;
+  codigo_regime_especial_tributacao?: string | null;
 }
 
 export interface RPSResponse {

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { NFSeForm } from "./NFSeForm";
@@ -43,7 +42,6 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
   useEffect(() => {
     const fetchServiceOrder = async () => {
       try {
-        // Buscar dados da empresa primeiro
         const { data: companyInfo, error: companyError } = await supabase
           .from("company_info")
           .select("codigo_servico, serie_rps_padrao")
@@ -51,7 +49,6 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
 
         if (companyError) throw companyError;
 
-        // Buscar configurações específicas para São Paulo
         const { data: spSettings, error: spError } = await supabase
           .from("nfse_sp_settings")
           .select("*")
@@ -59,7 +56,6 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
           .limit(1)
           .maybeSingle();
 
-        // Buscar configuração do RPS
         const { data: spConfig, error: spConfigError } = await supabase
           .from("nfse_sp_config")
           .select("numero_inicial_rps, ultima_rps_numero")
@@ -70,7 +66,6 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
         if (spError) throw spError;
         if (spConfigError) throw spConfigError;
 
-        // Buscar dados da ordem de serviço
         const { data: serviceOrder, error } = await supabase
           .from("service_orders")
           .select(`
@@ -89,7 +84,6 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
 
         if (serviceOrder) {
           const typedServiceOrder = serviceOrder as unknown as ServiceOrder;
-          // Formatar a descrição dos serviços em uma única linha
           const servicesDescription = `OS #${typedServiceOrder.order_number} - ${typedServiceOrder.equipment || 'Equipamento não especificado'} - S/N: ${typedServiceOrder.equipment_serial_number || 'N/A'} - Serviços realizados: ${typedServiceOrder.items.map(item => item.description).join(', ')} - (Total: R$ ${typedServiceOrder.total_price.toFixed(2)})`;
 
           let proximoNumeroRPS: string;
@@ -119,7 +113,6 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
             natureza_operacao: "1",
             serie_rps: companyInfo?.serie_rps_padrao || "1",
             numero_rps: proximoNumeroRPS,
-            // Campos específicos para São Paulo
             responsavel_retencao: "cliente",
             local_servico: "tomador",
             optante_mei: false,
@@ -157,7 +150,6 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
     try {
       setIsLoading(true);
 
-      // Create NFS-e record
       const { data: nfse, error: nfseError } = await supabase
         .from("nfse")
         .insert({
@@ -170,7 +162,6 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
 
       if (nfseError) throw nfseError;
 
-      // Atualizar o último número de RPS usado
       const { error: updateError } = await supabase
         .from("nfse_sp_config")
         .update({ 
@@ -187,7 +178,6 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
         description: "A nota fiscal foi salva e pode ser enviada posteriormente"
       });
       
-      // Redirecionar para a lista de NFS-e
       navigate("/dashboard/nfse");
     } catch (error: any) {
       console.error("Error saving NFSe:", error);

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { PostgrestError } from "@supabase/supabase-js";
@@ -485,7 +484,7 @@ const NFSePage = () => {
                       )}
 
                       {(nota.status_sefaz === "processado" || nota.status_sefaz === "autorizada") && !nota.cancelada && (
-                        <>
+                        <div className="flex gap-2">
                           <Button
                             variant="outline"
                             size="icon"
@@ -505,7 +504,7 @@ const NFSePage = () => {
                           >
                             <XCircle className="h-4 w-4" />
                           </Button>
-                        </>
+                        </div>
                       )}
 
                       <Button
@@ -649,4 +648,3 @@ const formatMoney = (value: number | null) => {
 };
 
 export default NFSePage;
-
