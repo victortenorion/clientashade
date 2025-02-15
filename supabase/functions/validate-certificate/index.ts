@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { parse } from "npm:@digitalbazaar/pkcs12@2.1.1";
+import * as forge from "npm:node-forge@1.3.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -60,21 +60,15 @@ serve(async (req) => {
       const binaryString = atob(certificadoBase64);
       console.log("Certificado decodificado de base64, tamanho:", binaryString.length);
       
-      // Converter para Uint8Array
-      const certificateBytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        certificateBytes[i] = binaryString.charCodeAt(i);
-      }
-      console.log("Array de bytes criado, tamanho:", certificateBytes.length);
+      // Converter string binária para Buffer compatível com node-forge
+      const buffer = forge.util.createBuffer(binaryString, 'raw');
+      const asn1 = forge.asn1.fromDer(buffer);
 
       // Tentar parsear o certificado
       console.log("Tentando parsear o certificado PKCS#12...");
-      let result;
+      let pkcs12;
       try {
-        result = await parse({
-          pkcs12Der: certificateBytes,
-          password: senhaLimpa
-        });
+        pkcs12 = forge.pkcs12.pkcs12FromAsn1(asn1, senhaLimpa);
         console.log("Parse do certificado bem sucedido");
       } catch (error: any) {
         console.error("Erro detalhado no parse do certificado:", {
@@ -83,8 +77,7 @@ serve(async (req) => {
           stack: error.stack
         });
         
-        if (error.message?.toLowerCase().includes('mac verify failure') || 
-            error.message?.toLowerCase().includes('invalid password')) {
+        if (error.message?.toLowerCase().includes('invalid password')) {
           return new Response(
             JSON.stringify({ 
               success: false, 
@@ -104,7 +97,10 @@ serve(async (req) => {
         );
       }
 
-      if (!result || !result.certInfos || result.certInfos.length === 0) {
+      // Extrair certificados
+      const certBags = pkcs12.getBags({ bagType: forge.pki.oids.certBag })[forge.pki.oids.certBag];
+      
+      if (!certBags || certBags.length === 0) {
         console.log("Certificado não encontrado no arquivo");
         return new Response(
           JSON.stringify({ 
@@ -115,11 +111,11 @@ serve(async (req) => {
         );
       }
 
-      // Extrair informações do certificado
-      const cert = result.certInfos[0];
-      const notBefore = new Date(cert.validity.notBefore);
-      const notAfter = new Date(cert.validity.notAfter);
+      // Obter o primeiro certificado
+      const cert = certBags[0].cert;
       const now = new Date();
+      const notBefore = cert.validity.notBefore;
+      const notAfter = cert.validity.notAfter;
 
       // Verificar validade do certificado
       if (now < notBefore || now > notAfter) {
@@ -136,7 +132,8 @@ serve(async (req) => {
       }
 
       // Verificar chave privada
-      if (!result.keyInfo) {
+      const keyBags = pkcs12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag })[forge.pki.oids.pkcs8ShroudedKeyBag];
+      if (!keyBags || keyBags.length === 0) {
         console.log("Chave privada não encontrada");
         return new Response(
           JSON.stringify({ 
@@ -148,8 +145,7 @@ serve(async (req) => {
       }
 
       // Verificar se é um certificado ICP-Brasil
-      const isICPBrasil = cert.issuer.some((issuerPart: any) => 
-        issuerPart.value?.toLowerCase().includes('icp-brasil'));
+      const isICPBrasil = cert.issuer.getField('O')?.value?.toLowerCase().includes('icp-brasil');
 
       if (!isICPBrasil) {
         console.log("Certificado não é ICP-Brasil");
@@ -172,8 +168,14 @@ serve(async (req) => {
             validoAte: notAfter.toISOString(),
             validoDe: notBefore.toISOString(),
             possuiChavePrivada: true,
-            emissor: cert.issuer,
-            subject: cert.subject
+            emissor: cert.issuer.attributes.map((attr: any) => ({
+              name: attr.name,
+              value: attr.value
+            })),
+            subject: cert.subject.attributes.map((attr: any) => ({
+              name: attr.name,
+              value: attr.value
+            }))
           }
         }),
         { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
