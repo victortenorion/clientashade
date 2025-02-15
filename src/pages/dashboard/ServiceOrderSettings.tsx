@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { StatusTab } from "./components/StatusTab";
 import { SEFAZTab } from "./components/SEFAZTab";
@@ -59,7 +58,6 @@ const ServiceOrderSettings = () => {
 
   const loadConfigurations = async () => {
     try {
-      // Carregar configurações NFC-e
       const { data: nfceData, error: nfceError } = await supabase
         .from('fiscal_config')
         .select('*')
@@ -70,7 +68,6 @@ const ServiceOrderSettings = () => {
         console.error('Erro ao carregar configurações NFC-e:', nfceError);
       }
 
-      // Carregar configurações NFS-e
       const { data: nfseData, error: nfseError } = await supabase
         .from('fiscal_config')
         .select('*')
@@ -81,7 +78,6 @@ const ServiceOrderSettings = () => {
         console.error('Erro ao carregar configurações NFS-e:', nfseError);
       }
 
-      // Carregar configurações fiscais gerais
       const { data: generalData, error: generalError } = await supabase
         .from('fiscal_config')
         .select('*')
@@ -124,7 +120,6 @@ const ServiceOrderSettings = () => {
 
   const handleSaveAllConfigs = async () => {
     try {
-      // Salvar configurações NFC-e
       const { error: nfceError } = await supabase
         .from('fiscal_config')
         .upsert({
@@ -136,7 +131,6 @@ const ServiceOrderSettings = () => {
 
       if (nfceError) throw nfceError;
 
-      // Salvar configurações NFS-e
       const { error: nfseError } = await supabase
         .from('fiscal_config')
         .upsert({
@@ -148,7 +142,6 @@ const ServiceOrderSettings = () => {
 
       if (nfseError) throw nfseError;
 
-      // Salvar configurações fiscais gerais
       const { error: fiscalError } = await supabase
         .from('fiscal_config')
         .upsert({
@@ -165,7 +158,6 @@ const ServiceOrderSettings = () => {
         description: "Configurações salvas com sucesso",
       });
 
-      // Recarregar as configurações após salvar
       await loadConfigurations();
     } catch (error) {
       console.error('Erro ao salvar configurações:', error);
@@ -200,7 +192,6 @@ const ServiceOrderSettings = () => {
     if (location.pathname.includes("/area-cliente") || location.pathname.includes("/campos-visiveis")) {
       return <ClientTab />;
     }
-    // Default to StatusTab
     return <StatusTab />;
   };
 

@@ -16,10 +16,8 @@ serve(async (req) => {
     const { certificado, senha } = await req.json()
     
     console.log("Iniciando processo de validação do certificado");
-    console.log("Senha recebida:", senha);
     
     if (!certificado || !senha) {
-      console.log("Certificado ou senha não fornecidos");
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -30,40 +28,26 @@ serve(async (req) => {
     }
 
     try {
-      // Remove possíveis caracteres inválidos do base64
-      const base64Clean = certificado.replace(/[\r\n\s]+/g, '');
-      console.log("Tamanho do certificado limpo:", base64Clean.length);
-
-      // Converte base64 para array de bytes
-      let certificateBytes;
-      try {
-        // Primeiro, converte base64 para string binária
-        const binaryString = atob(base64Clean);
-        console.log("Certificado decodificado de base64");
-        
-        // Converte string binária para Uint8Array
-        certificateBytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          certificateBytes[i] = binaryString.charCodeAt(i);
-        }
-        console.log("Array de bytes criado, tamanho:", certificateBytes.length);
-      } catch (e) {
-        console.error("Erro na conversão do certificado:", e);
-        throw new Error("Formato do certificado inválido. Certifique-se de que é um arquivo .pfx válido.");
-      }
-
-      console.log("Tentando parsear o certificado PKCS#12...");
+      // Decodificar o certificado base64
+      const binaryString = atob(certificado);
+      console.log("Certificado decodificado de base64");
       
-      // Tenta parsear o certificado com a senha fornecida
+      // Converter para Uint8Array
+      const certificateBytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        certificateBytes[i] = binaryString.charCodeAt(i);
+      }
+      console.log("Array de bytes criado, tamanho:", certificateBytes.length);
+
+      // Tentar parsear o certificado
+      console.log("Tentando parsear o certificado PKCS#12...");
       const result = await pkcs12.parse(certificateBytes, senha);
-      console.log("Certificado parseado com sucesso");
 
       if (!result || !result.cert) {
-        console.log("Certificado não encontrado no arquivo");
         throw new Error("Certificado não encontrado no arquivo");
       }
 
-      // Extrai informações do certificado
+      // Extrair informações do certificado
       const cert = result.cert;
       const notBefore = new Date(cert.notBefore);
       const notAfter = new Date(cert.notAfter);
@@ -75,7 +59,7 @@ serve(async (req) => {
         now: now.toISOString()
       });
 
-      // Verifica se o certificado está dentro do período de validade
+      // Verificar validade do certificado
       if (now < notBefore || now > notAfter) {
         return new Response(
           JSON.stringify({ 
@@ -86,16 +70,11 @@ serve(async (req) => {
         );
       }
 
-      // Verifica se temos a chave privada necessária para assinatura
+      // Verificar chave privada
       if (!result.key) {
-        console.error("Chave privada não encontrada no certificado");
-        throw new Error("Certificado inválido: chave privada não encontrada");
+        throw new Error("Chave privada não encontrada no certificado");
       }
 
-      // Sucesso na validação
-      console.log("Certificado e chave privada validados com sucesso");
-      console.log("Certificado válido até:", notAfter.toISOString());
-      
       return new Response(
         JSON.stringify({
           success: true,
@@ -111,9 +90,8 @@ serve(async (req) => {
       );
 
     } catch (error) {
-      console.error('Erro específico na validação:', error);
+      console.error("Erro ao validar certificado:", error);
       
-      // Melhor detecção de erro de senha incorreta
       const errorMessage = error.message?.toLowerCase() || '';
       const isSenhaIncorreta = 
         errorMessage.includes('mac verify failure') || 
@@ -126,14 +104,14 @@ serve(async (req) => {
         JSON.stringify({ 
           success: false, 
           message: isSenhaIncorreta ? 
-            'Senha do certificado digital inválida. Por favor, verifique e tente novamente.' : 
-            'Erro ao validar certificado digital. Verifique se o arquivo está no formato correto (.pfx) e a senha está correta.'
+            'Senha do certificado digital inválida' : 
+            'Erro ao validar certificado digital. Verifique se o arquivo está no formato correto (.pfx)'
         }),
         { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       );
     }
   } catch (error) {
-    console.error('Erro geral na requisição:', error);
+    console.error("Erro geral na requisição:", error);
     return new Response(
       JSON.stringify({ 
         success: false, 
