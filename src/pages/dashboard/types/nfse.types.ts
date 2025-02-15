@@ -1,3 +1,4 @@
+
 export interface NFSe {
   id: string;
   tipo_registro?: string;
@@ -5,11 +6,11 @@ export interface NFSe {
   data_hora_nfe?: string;
   data_emissao: string;
   data_competencia: string;
+  data_fato_gerador: string;
   codigo_verificacao: string;
   tipo_rps: string;
   serie_rps: string;
   numero_rps: string;
-  data_fato_gerador: string;
   inscricao_prestador: string;
   tipo_documento_prestador: string;
   documento_prestador: string;
@@ -35,7 +36,6 @@ export interface NFSe {
   aliquota_iss: number;
   valor_iss: number;
   valor_credito: number;
-  base_calculo: number;
   iss_retido: string;
   tipo_documento_tomador: string;
   documento_tomador: string;
@@ -64,9 +64,7 @@ export interface NFSe {
   valor_inss: number;
   valor_ir: number;
   valor_csll: number;
-  aliquota_pis: number;
-  aliquota_cofins: number;
-  aliquota_csll: number;
+  outras_retencoes: number;
   valor_carga_tributaria: number;
   percentual_carga_tributaria: number;
   percentual_tributos_ibpt: number;
@@ -100,8 +98,6 @@ export interface NFSe {
   desconto_incondicional: number;
   vendedor_id?: string;
   comissao_percentual: number;
-  outras_retencoes: number;
-  optante_mei: boolean;
   responsavel_retencao: string;
   local_servico: string;
   clients?: {
@@ -121,23 +117,32 @@ export interface NFSe {
 export interface NFSeFormData {
   id?: string;
   client_id: string;
+  tipo_registro?: string;
   tipo_rps: string;
   serie_rps: string;
   numero_rps: string;
   data_emissao: string;
   data_competencia: string;
+  data_fato_gerador: string;
   inscricao_prestador: string;
   tipo_documento_prestador: string;
   documento_prestador: string;
+  razao_social_prestador: string;
+  tipo_endereco_prestador: string;
+  endereco_prestador: string;
+  numero_endereco_prestador: string;
+  complemento_endereco_prestador: string;
+  bairro_prestador: string;
+  cidade_prestador: string;
+  uf_prestador: string;
+  cep_prestador: string;
+  email_prestador: string;
   codigo_servico: string;
   discriminacao_servicos: string;
   valor_servicos: number;
   valor_deducoes: number;
   deducoes: number;
   aliquota_iss: number;
-  aliquota_pis: number;
-  aliquota_cofins: number;
-  aliquota_csll: number;
   valor_iss: number;
   iss_retido: string;
   tipo_documento_tomador: string;
@@ -145,6 +150,7 @@ export interface NFSeFormData {
   razao_social_tomador: string;
   inscricao_municipal_tomador?: string;
   inscricao_estadual_tomador?: string;
+  tipo_endereco_tomador: string;
   endereco_tomador: string;
   numero_endereco_tomador: string;
   complemento_endereco_tomador: string;
@@ -187,21 +193,4 @@ export interface NFSeFormData {
   observacoes?: string;
   responsavel_retencao: string;
   local_servico: string;
-  optante_mei?: boolean;
-  prestador_incentivador_cultural?: boolean;
-}
-
-export interface RPSResponse {
-  ultima_rps_numero: number;
-  serie_rps_padrao: string;
-  tipo_rps: string;
-}
-
-export interface NFSeEvento {
-  id: string;
-  nfse_id: string;
-  tipo_evento: string;
-  status: string;
-  descricao: string;
-  data_evento: string;
 }

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { NFSeForm } from "./NFSeForm";
@@ -5,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 import type { NFSeFormData } from "../types/nfse.types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { format } from "date-fns";
 
 interface ServiceOrder {
   id: string;
@@ -33,6 +35,7 @@ interface ServiceOrder {
 interface ServiceOrderItem {
   description: string;
   price: number;
+  quantity?: number;
 }
 
 interface ServiceOrderNFSeProps {
@@ -49,26 +52,35 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState<NFSeFormData>({
     client_id: "",
+    tipo_registro: "2",
     tipo_rps: "RPS",
     serie_rps: "1",
     numero_rps: "",
     data_emissao: new Date().toISOString().split("T")[0],
     data_competencia: new Date().toISOString().split("T")[0],
+    data_fato_gerador: new Date().toISOString().split("T")[0],
     inscricao_prestador: "",
-    tipo_documento_prestador: "2", // 2 = CNPJ
+    tipo_documento_prestador: "2",
     documento_prestador: "",
+    razao_social_prestador: "",
+    tipo_endereco_prestador: "R",
+    endereco_prestador: "",
+    numero_endereco_prestador: "",
+    complemento_endereco_prestador: "",
+    bairro_prestador: "",
+    cidade_prestador: "",
+    uf_prestador: "",
+    cep_prestador: "",
+    email_prestador: "",
     codigo_servico: "",
     discriminacao_servicos: "",
     valor_servicos: 0,
     valor_deducoes: 0,
     deducoes: 0,
     aliquota_iss: 0,
-    aliquota_pis: 0,
-    aliquota_cofins: 0,
-    aliquota_csll: 0,
     valor_iss: 0,
     iss_retido: "N",
-    tipo_documento_tomador: "2", // 2 = CNPJ
+    tipo_documento_tomador: "2",
     documento_tomador: "",
     razao_social_tomador: "",
     inscricao_municipal_tomador: "",
@@ -105,7 +117,11 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
     desconto_incondicional: 0,
     comissao_percentual: 0,
     responsavel_retencao: "tomador",
-    local_servico: "tomador"
+    local_servico: "tomador",
+    tipo_documento_intermediario: "3",
+    municipio_prestacao_codigo: "",
+    municipio_prestacao: "",
+    observacoes: ""
   });
   
   const { toast } = useToast();
@@ -128,7 +144,8 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
             endereco_uf,
             endereco_cep,
             email,
-            codigo_servico
+            codigo_servico,
+            regime_tributario
           `)
           .maybeSingle();
 
@@ -159,7 +176,7 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
             equipment,
             equipment_serial_number,
             total_price,
-            items:service_order_items(description, price),
+            items:service_order_items(description, price, quantity),
             client:clients(
               id,
               name,
@@ -183,10 +200,20 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
 
         if (serviceOrder && companyInfo) {
           const typedServiceOrder = serviceOrder as unknown as ServiceOrder;
-          const servicesDescription = `OS #${typedServiceOrder.order_number} - ${typedServiceOrder.equipment || 'Equipamento não especificado'} - S/N: ${typedServiceOrder.equipment_serial_number || 'N/A'} - Serviços realizados: ${typedServiceOrder.items.map(item => item.description).join(', ')}`;
+          
+          // Formata a descrição dos serviços incluindo a ordem de serviço, equipamento e itens
+          const itemsDescription = typedServiceOrder.items.map(item => 
+            `${item.description} (${item.quantity || 1} Quantidade x R$${item.price.toFixed(2)})`
+          ).join(", ");
 
+          const servicesDescription = `OS ${typedServiceOrder.order_number} - ${
+            typedServiceOrder.equipment ? `${typedServiceOrder.equipment}${
+              typedServiceOrder.equipment_serial_number ? ` - SN: ${typedServiceOrder.equipment_serial_number}` : ''
+            }` : 'Equipamento não especificado'
+          } - ${itemsDescription}`;
+
+          // Calcula o próximo número de RPS
           let proximoNumeroRPS: string = "1";
-
           if (spConfig) {
             if (spConfig.numero_inicial_rps && spConfig.numero_inicial_rps > 0) {
               if (!spConfig.ultima_rps_numero || spConfig.ultima_rps_numero < spConfig.numero_inicial_rps) {
@@ -203,9 +230,16 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
           const aliquota_iss = spSettings?.servico_aliquota || 0;
           const valor_iss = (valor_servicos * aliquota_iss) / 100;
 
+          // Determina o tipo de documento do tomador baseado no tamanho do documento
+          const tipo_documento_tomador = typedServiceOrder.client.document.length > 11 ? "2" : "1";
+
           setFormData(prevData => ({
             ...prevData,
             client_id: typedServiceOrder.client.id,
+            tipo_registro: "2",
+            data_emissao: new Date().toISOString().split("T")[0],
+            data_competencia: new Date().toISOString().split("T")[0],
+            data_fato_gerador: new Date().toISOString().split("T")[0],
             codigo_servico: companyInfo.codigo_servico || "",
             discriminacao_servicos: servicesDescription,
             valor_servicos: typedServiceOrder.total_price,
@@ -215,13 +249,25 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
             valor_iss,
             // Dados do prestador
             inscricao_prestador: companyInfo.inscricao_municipal || "",
+            tipo_documento_prestador: "2",
             documento_prestador: companyInfo.cnpj || "",
+            razao_social_prestador: companyInfo.razao_social || "",
+            tipo_endereco_prestador: "R",
+            endereco_prestador: companyInfo.endereco_logradouro || "",
+            numero_endereco_prestador: companyInfo.endereco_numero || "",
+            complemento_endereco_prestador: companyInfo.endereco_complemento || "",
+            bairro_prestador: companyInfo.endereco_bairro || "",
+            cidade_prestador: companyInfo.endereco_cidade || "",
+            uf_prestador: companyInfo.endereco_uf || "",
+            cep_prestador: companyInfo.endereco_cep || "",
+            email_prestador: companyInfo.email || "",
+            opcao_simples: companyInfo.regime_tributario || "4",
             // Dados do tomador
-            tipo_documento_tomador: typedServiceOrder.client.document.length > 11 ? "2" : "1",
+            tipo_documento_tomador,
             documento_tomador: typedServiceOrder.client.document,
             razao_social_tomador: typedServiceOrder.client.name,
-            inscricao_municipal_tomador: typedServiceOrder.client.municipal_registration,
-            inscricao_estadual_tomador: typedServiceOrder.client.state_registration,
+            inscricao_municipal_tomador: typedServiceOrder.client.municipal_registration || "",
+            inscricao_estadual_tomador: typedServiceOrder.client.state_registration || "",
             endereco_tomador: typedServiceOrder.client.street,
             numero_endereco_tomador: typedServiceOrder.client.street_number,
             complemento_endereco_tomador: typedServiceOrder.client.complement || "",
