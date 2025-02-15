@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { PostgrestError } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,7 +47,7 @@ const NFSePage = () => {
 
   const queryClient = useQueryClient();
 
-  const { data: notas, isLoading, refetch } = useQuery<NFSe[], Error>({
+  const { data: notas, isLoading, refetch } = useQuery<NFSe[], PostgrestError>({
     queryKey: ["nfse", searchTerm],
     queryFn: async (): Promise<NFSe[]> => {
       const query = supabase
@@ -81,7 +82,7 @@ const NFSePage = () => {
       return data as NFSe[];
     },
     meta: {
-      onError: (error: Error) => {
+      onError: (error: PostgrestError) => {
         toast({
           title: "Erro ao carregar notas fiscais",
           description: error.message,
