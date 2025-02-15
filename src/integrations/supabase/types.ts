@@ -1489,6 +1489,7 @@ export type Database = {
           description: string
           id: string
           price: number
+          quantity: number
           service_order_id: string
           updated_at: string
         }
@@ -1497,6 +1498,7 @@ export type Database = {
           description: string
           id?: string
           price?: number
+          quantity?: number
           service_order_id: string
           updated_at?: string
         }
@@ -1505,6 +1507,7 @@ export type Database = {
           description?: string
           id?: string
           price?: number
+          quantity?: number
           service_order_id?: string
           updated_at?: string
         }
