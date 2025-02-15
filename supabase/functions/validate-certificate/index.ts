@@ -34,9 +34,16 @@ serve(async (req) => {
     console.log("Senha processada (comprimento):", senhaLimpa.length);
 
     try {
+      let certificadoBase64 = certificado;
+      
+      // Remover prefixo data URL se existir
+      if (certificadoBase64.includes('base64,')) {
+        certificadoBase64 = certificadoBase64.split('base64,')[1];
+      }
+
       // Verificar se o certificado base64 é válido
       try {
-        atob(certificado);
+        atob(certificadoBase64);
       } catch (e) {
         console.error("Certificado base64 inválido:", e);
         return new Response(
@@ -50,7 +57,7 @@ serve(async (req) => {
 
       // Decodificar o certificado base64
       console.log("Iniciando decodificação base64");
-      const binaryString = atob(certificado);
+      const binaryString = atob(certificadoBase64);
       console.log("Certificado decodificado de base64, tamanho:", binaryString.length);
       
       // Converter para Uint8Array

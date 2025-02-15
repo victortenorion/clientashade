@@ -97,9 +97,22 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
     }
 
     try {
-      const fileBuffer = await file.arrayBuffer();
-      const bytes = new Uint8Array(fileBuffer);
-      const base64 = btoa(String.fromCharCode.apply(null, Array.from(bytes)));
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result === 'string') {
+            // Remove o prefixo "data:application/x-pkcs12;base64," se existir
+            const base64Data = reader.result.includes('base64,') 
+              ? reader.result.split('base64,')[1]
+              : reader.result;
+            resolve(base64Data);
+          } else {
+            reject(new Error('Resultado da leitura do arquivo inválido'));
+          }
+        };
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+      });
 
       console.log("Tamanho do certificado em base64:", base64.length);
       setCertificateFile(base64);
@@ -107,12 +120,16 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
       if (selectedTab === 'nfse') {
         setNfseConfig({
           ...nfseConfig,
-          certificado_digital: base64
+          certificado_digital: base64,
+          certificado_valido: false,
+          certificado_validade: undefined
         });
       } else {
         setNfceConfig({
           ...nfceConfig,
-          certificado_digital: base64
+          certificado_digital: base64,
+          certificado_valido: false,
+          certificado_validade: undefined
         });
       }
     } catch (error) {
