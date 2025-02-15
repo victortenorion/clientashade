@@ -102,7 +102,8 @@ const ServiceOrdersPage = () => {
         throw error;
       }
 
-      setServiceOrders(data as ServiceOrder[]);
+      const typedData = data as unknown as ServiceOrder[];
+      setServiceOrders(typedData);
     } catch (error: any) {
       toast({
         variant: "destructive",
