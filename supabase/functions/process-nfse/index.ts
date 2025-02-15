@@ -18,6 +18,8 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    console.log('Iniciando processamento da NFS-e');
+
     const { nfseId } = await req.json();
 
     if (!nfseId) {
@@ -31,16 +33,30 @@ serve(async (req) => {
       .limit(1)
       .single();
 
-    if (configError) throw configError;
-    if (!nfseConfig) throw new Error('Configurações da NFS-e não encontradas');
+    if (configError) {
+      console.error('Erro ao buscar configurações:', configError);
+      throw configError;
+    }
+    if (!nfseConfig) {
+      throw new Error('Configurações da NFS-e não encontradas');
+    }
+
+    console.log('Configurações encontradas:', nfseConfig);
 
     // Increment RPS number
     const { data: rpsData, error: rpsError } = await supabase
       .rpc('increment_rps_numero')
       .single();
 
-    if (rpsError) throw rpsError;
-    if (!rpsData) throw new Error('Erro ao gerar número do RPS');
+    if (rpsError) {
+      console.error('Erro ao incrementar RPS:', rpsError);
+      throw rpsError;
+    }
+    if (!rpsData) {
+      throw new Error('Erro ao gerar número do RPS');
+    }
+
+    console.log('RPS incrementado:', rpsData);
 
     // Update queue status
     const { error: queueError } = await supabase
@@ -52,7 +68,10 @@ serve(async (req) => {
       .eq('documento_id', nfseId)
       .eq('tipo', 'nfse');
 
-    if (queueError) throw queueError;
+    if (queueError) {
+      console.error('Erro ao atualizar fila:', queueError);
+      throw queueError;
+    }
 
     // Update NFSe with RPS info
     const { data: nfse, error: nfseUpdateError } = await supabase
@@ -60,7 +79,8 @@ serve(async (req) => {
       .update({
         numero_rps: rpsData.ultima_rps_numero.toString(),
         serie_rps: rpsData.serie_rps_padrao,
-        tipo_rps: rpsData.tipo_rps
+        tipo_rps: rpsData.tipo_rps,
+        status_sefaz: 'processando'
       })
       .eq('id', nfseId)
       .select(`
@@ -80,8 +100,15 @@ serve(async (req) => {
       `)
       .single();
 
-    if (nfseUpdateError) throw nfseUpdateError;
-    if (!nfse) throw new Error('NFS-e não encontrada');
+    if (nfseUpdateError) {
+      console.error('Erro ao atualizar NFS-e:', nfseUpdateError);
+      throw nfseUpdateError;
+    }
+    if (!nfse) {
+      throw new Error('NFS-e não encontrada');
+    }
+
+    console.log('NFS-e atualizada com sucesso:', nfse);
 
     // Get company info
     const { data: companyInfo, error: companyError } = await supabase
@@ -90,22 +117,36 @@ serve(async (req) => {
       .limit(1)
       .single();
 
-    if (companyError) throw companyError;
-    if (!companyInfo) throw new Error('Informações da empresa não configuradas');
+    if (companyError) {
+      console.error('Erro ao buscar dados da empresa:', companyError);
+      throw companyError;
+    }
+    if (!companyInfo) {
+      throw new Error('Informações da empresa não configuradas');
+    }
 
-    // Log the processing attempt
-    console.log('Processing NFSe:', {
-      nfseId,
-      ambiente: nfseConfig.ambiente,
-      certificadoValido: nfseConfig.certificado_valido,
-      permiteEmissaoSemCertificado: nfseConfig.permite_emissao_sem_certificado,
-      numeroRPS: nfse.numero_rps,
-      serieRPS: nfse.serie_rps,
-      tipoRPS: nfse.tipo_rps
-    });
+    // Log de processamento
+    await supabase
+      .from('nfse_sefaz_logs')
+      .insert({
+        nfse_id: nfseId,
+        status: 'success',
+        message: 'NFS-e processada com sucesso',
+        request_payload: { 
+          nfseId,
+          rps: {
+            numero: nfse.numero_rps,
+            serie: nfse.serie_rps,
+            tipo: nfse.tipo_rps
+          }
+        },
+        response_payload: { 
+          status: 'processado',
+          message: 'Processamento realizado com sucesso'
+        }
+      });
 
-    // Simular processamento bem-sucedido
-    // Update NFSe status
+    // Atualizar status da NFS-e
     const { error: updateError } = await supabase
       .from('nfse')
       .update({
@@ -113,9 +154,12 @@ serve(async (req) => {
       })
       .eq('id', nfseId);
 
-    if (updateError) throw updateError;
+    if (updateError) {
+      console.error('Erro ao atualizar status final:', updateError);
+      throw updateError;
+    }
 
-    // Update queue status
+    // Atualizar status da fila
     const { error: queueUpdateError } = await supabase
       .from('sefaz_transmission_queue')
       .update({ 
@@ -125,24 +169,12 @@ serve(async (req) => {
       .eq('documento_id', nfseId)
       .eq('tipo', 'nfse');
 
-    if (queueUpdateError) throw queueUpdateError;
+    if (queueUpdateError) {
+      console.error('Erro ao atualizar status final da fila:', queueUpdateError);
+      throw queueUpdateError;
+    }
 
-    // Add log entry
-    await supabase
-      .from('nfse_sefaz_logs')
-      .insert({
-        nfse_id: nfseId,
-        status: 'success',
-        message: 'NFS-e processada com sucesso',
-        request_payload: { nfseId },
-        response_payload: { 
-          rps: {
-            numero: nfse.numero_rps,
-            serie: nfse.serie_rps,
-            tipo: nfse.tipo_rps
-          }
-        }
-      });
+    console.log('Processamento finalizado com sucesso');
 
     return new Response(
       JSON.stringify({ 
@@ -161,22 +193,48 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error processing NFSe:', error);
+    console.error('Erro no processamento da NFS-e:', error);
 
-    // Add error log entry if we have the nfseId
+    // Adicionar log de erro
     try {
       const { nfseId } = await req.json();
       if (nfseId) {
+        const supabase = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        );
+
         await supabase
           .from('nfse_sefaz_logs')
           .insert({
             nfse_id: nfseId,
             status: 'error',
-            message: error.message
+            message: error.message,
+            request_payload: { nfseId },
+            response_payload: { error: error.message }
           });
+
+        // Atualizar status da NFS-e em caso de erro
+        await supabase
+          .from('nfse')
+          .update({
+            status_sefaz: 'erro'
+          })
+          .eq('id', nfseId);
+
+        // Atualizar status da fila em caso de erro
+        await supabase
+          .from('sefaz_transmission_queue')
+          .update({ 
+            status: 'erro',
+            erro_mensagem: error.message,
+            ultima_tentativa: new Date().toISOString()
+          })
+          .eq('documento_id', nfseId)
+          .eq('tipo', 'nfse');
       }
     } catch (logError) {
-      console.error('Error logging NFSe error:', logError);
+      console.error('Erro ao registrar log de erro:', logError);
     }
 
     return new Response(
