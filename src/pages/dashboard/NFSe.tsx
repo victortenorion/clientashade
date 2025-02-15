@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -11,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { NFSe, NFSeFormData, RPSResponse } from "./types/nfse.types";
+import { NFSe, NFSeFormData, RPSResponse, NFSeWithClient } from "./types/nfse.types";
 import { format } from "date-fns";
 import { Plus, Pencil, Trash2, Send, XCircle, Printer, List } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -54,7 +55,15 @@ const NFSePage = () => {
           *,
           clients (
             name,
-            document
+            document,
+            email,
+            street,
+            street_number,
+            complement,
+            neighborhood,
+            city,
+            state,
+            zip_code
           )
         `)
         .order("data_emissao", { ascending: false });
@@ -118,7 +127,7 @@ const NFSePage = () => {
 
       console.log('Config encontrada:', config);
 
-      const { data: rpsData, error: rpsError } = await supabase
+      const { data: rpsResponse, error: rpsError } = await supabase
         .rpc<RPSResponse>('increment_rps_numero')
         .single();
 
@@ -126,11 +135,11 @@ const NFSePage = () => {
         console.error('Erro ao incrementar RPS:', rpsError);
         throw rpsError;
       }
-      if (!rpsData) {
+      if (!rpsResponse) {
         throw new Error('Erro ao gerar número do RPS');
       }
 
-      console.log('RPS incrementado:', rpsData);
+      console.log('RPS incrementado:', rpsResponse);
 
       const { error: queueError } = await supabase
         .from('sefaz_transmission_queue')
@@ -155,9 +164,9 @@ const NFSePage = () => {
             codigo_servico: nfse.codigo_servico
           },
           rps: {
-            numero: rpsData.ultima_rps_numero,
-            serie: rpsData.serie_rps_padrao,
-            tipo: rpsData.tipo_rps
+            numero: rpsResponse.ultima_rps_numero,
+            serie: rpsResponse.serie_rps_padrao,
+            tipo: rpsResponse.tipo_rps
           },
           cliente: nfse.clients
         },
@@ -167,9 +176,9 @@ const NFSePage = () => {
       const { error: updateError } = await supabase
         .from("nfse")
         .update({
-          numero_rps: rpsData.ultima_rps_numero.toString(),
-          serie_rps: rpsData.serie_rps_padrao,
-          tipo_rps: rpsData.tipo_rps,
+          numero_rps: rpsResponse.ultima_rps_numero.toString(),
+          serie_rps: rpsResponse.serie_rps_padrao,
+          tipo_rps: rpsResponse.tipo_rps,
           status_sefaz: "processando"
         })
         .eq("id", nfseId);
@@ -180,9 +189,9 @@ const NFSePage = () => {
         body: { 
           nfseId,
           rps: {
-            numero: rpsData.ultima_rps_numero.toString(),
-            serie: rpsData.serie_rps_padrao,
-            tipo: rpsData.tipo_rps
+            numero: rpsResponse.ultima_rps_numero.toString(),
+            serie: rpsResponse.serie_rps_padrao,
+            tipo: rpsResponse.tipo_rps
           }
         }
       });
@@ -198,9 +207,9 @@ const NFSePage = () => {
         request_payload: { 
           nfseId,
           rps: {
-            numero: rpsData.ultima_rps_numero.toString(),
-            serie: rpsData.serie_rps_padrao,
-            tipo: rpsData.tipo_rps
+            numero: rpsResponse.ultima_rps_numero.toString(),
+            serie: rpsResponse.serie_rps_padrao,
+            tipo: rpsResponse.tipo_rps
           }
         },
         response_payload: processResponse
@@ -208,7 +217,7 @@ const NFSePage = () => {
 
       toast({
         title: "NFS-e enviada para processamento",
-        description: `RPS número ${rpsData.ultima_rps_numero} gerado com sucesso.`,
+        description: `RPS número ${rpsResponse.ultima_rps_numero} gerado com sucesso.`,
       });
 
       setSelectedNFSeIdForLogs(nfseId);

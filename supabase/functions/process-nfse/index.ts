@@ -93,7 +93,7 @@ serve(async (req) => {
       throw new Error('ID da NFS-e não informado');
     }
 
-    // Get NFSe data with related information
+    // Buscar dados da NFS-e com informações relacionadas
     const { data: nfse, error: nfseError } = await supabase
       .from('nfse')
       .select(`
@@ -125,7 +125,7 @@ serve(async (req) => {
       throw nfseError;
     }
 
-    // Get company info
+    // Buscar dados da empresa
     const { data: companyInfo, error: companyError } = await supabase
       .from('company_info')
       .select('*')
@@ -136,7 +136,7 @@ serve(async (req) => {
       throw companyError;
     }
 
-    // Get SP settings
+    // Buscar configurações SP
     const { data: spSettings, error: spError } = await supabase
       .from('nfse_sp_settings')
       .select('*')
@@ -149,7 +149,7 @@ serve(async (req) => {
       throw spError;
     }
 
-    // Increment RPS number
+    // Incrementar número do RPS
     const { data: rpsData, error: rpsError } = await supabase
       .rpc('increment_rps_numero')
       .single();
@@ -159,7 +159,7 @@ serve(async (req) => {
       throw rpsError;
     }
 
-    // Prepare SP NFSe data
+    // Preparar dados para SP NFSe
     const spNFSeData: SPNFSeData = {
       tpAmb: nfse.ambiente === 'producao' ? '1' : '2',
       versao: spSettings.versao_schema || '2.00',
@@ -221,7 +221,7 @@ serve(async (req) => {
       }
     };
 
-    // If intermediário is configured, add it
+    // Se intermediário está configurado, adicionar
     if (nfse.intermediario_servico && spSettings.intermediario_cnpj) {
       spNFSeData.intermediario = {
         cnpj: spSettings.intermediario_cnpj.replace(/\D/g, ''),
@@ -230,7 +230,7 @@ serve(async (req) => {
       };
     }
 
-    // Update queue status
+    // Atualizar status da fila
     const { error: queueError } = await supabase
       .from('sefaz_transmission_queue')
       .update({ 
@@ -245,7 +245,7 @@ serve(async (req) => {
       throw queueError;
     }
 
-    // Update NFSe with RPS info
+    // Atualizar NFSe com info do RPS
     const { error: nfseUpdateError } = await supabase
       .from('nfse')
       .update({
