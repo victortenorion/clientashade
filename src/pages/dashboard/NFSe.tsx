@@ -152,6 +152,33 @@ const NFSePage = () => {
 
   const handleSendToSefaz = async (nfseId: string) => {
     try {
+      // Validar se o ID da NFS-e é válido
+      if (!nfseId || nfseId.trim() === '') {
+        toast({
+          title: "Erro ao enviar NFS-e",
+          description: "ID da NFS-e inválido",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Verificar se a NFS-e existe antes de prosseguir
+      const { data: nfse, error: nfseError } = await supabase
+        .from("nfse")
+        .select("*")
+        .eq("id", nfseId)
+        .maybeSingle();
+
+      if (nfseError) throw nfseError;
+      if (!nfse) {
+        toast({
+          title: "Erro ao enviar NFS-e",
+          description: "NFS-e não encontrada",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { data: config, error: configError } = await supabase
         .from("nfse_config")
         .select("*")
@@ -230,13 +257,15 @@ const NFSePage = () => {
     } catch (error: any) {
       console.error('Erro ao enviar NFSe:', error);
       
-      await supabase.from("nfse_sefaz_logs").insert({
-        nfse_id: nfseId,
-        status: "error",
-        message: error.message,
-        request_payload: { nfseId },
-        response_payload: { error: error.message }
-      });
+      if (nfseId) {
+        await supabase.from("nfse_sefaz_logs").insert({
+          nfse_id: nfseId,
+          status: "error",
+          message: error.message,
+          request_payload: { nfseId },
+          response_payload: { error: error.message }
+        });
+      }
 
       toast({
         title: "Erro ao enviar para SEFAZ",
