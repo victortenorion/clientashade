@@ -98,7 +98,6 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
         const binaryStr = e.target?.result;
         if (!binaryStr) return;
 
-        // Converte para base64 diretamente
         const base64 = btoa(
           new Uint8Array(binaryStr as ArrayBuffer)
             .reduce((data, byte) => data + String.fromCharCode(byte), '')
@@ -109,20 +108,16 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
         if (selectedTab === 'nfse') {
           setNfseConfig({
             ...nfseConfig,
-            certificado_digital: base64,
-            certificado_valido: false,
-            certificado_validade: undefined
+            certificado_digital: base64
           });
         } else {
           setNfceConfig({
             ...nfceConfig,
-            certificado_digital: base64,
-            certificado_valido: false,
-            certificado_validade: undefined
+            certificado_digital: base64
           });
         }
       };
-      reader.readAsArrayBuffer(file); // Lê como ArrayBuffer em vez de DataURL
+      reader.readAsArrayBuffer(file);
     } catch (error) {
       console.error('Erro ao processar arquivo:', error);
       toast({
@@ -160,16 +155,22 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
       console.log("Resposta da validação:", data);
 
       if (data.success) {
-        const newConfig = {
-          ...(selectedTab === 'nfse' ? nfseConfig : nfceConfig),
-          certificado_valido: true,
-          certificado_validade: data.validade,
-        };
-
         if (selectedTab === 'nfse') {
-          setNfseConfig(newConfig);
+          setNfseConfig({
+            ...nfseConfig,
+            certificado_digital: config.certificado_digital,
+            senha_certificado: config.senha_certificado,
+            certificado_valido: true,
+            certificado_validade: data.validade
+          });
         } else {
-          setNfceConfig(newConfig);
+          setNfceConfig({
+            ...nfceConfig,
+            certificado_digital: config.certificado_digital,
+            senha_certificado: config.senha_certificado,
+            certificado_valido: true,
+            certificado_validade: data.validade
+          });
         }
 
         toast({
@@ -182,16 +183,19 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
       }
     } catch (error: any) {
       console.error('Erro na validação:', error);
-      const newConfig = {
-        ...(selectedTab === 'nfse' ? nfseConfig : nfceConfig),
-        certificado_valido: false,
-        certificado_validade: undefined,
-      };
-
+      
       if (selectedTab === 'nfse') {
-        setNfseConfig(newConfig);
+        setNfseConfig({
+          ...nfseConfig,
+          certificado_valido: false,
+          certificado_validade: undefined
+        });
       } else {
-        setNfceConfig(newConfig);
+        setNfceConfig({
+          ...nfceConfig,
+          certificado_valido: false,
+          certificado_validade: undefined
+        });
       }
 
       toast({

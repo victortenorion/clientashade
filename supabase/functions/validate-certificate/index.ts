@@ -58,9 +58,17 @@ serve(async (req) => {
         throw new Error("Certificado não encontrado no arquivo");
       }
 
+      // Verifica informações específicas para NFS-e SP
+      const cert = result.cert;
+      
+      // Verifica se é um certificado tipo A1
+      if (cert.keyUsage && !cert.keyUsage.includes('digitalSignature')) {
+        throw new Error("O certificado deve ser do tipo A1 com permissão para assinatura digital");
+      }
+
       // Verifica a validade do certificado
-      const notBefore = new Date(result.cert.notBefore)
-      const notAfter = new Date(result.cert.notAfter)
+      const notBefore = new Date(cert.notBefore)
+      const notAfter = new Date(cert.notAfter)
       const now = new Date()
 
       if (now < notBefore || now > notAfter) {
