@@ -48,7 +48,7 @@ const NFSePage = () => {
 
   const { data: notas, isLoading, refetch } = useQuery<NFSe[], Error>({
     queryKey: ["nfse", searchTerm],
-    queryFn: async () => {
+    queryFn: async (): Promise<NFSe[]> => {
       const query = supabase
         .from("nfse")
         .select(`
