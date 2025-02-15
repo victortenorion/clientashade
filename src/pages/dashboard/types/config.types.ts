@@ -46,5 +46,7 @@ export interface ValidateCertificateResponse {
     validoAte: string;
     validoDe: string;
     possuiChavePrivada: boolean;
+    emissor: Array<{type: string, value: string}>;
+    subject: Array<{type: string, value: string}>;
   };
 }

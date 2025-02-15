@@ -35,16 +35,14 @@ serve(async (req) => {
 
     try {
       // Verificar se o certificado base64 é válido
-      let validBase64 = true;
       try {
         atob(certificado);
       } catch (e) {
-        validBase64 = false;
         console.error("Certificado base64 inválido:", e);
         return new Response(
           JSON.stringify({ 
             success: false, 
-            message: 'Certificado base64 inválido' 
+            message: 'Certificado inválido: formato base64 incorreto' 
           }),
           { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
         );
@@ -67,26 +65,20 @@ serve(async (req) => {
       let result;
       try {
         result = await pkcs12.parse(certificateBytes, senhaLimpa);
-        console.log("Parse do certificado bem sucedido:", result);
-      } catch (error) {
+        console.log("Parse do certificado bem sucedido");
+      } catch (error: any) {
         console.error("Erro detalhado no parse do certificado:", {
           message: error.message,
           name: error.name,
           stack: error.stack
         });
         
-        const errorMessage = error.message?.toLowerCase() || '';
-        
-        if (errorMessage.includes('mac verify failure') || 
-            errorMessage.includes('invalid password') ||
-            errorMessage.includes('wrong password') ||
-            errorMessage.includes('invalid mac') ||
-            errorMessage.includes('decrypt error')) {
+        if (error.message?.toLowerCase().includes('mac verify failure') || 
+            error.message?.toLowerCase().includes('invalid password')) {
           return new Response(
             JSON.stringify({ 
               success: false, 
-              message: 'Senha do certificado digital inválida',
-              debug: errorMessage
+              message: 'Senha do certificado digital inválida' 
             }),
             { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
           );
@@ -96,7 +88,7 @@ serve(async (req) => {
           JSON.stringify({ 
             success: false, 
             message: 'Erro ao processar certificado digital',
-            debug: errorMessage
+            error: error.message
           }),
           { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
         );
@@ -118,14 +110,6 @@ serve(async (req) => {
       const notBefore = new Date(cert.notBefore);
       const notAfter = new Date(cert.notAfter);
       const now = new Date();
-
-      console.log("Informações do certificado:", {
-        emissor: cert.issuer,
-        subject: cert.subject,
-        notBefore: notBefore.toISOString(),
-        notAfter: notAfter.toISOString(),
-        now: now.toISOString()
-      });
 
       // Verificar validade do certificado
       if (now < notBefore || now > notAfter) {
@@ -185,7 +169,7 @@ serve(async (req) => {
         { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       );
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro detalhado na validação:", {
         message: error.message,
         name: error.name,
@@ -194,13 +178,13 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          message: 'Erro ao validar certificado digital. Verifique se o arquivo está no formato correto (.pfx)',
-          debug: error.message
+          message: 'Erro ao validar certificado digital',
+          error: error.message
         }),
         { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       );
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erro detalhado na requisição:", {
       message: error.message,
       name: error.name,
@@ -209,13 +193,10 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        message: 'Erro interno do servidor ao processar o certificado digital',
+        message: 'Erro interno do servidor',
         error: error.message 
       }),
-      { 
-        status: 500, 
-        headers: { 'Content-Type': 'application/json', ...corsHeaders } 
-      }
+      { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
     );
   }
 })
