@@ -97,12 +97,30 @@ serve(async (req) => {
       throw new Error('ID da NFS-e não informado');
     }
 
+    // Verificar se a nota já não está em processamento
+    const { data: queueCheck, error: queueCheckError } = await supabase
+      .from('sefaz_transmission_queue')
+      .select('*')
+      .eq('documento_id', nfseId)
+      .eq('tipo', 'nfse')
+      .eq('status', 'processando')
+      .maybeSingle();
+
+    if (queueCheckError) {
+      console.error('Erro ao verificar fila:', queueCheckError);
+      throw queueCheckError;
+    }
+
+    if (queueCheck) {
+      throw new Error('NFS-e já está em processamento');
+    }
+
     // Buscar dados da NFS-e com informações relacionadas
     const { data: nfse, error: nfseError } = await supabase
       .from('nfse')
       .select(`
         *,
-        client:clients(
+        clients(
           id,
           name,
           document,
@@ -115,10 +133,6 @@ serve(async (req) => {
           city,
           state,
           zip_code
-        ),
-        service_order:service_orders(
-          id,
-          order_number
         )
       `)
       .eq('id', nfseId)
@@ -127,6 +141,10 @@ serve(async (req) => {
     if (nfseError) {
       console.error('Erro ao buscar NFS-e:', nfseError);
       throw nfseError;
+    }
+
+    if (!nfse) {
+      throw new Error('NFS-e não encontrada');
     }
 
     // Buscar dados da empresa
@@ -138,6 +156,10 @@ serve(async (req) => {
     if (companyError) {
       console.error('Erro ao buscar dados da empresa:', companyError);
       throw companyError;
+    }
+
+    if (!companyInfo) {
+      throw new Error('Dados da empresa não encontrados');
     }
 
     // Buscar configurações SP
@@ -153,6 +175,10 @@ serve(async (req) => {
       throw spError;
     }
 
+    if (!spSettings) {
+      throw new Error('Configurações SP não encontradas');
+    }
+
     // Incrementar número do RPS
     const { data: rpsData, error: rpsError } = await supabase
       .rpc('increment_rps_numero')
@@ -163,90 +189,16 @@ serve(async (req) => {
       throw rpsError;
     }
 
-    // Preparar dados para SP NFSe
-    const spNFSeData: SPNFSeData = {
-      tpAmb: nfse.ambiente === 'producao' ? '1' : '2',
-      versao: spSettings.versao_schema || '2.00',
-      prestador: {
-        cnpj: companyInfo.cnpj.replace(/\D/g, ''),
-        inscricaoMunicipal: companyInfo.inscricao_municipal,
-        tipo_documento: spSettings.tipo_documento_prestador
-      },
-      tomador: {
-        cnpj: nfse.client.document?.replace(/\D/g, ''),
-        inscricaoMunicipal: nfse.client.municipal_registration,
-        razaoSocial: nfse.client.name,
-        endereco: {
-          logradouro: nfse.client.street,
-          numero: nfse.client.street_number,
-          complemento: nfse.client.complement,
-          bairro: nfse.client.neighborhood,
-          codigoMunicipio: companyInfo.endereco_codigo_municipio,
-          uf: nfse.client.state,
-          cep: nfse.client.zip_code?.replace(/\D/g, ''),
-        },
-        email: nfse.client.email,
-      },
-      servico: {
-        valorServicos: nfse.valor_servicos,
-        codigoServico: nfse.codigo_servico,
-        discriminacao: nfse.discriminacao_servicos,
-        codigoMunicipio: companyInfo.endereco_codigo_municipio,
-        codigoLocalPrestacao: spSettings.servico_codigo_local_prestacao,
-        issRetido: spSettings.servico_iss_retido,
-        exigibilidade: spSettings.servico_exigibilidade,
-        operacao: spSettings.servico_operacao,
-        responsavelRetencao: nfse.responsavel_retencao,
-        itemListaServico: spSettings.servico_codigo_item_lista || nfse.codigo_servico,
-        aliquota: spSettings.servico_aliquota || 0,
-        valorDeducoes: spSettings.servico_valor_deducao || 0,
-        baseCalculo: spSettings.servico_valor_base_calculo,
-        percentualReducaoBaseCalculo: spSettings.servico_percentual_reducao_base_calculo,
-        outrasRetencoes: nfse.outras_retencoes,
-      },
-      rps: {
-        numero: rpsData.ultima_rps_numero.toString(),
-        serie: rpsData.serie_rps_padrao,
-        tipo: rpsData.tipo_rps,
-        dataEmissao: new Date().toISOString(),
-        status: spSettings.rps_status || 'N',
-        tributacao: nfse.tributacao_rps,
-      },
-      options: {
-        regimeEspecialTributacao: nfse.codigo_regime_especial_tributacao,
-        optanteSimplesNacional: spSettings.codigo_regime_tributario === '1',
-        incentivadorCultural: nfse.prestador_incentivador_cultural,
-      },
-      proxy: {
-        host: spSettings.proxy_host,
-        port: spSettings.proxy_port,
-        host_ssl: spSettings.proxy_host_ssl,
-        port_ssl: spSettings.proxy_port_ssl
-      },
-      wsdl: {
-        homologacao: spSettings.wsdl_homologacao_url,
-        producao: spSettings.wsdl_producao_url
-      }
-    };
-
-    // Se intermediário está configurado, adicionar
-    if (nfse.intermediario_servico && spSettings.intermediario_cnpj) {
-      spNFSeData.intermediario = {
-        cnpj: spSettings.intermediario_cnpj.replace(/\D/g, ''),
-        inscricaoMunicipal: spSettings.intermediario_inscricao_municipal,
-        email: spSettings.intermediario_email,
-      };
-    }
-
-    // Atualizar status da fila
+    // Criar ou atualizar registro na fila
     const { error: queueError } = await supabase
       .from('sefaz_transmission_queue')
-      .update({ 
+      .upsert({
+        documento_id: nfseId,
+        tipo: 'nfse',
         status: 'processando',
+        tentativas: 0,
         ultima_tentativa: new Date().toISOString()
-      })
-      .eq('documento_id', nfseId)
-      .eq('tipo', 'nfse');
+      });
 
     if (queueError) {
       console.error('Erro ao atualizar fila:', queueError);
@@ -270,7 +222,91 @@ serve(async (req) => {
       throw nfseUpdateError;
     }
 
-    // Log de processamento
+    // Preparar dados para SP NFSe
+    const spNFSeData: SPNFSeData = {
+      tpAmb: nfse.ambiente === 'producao' ? '1' : '2',
+      versao: spSettings.versao_schema || '2.00',
+      prestador: {
+        cnpj: companyInfo.cnpj.replace(/\D/g, ''),
+        inscricaoMunicipal: companyInfo.inscricao_municipal,
+        tipo_documento: spSettings.tipo_documento
+      },
+      tomador: {
+        cnpj: nfse.clients.document?.replace(/\D/g, ''),
+        inscricaoMunicipal: nfse.clients.municipal_registration,
+        razaoSocial: nfse.clients.name,
+        endereco: {
+          logradouro: nfse.clients.street || '',
+          numero: nfse.clients.street_number || '',
+          complemento: nfse.clients.complement || '',
+          bairro: nfse.clients.neighborhood || '',
+          codigoMunicipio: companyInfo.endereco_codigo_municipio || '',
+          uf: nfse.clients.state || '',
+          cep: (nfse.clients.zip_code || '').replace(/\D/g, ''),
+        },
+        email: nfse.clients.email,
+      },
+      servico: {
+        valorServicos: nfse.valor_servicos,
+        codigoServico: nfse.codigo_servico,
+        discriminacao: nfse.discriminacao_servicos,
+        codigoMunicipio: companyInfo.endereco_codigo_municipio || '',
+        codigoLocalPrestacao: nfse.local_servico || spSettings.servico_codigo_local_prestacao,
+        issRetido: nfse.retencao_iss || false,
+        exigibilidade: spSettings.servico_exigibilidade || '1',
+        operacao: spSettings.servico_operacao || '1',
+        responsavelRetencao: nfse.responsavel_retencao || 'cliente',
+        itemListaServico: nfse.codigo_servico || spSettings.servico_codigo_item_lista,
+        aliquota: spSettings.servico_aliquota || 0,
+        valorDeducoes: nfse.deducoes || 0,
+        baseCalculo: spSettings.servico_valor_base_calculo || nfse.valor_servicos,
+        percentualReducaoBaseCalculo: spSettings.servico_percentual_reducao_base_calculo || 0,
+        outrasRetencoes: nfse.outras_retencoes || 0,
+      },
+      rps: {
+        numero: rpsData.ultima_rps_numero.toString(),
+        serie: rpsData.serie_rps_padrao,
+        tipo: rpsData.tipo_rps,
+        dataEmissao: new Date().toISOString(),
+        status: spSettings.rps_status || 'N',
+        tributacao: nfse.tributacao_rps || 'T',
+      },
+      options: {
+        regimeEspecialTributacao: nfse.codigo_regime_especial_tributacao || spSettings.tipo_regime_especial,
+        optanteSimplesNacional: spSettings.codigo_regime_tributario === '1',
+        incentivadorCultural: nfse.prestador_incentivador_cultural || false,
+      },
+      proxy: {
+        host: spSettings.proxy_host,
+        port: spSettings.proxy_port,
+        host_ssl: spSettings.proxy_host_ssl,
+        port_ssl: spSettings.proxy_port_ssl
+      },
+      wsdl: {
+        homologacao: spSettings.wsdl_homologacao_url,
+        producao: spSettings.wsdl_producao_url
+      }
+    };
+
+    // Log de processamento inicial
+    await supabase
+      .from('nfse_sefaz_logs')
+      .insert({
+        nfse_id: nfseId,
+        status: 'processing',
+        message: 'Iniciando processamento da NFS-e',
+        request_payload: spNFSeData,
+        response_payload: null
+      });
+
+    // Aqui seria o envio efetivo para a SEFAZ
+    // Por enquanto vamos simular um processamento bem-sucedido
+    const processResponse = {
+      status: 'processado',
+      message: 'NFS-e processada com sucesso'
+    };
+
+    // Log de conclusão
     await supabase
       .from('nfse_sefaz_logs')
       .insert({
@@ -278,10 +314,7 @@ serve(async (req) => {
         status: 'success',
         message: 'NFS-e processada com sucesso',
         request_payload: spNFSeData,
-        response_payload: { 
-          status: 'processado',
-          message: 'Processamento realizado com sucesso'
-        }
+        response_payload: processResponse
       });
 
     console.log('Processamento finalizado com sucesso');
@@ -309,6 +342,7 @@ serve(async (req) => {
           Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
         );
 
+        // Log do erro
         await supabase
           .from('nfse_sefaz_logs')
           .insert({
@@ -319,7 +353,7 @@ serve(async (req) => {
             response_payload: { error: error.message }
           });
 
-        // Atualizar status da NFS-e em caso de erro
+        // Atualizar status da NFS-e
         await supabase
           .from('nfse')
           .update({
@@ -327,7 +361,7 @@ serve(async (req) => {
           })
           .eq('id', nfseId);
 
-        // Atualizar status da fila em caso de erro
+        // Atualizar status da fila
         await supabase
           .from('sefaz_transmission_queue')
           .update({ 
@@ -343,7 +377,10 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }),
       { 
         status: 400,
         headers: {
