@@ -1,4 +1,3 @@
-
 export interface NFSe {
   id: string;
   tipo_registro?: string;
@@ -69,7 +68,8 @@ export interface NFSe {
   aliquota_cofins: number;
   aliquota_csll: number;
   valor_carga_tributaria: number;
-  valor_tributos_ibpt: number;
+  percentual_carga_tributaria: number;
+  percentual_tributos_ibpt: number;
   fonte_carga_tributaria?: string;
   cei?: string;
   matricula_obra?: string;
@@ -104,12 +104,6 @@ export interface NFSe {
   optante_mei: boolean;
   responsavel_retencao: string;
   local_servico: string;
-  tributacao_rps: string;
-  tipo_servico: string;
-  regime_especial_tributacao: string;
-  prestador_incentivador_cultural: boolean;
-  enviar_email_tomador: boolean;
-  enviar_email_intermediario: boolean;
   clients?: {
     name: string;
     document: string;
@@ -170,7 +164,8 @@ export interface NFSeFormData {
   valor_csll: number;
   outras_retencoes: number;
   valor_carga_tributaria: number;
-  valor_tributos_ibpt: number;
+  percentual_carga_tributaria: number;
+  percentual_tributos_ibpt: number;
   municipio_prestacao_codigo?: string;
   municipio_prestacao?: string;
   valor_total: number;
@@ -193,12 +188,7 @@ export interface NFSeFormData {
   responsavel_retencao: string;
   local_servico: string;
   optante_mei?: boolean;
-  tributacao_rps: string;
-  tipo_servico: string;
-  regime_especial_tributacao: string;
-  prestador_incentivador_cultural: boolean;
-  enviar_email_tomador: boolean;
-  enviar_email_intermediario: boolean;
+  prestador_incentivador_cultural?: boolean;
 }
 
 export interface RPSResponse {

@@ -55,7 +55,7 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
     data_emissao: new Date().toISOString().split("T")[0],
     data_competencia: new Date().toISOString().split("T")[0],
     inscricao_prestador: "",
-    tipo_documento_prestador: "2",
+    tipo_documento_prestador: "2", // 2 = CNPJ
     documento_prestador: "",
     codigo_servico: "",
     discriminacao_servicos: "",
@@ -68,7 +68,7 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
     aliquota_csll: 0,
     valor_iss: 0,
     iss_retido: "N",
-    tipo_documento_tomador: "2",
+    tipo_documento_tomador: "2", // 2 = CNPJ
     documento_tomador: "",
     razao_social_tomador: "",
     inscricao_municipal_tomador: "",
@@ -105,13 +105,7 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
     desconto_incondicional: 0,
     comissao_percentual: 0,
     responsavel_retencao: "tomador",
-    local_servico: "tomador",
-    tributacao_rps: "T",
-    tipo_servico: "P",
-    regime_especial_tributacao: "1",
-    prestador_incentivador_cultural: false,
-    enviar_email_tomador: true,
-    enviar_email_intermediario: false
+    local_servico: "tomador"
   });
   
   const { toast } = useToast();
