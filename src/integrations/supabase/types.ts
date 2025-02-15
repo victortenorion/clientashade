@@ -690,6 +690,8 @@ export type Database = {
           desconto_iss: boolean | null
           discriminacao_servicos: string
           documento_intermediario: string | null
+          documento_prestador: string | null
+          documento_tomador: string | null
           email_prestador: string | null
           email_tomador: string | null
           encapsulamento: string | null
@@ -701,6 +703,7 @@ export type Database = {
           fonte_carga_tributaria: string | null
           id: string
           inscricao_municipal_intermediario: string | null
+          inscricao_prestador: string | null
           intermediario_servico: boolean | null
           iss_a_pagar: number | null
           iss_pago: number | null
@@ -725,6 +728,8 @@ export type Database = {
           prestador_incentivador_cultural: boolean | null
           protocolo_cancelamento: string | null
           razao_social_intermediario: string | null
+          razao_social_prestador: string | null
+          razao_social_tomador: string | null
           repasse_plano_saude: number | null
           responsavel_retencao: string | null
           retencao_inss: boolean | null
@@ -744,6 +749,7 @@ export type Database = {
           tipo_consolidacao: string | null
           tipo_documento_intermediario: string | null
           tipo_documento_prestador: string | null
+          tipo_documento_tomador: string | null
           tipo_endereco_prestador: string | null
           tipo_endereco_tomador: string | null
           tipo_registro: string | null
@@ -807,6 +813,8 @@ export type Database = {
           desconto_iss?: boolean | null
           discriminacao_servicos: string
           documento_intermediario?: string | null
+          documento_prestador?: string | null
+          documento_tomador?: string | null
           email_prestador?: string | null
           email_tomador?: string | null
           encapsulamento?: string | null
@@ -818,6 +826,7 @@ export type Database = {
           fonte_carga_tributaria?: string | null
           id?: string
           inscricao_municipal_intermediario?: string | null
+          inscricao_prestador?: string | null
           intermediario_servico?: boolean | null
           iss_a_pagar?: number | null
           iss_pago?: number | null
@@ -842,6 +851,8 @@ export type Database = {
           prestador_incentivador_cultural?: boolean | null
           protocolo_cancelamento?: string | null
           razao_social_intermediario?: string | null
+          razao_social_prestador?: string | null
+          razao_social_tomador?: string | null
           repasse_plano_saude?: number | null
           responsavel_retencao?: string | null
           retencao_inss?: boolean | null
@@ -861,6 +872,7 @@ export type Database = {
           tipo_consolidacao?: string | null
           tipo_documento_intermediario?: string | null
           tipo_documento_prestador?: string | null
+          tipo_documento_tomador?: string | null
           tipo_endereco_prestador?: string | null
           tipo_endereco_tomador?: string | null
           tipo_registro?: string | null
@@ -924,6 +936,8 @@ export type Database = {
           desconto_iss?: boolean | null
           discriminacao_servicos?: string
           documento_intermediario?: string | null
+          documento_prestador?: string | null
+          documento_tomador?: string | null
           email_prestador?: string | null
           email_tomador?: string | null
           encapsulamento?: string | null
@@ -935,6 +949,7 @@ export type Database = {
           fonte_carga_tributaria?: string | null
           id?: string
           inscricao_municipal_intermediario?: string | null
+          inscricao_prestador?: string | null
           intermediario_servico?: boolean | null
           iss_a_pagar?: number | null
           iss_pago?: number | null
@@ -959,6 +974,8 @@ export type Database = {
           prestador_incentivador_cultural?: boolean | null
           protocolo_cancelamento?: string | null
           razao_social_intermediario?: string | null
+          razao_social_prestador?: string | null
+          razao_social_tomador?: string | null
           repasse_plano_saude?: number | null
           responsavel_retencao?: string | null
           retencao_inss?: boolean | null
@@ -978,6 +995,7 @@ export type Database = {
           tipo_consolidacao?: string | null
           tipo_documento_intermediario?: string | null
           tipo_documento_prestador?: string | null
+          tipo_documento_tomador?: string | null
           tipo_endereco_prestador?: string | null
           tipo_endereco_tomador?: string | null
           tipo_registro?: string | null

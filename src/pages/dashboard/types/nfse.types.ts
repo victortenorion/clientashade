@@ -1,3 +1,4 @@
+
 export interface NFSe {
   id: string;
   tipo_registro?: string;
@@ -101,6 +102,9 @@ export interface NFSe {
   vendedor_id?: string;
   comissao_percentual: number;
   outras_retencoes: number;
+  optante_mei: boolean;
+  responsavel_retencao: string;
+  local_servico: string;
   clients?: {
     name: string;
     document: string;
@@ -184,6 +188,7 @@ export interface NFSeFormData {
   observacoes?: string;
   responsavel_retencao: string;
   local_servico: string;
+  optante_mei?: boolean;
 }
 
 export interface RPSResponse {
