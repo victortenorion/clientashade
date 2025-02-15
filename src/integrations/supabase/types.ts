@@ -1065,7 +1065,11 @@ export type Database = {
           proxy_host_ssl: string | null
           proxy_port_ssl: string | null
           servico_codigo_item_lista: string | null
+          servico_codigo_local_prestacao: string | null
           servico_discriminacao_item: string | null
+          servico_exigibilidade: string | null
+          servico_iss_retido: boolean | null
+          servico_operacao: string | null
           servico_percentual_reducao_base_calculo: number | null
           servico_valor_base_calculo: number | null
           servico_valor_deducao: number | null
@@ -1093,7 +1097,11 @@ export type Database = {
           proxy_host_ssl?: string | null
           proxy_port_ssl?: string | null
           servico_codigo_item_lista?: string | null
+          servico_codigo_local_prestacao?: string | null
           servico_discriminacao_item?: string | null
+          servico_exigibilidade?: string | null
+          servico_iss_retido?: boolean | null
+          servico_operacao?: string | null
           servico_percentual_reducao_base_calculo?: number | null
           servico_valor_base_calculo?: number | null
           servico_valor_deducao?: number | null
@@ -1121,7 +1129,11 @@ export type Database = {
           proxy_host_ssl?: string | null
           proxy_port_ssl?: string | null
           servico_codigo_item_lista?: string | null
+          servico_codigo_local_prestacao?: string | null
           servico_discriminacao_item?: string | null
+          servico_exigibilidade?: string | null
+          servico_iss_retido?: boolean | null
+          servico_operacao?: string | null
           servico_percentual_reducao_base_calculo?: number | null
           servico_valor_base_calculo?: number | null
           servico_valor_deducao?: number | null
