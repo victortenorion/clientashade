@@ -15,91 +15,121 @@ serve(async (req) => {
   try {
     const { certificado, senha } = await req.json()
     
-    console.log("Recebido certificado e senha");
-    console.log("Senha recebida:", senha);
+    console.log("Iniciando processo de validação do certificado");
     
     if (!certificado || !senha) {
+      console.log("Certificado ou senha não fornecidos");
       return new Response(
         JSON.stringify({ 
           success: false, 
           message: 'Certificado e senha são obrigatórios' 
         }),
-        { 
-          headers: { 
-            'Content-Type': 'application/json',
-            ...corsHeaders 
-          } 
-        }
+        { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       )
     }
 
     try {
-      // Decodifica o certificado base64 para um buffer
-      const binaryString = atob(certificado);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
+      // Remove possíveis caracteres inválidos do base64
+      const base64Clean = certificado.replace(/[\r\n\s]+/g, '');
+      console.log("Tamanho do certificado limpo:", base64Clean.length);
+
+      // Converte base64 para array de bytes
+      let certificateBytes;
+      try {
+        // Primeiro, converte base64 para string binária
+        const binaryString = atob(base64Clean);
+        console.log("Certificado decodificado de base64");
+        
+        // Converte string binária para Uint8Array
+        certificateBytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          certificateBytes[i] = binaryString.charCodeAt(i);
+        }
+        console.log("Array de bytes criado, tamanho:", certificateBytes.length);
+      } catch (e) {
+        console.error("Erro na conversão do certificado:", e);
+        throw new Error("Formato do certificado inválido. Certifique-se de que é um arquivo .pfx válido.");
       }
 
-      console.log("Certificado decodificado, tentando parsear...");
+      console.log("Tentando parsear o certificado PKCS#12...");
       
-      // Tenta parsear o certificado PKCS#12
-      const result = await pkcs12.parse(bytes, senha);
-      
+      // Tenta parsear o certificado com a senha fornecida
+      const result = await pkcs12.parse(certificateBytes, senha);
+      console.log("Certificado parseado com sucesso");
+
       if (!result || !result.cert) {
+        console.log("Certificado não encontrado no arquivo");
         throw new Error("Certificado não encontrado no arquivo");
       }
 
+      // Verifica a validade do certificado
       const cert = result.cert;
       const notBefore = new Date(cert.notBefore);
       const notAfter = new Date(cert.notAfter);
       const now = new Date();
 
+      console.log("Datas do certificado:", {
+        notBefore: notBefore.toISOString(),
+        notAfter: notAfter.toISOString(),
+        now: now.toISOString()
+      });
+
       if (now < notBefore || now > notAfter) {
         return new Response(
           JSON.stringify({ 
             success: false, 
-            message: 'Certificado expirado ou ainda não válido' 
+            message: `Certificado ${now > notAfter ? 'expirado' : 'ainda não válido'}` 
           }),
-          { 
-            headers: { 
-              'Content-Type': 'application/json',
-              ...corsHeaders 
-            } 
-          }
+          { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
         );
       }
 
+      // Verifica se é um certificado tipo A1 com capacidade de assinatura digital
+      if (cert.keyUsage) {
+        console.log("Usos permitidos do certificado:", cert.keyUsage);
+        if (!cert.keyUsage.includes('digitalSignature')) {
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              message: 'O certificado deve ter permissão para assinatura digital' 
+            }),
+            { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+          );
+        }
+      }
+
+      // Sucesso na validação
+      console.log("Certificado válido até:", notAfter.toISOString());
       return new Response(
         JSON.stringify({
           success: true,
           message: 'Certificado válido',
           validade: notAfter.toISOString()
         }),
-        { 
-          headers: { 
-            'Content-Type': 'application/json',
-            ...corsHeaders 
-          } 
-        }
+        { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       );
+
     } catch (error) {
-      console.error('Erro ao validar certificado:', error);
+      console.error('Erro específico na validação:', error);
+      // Verifica se o erro é relacionado à senha incorreta
+      const errorMessage = error.message?.toLowerCase() || '';
+      const isSenhaIncorreta = 
+        errorMessage.includes('mac verify failure') || 
+        errorMessage.includes('invalid password') ||
+        errorMessage.includes('wrong password');
+
       return new Response(
         JSON.stringify({ 
           success: false, 
-          message: 'Senha incorreta ou certificado inválido' 
+          message: isSenhaIncorreta ? 
+            'Senha do certificado incorreta' : 
+            'Erro ao validar certificado. Verifique se o arquivo e a senha estão corretos.'
         }),
-        { 
-          headers: { 
-            'Content-Type': 'application/json',
-            ...corsHeaders 
-          } 
-        }
+        { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       );
     }
   } catch (error) {
-    console.error('Erro na requisição:', error);
+    console.error('Erro geral na requisição:', error);
     return new Response(
       JSON.stringify({ 
         success: false, 
@@ -107,10 +137,7 @@ serve(async (req) => {
       }),
       { 
         status: 500, 
-        headers: { 
-          'Content-Type': 'application/json',
-          ...corsHeaders 
-        } 
+        headers: { 'Content-Type': 'application/json', ...corsHeaders } 
       }
     );
   }
