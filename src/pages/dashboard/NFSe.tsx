@@ -49,6 +49,9 @@ const NFSePage = () => {
   const [showLogsDialog, setShowLogsDialog] = useState(false);
   const [selectedNFSeIdForLogs, setSelectedNFSeIdForLogs] = useState<string | null>(null);
   const [nfseToEdit, setNfseToEdit] = useState<NFSe | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [nfseToDelete, setNfseToDelete] = useState<string | null>(null);
+  const [motivoExclusao, setMotivoExclusao] = useState("");
 
   const queryClient = useQueryClient();
 
@@ -328,6 +331,45 @@ const NFSePage = () => {
     }
   };
 
+  const handleDeleteNFSe = async () => {
+    if (!nfseToDelete || !motivoExclusao) return;
+
+    try {
+      const { error } = await supabase
+        .from("nfse")
+        .update({
+          excluida: true,
+          data_exclusao: new Date().toISOString(),
+          motivo_exclusao: motivoExclusao
+        })
+        .eq("id", nfseToDelete);
+
+      if (error) throw error;
+
+      await supabase.from("nfse_eventos").insert({
+        nfse_id: nfseToDelete,
+        tipo_evento: "exclusao",
+        descricao: motivoExclusao,
+        status: "concluido"
+      });
+
+      toast({
+        title: "NFS-e excluída com sucesso",
+      });
+
+      setShowDeleteDialog(false);
+      setMotivoExclusao("");
+      setNfseToDelete(null);
+      refreshData();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao excluir NFS-e",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -370,7 +412,7 @@ const NFSePage = () => {
                 </TableCell>
               </TableRow>
             ) : (
-              notas?.map((nota: NFSe) => (
+              notas?.filter(nota => !nota.excluida).map((nota: NFSe) => (
                 <TableRow 
                   key={nota.id} 
                   className="cursor-pointer hover:bg-muted/50"
@@ -407,14 +449,27 @@ const NFSePage = () => {
                       </Button>
 
                       {nota.status_sefaz === "pendente" && (
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleSendToSefaz(nota.id)}
-                          title="Enviar NFS-e"
-                        >
-                          <Send className="h-4 w-4" />
-                        </Button>
+                        <>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleSendToSefaz(nota.id)}
+                            title="Enviar NFS-e"
+                          >
+                            <Send className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => {
+                              setNfseToDelete(nota.id);
+                              setShowDeleteDialog(true);
+                            }}
+                            title="Excluir NFS-e"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
                       )}
 
                       {nota.status_sefaz === "enviando" && (
@@ -519,6 +574,46 @@ const NFSePage = () => {
             <Button
               onClick={handleCancelarNFSe}
               disabled={!motivoCancelamento}
+            >
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir NFS-e</DialogTitle>
+            <DialogDescription>
+              Informe o motivo da exclusão da nota fiscal
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="motivo">Motivo da Exclusão</Label>
+              <Textarea
+                id="motivo"
+                value={motivoExclusao}
+                onChange={(e) => setMotivoExclusao(e.target.value)}
+                placeholder="Descreva o motivo da exclusão..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteDialog(false);
+                setMotivoExclusao("");
+                setNfseToDelete(null);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleDeleteNFSe}
+              disabled={!motivoExclusao}
             >
               Confirmar
             </Button>

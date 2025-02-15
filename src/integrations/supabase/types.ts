@@ -673,16 +673,19 @@ export type Database = {
           data_competencia: string
           data_emissao: string | null
           data_emissao_rps: string | null
+          data_exclusao: string | null
           deducoes: number | null
           desconto_incondicional: number | null
           desconto_iss: boolean | null
           discriminacao_servicos: string
           enviar_email_intermediario: boolean | null
           enviar_email_tomador: boolean | null
+          excluida: boolean | null
           id: string
           intermediario_servico: boolean | null
           local_servico: string | null
           motivo_cancelamento: string | null
+          motivo_exclusao: string | null
           municipio_prestacao: string | null
           natureza_operacao: string | null
           numero_nfse: number
@@ -693,6 +696,7 @@ export type Database = {
           percentual_ir: number | null
           percentual_tributos_ibpt: number | null
           prestador_incentivador_cultural: boolean | null
+          protocolo_cancelamento: string | null
           responsavel_retencao: string | null
           retencao_inss: boolean | null
           retencao_ir: boolean | null
@@ -745,16 +749,19 @@ export type Database = {
           data_competencia: string
           data_emissao?: string | null
           data_emissao_rps?: string | null
+          data_exclusao?: string | null
           deducoes?: number | null
           desconto_incondicional?: number | null
           desconto_iss?: boolean | null
           discriminacao_servicos: string
           enviar_email_intermediario?: boolean | null
           enviar_email_tomador?: boolean | null
+          excluida?: boolean | null
           id?: string
           intermediario_servico?: boolean | null
           local_servico?: string | null
           motivo_cancelamento?: string | null
+          motivo_exclusao?: string | null
           municipio_prestacao?: string | null
           natureza_operacao?: string | null
           numero_nfse?: number
@@ -765,6 +772,7 @@ export type Database = {
           percentual_ir?: number | null
           percentual_tributos_ibpt?: number | null
           prestador_incentivador_cultural?: boolean | null
+          protocolo_cancelamento?: string | null
           responsavel_retencao?: string | null
           retencao_inss?: boolean | null
           retencao_ir?: boolean | null
@@ -817,16 +825,19 @@ export type Database = {
           data_competencia?: string
           data_emissao?: string | null
           data_emissao_rps?: string | null
+          data_exclusao?: string | null
           deducoes?: number | null
           desconto_incondicional?: number | null
           desconto_iss?: boolean | null
           discriminacao_servicos?: string
           enviar_email_intermediario?: boolean | null
           enviar_email_tomador?: boolean | null
+          excluida?: boolean | null
           id?: string
           intermediario_servico?: boolean | null
           local_servico?: string | null
           motivo_cancelamento?: string | null
+          motivo_exclusao?: string | null
           municipio_prestacao?: string | null
           natureza_operacao?: string | null
           numero_nfse?: number
@@ -837,6 +848,7 @@ export type Database = {
           percentual_ir?: number | null
           percentual_tributos_ibpt?: number | null
           prestador_incentivador_cultural?: boolean | null
+          protocolo_cancelamento?: string | null
           responsavel_retencao?: string | null
           retencao_inss?: boolean | null
           retencao_ir?: boolean | null
