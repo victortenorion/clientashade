@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,7 +15,7 @@ import {
 import { NFSe, NFSeFormData } from "./types/nfse.types";
 import { format } from "date-fns";
 import { Plus, Pencil, Trash2, Send, XCircle, Printer, List } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +31,12 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
+
+interface RPSResponse {
+  ultima_rps_numero: number;
+  serie_rps_padrao: string;
+  tipo_rps: string;
+}
 
 const NFSePage = () => {
   const { toast } = useToast();
@@ -152,12 +159,10 @@ const NFSePage = () => {
 
   const handleSendToSefaz = async (nfseId: string) => {
     try {
-      // Validar se o ID da NFS-e é válido
       if (!nfseId || nfseId.trim() === '') {
         throw new Error('ID da NFS-e inválido');
       }
 
-      // Verificar se a NFS-e existe antes de prosseguir
       const { data: nfse, error: nfseError } = await supabase
         .from("nfse")
         .select(`
@@ -202,7 +207,7 @@ const NFSePage = () => {
 
       // Incrementar número do RPS
       const { data: rpsData, error: rpsError } = await supabase
-        .rpc('increment_rps_numero')
+        .rpc<RPSResponse>('increment_rps_numero')
         .single();
 
       if (rpsError) {
