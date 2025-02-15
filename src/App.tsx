@@ -9,6 +9,7 @@ import {
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { useSession, useSupabaseClient, SessionContextProvider } from "@supabase/auth-helpers-react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import Dashboard from "./pages/Dashboard";
 import Clients from "./pages/dashboard/Clients";
@@ -18,6 +19,16 @@ import NFSeFromServiceOrder from "./pages/dashboard/NFSeFromServiceOrder";
 import { ClientTab } from "./pages/dashboard/components/ClientTab";
 import { NotasFiscaisTab } from "./pages/dashboard/components/NotasFiscaisTab";
 import NFSePage from "./pages/dashboard/NFSe";
+
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1
+    },
+  },
+});
 
 function AppRoutes() {
   return (
@@ -47,11 +58,13 @@ function AppRoutes() {
 
 function App() {
   return (
-    <SessionContextProvider supabaseClient={supabase}>
-      <Router>
-        <AppRoutes />
-      </Router>
-    </SessionContextProvider>
+    <QueryClientProvider client={queryClient}>
+      <SessionContextProvider supabaseClient={supabase}>
+        <Router>
+          <AppRoutes />
+        </Router>
+      </SessionContextProvider>
+    </QueryClientProvider>
   );
 }
 
