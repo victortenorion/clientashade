@@ -299,17 +299,18 @@ serve(async (req) => {
       });
 
     // Aqui seria o envio efetivo para a SEFAZ
-    // Por enquanto vamos simular um processamento bem-sucedido
+    // Por enquanto vamos simular um processamento "em processamento"
     const processResponse = {
-      status: 'enviado',
-      message: 'NFS-e enviada com sucesso'
+      status: 'processando',
+      message: 'NFS-e em processamento pela SEFAZ'
     };
 
-    // Atualizar status da nota
+    // Atualizar status da nota para "processando"
     const { error: updateStatusError } = await supabase
       .from('nfse')
       .update({
-        status_sefaz: 'enviado'
+        status_sefaz: 'processando',
+        data_emissao_rps: new Date().toISOString()
       })
       .eq('id', nfseId);
 
@@ -321,7 +322,7 @@ serve(async (req) => {
     const { error: updateQueueError } = await supabase
       .from('sefaz_transmission_queue')
       .update({
-        status: 'enviado',
+        status: 'processando',
         ultima_tentativa: new Date().toISOString()
       })
       .eq('documento_id', nfseId)
@@ -331,25 +332,29 @@ serve(async (req) => {
       throw updateQueueError;
     }
 
-    // Log de conclusão
+    // Log do envio inicial
     await supabase
       .from('nfse_sefaz_logs')
       .insert({
         nfse_id: nfseId,
-        status: 'success',
-        message: 'NFS-e enviada com sucesso',
+        status: 'processing',
+        message: 'NFS-e enviada para processamento na SEFAZ',
         request_payload: spNFSeData,
         response_payload: processResponse
       });
 
-    console.log('Processamento finalizado com sucesso');
+    console.log('Processamento iniciado com sucesso');
+
+    // TODO: Implementar consulta assíncrona do status real na SEFAZ
+    // Isso deve ser feito em um processo separado que consulta periodicamente
+    // o status na SEFAZ e atualiza o status_sefaz quando houver confirmação
 
     return new Response(
       JSON.stringify({ 
         success: true,
         data: {
           ...spNFSeData,
-          status: 'enviado'
+          status: 'processando'
         }
       }),
       { 
