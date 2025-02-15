@@ -97,32 +97,24 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
     }
 
     try {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const binaryStr = e.target?.result;
-        if (!binaryStr) return;
+      const fileBuffer = await file.arrayBuffer();
+      const bytes = new Uint8Array(fileBuffer);
+      const base64 = btoa(String.fromCharCode.apply(null, Array.from(bytes)));
 
-        const base64 = btoa(
-          new Uint8Array(binaryStr as ArrayBuffer)
-            .reduce((data, byte) => data + String.fromCharCode(byte), '')
-        );
+      console.log("Tamanho do certificado em base64:", base64.length);
+      setCertificateFile(base64);
 
-        console.log("Tamanho do certificado em base64:", base64.length);
-        setCertificateFile(base64);
-
-        if (selectedTab === 'nfse') {
-          setNfseConfig({
-            ...nfseConfig,
-            certificado_digital: base64
-          });
-        } else {
-          setNfceConfig({
-            ...nfceConfig,
-            certificado_digital: base64
-          });
-        }
-      };
-      reader.readAsArrayBuffer(file);
+      if (selectedTab === 'nfse') {
+        setNfseConfig({
+          ...nfseConfig,
+          certificado_digital: base64
+        });
+      } else {
+        setNfceConfig({
+          ...nfceConfig,
+          certificado_digital: base64
+        });
+      }
     } catch (error) {
       console.error('Erro ao processar arquivo:', error);
       toast({
