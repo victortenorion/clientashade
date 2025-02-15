@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/table";
 import { NFSe, NFSeFormData, RPSResponse } from "./types/nfse.types";
 import { format } from "date-fns";
-import { Plus, Pencil, Trash2, Send, XCircle, Printer, List } from "lucide-react";
+import { Plus, Pencil, Trash2, Send, XCircle, Printer, List, FileDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -427,6 +427,51 @@ const NFSePage = () => {
     }
   };
 
+  const handleDownloadCSV = () => {
+    if (!notas || notas.length === 0) {
+      toast({
+        title: "Nenhuma nota fiscal encontrada",
+        description: "Não há dados para exportar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const headers = [
+      "Número",
+      "Cliente",
+      "Data Emissão",
+      "Valor Total",
+      "Status",
+      "Situação",
+    ];
+
+    const csvData = notas
+      .filter(nota => !nota.excluida)
+      .map((nota) => [
+        nota.numero_nfse,
+        nota.clients?.name,
+        format(new Date(nota.data_emissao), "dd/MM/yyyy HH:mm"),
+        nota.valor_total,
+        nota.status_sefaz,
+        nota.cancelada ? "Cancelada" : "Ativa",
+      ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...csvData.map(row => row.join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `nfse_${format(new Date(), "dd-MM-yyyy")}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -437,10 +482,16 @@ const NFSePage = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button onClick={() => setShowEmissaoDialog(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nova NFS-e
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleDownloadCSV}>
+            <FileDown className="h-4 w-4 mr-2" />
+            Exportar CSV
+          </Button>
+          <Button onClick={() => setShowEmissaoDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nova NFS-e
+          </Button>
+        </div>
       </div>
 
       <div className="border rounded-lg">
