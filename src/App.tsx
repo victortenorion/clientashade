@@ -19,6 +19,7 @@ import CustomerArea from "./pages/dashboard/CustomerArea";
 import NFSe from "./pages/dashboard/NFSe";
 import NFCe from "./pages/dashboard/NFCe";
 import NFSeFromServiceOrder from "./pages/dashboard/NFSeFromServiceOrder";
+import ServiceOrderCSV from "./pages/dashboard/ServiceOrderCSV";
 import NotFound from "./pages/NotFound";
 import ClientLogin from "./pages/ClientLogin";
 import { LoginForm } from "./components/LoginForm";
@@ -49,6 +50,7 @@ function App() {
                   <Route path="service-orders" element={<ServiceOrders />} />
                   <Route path="service-orders/:id" element={<ServiceOrderDetails />} />
                   <Route path="service-order-settings/*" element={<ServiceOrderSettings />} />
+                  <Route path="service-orders/csv" element={<ServiceOrderCSV />} />
                   <Route path="customer-area" element={<CustomerArea />} />
                   <Route path="nfse" element={<NFSe />} />
                   <Route path="nfse/from-service-order/:id" element={<NFSeFromServiceOrder />} />
