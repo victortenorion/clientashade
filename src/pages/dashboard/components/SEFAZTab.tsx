@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -211,6 +210,8 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
           senha: currentConfig.senha_certificado,
         }
       });
+
+      console.log("Resposta completa:", response);
 
       if (!response.data) {
         throw new Error("Resposta inválida do servidor");

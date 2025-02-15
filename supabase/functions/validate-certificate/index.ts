@@ -16,8 +16,11 @@ serve(async (req) => {
     const { certificado, senha } = await req.json()
     
     console.log("Iniciando processo de validação do certificado");
+    console.log("Tamanho do certificado:", certificado?.length || 0);
+    console.log("Senha fornecida:", senha ? "Sim" : "Não");
     
     if (!certificado || !senha) {
+      console.log("Certificado ou senha não fornecidos");
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -29,8 +32,9 @@ serve(async (req) => {
 
     try {
       // Decodificar o certificado base64
+      console.log("Iniciando decodificação base64");
       const binaryString = atob(certificado);
-      console.log("Certificado decodificado de base64");
+      console.log("Certificado decodificado de base64, tamanho:", binaryString.length);
       
       // Converter para Uint8Array
       const certificateBytes = new Uint8Array(binaryString.length);
@@ -42,8 +46,10 @@ serve(async (req) => {
       // Tentar parsear o certificado
       console.log("Tentando parsear o certificado PKCS#12...");
       const result = await pkcs12.parse(certificateBytes, senha);
+      console.log("Resultado do parse:", result ? "Sucesso" : "Falha");
 
       if (!result || !result.cert) {
+        console.log("Certificado não encontrado no arquivo");
         throw new Error("Certificado não encontrado no arquivo");
       }
 
@@ -61,6 +67,7 @@ serve(async (req) => {
 
       // Verificar validade do certificado
       if (now < notBefore || now > notAfter) {
+        console.log("Certificado fora do período de validade");
         return new Response(
           JSON.stringify({ 
             success: false, 
@@ -72,9 +79,11 @@ serve(async (req) => {
 
       // Verificar chave privada
       if (!result.key) {
+        console.log("Chave privada não encontrada");
         throw new Error("Chave privada não encontrada no certificado");
       }
 
+      console.log("Certificado validado com sucesso");
       return new Response(
         JSON.stringify({
           success: true,
@@ -115,7 +124,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        message: 'Erro interno do servidor ao processar o certificado digital' 
+        message: 'Erro interno do servidor ao processar o certificado digital',
+        error: error.message 
       }),
       { 
         status: 500, 
