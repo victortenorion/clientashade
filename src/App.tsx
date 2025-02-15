@@ -15,6 +15,7 @@ import Clients from "./pages/dashboard/Clients";
 import ServiceOrders from "./pages/dashboard/ServiceOrders";
 import { NFSeStandalone } from "./pages/dashboard/NFSeStandalone";
 import NFSeFromServiceOrder from "./pages/dashboard/NFSeFromServiceOrder";
+import { ClientTab } from "./pages/dashboard/components/ClientTab";
 
 function AppRoutes() {
   return (
@@ -34,6 +35,7 @@ function AppRoutes() {
         <Route path="service-orders" element={<ServiceOrders />} />
         <Route path="service-orders/:id/nfse" element={<NFSeFromServiceOrder />} />
         <Route path="nfse/new" element={<NFSeStandalone />} />
+        <Route path="service-order-settings/area-cliente" element={<ClientTab />} />
       </Route>
     </Routes>
   );
