@@ -16,15 +16,12 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { MoreVertical, Plus, Trash2, Pencil, Receipt } from "lucide-react";
+import { Plus, Trash2, Pencil, Receipt } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { NFCeForm } from "./components/NFCeForm";
-import { NFCeFormData } from "./types/nfce.types";
 
 interface ServiceOrder {
   id: string;
@@ -33,17 +30,14 @@ interface ServiceOrder {
   status: string;
   total: number;
   nfce_issued: boolean;
-  nfce?: NFCeFormData | null;
 }
 
 const ServiceOrders = () => {
   const [loading, setLoading] = useState(true);
   const [serviceOrders, setServiceOrders] = useState<ServiceOrder[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedServiceOrder, setSelectedServiceOrder] =
-    useState<ServiceOrder | null>(null);
   const [isNFCeFormOpen, setIsNFCeFormOpen] = useState(false);
+  const [selectedServiceOrder, setSelectedServiceOrder] = useState<ServiceOrder | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -52,12 +46,31 @@ const ServiceOrders = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from("service_orders")
-        .select("*")
-        .ilike("client_name", `%${searchTerm}%`);
+        .select(`
+          id,
+          created_at,
+          clients (
+            name
+          ),
+          status:service_order_statuses (
+            name
+          ),
+          total_price
+        `)
+        .ilike("clients.name", `%${searchTerm}%`);
 
       if (error) throw error;
 
-      setServiceOrders(data || []);
+      const formattedOrders: ServiceOrder[] = (data || []).map(order => ({
+        id: order.id,
+        created_at: order.created_at,
+        client_name: order.clients?.name || 'Cliente não encontrado',
+        status: order.status?.name || 'Sem status',
+        total: order.total_price || 0,
+        nfce_issued: false // Você pode ajustar isso baseado em sua lógica de negócio
+      }));
+
+      setServiceOrders(formattedOrders);
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -216,9 +229,8 @@ const ServiceOrders = () => {
               <DialogTitle>Emitir NFC-e</DialogTitle>
             </DialogHeader>
             <NFCeForm
-              onSubmit={handleNFCeSubmit}
-              onCancel={() => setIsNFCeFormOpen(false)}
-              isLoading={false}
+              serviceOrder={selectedServiceOrder}
+              onClose={closeNFCeForm}
             />
           </DialogContent>
         </Dialog>
