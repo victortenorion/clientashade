@@ -8,7 +8,8 @@ import {
 } from "react-router-dom";
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
-import { useSession, useSupabaseClient } from "@supabase/auth-helpers-react";
+import { useSession, useSupabaseClient, SupabaseProvider } from "@supabase/auth-helpers-react";
+import { supabase } from "@/lib/supabase";
 import Dashboard from "./pages/Dashboard";
 import Clients from "./pages/dashboard/Clients";
 import ServiceOrders from "./pages/dashboard/ServiceOrders";
@@ -40,9 +41,11 @@ function AppRoutes() {
 
 function App() {
   return (
-    <Router>
-      <AppRoutes />
-    </Router>
+    <SupabaseProvider client={supabase}>
+      <Router>
+        <AppRoutes />
+      </Router>
+    </SupabaseProvider>
   );
 }
 
