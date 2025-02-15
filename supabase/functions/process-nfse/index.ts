@@ -56,19 +56,37 @@ serve(async (req) => {
     const { data: spSettings, error: spError } = await supabaseClient
       .from('nfse_sp_settings')
       .select('*')
+      .limit(1)
       .maybeSingle()
 
     if (spError) throw spError
-    if (!spSettings) throw new Error('Configurações da NFS-e SP não encontradas')
+    if (!spSettings) {
+      // Se não encontrar configurações, criar configurações padrão
+      const { data: newSettings, error: newSettingsError } = await supabaseClient
+        .from('nfse_sp_settings')
+        .insert({
+          versao_schema: '2.00',
+          rps_status: 'N',
+          servico_operacao: '1',
+          servico_exigibilidade: '1',
+          tipo_documento: 'CNPJ'
+        })
+        .select()
+        .single()
+
+      if (newSettingsError) throw newSettingsError
+      if (!newSettings) throw new Error('Erro ao criar configurações padrão da NFS-e SP')
+    }
 
     // Buscar certificado digital
     const { data: nfseConfig, error: configError } = await supabaseClient
       .from('nfse_config')
       .select('*')
+      .limit(1)
       .maybeSingle()
 
     if (configError) throw configError
-    if (!nfseConfig) throw new Error('Configurações da NFS-e não encontradas')
+    if (!nfseConfig) throw new Error('Configurações da NFS-e não encontradas. Configure o certificado digital primeiro.')
 
     if (!nfseConfig.certificado_digital || !nfseConfig.senha_certificado) {
       throw new Error('Certificado digital não configurado')
@@ -100,7 +118,7 @@ serve(async (req) => {
     // Montar XML de envio
     const xmlEnvio = `<?xml version="1.0" encoding="UTF-8"?>
 <PedidoEnvioLoteRPS xmlns="http://www.prefeitura.sp.gov.br/nfe">
-  <Cabecalho xmlns="" Versao="${spSettings.versao_schema}">
+  <Cabecalho xmlns="" Versao="${spSettings?.versao_schema || '2.00'}">
     <CPFCNPJRemetente>
       <CNPJ>${nfse.clients.document.replace(/\D/g, '')}</CNPJ>
     </CPFCNPJRemetente>
