@@ -37,3 +37,14 @@ export interface FiscalConfig {
   cnae: string;
   tax_regime: string;
 }
+
+export interface ValidateCertificateResponse {
+  success: boolean;
+  message: string;
+  validade?: string;
+  info?: {
+    validoAte: string;
+    validoDe: string;
+    possuiChavePrivada: boolean;
+  };
+}

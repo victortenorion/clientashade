@@ -204,28 +204,27 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
       console.log("Enviando certificado para validação...");
       console.log("Senha sendo enviada:", currentConfig.senha_certificado);
 
-      const response = await supabase.functions.invoke('validate-certificate', {
+      const { data, error } = await supabase.functions.invoke<ValidateCertificateResponse>('validate-certificate', {
         body: {
           certificado: certificateFile,
           senha: currentConfig.senha_certificado,
         }
       });
 
-      console.log("Resposta completa:", response);
+      console.log("Resposta completa:", { data, error });
 
-      if (!response.data) {
-        throw new Error("Resposta inválida do servidor");
-      }
+      if (error) throw new Error(error.message);
+      if (!data) throw new Error("Resposta inválida do servidor");
 
-      console.log("Resposta da validação:", response.data);
+      console.log("Resposta da validação:", data);
 
-      if (response.data.success) {
+      if (data.success) {
         // Salvar certificado no banco
         const certificateData = {
           type: selectedTab,
           certificate_data: certificateFile,
           certificate_password: currentConfig.senha_certificado,
-          valid_until: response.data.validade,
+          valid_until: data.validade,
           is_valid: true
         };
 
@@ -235,31 +234,27 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
 
         if (saveError) throw new Error("Erro ao salvar certificado no banco de dados");
 
+        const updatedConfig = {
+          ...currentConfig,
+          certificado_digital: certificateFile,
+          senha_certificado: currentConfig.senha_certificado,
+          certificado_valido: true,
+          certificado_validade: data.validade
+        };
+
         if (selectedTab === 'nfse') {
-          setNfseConfig({
-            ...nfseConfig,
-            certificado_digital: certificateFile,
-            senha_certificado: currentConfig.senha_certificado,
-            certificado_valido: true,
-            certificado_validade: response.data.validade
-          });
+          setNfseConfig(updatedConfig as NFSeConfig);
         } else {
-          setNfceConfig({
-            ...nfceConfig,
-            certificado_digital: certificateFile,
-            senha_certificado: currentConfig.senha_certificado,
-            certificado_valido: true,
-            certificado_validade: response.data.validade
-          });
+          setNfceConfig(updatedConfig as NFCeConfig);
         }
 
         toast({
           title: "Sucesso",
           description: "Certificado digital válido até " + 
-            new Date(response.data.validade).toLocaleDateString(),
+            new Date(data.validade!).toLocaleDateString(),
         });
       } else {
-        throw new Error(response.data.message || "Certificado inválido");
+        throw new Error(data.message || "Certificado inválido");
       }
     } catch (error: any) {
       console.error('Erro na validação:', error);
@@ -279,23 +274,21 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
         console.error('Erro ao atualizar status do certificado:', dbError);
       }
 
+      const updatedConfig = {
+        ...currentConfig,
+        certificado_valido: false,
+        certificado_validade: undefined
+      };
+
       if (selectedTab === 'nfse') {
-        setNfseConfig({
-          ...nfseConfig,
-          certificado_valido: false,
-          certificado_validade: undefined
-        });
+        setNfseConfig(updatedConfig as NFSeConfig);
       } else {
-        setNfceConfig({
-          ...nfceConfig,
-          certificado_valido: false,
-          certificado_validade: undefined
-        });
+        setNfceConfig(updatedConfig as NFCeConfig);
       }
 
       toast({
         title: "Erro na validação",
-        description: error.message || "Certificado digital inválido",
+        description: error.message || "Erro ao validar certificado digital",
         variant: "destructive",
       });
     } finally {

@@ -182,9 +182,9 @@ const ServiceOrderSettings = () => {
           nfceConfig={nfceConfig}
           nfseConfig={nfseConfig}
           fiscalConfig={fiscalConfig}
-          setNfceConfig={setNfceConfig}
-          setNfseConfig={setNfseConfig}
-          setFiscalConfig={setFiscalConfig}
+          setNfceConfig={(config: NFCeConfig) => setNfceConfig(config)}
+          setNfseConfig={(config: NFSeConfig) => setNfseConfig(config)}
+          setFiscalConfig={(config: FiscalConfig) => setFiscalConfig(config)}
           handleSaveAllConfigs={handleSaveAllConfigs}
         />
       );
