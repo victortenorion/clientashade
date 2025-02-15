@@ -104,7 +104,7 @@ export const CompanyInfoTab = () => {
             title: "Atenção",
             description: `Já existem NFS-e com número RPS maior que ${spConfig.numero_inicial_rps}. ` +
             `O próximo número será ${parseInt(lastNFSe.numero_rps) + 1}.`,
-            variant: "warning"
+            variant: "destructive"
           });
         }
       }
@@ -306,7 +306,7 @@ export const CompanyInfoTab = () => {
       });
 
       loadCompanyInfo();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao salvar dados da empresa:', error);
       toast({
         title: "Erro",
@@ -573,8 +573,15 @@ export const CompanyInfoTab = () => {
           </div>
 
           <div className="flex justify-end">
-            <Button onClick={handleSave}>
-              Salvar Dados da Empresa
+            <Button onClick={handleSave} disabled={isLoading || isCheckingRPS}>
+              {isLoading || isCheckingRPS ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                'Salvar Dados da Empresa'
+              )}
             </Button>
           </div>
         </CardContent>
