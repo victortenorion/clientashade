@@ -102,10 +102,7 @@ const NFSePage = () => {
       console.log("Enviando NFS-e para processamento...", { nfseId });
 
       const { data, error } = await supabase.functions.invoke<ProcessNFSeResponse>('process-nfse', {
-        body: { 
-          nfseId,
-          method: 'POST'  // Adicionando método explicitamente
-        }
+        body: { nfseId }
       });
 
       console.log("Resposta do processamento:", { data, error });
@@ -146,7 +143,6 @@ const NFSePage = () => {
 
       if (error) throw error;
 
-      // Transform NFSe into NFSeFormData by providing default values
       const formData: NFSeFormData = {
         client_id: data.client_id,
         codigo_servico: data.codigo_servico,
@@ -185,7 +181,7 @@ const NFSePage = () => {
         codigo_regime_especial_tributacao: data.codigo_regime_especial_tributacao
       };
 
-      setNfseToEdit(data as unknown as NFSe);
+      setNfseToEdit(formData);
       setSelectedNFSeId(null);
     } catch (error: any) {
       toast({
