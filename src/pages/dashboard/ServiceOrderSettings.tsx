@@ -8,12 +8,13 @@ import { CompanyInfoTab } from "./components/CompanyInfoTab";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { NFCeConfig, NFSeConfig, FiscalConfig } from "./types/config.types";
 
 const ServiceOrderSettings = () => {
   const location = useLocation();
   const { toast } = useToast();
 
-  const [nfceConfig, setNfceConfig] = useState({
+  const [nfceConfig, setNfceConfig] = useState<NFCeConfig>({
     certificado_digital: "",
     senha_certificado: "",
     ambiente: "homologacao",
@@ -26,7 +27,7 @@ const ServiceOrderSettings = () => {
     certificado_validade: undefined
   });
 
-  const [nfseConfig, setNfseConfig] = useState({
+  const [nfseConfig, setNfseConfig] = useState<NFSeConfig>({
     certificado_digital: "",
     senha_certificado: "",
     ambiente: "homologacao",
@@ -46,7 +47,7 @@ const ServiceOrderSettings = () => {
     tipo_regime_especial: ""
   });
 
-  const [fiscalConfig, setFiscalConfig] = useState({
+  const [fiscalConfig, setFiscalConfig] = useState<FiscalConfig>({
     service_code: "",
     cnae: "",
     tax_regime: ""
@@ -63,9 +64,9 @@ const ServiceOrderSettings = () => {
         .from('fiscal_config')
         .select('*')
         .eq('type', 'nfce')
-        .single();
+        .maybeSingle();
 
-      if (nfceError && nfceError.code !== 'PGRST116') {
+      if (nfceError) {
         console.error('Erro ao carregar configurações NFC-e:', nfceError);
       }
 
@@ -74,9 +75,9 @@ const ServiceOrderSettings = () => {
         .from('fiscal_config')
         .select('*')
         .eq('type', 'nfse')
-        .single();
+        .maybeSingle();
 
-      if (nfseError && nfseError.code !== 'PGRST116') {
+      if (nfseError) {
         console.error('Erro ao carregar configurações NFS-e:', nfseError);
       }
 
@@ -85,31 +86,31 @@ const ServiceOrderSettings = () => {
         .from('fiscal_config')
         .select('*')
         .eq('type', 'general')
-        .single();
+        .maybeSingle();
 
-      if (generalError && generalError.code !== 'PGRST116') {
+      if (generalError) {
         console.error('Erro ao carregar configurações gerais:', generalError);
       }
 
-      if (nfceData) {
-        setNfceConfig({
-          ...nfceConfig,
-          ...nfceData.config,
-        });
+      if (nfceData?.config) {
+        setNfceConfig(prevConfig => ({
+          ...prevConfig,
+          ...nfceData.config
+        }));
       }
 
-      if (nfseData) {
-        setNfseConfig({
-          ...nfseConfig,
-          ...nfseData.config,
-        });
+      if (nfseData?.config) {
+        setNfseConfig(prevConfig => ({
+          ...prevConfig,
+          ...nfseData.config
+        }));
       }
 
-      if (generalData) {
-        setFiscalConfig({
-          ...fiscalConfig,
-          ...generalData.config,
-        });
+      if (generalData?.config) {
+        setFiscalConfig(prevConfig => ({
+          ...prevConfig,
+          ...generalData.config
+        }));
       }
     } catch (error) {
       console.error('Erro ao carregar configurações:', error);
