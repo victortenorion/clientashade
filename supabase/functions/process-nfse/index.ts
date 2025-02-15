@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
@@ -302,9 +301,35 @@ serve(async (req) => {
     // Aqui seria o envio efetivo para a SEFAZ
     // Por enquanto vamos simular um processamento bem-sucedido
     const processResponse = {
-      status: 'processado',
-      message: 'NFS-e processada com sucesso'
+      status: 'enviado',
+      message: 'NFS-e enviada com sucesso'
     };
+
+    // Atualizar status da nota
+    const { error: updateStatusError } = await supabase
+      .from('nfse')
+      .update({
+        status_sefaz: 'enviado'
+      })
+      .eq('id', nfseId);
+
+    if (updateStatusError) {
+      throw updateStatusError;
+    }
+
+    // Atualizar status da fila
+    const { error: updateQueueError } = await supabase
+      .from('sefaz_transmission_queue')
+      .update({
+        status: 'enviado',
+        ultima_tentativa: new Date().toISOString()
+      })
+      .eq('documento_id', nfseId)
+      .eq('tipo', 'nfse');
+
+    if (updateQueueError) {
+      throw updateQueueError;
+    }
 
     // Log de conclusão
     await supabase
@@ -312,7 +337,7 @@ serve(async (req) => {
       .insert({
         nfse_id: nfseId,
         status: 'success',
-        message: 'NFS-e processada com sucesso',
+        message: 'NFS-e enviada com sucesso',
         request_payload: spNFSeData,
         response_payload: processResponse
       });
@@ -322,7 +347,10 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true,
-        data: spNFSeData
+        data: {
+          ...spNFSeData,
+          status: 'enviado'
+        }
       }),
       { 
         headers: { 
