@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import { Buffer } from "https://deno.land/std@0.168.0/node/buffer.ts";
@@ -27,6 +26,17 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
+
+    // Atualizar status de transmissão para 'enviando'
+    const { error: updateError } = await supabaseClient
+      .from('nfse')
+      .update({ 
+        status_transmissao: 'enviando',
+        status_sefaz: 'processando'
+      })
+      .eq('id', nfseId)
+
+    if (updateError) throw updateError
 
     // Primeiro, buscar o certificado válido mais recente
     console.log("Buscando certificado digital...")
@@ -244,6 +254,17 @@ serve(async (req) => {
 
     if (queueError) throw queueError
 
+    // Após o processamento bem-sucedido
+    const { error: finalUpdateError } = await supabaseClient
+      .from('nfse')
+      .update({ 
+        status_transmissao: 'enviado',
+        status_sefaz: 'processado'
+      })
+      .eq('id', nfseId)
+
+    if (finalUpdateError) throw finalUpdateError
+
     console.log("Processamento concluído com sucesso")
     return new Response(
       JSON.stringify({
@@ -257,6 +278,21 @@ serve(async (req) => {
     )
   } catch (error) {
     console.error('Erro ao processar NFS-e:', error)
+
+    // Em caso de erro, atualizar os status
+    if (error.nfseId) {
+      try {
+        await supabaseClient
+          .from('nfse')
+          .update({ 
+            status_transmissao: 'erro',
+            status_sefaz: 'erro'
+          })
+          .eq('id', error.nfseId)
+      } catch (updateError) {
+        console.error('Erro ao atualizar status de erro:', updateError)
+      }
+    }
 
     return new Response(
       JSON.stringify({

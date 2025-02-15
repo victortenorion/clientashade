@@ -1,4 +1,3 @@
-
 import { format } from "date-fns";
 import {
   Dialog,
@@ -161,7 +160,8 @@ export const NFSeView = ({ nfseId, onClose, onEdit }: Props) => {
                     {format(new Date(nfse.data_competencia), "MM/yyyy")}
                   </p>
                   <p>Código do Serviço: {nfse.codigo_servico}</p>
-                  <p>Status: {nfse.status_sefaz}</p>
+                  <p>Status SEFAZ: {nfse.status_sefaz}</p>
+                  <p>Status Transmissão: {nfse.status_transmissao}</p>
                   <p>Ambiente: {nfse.ambiente}</p>
                 </div>
               </div>

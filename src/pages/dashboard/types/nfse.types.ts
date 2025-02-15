@@ -7,6 +7,7 @@ export interface NFSe {
   valor_servicos: number;
   valor_total: number | null;
   status_sefaz: string;
+  status_transmissao: string;
   cancelada: boolean;
   excluida: boolean;
   data_exclusao: string | null;

@@ -707,6 +707,7 @@ export type Database = {
           situacao_nota: string | null
           status_processamento: string | null
           status_sefaz: string | null
+          status_transmissao: string | null
           substituido_rps_numero: string | null
           substituido_rps_serie: string | null
           substituido_rps_tipo: string | null
@@ -783,6 +784,7 @@ export type Database = {
           situacao_nota?: string | null
           status_processamento?: string | null
           status_sefaz?: string | null
+          status_transmissao?: string | null
           substituido_rps_numero?: string | null
           substituido_rps_serie?: string | null
           substituido_rps_tipo?: string | null
@@ -859,6 +861,7 @@ export type Database = {
           situacao_nota?: string | null
           status_processamento?: string | null
           status_sefaz?: string | null
+          status_transmissao?: string | null
           substituido_rps_numero?: string | null
           substituido_rps_serie?: string | null
           substituido_rps_tipo?: string | null
