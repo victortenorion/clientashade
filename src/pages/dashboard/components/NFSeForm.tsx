@@ -36,6 +36,7 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
     codigo_servico: "",
     discriminacao_servicos: "",
     valor_servicos: 0,
+    valor_deducoes: 0,
     data_competencia: new Date().toISOString().split("T")[0],
     deducoes: 0,
     observacoes: "",
@@ -95,6 +96,8 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
     opcao_simples: "N",
     regime_especial_tributacao: "1",
     tipo_servico: "P",
+    enviar_email_tomador: true,
+    enviar_email_intermediario: false,
     data_emissao: new Date().toISOString().split("T")[0]
   });
 

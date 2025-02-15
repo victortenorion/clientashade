@@ -1,4 +1,3 @@
-
 export interface NFSe {
   id: string;
   tipo_registro?: string;
@@ -106,21 +105,11 @@ export interface NFSe {
   responsavel_retencao: string;
   local_servico: string;
   tributacao_rps: string;
-  tipo_servico?: string;
-  regime_especial_tributacao?: string;
-  prestador_incentivador_cultural?: boolean;
-  clients?: {
-    name: string;
-    document: string;
-    email: string;
-    street: string;
-    street_number: string;
-    complement: string;
-    neighborhood: string;
-    city: string;
-    state: string;
-    zip_code: string;
-  };
+  tipo_servico: string;
+  regime_especial_tributacao: string;
+  prestador_incentivador_cultural: boolean;
+  enviar_email_tomador: boolean;
+  enviar_email_intermediario: boolean;
 }
 
 export interface NFSeFormData {
@@ -194,9 +183,11 @@ export interface NFSeFormData {
   local_servico: string;
   optante_mei?: boolean;
   tributacao_rps: string;
-  tipo_servico?: string;
-  regime_especial_tributacao?: string;
-  prestador_incentivador_cultural?: boolean;
+  tipo_servico: string;
+  regime_especial_tributacao: string;
+  prestador_incentivador_cultural: boolean;
+  enviar_email_tomador: boolean;
+  enviar_email_intermediario: boolean;
 }
 
 export interface RPSResponse {
