@@ -1,3 +1,4 @@
+<lov-code>
 import React, { useState } from "react";
 import {
   Form,
@@ -1032,4 +1033,4 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
               <div className="space-y-0.5">
                 <FormLabel className="text-sm">Retenção ISS</FormLabel>
                 <FormDescription>
-                  Indica se há retenção de ISS
+                  Indica se há reten
