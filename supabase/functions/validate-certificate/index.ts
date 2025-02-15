@@ -17,7 +17,6 @@ serve(async (req) => {
     
     console.log("Iniciando processo de validação do certificado");
     console.log("Tamanho do certificado:", certificado?.length || 0);
-    console.log("Senha fornecida:", senha ? "Sim" : "Não");
     
     if (!certificado || !senha) {
       console.log("Certificado ou senha não fornecidos");
@@ -30,7 +29,25 @@ serve(async (req) => {
       )
     }
 
+    // Remover possíveis espaços em branco da senha
+    const senhaLimpa = senha.trim();
+    console.log("Senha processada (comprimento):", senhaLimpa.length);
+
     try {
+      // Verificar se o certificado base64 é válido
+      try {
+        atob(certificado);
+      } catch (e) {
+        console.error("Certificado base64 inválido:", e);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: 'Certificado base64 inválido' 
+          }),
+          { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        );
+      }
+
       // Decodificar o certificado base64
       console.log("Iniciando decodificação base64");
       const binaryString = atob(certificado);
@@ -45,12 +62,48 @@ serve(async (req) => {
 
       // Tentar parsear o certificado
       console.log("Tentando parsear o certificado PKCS#12...");
-      const result = await pkcs12.parse(certificateBytes, senha);
-      console.log("Resultado do parse:", result ? "Sucesso" : "Falha");
+      let result;
+      try {
+        result = await pkcs12.parse(certificateBytes, senhaLimpa);
+        console.log("Parse do certificado bem sucedido");
+      } catch (error) {
+        console.error("Erro no parse do certificado:", error);
+        const errorMessage = error.message?.toLowerCase() || '';
+        
+        if (errorMessage.includes('mac verify failure') || 
+            errorMessage.includes('invalid password') ||
+            errorMessage.includes('wrong password') ||
+            errorMessage.includes('invalid mac') ||
+            errorMessage.includes('decrypt error')) {
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              message: 'Senha do certificado digital inválida',
+              debug: errorMessage
+            }),
+            { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+          );
+        }
+
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: 'Erro ao processar certificado digital',
+            debug: errorMessage
+          }),
+          { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        );
+      }
 
       if (!result || !result.cert) {
         console.log("Certificado não encontrado no arquivo");
-        throw new Error("Certificado não encontrado no arquivo");
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: 'Certificado não encontrado no arquivo' 
+          }),
+          { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        );
       }
 
       // Extrair informações do certificado
@@ -59,7 +112,9 @@ serve(async (req) => {
       const notAfter = new Date(cert.notAfter);
       const now = new Date();
 
-      console.log("Datas do certificado:", {
+      console.log("Informações do certificado:", {
+        emissor: cert.issuer,
+        subject: cert.subject,
         notBefore: notBefore.toISOString(),
         notAfter: notAfter.toISOString(),
         now: now.toISOString()
@@ -71,7 +126,9 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ 
             success: false, 
-            message: `Certificado ${now > notAfter ? 'expirado' : 'ainda não válido'}` 
+            message: `Certificado ${now > notAfter ? 'expirado' : 'ainda não válido'}`,
+            validoAte: notAfter.toISOString(),
+            validoDe: notBefore.toISOString()
           }),
           { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
         );
@@ -80,7 +137,28 @@ serve(async (req) => {
       // Verificar chave privada
       if (!result.key) {
         console.log("Chave privada não encontrada");
-        throw new Error("Chave privada não encontrada no certificado");
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: 'Chave privada não encontrada no certificado' 
+          }),
+          { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        );
+      }
+
+      // Verificar se é um certificado ICP-Brasil
+      const isICPBrasil = cert.issuer.some((issuerPart: any) => 
+        issuerPart.value?.toLowerCase().includes('icp-brasil'));
+
+      if (!isICPBrasil) {
+        console.log("Certificado não é ICP-Brasil");
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: 'O certificado não é ICP-Brasil' 
+          }),
+          { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        );
       }
 
       console.log("Certificado validado com sucesso");
@@ -92,7 +170,9 @@ serve(async (req) => {
           info: {
             validoAte: notAfter.toISOString(),
             validoDe: notBefore.toISOString(),
-            possuiChavePrivada: true
+            possuiChavePrivada: true,
+            emissor: cert.issuer,
+            subject: cert.subject
           }
         }),
         { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
@@ -100,21 +180,11 @@ serve(async (req) => {
 
     } catch (error) {
       console.error("Erro ao validar certificado:", error);
-      
-      const errorMessage = error.message?.toLowerCase() || '';
-      const isSenhaIncorreta = 
-        errorMessage.includes('mac verify failure') || 
-        errorMessage.includes('invalid password') ||
-        errorMessage.includes('wrong password') ||
-        errorMessage.includes('invalid mac') ||
-        errorMessage.includes('decrypt error');
-
       return new Response(
         JSON.stringify({ 
           success: false, 
-          message: isSenhaIncorreta ? 
-            'Senha do certificado digital inválida' : 
-            'Erro ao validar certificado digital. Verifique se o arquivo está no formato correto (.pfx)'
+          message: 'Erro ao validar certificado digital. Verifique se o arquivo está no formato correto (.pfx)',
+          debug: error.message
         }),
         { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       );
