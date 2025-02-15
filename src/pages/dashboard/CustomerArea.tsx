@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -10,25 +10,33 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { ServiceOrder } from "./types/service-order-settings.types";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 const CustomerArea = () => {
   const { clientId } = useParams();
+  const [serviceOrders, setServiceOrders] = useState<ServiceOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [date, setDate] = useState<Date | undefined>(new Date());
   const navigate = useNavigate();
 
-  const { data: serviceOrders, isLoading } = useQuery({
-    queryKey: ["serviceOrders", clientId],
-    queryFn: async () => {
-      if (!clientId) {
-        throw new Error("ID do cliente não encontrado");
-      }
+  useEffect(() => {
+    if (clientId) {
+      fetchServiceOrders();
+    }
+  }, [clientId]);
 
+  const fetchServiceOrders = async () => {
+    try {
       const { data, error } = await supabase
         .from("service_orders")
         .select(`
@@ -39,44 +47,34 @@ const CustomerArea = () => {
 
       if (error) throw error;
 
-      return (data || []).map((order) => ({
+      // Convert the data to match ServiceOrder type
+      const formattedOrders: ServiceOrder[] = (data || []).map(order => ({
         ...order,
         status: {
-          name: order.status?.[0]?.name || "",
-          color: order.status?.[0]?.color || "",
-        },
+          name: order.status?.[0]?.name || '',
+          color: order.status?.[0]?.color || ''
+        }
       }));
-    },
-    enabled: !!clientId, // Só executa a query se clientId existir
-  });
 
-  if (!clientId) {
-    return (
-      <div className="container py-8">
-        <div className="mb-4">
-          <Button onClick={() => navigate("/dashboard/clients")}>
-            Voltar para Clientes
-          </Button>
-        </div>
-        <h1 className="text-2xl font-bold mb-4">Área do Cliente</h1>
-        <p>Cliente não encontrado.</p>
-      </div>
-    );
-  }
+      setServiceOrders(formattedOrders);
+    } catch (error) {
+      console.error("Error fetching service orders:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="container py-8">
       <div className="mb-4">
-        <Button onClick={() => navigate("/dashboard/clients")}>
-          Voltar para Clientes
-        </Button>
+        <Button onClick={() => navigate("/dashboard/clients")}>Voltar para Clientes</Button>
       </div>
       <h1 className="text-2xl font-bold mb-4">Área do Cliente</h1>
       <Separator className="mb-4" />
 
       <div className="mb-4">
         <h2 className="text-xl font-semibold mb-2">Ordens de Serviço</h2>
-        {isLoading ? (
+        {loading ? (
           <p>Carregando ordens de serviço...</p>
         ) : (
           <Table>
@@ -91,34 +89,21 @@ const CustomerArea = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {serviceOrders?.map((order: ServiceOrder) => (
+              {serviceOrders.map((order) => (
                 <TableRow key={order.id}>
                   <TableCell>{order.order_number}</TableCell>
                   <TableCell>{order.description}</TableCell>
                   <TableCell>
-                    <Badge
-                      style={{
-                        backgroundColor: order.status.color,
-                        color: "white",
-                      }}
-                    >
+                    <Badge style={{ backgroundColor: order.status.color, color: 'white' }}>
                       {order.status.name}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {format(new Date(order.created_at), "dd/MM/yyyy", {
-                      locale: ptBR,
-                    })}
+                    {format(new Date(order.created_at), "dd/MM/yyyy", { locale: ptBR })}
                   </TableCell>
                   <TableCell>R$ {order.total_price.toFixed(2)}</TableCell>
                   <TableCell>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        navigate(`/dashboard/service-orders/${order.id}`)
-                      }
-                    >
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/dashboard/service-orders/${order.id}`)}>
                       Ver Detalhes
                     </Button>
                   </TableCell>
@@ -127,6 +112,36 @@ const CustomerArea = () => {
             </TableBody>
           </Table>
         )}
+      </div>
+
+      <div>
+        <h2 className="text-xl font-semibold mb-2">Agendamentos</h2>
+        <p>Selecione uma data para ver os agendamentos:</p>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant={"outline"}
+              className={cn(
+                "w-[240px] justify-start text-left font-normal",
+                !date && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione a data</span>}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={date}
+              onSelect={setDate}
+              disabled={(date) =>
+                date > new Date()
+              }
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
       </div>
     </div>
   );
