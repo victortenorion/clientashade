@@ -41,7 +41,8 @@ interface ServiceOrder {
   equipment: string | null;
   equipment_serial_number: string | null;
   status_id: string;
-  notes: string | null;
+  internal_notes: string | null;
+  reception_notes: string | null;
   total_price: number;
   status: {
     id: string;
@@ -82,7 +83,8 @@ const ServiceOrdersPage = () => {
           equipment,
           equipment_serial_number,
           status_id,
-          notes,
+          internal_notes,
+          reception_notes,
           total_price,
           status:service_order_statuses!service_orders_status_id_fkey (id, name, color),
           client:client_id (name, document)
@@ -92,7 +94,7 @@ const ServiceOrdersPage = () => {
 
       if (searchTerm) {
         query = query.or(
-          `order_number.ilike.%${searchTerm}%,equipment.ilike.%${searchTerm}%,equipment_serial_number.ilike.%${searchTerm}%,notes.ilike.%${searchTerm}%,client_id.name.ilike.%${searchTerm}%,client_id.document.ilike.%${searchTerm}%`
+          `order_number.ilike.%${searchTerm}%,equipment.ilike.%${searchTerm}%,equipment_serial_number.ilike.%${searchTerm}%,internal_notes.ilike.%${searchTerm}%,reception_notes.ilike.%${searchTerm}%,client_id.name.ilike.%${searchTerm}%,client_id.document.ilike.%${searchTerm}%`
         );
       }
 
