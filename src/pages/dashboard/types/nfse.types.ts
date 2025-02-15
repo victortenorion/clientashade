@@ -1,3 +1,4 @@
+
 export interface NFSe {
   id: string;
   tipo_registro?: string;
@@ -110,6 +111,18 @@ export interface NFSe {
   prestador_incentivador_cultural: boolean;
   enviar_email_tomador: boolean;
   enviar_email_intermediario: boolean;
+  clients?: {
+    name: string;
+    document: string;
+    email: string;
+    street: string;
+    street_number: string;
+    complement: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+    zip_code: string;
+  };
 }
 
 export interface NFSeFormData {
