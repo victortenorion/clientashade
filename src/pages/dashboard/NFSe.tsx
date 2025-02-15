@@ -77,43 +77,33 @@ const NFSePage = () => {
     try {
       console.log('Iniciando exclusão da NFS-e:', nfseId);
 
-      // Primeiro verificar se a NFS-e existe e seu status
+      // Primeiro verificar se a NFS-e existe
       const { data: nfse, error: checkError } = await supabase
         .from("nfse")
         .select("*")
         .eq("id", nfseId)
-        .maybeSingle();
+        .single();
 
       if (checkError) {
-        throw checkError;
-      }
-
-      if (!nfse) {
         throw new Error("NFS-e não encontrada");
       }
 
-      // Excluir todos os registros relacionados primeiro
-      const { error: eventosError } = await supabase
+      // Excluir registros relacionados em sequência
+      await supabase
         .from("nfse_eventos")
         .delete()
         .eq("nfse_id", nfseId);
 
-      console.log('Resultado exclusão eventos:', eventosError);
-
-      const { error: logsError } = await supabase
+      await supabase
         .from("nfse_sefaz_logs")
         .delete()
         .eq("nfse_id", nfseId);
 
-      console.log('Resultado exclusão logs:', logsError);
-
-      const { error: queueError } = await supabase
+      await supabase
         .from("sefaz_transmission_queue")
         .delete()
         .eq("documento_id", nfseId)
         .eq("tipo", "nfse");
-
-      console.log('Resultado exclusão fila:', queueError);
 
       // Por fim, excluir a NFS-e
       const { error: deleteError } = await supabase
@@ -121,21 +111,19 @@ const NFSePage = () => {
         .delete()
         .eq("id", nfseId);
 
-      console.log('Resultado exclusão NFS-e:', deleteError);
-
       if (deleteError) {
         throw deleteError;
       }
 
-      // Atualizar a interface
+      // Atualizar o cache e a interface
+      queryClient.invalidateQueries({ queryKey: ["nfse"] });
+
       toast({
         title: "NFS-e excluída com sucesso"
       });
 
-      await refetch();
-
     } catch (error: any) {
-      console.error('Erro detalhado:', error);
+      console.error('Erro ao excluir NFS-e:', error);
       toast({
         variant: "destructive",
         title: "Erro ao excluir NFS-e",
