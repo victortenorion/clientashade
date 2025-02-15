@@ -1126,11 +1126,14 @@ export type Database = {
           servico_valor_deducao: number | null
           servico_valor_item: number | null
           tipo_documento: string | null
+          tipo_documento_prestador: string | null
           tipo_regime_especial: string | null
           ultima_verificacao: string | null
           updated_at: string
           versao_schema: string | null
+          wsdl_homologacao: string | null
           wsdl_homologacao_url: string | null
+          wsdl_producao: string | null
           wsdl_producao_url: string | null
         }
         Insert: {
@@ -1165,11 +1168,14 @@ export type Database = {
           servico_valor_deducao?: number | null
           servico_valor_item?: number | null
           tipo_documento?: string | null
+          tipo_documento_prestador?: string | null
           tipo_regime_especial?: string | null
           ultima_verificacao?: string | null
           updated_at?: string
           versao_schema?: string | null
+          wsdl_homologacao?: string | null
           wsdl_homologacao_url?: string | null
+          wsdl_producao?: string | null
           wsdl_producao_url?: string | null
         }
         Update: {
@@ -1204,11 +1210,14 @@ export type Database = {
           servico_valor_deducao?: number | null
           servico_valor_item?: number | null
           tipo_documento?: string | null
+          tipo_documento_prestador?: string | null
           tipo_regime_especial?: string | null
           ultima_verificacao?: string | null
           updated_at?: string
           versao_schema?: string | null
+          wsdl_homologacao?: string | null
           wsdl_homologacao_url?: string | null
+          wsdl_producao?: string | null
           wsdl_producao_url?: string | null
         }
         Relationships: []
@@ -1624,12 +1633,17 @@ export type Database = {
         }
         Returns: string
       }
-      increment_rps_numero: {
-        Args: {
-          config_id?: string
-        }
-        Returns: Json
-      }
+      increment_rps_numero:
+        | {
+            Args: Record<PropertyKey, never>
+            Returns: Json
+          }
+        | {
+            Args: {
+              config_id?: string
+            }
+            Returns: Json
+          }
       user_has_all_permissions: {
         Args: {
           user_uuid: string
