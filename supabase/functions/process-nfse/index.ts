@@ -7,6 +7,59 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface SPNFSeData {
+  tpAmb: string;
+  versao: string;
+  prestador: {
+    cnpj: string;
+    inscricaoMunicipal: string;
+  };
+  tomador: {
+    cnpj?: string;
+    cpf?: string;
+    inscricaoMunicipal?: string;
+    razaoSocial: string;
+    endereco: {
+      logradouro: string;
+      numero: string;
+      complemento?: string;
+      bairro: string;
+      codigoMunicipio: string;
+      uf: string;
+      cep: string;
+    };
+    email?: string;
+  };
+  servico: {
+    valorServicos: number;
+    codigoServico: string;
+    discriminacao: string;
+    codigoMunicipio: string;
+    responsavelRetencao?: string;
+    itemListaServico: string;
+    aliquota: number;
+    valorDeducoes?: number;
+    outrasRetencoes?: number;
+  };
+  intermediario?: {
+    cnpj?: string;
+    inscricaoMunicipal?: string;
+    email?: string;
+  };
+  rps: {
+    numero: string;
+    serie: string;
+    tipo: string;
+    dataEmissao: string;
+    tributacao: string;
+  };
+  options: {
+    regimeEspecialTributacao?: string;
+    optanteSimplesNacional: boolean;
+    incentivadorCultural: boolean;
+  };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -26,22 +79,61 @@ serve(async (req) => {
       throw new Error('ID da NFS-e não informado');
     }
 
-    // Get NFSe config and increment RPS number
-    const { data: nfseConfig, error: configError } = await supabase
-      .from('nfse_config')
+    // Get NFSe data with related information
+    const { data: nfse, error: nfseError } = await supabase
+      .from('nfse')
+      .select(`
+        *,
+        client:clients(
+          id,
+          name,
+          document,
+          municipal_registration,
+          email,
+          street,
+          street_number,
+          complement,
+          neighborhood,
+          city,
+          state,
+          zip_code
+        ),
+        service_order:service_orders(
+          id,
+          order_number
+        )
+      `)
+      .eq('id', nfseId)
+      .single();
+
+    if (nfseError) {
+      console.error('Erro ao buscar NFS-e:', nfseError);
+      throw nfseError;
+    }
+
+    // Get company info
+    const { data: companyInfo, error: companyError } = await supabase
+      .from('company_info')
       .select('*')
+      .single();
+
+    if (companyError) {
+      console.error('Erro ao buscar dados da empresa:', companyError);
+      throw companyError;
+    }
+
+    // Get SP settings
+    const { data: spSettings, error: spError } = await supabase
+      .from('nfse_sp_settings')
+      .select('*')
+      .order('created_at', { ascending: false })
       .limit(1)
       .single();
 
-    if (configError) {
-      console.error('Erro ao buscar configurações:', configError);
-      throw configError;
+    if (spError) {
+      console.error('Erro ao buscar configurações SP:', spError);
+      throw spError;
     }
-    if (!nfseConfig) {
-      throw new Error('Configurações da NFS-e não encontradas');
-    }
-
-    console.log('Configurações encontradas:', nfseConfig);
 
     // Increment RPS number
     const { data: rpsData, error: rpsError } = await supabase
@@ -52,11 +144,63 @@ serve(async (req) => {
       console.error('Erro ao incrementar RPS:', rpsError);
       throw rpsError;
     }
-    if (!rpsData) {
-      throw new Error('Erro ao gerar número do RPS');
-    }
 
-    console.log('RPS incrementado:', rpsData);
+    // Prepare SP NFSe data
+    const spNFSeData: SPNFSeData = {
+      tpAmb: nfse.ambiente === 'producao' ? '1' : '2',
+      versao: spSettings.versao_schema || '2.00',
+      prestador: {
+        cnpj: companyInfo.cnpj.replace(/\D/g, ''),
+        inscricaoMunicipal: companyInfo.inscricao_municipal,
+      },
+      tomador: {
+        cnpj: nfse.client.document?.replace(/\D/g, ''),
+        inscricaoMunicipal: nfse.client.municipal_registration,
+        razaoSocial: nfse.client.name,
+        endereco: {
+          logradouro: nfse.client.street,
+          numero: nfse.client.street_number,
+          complemento: nfse.client.complement,
+          bairro: nfse.client.neighborhood,
+          codigoMunicipio: companyInfo.endereco_codigo_municipio,
+          uf: nfse.client.state,
+          cep: nfse.client.zip_code?.replace(/\D/g, ''),
+        },
+        email: nfse.client.email,
+      },
+      servico: {
+        valorServicos: nfse.valor_servicos,
+        codigoServico: nfse.codigo_servico,
+        discriminacao: nfse.discriminacao_servicos,
+        codigoMunicipio: companyInfo.endereco_codigo_municipio,
+        responsavelRetencao: nfse.responsavel_retencao,
+        itemListaServico: spSettings.servico_codigo_item_lista || nfse.codigo_servico,
+        aliquota: spSettings.aliquota_servico || 0,
+        valorDeducoes: nfse.deducoes,
+        outrasRetencoes: nfse.outras_retencoes,
+      },
+      rps: {
+        numero: rpsData.ultima_rps_numero.toString(),
+        serie: rpsData.serie_rps_padrao,
+        tipo: rpsData.tipo_rps,
+        dataEmissao: new Date().toISOString(),
+        tributacao: nfse.tributacao_rps,
+      },
+      options: {
+        regimeEspecialTributacao: nfse.codigo_regime_especial_tributacao,
+        optanteSimplesNacional: spSettings.codigo_regime_tributario === '1',
+        incentivadorCultural: nfse.prestador_incentivador_cultural,
+      },
+    };
+
+    // If intermediário is configured, add it
+    if (nfse.intermediario_servico && spSettings.intermediario_cnpj) {
+      spNFSeData.intermediario = {
+        cnpj: spSettings.intermediario_cnpj.replace(/\D/g, ''),
+        inscricaoMunicipal: spSettings.intermediario_inscricao_municipal,
+        email: spSettings.intermediario_email,
+      };
+    }
 
     // Update queue status
     const { error: queueError } = await supabase
@@ -74,55 +218,20 @@ serve(async (req) => {
     }
 
     // Update NFSe with RPS info
-    const { data: nfse, error: nfseUpdateError } = await supabase
+    const { error: nfseUpdateError } = await supabase
       .from('nfse')
       .update({
         numero_rps: rpsData.ultima_rps_numero.toString(),
         serie_rps: rpsData.serie_rps_padrao,
         tipo_rps: rpsData.tipo_rps,
-        status_sefaz: 'processando'
+        status_sefaz: 'processando',
+        data_emissao_rps: new Date().toISOString(),
       })
-      .eq('id', nfseId)
-      .select(`
-        *,
-        client:clients(
-          name,
-          document,
-          municipal_registration,
-          street,
-          street_number,
-          complement,
-          neighborhood,
-          city,
-          state,
-          zip_code
-        )
-      `)
-      .single();
+      .eq('id', nfseId);
 
     if (nfseUpdateError) {
       console.error('Erro ao atualizar NFS-e:', nfseUpdateError);
       throw nfseUpdateError;
-    }
-    if (!nfse) {
-      throw new Error('NFS-e não encontrada');
-    }
-
-    console.log('NFS-e atualizada com sucesso:', nfse);
-
-    // Get company info
-    const { data: companyInfo, error: companyError } = await supabase
-      .from('company_info')
-      .select('*')
-      .limit(1)
-      .single();
-
-    if (companyError) {
-      console.error('Erro ao buscar dados da empresa:', companyError);
-      throw companyError;
-    }
-    if (!companyInfo) {
-      throw new Error('Informações da empresa não configuradas');
     }
 
     // Log de processamento
@@ -132,58 +241,19 @@ serve(async (req) => {
         nfse_id: nfseId,
         status: 'success',
         message: 'NFS-e processada com sucesso',
-        request_payload: { 
-          nfseId,
-          rps: {
-            numero: nfse.numero_rps,
-            serie: nfse.serie_rps,
-            tipo: nfse.tipo_rps
-          }
-        },
+        request_payload: spNFSeData,
         response_payload: { 
           status: 'processado',
           message: 'Processamento realizado com sucesso'
         }
       });
 
-    // Atualizar status da NFS-e
-    const { error: updateError } = await supabase
-      .from('nfse')
-      .update({
-        status_sefaz: 'processado'
-      })
-      .eq('id', nfseId);
-
-    if (updateError) {
-      console.error('Erro ao atualizar status final:', updateError);
-      throw updateError;
-    }
-
-    // Atualizar status da fila
-    const { error: queueUpdateError } = await supabase
-      .from('sefaz_transmission_queue')
-      .update({ 
-        status: 'enviado',
-        ultima_tentativa: new Date().toISOString()
-      })
-      .eq('documento_id', nfseId)
-      .eq('tipo', 'nfse');
-
-    if (queueUpdateError) {
-      console.error('Erro ao atualizar status final da fila:', queueUpdateError);
-      throw queueUpdateError;
-    }
-
     console.log('Processamento finalizado com sucesso');
 
     return new Response(
       JSON.stringify({ 
         success: true,
-        rps: {
-          numero: nfse.numero_rps,
-          serie: nfse.serie_rps,
-          tipo: nfse.tipo_rps
-        }
+        data: spNFSeData
       }),
       { 
         headers: { 
@@ -195,7 +265,6 @@ serve(async (req) => {
   } catch (error) {
     console.error('Erro no processamento da NFS-e:', error);
 
-    // Adicionar log de erro
     try {
       const { nfseId } = await req.json();
       if (nfseId) {
