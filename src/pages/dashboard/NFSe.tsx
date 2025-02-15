@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { PostgrestError } from "@supabase/supabase-js";
@@ -31,6 +30,19 @@ import { NFSeSefazLogs } from "./components/NFSeSefazLogs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
+
+interface RPSResponse {
+  ultima_rps_numero: number;
+  serie_rps_padrao: string;
+  tipo_rps: string;
+  ambiente: string;
+}
+
+interface ProcessNFSeResponse {
+  success: boolean;
+  data?: any;
+  error?: string;
+}
 
 const NFSePage = () => {
   const { toast } = useToast();
@@ -138,7 +150,7 @@ const NFSePage = () => {
       console.log('Config encontrada:', config);
 
       const { data: rpsData, error: rpsError } = await supabase
-        .rpc<RPSResponse, null>('increment_rps_numero')
+        .rpc<RPSResponse>('increment_rps_numero')
         .single();
 
       if (rpsError) {
@@ -196,7 +208,7 @@ const NFSePage = () => {
 
       if (updateError) throw updateError;
 
-      const { data: processResponse, error: processError } = await supabase.functions.invoke('process-nfse', {
+      const { data: processResponse, error: processError } = await supabase.functions.invoke<ProcessNFSeResponse>('process-nfse', {
         body: { 
           nfseId,
           rps: {
