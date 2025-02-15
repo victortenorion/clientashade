@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -14,7 +14,6 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { ServiceOrder } from "./types/service-order-settings.types";
@@ -26,6 +25,10 @@ const CustomerArea = () => {
   const { data: serviceOrders, isLoading } = useQuery({
     queryKey: ["serviceOrders", clientId],
     queryFn: async () => {
+      if (!clientId) {
+        throw new Error("ID do cliente não encontrado");
+      }
+
       const { data, error } = await supabase
         .from("service_orders")
         .select(`
@@ -44,7 +47,22 @@ const CustomerArea = () => {
         },
       }));
     },
+    enabled: !!clientId, // Só executa a query se clientId existir
   });
+
+  if (!clientId) {
+    return (
+      <div className="container py-8">
+        <div className="mb-4">
+          <Button onClick={() => navigate("/dashboard/clients")}>
+            Voltar para Clientes
+          </Button>
+        </div>
+        <h1 className="text-2xl font-bold mb-4">Área do Cliente</h1>
+        <p>Cliente não encontrado.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="container py-8">
