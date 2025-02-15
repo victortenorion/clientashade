@@ -5,6 +5,7 @@ import { Buffer } from "https://deno.land/std@0.168.0/node/buffer.ts";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS'
 }
 
 console.log("Função de processamento de NFS-e iniciada")
@@ -14,8 +15,22 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  if (req.method !== 'POST') {
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: 'Método não permitido' 
+      }),
+      { 
+        status: 405,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    )
+  }
+
   try {
     const { nfseId } = await req.json()
+    console.log("ID da NFS-e recebido:", nfseId)
 
     if (!nfseId) {
       throw new Error('ID da NFS-e não informado')
@@ -27,6 +42,8 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    console.log("Cliente Supabase criado, atualizando status...")
+
     // Atualizar status de transmissão para 'enviando'
     const { error: updateError } = await supabaseClient
       .from('nfse')
@@ -36,7 +53,10 @@ serve(async (req) => {
       })
       .eq('id', nfseId)
 
-    if (updateError) throw updateError
+    if (updateError) {
+      console.error("Erro ao atualizar status:", updateError)
+      throw updateError
+    }
 
     // Primeiro, buscar o certificado válido mais recente
     console.log("Buscando certificado digital...")
@@ -278,22 +298,6 @@ serve(async (req) => {
     )
   } catch (error) {
     console.error('Erro ao processar NFS-e:', error)
-
-    // Em caso de erro, atualizar os status
-    if (error.nfseId) {
-      try {
-        await supabaseClient
-          .from('nfse')
-          .update({ 
-            status_transmissao: 'erro',
-            status_sefaz: 'erro'
-          })
-          .eq('id', error.nfseId)
-      } catch (updateError) {
-        console.error('Erro ao atualizar status de erro:', updateError)
-      }
-    }
-
     return new Response(
       JSON.stringify({
         success: false,

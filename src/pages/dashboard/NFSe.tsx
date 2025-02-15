@@ -99,15 +99,21 @@ const NFSePage = () => {
   const handleSendToSefaz = async (nfseId: string) => {
     try {
       setIsEmitindo(true);
+      console.log("Enviando NFS-e para processamento...", { nfseId });
 
       const { data, error } = await supabase.functions.invoke<ProcessNFSeResponse>('process-nfse', {
-        body: { nfseId }
+        body: { 
+          nfseId,
+          method: 'POST'  // Adicionando método explicitamente
+        }
       });
+
+      console.log("Resposta do processamento:", { data, error });
 
       if (error) throw error;
 
-      if (!data.success) {
-        throw new Error(data.error || 'Erro ao processar NFS-e');
+      if (!data?.success) {
+        throw new Error(data?.error || 'Erro ao processar NFS-e');
       }
 
       toast({
@@ -179,7 +185,7 @@ const NFSePage = () => {
         codigo_regime_especial_tributacao: data.codigo_regime_especial_tributacao
       };
 
-      setNfseToEdit(formData);
+      setNfseToEdit(data as unknown as NFSe);
       setSelectedNFSeId(null);
     } catch (error: any) {
       toast({
