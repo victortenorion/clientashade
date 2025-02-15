@@ -84,7 +84,7 @@ const ServiceOrdersPage = () => {
           status_id,
           notes,
           total_price,
-          status:status_id (id, name, color),
+          status:service_order_statuses!service_orders_status_id_fkey (id, name, color),
           client:client_id (name, document)
         `
         )
