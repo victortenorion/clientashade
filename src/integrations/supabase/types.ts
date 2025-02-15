@@ -702,7 +702,9 @@ export type Database = {
           excluida: boolean | null
           fonte_carga_tributaria: string | null
           id: string
+          inscricao_estadual_tomador: string | null
           inscricao_municipal_intermediario: string | null
+          inscricao_municipal_tomador: string | null
           inscricao_prestador: string | null
           intermediario_servico: boolean | null
           iss_a_pagar: number | null
@@ -825,7 +827,9 @@ export type Database = {
           excluida?: boolean | null
           fonte_carga_tributaria?: string | null
           id?: string
+          inscricao_estadual_tomador?: string | null
           inscricao_municipal_intermediario?: string | null
+          inscricao_municipal_tomador?: string | null
           inscricao_prestador?: string | null
           intermediario_servico?: boolean | null
           iss_a_pagar?: number | null
@@ -948,7 +952,9 @@ export type Database = {
           excluida?: boolean | null
           fonte_carga_tributaria?: string | null
           id?: string
+          inscricao_estadual_tomador?: string | null
           inscricao_municipal_intermediario?: string | null
+          inscricao_municipal_tomador?: string | null
           inscricao_prestador?: string | null
           intermediario_servico?: boolean | null
           iss_a_pagar?: number | null
