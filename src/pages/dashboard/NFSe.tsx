@@ -138,7 +138,7 @@ const NFSePage = () => {
       console.log('Config encontrada:', config);
 
       const { data: rpsData, error: rpsError } = await supabase
-        .rpc<RPSResponse>('increment_rps_numero')
+        .rpc<RPSResponse, null>('increment_rps_numero')
         .single();
 
       if (rpsError) {
