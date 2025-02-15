@@ -77,26 +77,35 @@ const NFSePage = () => {
     try {
       console.log('Iniciando exclusão da NFS-e:', nfseId);
 
-      // Primeiro deletar todos os registros relacionados
+      // Primeiro verificar se a NFS-e existe e seu status
+      const { data: nfse, error: checkError } = await supabase
+        .from("nfse")
+        .select("*")
+        .eq("id", nfseId)
+        .maybeSingle();
+
+      if (checkError) {
+        throw checkError;
+      }
+
+      if (!nfse) {
+        throw new Error("NFS-e não encontrada");
+      }
+
+      // Excluir todos os registros relacionados primeiro
       const { error: eventosError } = await supabase
         .from("nfse_eventos")
         .delete()
         .eq("nfse_id", nfseId);
 
-      if (eventosError) {
-        console.error('Erro ao excluir eventos:', eventosError);
-        throw eventosError;
-      }
+      console.log('Resultado exclusão eventos:', eventosError);
 
       const { error: logsError } = await supabase
         .from("nfse_sefaz_logs")
         .delete()
         .eq("nfse_id", nfseId);
 
-      if (logsError) {
-        console.error('Erro ao excluir logs:', logsError);
-        throw logsError;
-      }
+      console.log('Resultado exclusão logs:', logsError);
 
       const { error: queueError } = await supabase
         .from("sefaz_transmission_queue")
@@ -104,45 +113,33 @@ const NFSePage = () => {
         .eq("documento_id", nfseId)
         .eq("tipo", "nfse");
 
-      if (queueError) {
-        console.error('Erro ao excluir da fila:', queueError);
-        throw queueError;
-      }
+      console.log('Resultado exclusão fila:', queueError);
 
       // Por fim, excluir a NFS-e
-      const { error: nfseError } = await supabase
+      const { error: deleteError } = await supabase
         .from("nfse")
         .delete()
         .eq("id", nfseId);
 
-      if (nfseError) {
-        console.error('Erro ao excluir NFS-e:', nfseError);
-        throw nfseError;
+      console.log('Resultado exclusão NFS-e:', deleteError);
+
+      if (deleteError) {
+        throw deleteError;
       }
 
-      console.log('NFS-e excluída com sucesso');
-
-      // Atualizar o cache e a UI
-      queryClient.setQueryData(["nfse", searchTerm], (oldData: any) => {
-        if (!oldData) return [];
-        return oldData.filter((nota: any) => nota.id !== nfseId);
-      });
-
-      // Invalidar a query para forçar uma nova busca
-      await queryClient.invalidateQueries({ queryKey: ["nfse"] });
-
+      // Atualizar a interface
       toast({
-        title: "NFS-e excluída com sucesso",
+        title: "NFS-e excluída com sucesso"
       });
 
-      // Forçar atualização dos dados
       await refetch();
+
     } catch (error: any) {
-      console.error('Erro ao excluir NFS-e:', error);
+      console.error('Erro detalhado:', error);
       toast({
         variant: "destructive",
         title: "Erro ao excluir NFS-e",
-        description: error.message,
+        description: error.message
       });
     }
   };
