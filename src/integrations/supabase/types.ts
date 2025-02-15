@@ -670,8 +670,12 @@ export type Database = {
           client_id: string
           cnae: string | null
           codigo_atividade: string | null
+          codigo_pais_prestador: string | null
+          codigo_pais_tomador: string | null
+          codigo_proprio: string | null
           codigo_regime_especial_tributacao: string | null
           codigo_servico: string
+          codigo_servico_municipio: string | null
           codigo_tributacao_municipio: string | null
           codigo_verificacao: string | null
           comissao_percentual: number | null
@@ -701,9 +705,12 @@ export type Database = {
           enviar_email_tomador: boolean | null
           excluida: boolean | null
           fonte_carga_tributaria: string | null
+          fonte_tributos: string | null
           id: string
+          inscricao_estadual_prestador: string | null
           inscricao_estadual_tomador: string | null
           inscricao_municipal_intermediario: string | null
+          inscricao_municipal_prestador: string | null
           inscricao_municipal_tomador: string | null
           inscricao_prestador: string | null
           intermediario_servico: boolean | null
@@ -732,6 +739,7 @@ export type Database = {
           razao_social_intermediario: string | null
           razao_social_prestador: string | null
           razao_social_tomador: string | null
+          regime_especial: string | null
           repasse_plano_saude: number | null
           responsavel_retencao: string | null
           retencao_inss: boolean | null
@@ -754,12 +762,14 @@ export type Database = {
           tipo_documento_tomador: string | null
           tipo_endereco_prestador: string | null
           tipo_endereco_tomador: string | null
+          tipo_regime_especial: string | null
           tipo_registro: string | null
           tipo_rps: string | null
           tipo_servico: string | null
           tributacao_rps: string | null
           uf_prestador: string | null
           uf_tomador: string | null
+          unidade_codigo: string | null
           updated_at: string | null
           valor_cofins: number | null
           valor_comissao: number | null
@@ -795,8 +805,12 @@ export type Database = {
           client_id: string
           cnae?: string | null
           codigo_atividade?: string | null
+          codigo_pais_prestador?: string | null
+          codigo_pais_tomador?: string | null
+          codigo_proprio?: string | null
           codigo_regime_especial_tributacao?: string | null
           codigo_servico: string
+          codigo_servico_municipio?: string | null
           codigo_tributacao_municipio?: string | null
           codigo_verificacao?: string | null
           comissao_percentual?: number | null
@@ -826,9 +840,12 @@ export type Database = {
           enviar_email_tomador?: boolean | null
           excluida?: boolean | null
           fonte_carga_tributaria?: string | null
+          fonte_tributos?: string | null
           id?: string
+          inscricao_estadual_prestador?: string | null
           inscricao_estadual_tomador?: string | null
           inscricao_municipal_intermediario?: string | null
+          inscricao_municipal_prestador?: string | null
           inscricao_municipal_tomador?: string | null
           inscricao_prestador?: string | null
           intermediario_servico?: boolean | null
@@ -857,6 +874,7 @@ export type Database = {
           razao_social_intermediario?: string | null
           razao_social_prestador?: string | null
           razao_social_tomador?: string | null
+          regime_especial?: string | null
           repasse_plano_saude?: number | null
           responsavel_retencao?: string | null
           retencao_inss?: boolean | null
@@ -879,12 +897,14 @@ export type Database = {
           tipo_documento_tomador?: string | null
           tipo_endereco_prestador?: string | null
           tipo_endereco_tomador?: string | null
+          tipo_regime_especial?: string | null
           tipo_registro?: string | null
           tipo_rps?: string | null
           tipo_servico?: string | null
           tributacao_rps?: string | null
           uf_prestador?: string | null
           uf_tomador?: string | null
+          unidade_codigo?: string | null
           updated_at?: string | null
           valor_cofins?: number | null
           valor_comissao?: number | null
@@ -920,8 +940,12 @@ export type Database = {
           client_id?: string
           cnae?: string | null
           codigo_atividade?: string | null
+          codigo_pais_prestador?: string | null
+          codigo_pais_tomador?: string | null
+          codigo_proprio?: string | null
           codigo_regime_especial_tributacao?: string | null
           codigo_servico?: string
+          codigo_servico_municipio?: string | null
           codigo_tributacao_municipio?: string | null
           codigo_verificacao?: string | null
           comissao_percentual?: number | null
@@ -951,9 +975,12 @@ export type Database = {
           enviar_email_tomador?: boolean | null
           excluida?: boolean | null
           fonte_carga_tributaria?: string | null
+          fonte_tributos?: string | null
           id?: string
+          inscricao_estadual_prestador?: string | null
           inscricao_estadual_tomador?: string | null
           inscricao_municipal_intermediario?: string | null
+          inscricao_municipal_prestador?: string | null
           inscricao_municipal_tomador?: string | null
           inscricao_prestador?: string | null
           intermediario_servico?: boolean | null
@@ -982,6 +1009,7 @@ export type Database = {
           razao_social_intermediario?: string | null
           razao_social_prestador?: string | null
           razao_social_tomador?: string | null
+          regime_especial?: string | null
           repasse_plano_saude?: number | null
           responsavel_retencao?: string | null
           retencao_inss?: boolean | null
@@ -1004,12 +1032,14 @@ export type Database = {
           tipo_documento_tomador?: string | null
           tipo_endereco_prestador?: string | null
           tipo_endereco_tomador?: string | null
+          tipo_regime_especial?: string | null
           tipo_registro?: string | null
           tipo_rps?: string | null
           tipo_servico?: string | null
           tributacao_rps?: string | null
           uf_prestador?: string | null
           uf_tomador?: string | null
+          unidade_codigo?: string | null
           updated_at?: string | null
           valor_cofins?: number | null
           valor_comissao?: number | null
@@ -1264,11 +1294,14 @@ export type Database = {
           servico_aliquota: number | null
           servico_codigo_item_lista: string | null
           servico_codigo_local_prestacao: string | null
+          servico_codigo_municipio: string | null
+          servico_codigo_tributacao: string | null
           servico_discriminacao_item: string | null
           servico_exigibilidade: string | null
           servico_iss_retido: boolean | null
           servico_operacao: string | null
           servico_percentual_reducao_base_calculo: number | null
+          servico_unidade_codigo: string | null
           servico_valor_base_calculo: number | null
           servico_valor_deducao: number | null
           servico_valor_item: number | null
@@ -1306,11 +1339,14 @@ export type Database = {
           servico_aliquota?: number | null
           servico_codigo_item_lista?: string | null
           servico_codigo_local_prestacao?: string | null
+          servico_codigo_municipio?: string | null
+          servico_codigo_tributacao?: string | null
           servico_discriminacao_item?: string | null
           servico_exigibilidade?: string | null
           servico_iss_retido?: boolean | null
           servico_operacao?: string | null
           servico_percentual_reducao_base_calculo?: number | null
+          servico_unidade_codigo?: string | null
           servico_valor_base_calculo?: number | null
           servico_valor_deducao?: number | null
           servico_valor_item?: number | null
@@ -1348,11 +1384,14 @@ export type Database = {
           servico_aliquota?: number | null
           servico_codigo_item_lista?: string | null
           servico_codigo_local_prestacao?: string | null
+          servico_codigo_municipio?: string | null
+          servico_codigo_tributacao?: string | null
           servico_discriminacao_item?: string | null
           servico_exigibilidade?: string | null
           servico_iss_retido?: boolean | null
           servico_operacao?: string | null
           servico_percentual_reducao_base_calculo?: number | null
+          servico_unidade_codigo?: string | null
           servico_valor_base_calculo?: number | null
           servico_valor_deducao?: number | null
           servico_valor_item?: number | null

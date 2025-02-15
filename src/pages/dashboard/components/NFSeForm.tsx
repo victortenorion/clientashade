@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -108,7 +107,23 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
     cidade_tomador: "",
     uf_tomador: "",
     cep_tomador: "",
-    email_tomador: ""
+    email_tomador: "",
+    codigo_regime_especial_tributacao: "",
+    tipo_regime_especial: "",
+    codigo_servico_municipio: "",
+    unidade_codigo: "",
+    codigo_tributacao_municipio: "",
+    codigo_proprio: "",
+    inscricao_estadual_prestador: "",
+    inscricao_municipal_prestador: "",
+    codigo_pais_prestador: "1058",
+    codigo_pais_tomador: "1058",
+    regime_especial: "",
+    fonte_tributos: "I",
+    tipo_servico: "P",
+    responsavel_retencao: "T",
+    situacao_nota: "N",
+    ambiente: "1"
   });
 
   useEffect(() => {

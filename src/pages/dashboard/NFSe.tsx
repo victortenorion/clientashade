@@ -234,7 +234,20 @@ const NFSePage = () => {
         cidade_tomador: data.cidade_tomador || "",
         uf_tomador: data.uf_tomador || "",
         cep_tomador: data.cep_tomador || "",
-        email_tomador: data.email_tomador || ""
+        email_tomador: data.email_tomador || "",
+        codigo_regime_especial_tributacao: data.codigo_regime_especial_tributacao || "",
+        tipo_regime_especial: data.tipo_regime_especial || "",
+        codigo_servico_municipio: data.codigo_servico_municipio || "",
+        unidade_codigo: data.unidade_codigo || "",
+        codigo_tributacao_municipio: data.codigo_tributacao_municipio || "",
+        codigo_proprio: data.codigo_proprio || "",
+        inscricao_estadual_prestador: data.inscricao_estadual_prestador || "",
+        inscricao_municipal_prestador: data.inscricao_municipal_prestador || "",
+        codigo_pais_prestador: data.codigo_pais_prestador || "1058",
+        codigo_pais_tomador: data.codigo_pais_tomador || "1058",
+        regime_especial: data.regime_especial || "",
+        fonte_tributos: data.fonte_tributos || "I",
+        tipo_servico: data.tipo_servico || "P"
       };
 
       setNfseToEdit(formData);
@@ -435,13 +448,14 @@ const NFSePage = () => {
 
     const headers = [
       "Tipo de Registro",
-      "Nº NFS-e",
-      "Data Hora NFE",
-      "Código de Verificação da NFS-e",
+      "Data de Emissão",
       "Tipo de RPS",
       "Série do RPS",
       "Número do RPS",
-      "Data do Fato Gerador",
+      "Situação do RPS",
+      "Número da NFS-e",
+      "Data de Emissão da NFS-e",
+      "Código de Verificação",
       "Inscrição Municipal do Prestador",
       "Indicador de CPF/CNPJ do Prestador",
       "CPF/CNPJ do Prestador",
@@ -455,18 +469,14 @@ const NFSePage = () => {
       "UF do Prestador",
       "CEP do Prestador",
       "Email do Prestador",
-      "Opção Pelo Simples",
-      "Situação da Nota Fiscal",
-      "Data de Cancelamento",
-      "Nº da Guia",
-      "Data de Quitação da Guia Vinculada a Nota Fiscal",
+      "Regime Especial",
+      "Opção Simples",
+      "Código do Serviço Municipal",
+      "Discriminação dos Serviços",
       "Valor dos Serviços",
       "Valor das Deduções",
-      "Código do Serviço Prestado na Nota Fiscal",
-      "Alíquota",
-      "ISS devido",
-      "Valor do Crédito",
-      "ISS Retido",
+      "Código do Município da Prestação",
+      "Código da Tributação",
       "Indicador de CPF/CNPJ do Tomador",
       "CPF/CNPJ do Tomador",
       "Inscrição Municipal do Tomador",
@@ -481,155 +491,89 @@ const NFSePage = () => {
       "UF do Tomador",
       "CEP do Tomador",
       "Email do Tomador",
-      "Nº NFS-e Substituta",
-      "ISS pago",
-      "ISS a pagar",
-      "Indicador de CPF/CNPJ do Intermediário",
-      "CPF/CNPJ do Intermediário",
-      "Inscrição Municipal do Intermediário",
-      "Razão Social do Intermediário",
-      "Repasse do Plano de Saúde",
-      "PIS/PASEP",
-      "COFINS",
-      "INSS",
-      "IR",
-      "CSLL",
-      "Carga tributária: Valor",
-      "Carga tributária: Porcentagem",
-      "Carga tributária: Fonte",
-      "CEI",
-      "Matrícula da Obra",
-      "Município Prestação - cód. IBGE",
-      "Situação do Aceite",
-      "Encapsulamento",
-      "Valor Total Recebido",
-      "Tipo de Consolidação",
-      "Nº NFS-e Consolidada",
-      "Campo Reservado",
-      "Discriminação dos Serviços"
+      "Situação da Nota Fiscal",
+      "ISS Retido",
+      "Valor do ISS",
+      "Alíquota do ISS",
+      "Base de Cálculo",
+      "Valor do PIS",
+      "Valor do COFINS",
+      "Valor do INSS",
+      "Valor do IR",
+      "Valor do CSLL",
+      "Fonte de Tributos",
+      "Código do País do Prestador",
+      "Código do País do Tomador"
     ];
 
     const csvData = notas
       .filter(nota => !nota.excluida)
       .map((nota) => [
         nota.tipo_registro || "2",
-        nota.numero_nfse,
-        format(new Date(nota.data_hora_nfe || nota.data_emissao), "dd/MM/yyyy HH:mm:ss"),
-        nota.codigo_verificacao,
+        format(new Date(nota.data_emissao), "dd/MM/yyyy"),
         nota.tipo_rps || "RPS",
-        nota.serie_rps,
-        nota.numero_rps,
-        format(new Date(nota.data_fato_gerador || nota.data_emissao), "dd/MM/yyyy"),
-        nota.inscricao_prestador,
-        nota.tipo_documento_prestador,
-        nota.documento_prestador,
-        nota.razao_social_prestador,
+        nota.serie_rps || "1",
+        nota.numero_rps || "",
+        nota.situacao_nota || "N",
+        nota.numero_nfse || "",
+        nota.data_hora_nfe ? format(new Date(nota.data_hora_nfe), "dd/MM/yyyy HH:mm:ss") : "",
+        nota.codigo_verificacao || "",
+        nota.inscricao_municipal_prestador || "",
+        nota.tipo_documento_prestador || "2",
+        nota.documento_prestador || "",
+        nota.razao_social_prestador || "",
         nota.tipo_endereco_prestador || "R",
-        nota.endereco_prestador,
-        nota.numero_endereco_prestador,
+        nota.endereco_prestador || "",
+        nota.numero_endereco_prestador || "",
         nota.complemento_endereco_prestador || "",
-        nota.bairro_prestador,
-        nota.cidade_prestador,
-        nota.uf_prestador,
-        nota.cep_prestador,
-        nota.email_prestador,
-        nota.opcao_simples,
-        nota.cancelada ? "C" : "T",
-        nota.data_cancelamento ? format(new Date(nota.data_cancelamento), "dd/MM/yyyy") : "",
-        nota.numero_guia || "",
-        nota.data_quitacao_guia ? format(new Date(nota.data_quitacao_guia), "dd/MM/yyyy") : "",
-        formatMoney(nota.valor_servicos).replace("R$", "").trim(),
+        nota.bairro_prestador || "",
+        nota.cidade_prestador || "",
+        nota.uf_prestador || "",
+        nota.cep_prestador || "",
+        nota.email_prestador || "",
+        nota.regime_especial || "",
+        nota.opcao_simples || "4",
+        nota.codigo_servico_municipio || "",
+        nota.discriminacao_servicos || "",
+        formatMoney(nota.valor_servicos || 0).replace("R$", "").trim(),
         formatMoney(nota.valor_deducoes || 0).replace("R$", "").trim(),
-        nota.codigo_servico,
-        nota.aliquota_iss ? `${nota.aliquota_iss}` : "0,00",
-        formatMoney(nota.valor_iss || 0).replace("R$", "").trim(),
-        formatMoney(nota.valor_credito || 0).replace("R$", "").trim(),
-        nota.iss_retido || "N",
-        nota.tipo_documento_tomador,
-        nota.documento_tomador,
+        nota.municipio_prestacao_codigo || "",
+        nota.codigo_tributacao_municipio || "",
+        nota.tipo_documento_tomador || "2",
+        nota.documento_tomador || "",
         nota.inscricao_municipal_tomador || "",
         nota.inscricao_estadual_tomador || "",
-        nota.razao_social_tomador,
-        nota.tipo_endereco_tomador || "",
-        nota.endereco_tomador,
-        nota.numero_endereco_tomador,
+        nota.razao_social_tomador || "",
+        nota.tipo_endereco_tomador || "R",
+        nota.endereco_tomador || "",
+        nota.numero_endereco_tomador || "",
         nota.complemento_endereco_tomador || "",
-        nota.bairro_tomador,
-        nota.cidade_tomador,
-        nota.uf_tomador,
-        nota.cep_tomador,
-        nota.email_tomador,
-        nota.nfse_substituta || "",
-        formatMoney(nota.iss_pago || 0).replace("R$", "").trim(),
-        formatMoney(nota.iss_a_pagar || 0).replace("R$", "").trim(),
-        nota.tipo_documento_intermediario || "",
-        nota.documento_intermediario || "",
-        nota.inscricao_municipal_intermediario || "",
-        nota.razao_social_intermediario || "",
-        formatMoney(nota.repasse_plano_saude || 0).replace("R$", "").trim(),
+        nota.bairro_tomador || "",
+        nota.cidade_tomador || "",
+        nota.uf_tomador || "",
+        nota.cep_tomador || "",
+        nota.email_tomador || "",
+        nota.situacao_nota || "N",
+        nota.iss_retido || "N",
+        formatMoney(nota.valor_iss || 0).replace("R$", "").trim(),
+        nota.aliquota_iss ? `${nota.aliquota_iss}` : "0,00",
+        formatMoney(nota.base_calculo || 0).replace("R$", "").trim(),
         formatMoney(nota.valor_pis || 0).replace("R$", "").trim(),
         formatMoney(nota.valor_cofins || 0).replace("R$", "").trim(),
         formatMoney(nota.valor_inss || 0).replace("R$", "").trim(),
         formatMoney(nota.valor_ir || 0).replace("R$", "").trim(),
         formatMoney(nota.valor_csll || 0).replace("R$", "").trim(),
-        formatMoney(nota.valor_carga_tributaria || 0).replace("R$", "").trim(),
-        nota.percentual_carga_tributaria ? `${nota.percentual_carga_tributaria}` : "0,00",
-        nota.fonte_carga_tributaria || "",
-        nota.cei || "",
-        nota.matricula_obra || "",
-        nota.municipio_prestacao_codigo || "",
-        nota.situacao_aceite || "",
-        nota.encapsulamento || "",
-        formatMoney(nota.valor_total_recebido || 0).replace("R$", "").trim(),
-        nota.tipo_consolidacao || "",
-        nota.nfse_consolidada || "",
-        "", // Campo Reservado
-        nota.discriminacao_servicos?.replace(/"/g, '""') || ""
+        nota.fonte_tributos || "I",
+        nota.codigo_pais_prestador || "1058",
+        nota.codigo_pais_tomador || "1058"
       ]);
 
     // Adiciona linha de total
     const totalRow = [
       "Total",
-      "1", // Quantidade de notas
-      "", // Campos vazios
-      "", "",
-      "", "",
-      "", "",
-      "", "",
-      "", "",
-      "", "",
-      "", "",
-      "", "",
-      "", "",
-      "", "",
-      "", "",
-      "", "",
-      "", "",
-      formatMoney(notas.reduce((acc, nota) => acc + (nota.valor_servicos || 0), 0)).replace("R$", "").trim(),
-      formatMoney(notas.reduce((acc, nota) => acc + (nota.valor_deducoes || 0), 0)).replace("R$", "").trim(),
-      "", "",
-      formatMoney(notas.reduce((acc, nota) => acc + (nota.valor_iss || 0), 0)).replace("R$", "").trim(),
-      "0,00", // Valor do Crédito
-      "", "",
-      "", "",
-      "", "",
-      "", "",
-      "", "",
-      "", "",
-      "", "",
-      "", "",
-      "", "",
-      "", "",
-      "", "",
-      "", "",
-      "", "",
-      "", "",
-      "", "",
-      "", "",
-      "", "",
-      "", "",
-      "", "",
-      "", ""
+      notas.length.toString(), // Quantidade de notas
+      // Preenche o restante das colunas com valores vazios
+      ...Array(headers.length - 2).fill("")
     ];
 
     // Adiciona BOM para Excel reconhecer caracteres especiais
@@ -927,28 +871,4 @@ const NFSePage = () => {
 
       <NFSeView
         nfseId={selectedNFSeId}
-        onClose={() => setSelectedNFSeId(null)}
-        onEdit={handleEditNFSe}
-      />
-
-      <NFSeSefazLogs
-        nfseId={selectedNFSeIdForLogs}
-        isOpen={showLogsDialog}
-        onClose={() => {
-          setShowLogsDialog(false);
-          setSelectedNFSeIdForLogs(null);
-        }}
-      />
-    </div>
-  );
-};
-
-const formatMoney = (value: number | null) => {
-  if (value === null) return "R$ 0,00";
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(value);
-};
-
-export default NFSePage;
+        onClose={() =>

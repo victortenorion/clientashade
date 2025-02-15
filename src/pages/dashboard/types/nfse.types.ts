@@ -205,6 +205,19 @@ export interface NFSeFormData {
   enviar_email_tomador?: boolean;
   enviar_email_intermediario?: boolean;
   intermediario_servico?: boolean;
+  codigo_regime_especial_tributacao?: string;
+  tipo_regime_especial?: string;
+  codigo_servico_municipio?: string;
+  unidade_codigo?: string;
+  codigo_tributacao_municipio?: string;
+  codigo_proprio?: string;
+  inscricao_estadual_prestador?: string;
+  inscricao_municipal_prestador?: string;
+  codigo_pais_prestador?: string;
+  codigo_pais_tomador?: string;
+  regime_especial?: string;
+  fonte_tributos?: string;
+  tipo_servico?: string;
 }
 
 export interface NFSeEvento {
