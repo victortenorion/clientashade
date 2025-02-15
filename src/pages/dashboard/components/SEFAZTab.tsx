@@ -1,14 +1,8 @@
-import React, { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -155,15 +149,15 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
         setCertificateFile(base64);
 
         if (selectedTab === 'nfse') {
-          setNfseConfig(prev => ({
-            ...prev,
+          setNfseConfig({
+            ...nfseConfig,
             certificado_digital: base64
-          }));
+          });
         } else {
-          setNfceConfig(prev => ({
-            ...prev,
+          setNfceConfig({
+            ...nfceConfig,
             certificado_digital: base64
-          }));
+          });
         }
       };
       reader.readAsArrayBuffer(file);
@@ -180,19 +174,19 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
   const handleSenhaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const novaSenha = e.target.value;
     if (selectedTab === 'nfse') {
-      setNfseConfig(prev => ({
-        ...prev,
+      setNfseConfig({
+        ...nfseConfig,
         senha_certificado: novaSenha,
         certificado_valido: false,
         certificado_validade: undefined
-      }));
+      });
     } else {
-      setNfceConfig(prev => ({
-        ...prev,
+      setNfceConfig({
+        ...nfceConfig,
         senha_certificado: novaSenha,
         certificado_valido: false,
         certificado_validade: undefined
-      }));
+      });
     }
   };
 
@@ -237,21 +231,21 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
         if (saveError) throw new Error("Erro ao salvar certificado no banco de dados");
 
         if (selectedTab === 'nfse') {
-          setNfseConfig(prev => ({
-            ...prev,
+          setNfseConfig({
+            ...nfseConfig,
             certificado_digital: certificateFile,
             senha_certificado: currentConfig.senha_certificado,
             certificado_valido: true,
             certificado_validade: data.validade
-          }));
+          });
         } else {
-          setNfceConfig(prev => ({
-            ...prev,
+          setNfceConfig({
+            ...nfceConfig,
             certificado_digital: certificateFile,
             senha_certificado: currentConfig.senha_certificado,
             certificado_valido: true,
             certificado_validade: data.validade
-          }));
+          });
         }
 
         toast({
@@ -281,17 +275,17 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
       }
 
       if (selectedTab === 'nfse') {
-        setNfseConfig(prev => ({
-          ...prev,
+        setNfseConfig({
+          ...nfseConfig,
           certificado_valido: false,
           certificado_validade: undefined
-        }));
+        });
       } else {
-        setNfceConfig(prev => ({
-          ...prev,
+        setNfceConfig({
+          ...nfceConfig,
           certificado_valido: false,
           certificado_validade: undefined
-        }));
+        });
       }
 
       toast({
