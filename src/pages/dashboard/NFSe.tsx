@@ -79,6 +79,15 @@ const NFSePage = () => {
       }
 
       return data as NFSe[];
+    },
+    meta: {
+      onError: (error: Error) => {
+        toast({
+          title: "Erro ao carregar notas fiscais",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     }
   });
 
