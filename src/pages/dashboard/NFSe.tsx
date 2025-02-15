@@ -175,7 +175,7 @@ const NFSePage = () => {
         desconto_iss: data.desconto_iss || false,
         retencao_inss: data.retencao_inss || false,
         retencao_pis_cofins_csll: data.retencao_pis_cofins_csll || false,
-        percentual_tributos_ibpt: data.percentual_tributos_ibpt || 0,
+        valor_tributos_ibpt: data.valor_tributos_ibpt || 0,
         desconto_incondicional: data.desconto_incondicional || 0,
         vendedor_id: data.vendedor_id || "",
         comissao_percentual: data.comissao_percentual || 0,
@@ -188,7 +188,6 @@ const NFSePage = () => {
         tributacao_rps: data.tributacao_rps || "T",
         enviar_email_tomador: data.enviar_email_tomador || true,
         enviar_email_intermediario: data.enviar_email_intermediario || false,
-        intermediario_servico: data.intermediario_servico || false,
         aliquota_pis: data.aliquota_pis || 0,
         aliquota_cofins: data.aliquota_cofins || 0,
         aliquota_csll: data.aliquota_csll || 0,
@@ -225,7 +224,6 @@ const NFSePage = () => {
         valor_ir: data.valor_ir || 0,
         valor_csll: data.valor_csll || 0,
         valor_carga_tributaria: data.valor_carga_tributaria || 0,
-        percentual_carga_tributaria: data.percentual_carga_tributaria || 0,
         municipio_prestacao_codigo: data.municipio_prestacao_codigo,
         data_emissao: data.data_emissao || new Date().toISOString().split("T")[0],
         aliquota_iss: data.aliquota_iss || 0
@@ -266,7 +264,7 @@ const NFSePage = () => {
             desconto_iss: formData.desconto_iss,
             retencao_inss: formData.retencao_inss,
             retencao_pis_cofins_csll: formData.retencao_pis_cofins_csll,
-            percentual_tributos_ibpt: formData.percentual_tributos_ibpt,
+            valor_tributos_ibpt: formData.valor_tributos_ibpt,
             desconto_incondicional: formData.desconto_incondicional,
             vendedor_id: formData.vendedor_id,
             comissao_percentual: formData.comissao_percentual,
@@ -857,137 +855,4 @@ const NFSePage = () => {
                         title="Ver Logs"
                       >
                         <List className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      <Dialog open={showEmissaoDialog} onOpenChange={setShowEmissaoDialog}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Emitir Nova NFS-e</DialogTitle>
-          </DialogHeader>
-          <NFSeForm
-            onSubmit={handleEmitirNFSe}
-            onCancel={() => {
-              setShowEmissaoDialog(false);
-              setNfseToEdit(null);
-            }}
-            isLoading={isEmitindo}
-            initialData={nfseToEdit}
-          />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Cancelar NFS-e</DialogTitle>
-            <DialogDescription>
-              Informe o motivo do cancelamento da nota fiscal
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="motivo">Motivo do Cancelamento</Label>
-              <Textarea
-                id="motivo"
-                value={motivoCancelamento}
-                onChange={(e) => setMotivoCancelamento(e.target.value)}
-                placeholder="Descreva o motivo do cancelamento..."
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowCancelDialog(false);
-                setMotivoCancelamento("");
-                setNfceCancelamento(null);
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleCancelarNFSe}
-              disabled={!motivoCancelamento}
-            >
-              Confirmar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Excluir NFS-e</DialogTitle>
-            <DialogDescription>
-              Informe o motivo da exclusão da nota fiscal
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="motivo">Motivo da Exclusão</Label>
-              <Textarea
-                id="motivo"
-                value={motivoExclusao}
-                onChange={(e) => setMotivoExclusao(e.target.value)}
-                placeholder="Descreva o motivo da exclusão..."
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowDeleteDialog(false);
-                setMotivoExclusao("");
-                setNfseToDelete(null);
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleDeleteNFSe}
-              disabled={!motivoExclusao}
-            >
-              Confirmar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <NFSeView
-        nfseId={selectedNFSeId}
-        onClose={() => setSelectedNFSeId(null)}
-        onEdit={handleEditNFSe}
-      />
-
-      <NFSeSefazLogs
-        nfseId={selectedNFSeIdForLogs}
-        isOpen={showLogsDialog}
-        onClose={() => {
-          setShowLogsDialog(false);
-          setSelectedNFSeIdForLogs(null);
-        }}
-      />
-    </div>
-  );
-};
-
-const formatMoney = (value: number | null) => {
-  if (value === null) return "R$ 0,00";
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(value);
-};
-
-export default NFSePage;
+                      </

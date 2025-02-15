@@ -69,8 +69,7 @@ export interface NFSe {
   aliquota_cofins: number;
   aliquota_csll: number;
   valor_carga_tributaria: number;
-  percentual_carga_tributaria: number;
-  percentual_tributos_ibpt: number;
+  valor_tributos_ibpt: number;
   fonte_carga_tributaria?: string;
   cei?: string;
   matricula_obra?: string;
@@ -171,8 +170,7 @@ export interface NFSeFormData {
   valor_csll: number;
   outras_retencoes: number;
   valor_carga_tributaria: number;
-  percentual_carga_tributaria: number;
-  percentual_tributos_ibpt: number;
+  valor_tributos_ibpt: number;
   municipio_prestacao_codigo?: string;
   municipio_prestacao?: string;
   valor_total: number;
