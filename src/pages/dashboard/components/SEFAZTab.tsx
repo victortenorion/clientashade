@@ -78,6 +78,7 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
   const [isValidating, setIsValidating] = useState(false);
   const [selectedTab, setSelectedTab] = useState("nfse");
   const [isSaving, setIsSaving] = useState(false);
+  const [certificateFile, setCertificateFile] = useState<string | null>(null);
 
   useEffect(() => {
     loadCertificate();
@@ -93,37 +94,36 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
         .limit(1)
         .maybeSingle();
 
-      if (error) {
-        console.error('Erro ao carregar certificado:', error);
-        toast({
-          title: "Erro",
-          description: "Erro ao carregar certificado do banco de dados",
-          variant: "destructive"
-        });
-        return;
-      }
+      if (error) throw error;
 
       if (certificate) {
         if (selectedTab === 'nfse') {
           setNfseConfig({
             ...nfseConfig,
             certificado_digital: certificate.certificate_data,
-            senha_certificado: certificate.certificate_password,
+            senha_certificado: certificate.certificate_password || '',
             certificado_valido: certificate.is_valid,
             certificado_validade: certificate.valid_until
           });
+          setCertificateFile(certificate.certificate_data);
         } else {
           setNfceConfig({
             ...nfceConfig,
             certificado_digital: certificate.certificate_data,
-            senha_certificado: certificate.certificate_password,
+            senha_certificado: certificate.certificate_password || '',
             certificado_valido: certificate.is_valid,
             certificado_validade: certificate.valid_until
           });
+          setCertificateFile(certificate.certificate_data);
         }
       }
     } catch (error) {
       console.error('Erro ao carregar certificado:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar certificado do banco de dados",
+        variant: "destructive"
+      });
     }
   };
 
@@ -152,17 +152,18 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
         );
 
         console.log("Tamanho do certificado em base64:", base64.length);
+        setCertificateFile(base64);
 
         if (selectedTab === 'nfse') {
-          setNfseConfig({
-            ...nfseConfig,
+          setNfseConfig(prev => ({
+            ...prev,
             certificado_digital: base64
-          });
+          }));
         } else {
-          setNfceConfig({
-            ...nfceConfig,
+          setNfceConfig(prev => ({
+            ...prev,
             certificado_digital: base64
-          });
+          }));
         }
       };
       reader.readAsArrayBuffer(file);
@@ -176,6 +177,25 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
     }
   };
 
+  const handleSenhaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const novaSenha = e.target.value;
+    if (selectedTab === 'nfse') {
+      setNfseConfig(prev => ({
+        ...prev,
+        senha_certificado: novaSenha,
+        certificado_valido: false,
+        certificado_validade: undefined
+      }));
+    } else {
+      setNfceConfig(prev => ({
+        ...prev,
+        senha_certificado: novaSenha,
+        certificado_valido: false,
+        certificado_validade: undefined
+      }));
+    }
+  };
+
   const handleValidateCertificate = async () => {
     setIsValidating(true);
     const currentConfig = selectedTab === 'nfse' ? nfseConfig : nfceConfig;
@@ -183,7 +203,7 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
     try {
       console.log("Iniciando validação do certificado...");
       
-      if (!currentConfig.certificado_digital || !currentConfig.senha_certificado) {
+      if (!certificateFile || !currentConfig.senha_certificado) {
         throw new Error("Certificado e senha são obrigatórios");
       }
 
@@ -192,51 +212,46 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
 
       const { data, error } = await supabase.functions.invoke('validate-certificate', {
         body: {
-          certificado: currentConfig.certificado_digital,
+          certificado: certificateFile,
           senha: currentConfig.senha_certificado,
         }
       });
 
-      if (error) {
-        console.error("Erro na chamada da função:", error);
-        throw error;
-      }
+      if (error) throw error;
 
       console.log("Resposta da validação:", data);
 
       if (data.success) {
-        // Salvar certificado no banco
+        const certificateData = {
+          type: selectedTab,
+          certificate_data: certificateFile,
+          certificate_password: currentConfig.senha_certificado,
+          valid_until: data.validade,
+          is_valid: true
+        };
+
         const { error: saveError } = await supabase
           .from('certificates')
-          .upsert({
-            type: selectedTab,
-            certificate_data: currentConfig.certificado_digital,
-            certificate_password: currentConfig.senha_certificado,
-            valid_until: data.validade,
-            is_valid: true
-          });
+          .upsert(certificateData);
 
-        if (saveError) {
-          console.error("Erro ao salvar certificado:", saveError);
-          throw new Error("Erro ao salvar certificado no banco de dados");
-        }
+        if (saveError) throw new Error("Erro ao salvar certificado no banco de dados");
 
         if (selectedTab === 'nfse') {
-          setNfseConfig({
-            ...nfseConfig,
-            certificado_digital: currentConfig.certificado_digital,
+          setNfseConfig(prev => ({
+            ...prev,
+            certificado_digital: certificateFile,
             senha_certificado: currentConfig.senha_certificado,
             certificado_valido: true,
             certificado_validade: data.validade
-          });
+          }));
         } else {
-          setNfceConfig({
-            ...nfceConfig,
-            certificado_digital: currentConfig.certificado_digital,
+          setNfceConfig(prev => ({
+            ...prev,
+            certificado_digital: certificateFile,
             senha_certificado: currentConfig.senha_certificado,
             certificado_valido: true,
             certificado_validade: data.validade
-          });
+          }));
         }
 
         toast({
@@ -250,13 +265,13 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
     } catch (error: any) {
       console.error('Erro na validação:', error);
       
-      // Marcar certificado como inválido no banco
+      // Atualizar status do certificado no banco
       try {
         await supabase
           .from('certificates')
           .upsert({
             type: selectedTab,
-            certificate_data: currentConfig.certificado_digital,
+            certificate_data: certificateFile,
             certificate_password: currentConfig.senha_certificado,
             is_valid: false,
             valid_until: null
@@ -266,17 +281,17 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
       }
 
       if (selectedTab === 'nfse') {
-        setNfseConfig({
-          ...nfseConfig,
+        setNfseConfig(prev => ({
+          ...prev,
           certificado_valido: false,
           certificado_validade: undefined
-        });
+        }));
       } else {
-        setNfceConfig({
-          ...nfceConfig,
+        setNfceConfig(prev => ({
+          ...prev,
           certificado_valido: false,
           certificado_validade: undefined
-        });
+        }));
       }
 
       toast({
@@ -310,7 +325,7 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                       accept=".pfx"
                       onChange={handleFileUpload}
                     />
-                    {nfseConfig.certificado_digital && (
+                    {certificateFile && (
                       <p className="text-sm text-gray-500">
                         Certificado carregado
                       </p>
@@ -321,26 +336,19 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                     <Label>Senha do Certificado</Label>
                     <Input
                       type="password"
-                      value={nfseConfig.senha_certificado}
-                      onChange={(e) =>
-                        setNfseConfig({
-                          ...nfseConfig,
-                          senha_certificado: e.target.value,
-                          certificado_valido: false,
-                          certificado_validade: undefined
-                        })
-                      }
+                      value={selectedTab === 'nfse' ? nfseConfig.senha_certificado : nfceConfig.senha_certificado}
+                      onChange={handleSenhaChange}
                     />
                   </div>
 
-                  {nfseConfig.certificado_digital && (
+                  {certificateFile && (
                     <Button
                       onClick={handleValidateCertificate}
-                      disabled={isValidating || !nfseConfig.senha_certificado}
+                      disabled={isValidating || !(selectedTab === 'nfse' ? nfseConfig.senha_certificado : nfceConfig.senha_certificado)}
                     >
                       {isValidating ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : nfseConfig.certificado_valido ? (
+                      ) : (selectedTab === 'nfse' ? nfseConfig.certificado_valido : nfceConfig.certificado_valido) ? (
                         <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />
                       ) : (
                         <XCircle className="mr-2 h-4 w-4 text-red-500" />
@@ -349,9 +357,9 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                     </Button>
                   )}
 
-                  {nfseConfig.certificado_validade && (
+                  {(selectedTab === 'nfse' ? nfseConfig.certificado_validade : nfceConfig.certificado_validade) && (
                     <p className="text-sm text-gray-500">
-                      Válido até: {new Date(nfseConfig.certificado_validade).toLocaleDateString()}
+                      Válido até: {new Date(selectedTab === 'nfse' ? nfseConfig.certificado_validade! : nfceConfig.certificado_validade!).toLocaleDateString()}
                     </p>
                   )}
                 </div>
