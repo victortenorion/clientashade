@@ -620,20 +620,26 @@ export type Database = {
       }
       nfse: {
         Row: {
+          aliquota_cofins: number | null
+          aliquota_csll: number | null
           aliquota_iss: number | null
+          aliquota_pis: number | null
           ambiente: string | null
           base_calculo: number | null
           cancelada: boolean | null
           client_id: string
           cnae: string | null
           codigo_atividade: string | null
+          codigo_regime_especial_tributacao: string | null
           codigo_servico: string
           codigo_tributacao_municipio: string | null
+          codigo_verificacao: string | null
           comissao_percentual: number | null
           created_at: string | null
           data_cancelamento: string | null
           data_competencia: string
           data_emissao: string | null
+          data_emissao_rps: string | null
           deducoes: number | null
           desconto_incondicional: number | null
           desconto_iss: boolean | null
@@ -641,6 +647,7 @@ export type Database = {
           enviar_email_intermediario: boolean | null
           enviar_email_tomador: boolean | null
           id: string
+          intermediario_servico: boolean | null
           local_servico: string | null
           motivo_cancelamento: string | null
           municipio_prestacao: string | null
@@ -649,6 +656,7 @@ export type Database = {
           numero_rps: string | null
           observacoes: string | null
           optante_mei: boolean | null
+          outras_retencoes: number | null
           percentual_ir: number | null
           percentual_tributos_ibpt: number | null
           prestador_incentivador_cultural: boolean | null
@@ -659,17 +667,23 @@ export type Database = {
           retencao_pis_cofins_csll: boolean | null
           serie_rps: string | null
           service_order_id: string | null
+          situacao_nota: string | null
+          status_processamento: string | null
           status_sefaz: string | null
           substituido_rps_numero: string | null
           substituido_rps_serie: string | null
           substituido_rps_tipo: string | null
           tipo_rps: string | null
+          tipo_servico: string | null
           tributacao_rps: string | null
           updated_at: string | null
+          valor_cofins: number | null
           valor_comissao: number | null
+          valor_csll: number | null
           valor_inss: number | null
           valor_ir: number | null
           valor_iss: number | null
+          valor_pis: number | null
           valor_servicos: number
           valor_total: number | null
           valor_tributos_ibpt: number | null
@@ -678,20 +692,26 @@ export type Database = {
           xml_retorno: string | null
         }
         Insert: {
+          aliquota_cofins?: number | null
+          aliquota_csll?: number | null
           aliquota_iss?: number | null
+          aliquota_pis?: number | null
           ambiente?: string | null
           base_calculo?: number | null
           cancelada?: boolean | null
           client_id: string
           cnae?: string | null
           codigo_atividade?: string | null
+          codigo_regime_especial_tributacao?: string | null
           codigo_servico: string
           codigo_tributacao_municipio?: string | null
+          codigo_verificacao?: string | null
           comissao_percentual?: number | null
           created_at?: string | null
           data_cancelamento?: string | null
           data_competencia: string
           data_emissao?: string | null
+          data_emissao_rps?: string | null
           deducoes?: number | null
           desconto_incondicional?: number | null
           desconto_iss?: boolean | null
@@ -699,6 +719,7 @@ export type Database = {
           enviar_email_intermediario?: boolean | null
           enviar_email_tomador?: boolean | null
           id?: string
+          intermediario_servico?: boolean | null
           local_servico?: string | null
           motivo_cancelamento?: string | null
           municipio_prestacao?: string | null
@@ -707,6 +728,7 @@ export type Database = {
           numero_rps?: string | null
           observacoes?: string | null
           optante_mei?: boolean | null
+          outras_retencoes?: number | null
           percentual_ir?: number | null
           percentual_tributos_ibpt?: number | null
           prestador_incentivador_cultural?: boolean | null
@@ -717,17 +739,23 @@ export type Database = {
           retencao_pis_cofins_csll?: boolean | null
           serie_rps?: string | null
           service_order_id?: string | null
+          situacao_nota?: string | null
+          status_processamento?: string | null
           status_sefaz?: string | null
           substituido_rps_numero?: string | null
           substituido_rps_serie?: string | null
           substituido_rps_tipo?: string | null
           tipo_rps?: string | null
+          tipo_servico?: string | null
           tributacao_rps?: string | null
           updated_at?: string | null
+          valor_cofins?: number | null
           valor_comissao?: number | null
+          valor_csll?: number | null
           valor_inss?: number | null
           valor_ir?: number | null
           valor_iss?: number | null
+          valor_pis?: number | null
           valor_servicos: number
           valor_total?: number | null
           valor_tributos_ibpt?: number | null
@@ -736,20 +764,26 @@ export type Database = {
           xml_retorno?: string | null
         }
         Update: {
+          aliquota_cofins?: number | null
+          aliquota_csll?: number | null
           aliquota_iss?: number | null
+          aliquota_pis?: number | null
           ambiente?: string | null
           base_calculo?: number | null
           cancelada?: boolean | null
           client_id?: string
           cnae?: string | null
           codigo_atividade?: string | null
+          codigo_regime_especial_tributacao?: string | null
           codigo_servico?: string
           codigo_tributacao_municipio?: string | null
+          codigo_verificacao?: string | null
           comissao_percentual?: number | null
           created_at?: string | null
           data_cancelamento?: string | null
           data_competencia?: string
           data_emissao?: string | null
+          data_emissao_rps?: string | null
           deducoes?: number | null
           desconto_incondicional?: number | null
           desconto_iss?: boolean | null
@@ -757,6 +791,7 @@ export type Database = {
           enviar_email_intermediario?: boolean | null
           enviar_email_tomador?: boolean | null
           id?: string
+          intermediario_servico?: boolean | null
           local_servico?: string | null
           motivo_cancelamento?: string | null
           municipio_prestacao?: string | null
@@ -765,6 +800,7 @@ export type Database = {
           numero_rps?: string | null
           observacoes?: string | null
           optante_mei?: boolean | null
+          outras_retencoes?: number | null
           percentual_ir?: number | null
           percentual_tributos_ibpt?: number | null
           prestador_incentivador_cultural?: boolean | null
@@ -775,17 +811,23 @@ export type Database = {
           retencao_pis_cofins_csll?: boolean | null
           serie_rps?: string | null
           service_order_id?: string | null
+          situacao_nota?: string | null
+          status_processamento?: string | null
           status_sefaz?: string | null
           substituido_rps_numero?: string | null
           substituido_rps_serie?: string | null
           substituido_rps_tipo?: string | null
           tipo_rps?: string | null
+          tipo_servico?: string | null
           tributacao_rps?: string | null
           updated_at?: string | null
+          valor_cofins?: number | null
           valor_comissao?: number | null
+          valor_csll?: number | null
           valor_inss?: number | null
           valor_ir?: number | null
           valor_iss?: number | null
+          valor_pis?: number | null
           valor_servicos?: number
           valor_total?: number | null
           valor_tributos_ibpt?: number | null
@@ -1009,31 +1051,64 @@ export type Database = {
       nfse_sp_settings: {
         Row: {
           codigo_regime_tributario: string | null
+          cpf_responsavel: string | null
           created_at: string
           id: string
           inscricao_municipal: string | null
+          intermediario_cnpj: string | null
+          intermediario_email: string | null
+          intermediario_inscricao_municipal: string | null
+          iss_retido_intermediario: boolean | null
           lote_rps_numero: number | null
+          operacao_tributacao: string | null
+          producao_intermediario: boolean | null
+          servico_codigo_item_lista: string | null
+          servico_discriminacao_item: string | null
+          servico_valor_item: number | null
           tipo_documento: string | null
+          tipo_regime_especial: string | null
           updated_at: string
           versao_schema: string | null
         }
         Insert: {
           codigo_regime_tributario?: string | null
+          cpf_responsavel?: string | null
           created_at?: string
           id?: string
           inscricao_municipal?: string | null
+          intermediario_cnpj?: string | null
+          intermediario_email?: string | null
+          intermediario_inscricao_municipal?: string | null
+          iss_retido_intermediario?: boolean | null
           lote_rps_numero?: number | null
+          operacao_tributacao?: string | null
+          producao_intermediario?: boolean | null
+          servico_codigo_item_lista?: string | null
+          servico_discriminacao_item?: string | null
+          servico_valor_item?: number | null
           tipo_documento?: string | null
+          tipo_regime_especial?: string | null
           updated_at?: string
           versao_schema?: string | null
         }
         Update: {
           codigo_regime_tributario?: string | null
+          cpf_responsavel?: string | null
           created_at?: string
           id?: string
           inscricao_municipal?: string | null
+          intermediario_cnpj?: string | null
+          intermediario_email?: string | null
+          intermediario_inscricao_municipal?: string | null
+          iss_retido_intermediario?: boolean | null
           lote_rps_numero?: number | null
+          operacao_tributacao?: string | null
+          producao_intermediario?: boolean | null
+          servico_codigo_item_lista?: string | null
+          servico_discriminacao_item?: string | null
+          servico_valor_item?: number | null
           tipo_documento?: string | null
+          tipo_regime_especial?: string | null
           updated_at?: string
           versao_schema?: string | null
         }

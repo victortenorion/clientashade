@@ -1,4 +1,3 @@
-
 export interface NFSe {
   id: string;
   numero_nfse: number;
@@ -41,7 +40,7 @@ export interface NFSe {
   vendedor_id: string | null;
   comissao_percentual: number;
   valor_comissao: number;
-  // Novos campos específicos para São Paulo
+  // Campos específicos para São Paulo
   responsavel_retencao: string;
   local_servico: string;
   codigo_atividade: string | null;
@@ -51,6 +50,20 @@ export interface NFSe {
   tributacao_rps: string;
   enviar_email_tomador: boolean;
   enviar_email_intermediario: boolean;
+  situacao_nota: string;
+  data_emissao_rps: string;
+  status_processamento: string;
+  codigo_verificacao: string | null;
+  codigo_regime_especial_tributacao: string | null;
+  tipo_servico: string;
+  intermediario_servico: boolean;
+  valor_pis: number;
+  valor_cofins: number;
+  valor_csll: number;
+  outras_retencoes: number;
+  aliquota_pis: number;
+  aliquota_cofins: number;
+  aliquota_csll: number;
 }
 
 export interface NFSeEvento {
@@ -89,6 +102,17 @@ export interface NFSeSPSettings {
   versao_schema: string;
   created_at: string;
   updated_at: string;
+  tipo_regime_especial: string | null;
+  operacao_tributacao: string;
+  cpf_responsavel: string | null;
+  producao_intermediario: boolean;
+  iss_retido_intermediario: boolean;
+  intermediario_cnpj: string | null;
+  intermediario_inscricao_municipal: string | null;
+  intermediario_email: string | null;
+  servico_codigo_item_lista: string | null;
+  servico_discriminacao_item: string | null;
+  servico_valor_item: number;
 }
 
 export interface NFSeServico {
@@ -123,7 +147,7 @@ export interface NFSeFormData {
   comissao_percentual?: number;
   numero_rps?: string;
   serie_rps?: string;
-  // Novos campos específicos para São Paulo
+  // Campos específicos para São Paulo
   responsavel_retencao?: string;
   local_servico?: string;
   codigo_atividade?: string;
@@ -133,6 +157,13 @@ export interface NFSeFormData {
   tributacao_rps?: string;
   enviar_email_tomador?: boolean;
   enviar_email_intermediario?: boolean;
+  intermediario_servico?: boolean;
+  aliquota_pis?: number;
+  aliquota_cofins?: number;
+  aliquota_csll?: number;
+  outras_retencoes?: number;
+  tipo_servico?: string;
+  codigo_regime_especial_tributacao?: string;
 }
 
 export interface NFSeCancelamento {
