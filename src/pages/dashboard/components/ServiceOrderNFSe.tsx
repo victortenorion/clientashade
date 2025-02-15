@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { NFSeForm } from "./NFSeForm";
@@ -54,7 +55,7 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
     retencao_pis_cofins_csll: false,
     percentual_tributos_ibpt: 0,
     desconto_incondicional: 0,
-    vendedor_id: "", // Alterado para string vazia
+    vendedor_id: "",
     comissao_percentual: 0,
     numero_rps: "",
     serie_rps: "1",
@@ -70,7 +71,19 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
     aliquota_cofins: 0,
     aliquota_csll: 0,
     outras_retencoes: 0,
-    codigo_regime_especial_tributacao: null
+    codigo_regime_especial_tributacao: null,
+    data_emissao: new Date().toISOString().split("T")[0], // Adicionado campo data_emissao
+    status_transmissao: "pendente", // Adicionado valor inicial
+    status_sefaz: "pendente", // Adicionado valor inicial
+    aliquota_iss: 0, // Adicionado campo aliquota_iss
+    valor_iss: 0, // Adicionado campo valor_iss
+    base_calculo: 0, // Adicionado campo base_calculo
+    valor_pis: 0, // Adicionado campo valor_pis
+    valor_cofins: 0, // Adicionado campo valor_cofins
+    valor_inss: 0, // Adicionado campo valor_inss
+    valor_ir: 0, // Adicionado campo valor_ir
+    valor_csll: 0, // Adicionado campo valor_csll
+    valor_total: 0 // Adicionado campo valor_total
   });
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -80,7 +93,7 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
       try {
         const { data: companyInfo, error: companyError } = await supabase
           .from("company_info")
-          .select("codigo_servico, serie_rps_padrao")
+          .select("codigo_servico, serie_rps_padrao, endereco_cidade, cnae")
           .maybeSingle();
 
         if (companyError) throw companyError;
@@ -136,16 +149,30 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
             }
           }
 
+          // Calcular valores de impostos baseados nas configurações
+          const valor_servicos = typedServiceOrder.total_price;
+          const aliquota_iss = spSettings?.servico_aliquota || 0;
+          const valor_iss = (valor_servicos * aliquota_iss) / 100;
+          const base_calculo = valor_servicos - (formData.deducoes || 0);
+
           setFormData(prevData => ({
             ...prevData,
             client_id: typedServiceOrder.client.id,
             codigo_servico: companyInfo?.codigo_servico || "",
             discriminacao_servicos: servicesDescription,
             valor_servicos: typedServiceOrder.total_price,
+            valor_total: typedServiceOrder.total_price,
             observacoes: `Ordem de Serviço #${typedServiceOrder.order_number}`,
             serie_rps: companyInfo?.serie_rps_padrao || "1",
             numero_rps: proximoNumeroRPS,
-            codigo_regime_especial_tributacao: spSettings?.tipo_regime_especial || null
+            codigo_regime_especial_tributacao: spSettings?.tipo_regime_especial || null,
+            municipio_prestacao: companyInfo?.endereco_cidade || "",
+            cnae: companyInfo?.cnae || "",
+            aliquota_iss,
+            valor_iss,
+            base_calculo,
+            status_transmissao: "pendente",
+            status_sefaz: "pendente"
           }));
         }
       } catch (error: any) {
@@ -168,13 +195,15 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
     try {
       setIsLoading(true);
 
-      // Preparar dados para envio, convertendo string vazia para null quando necessário
+      // Preparar dados para envio
       const cleanedData = {
         ...data,
-        vendedor_id: data.vendedor_id || null, // Converter string vazia para null apenas no envio
+        vendedor_id: data.vendedor_id || null,
         service_order_id: serviceOrderId,
         status_sefaz: "pendente",
-        status_transmissao: "pendente"
+        status_transmissao: "pendente",
+        data_emissao: new Date().toISOString().split("T")[0],
+        valor_total: data.valor_servicos - (data.desconto_incondicional || 0)
       };
 
       // Validar client_id antes de enviar
