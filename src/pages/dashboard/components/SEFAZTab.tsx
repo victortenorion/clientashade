@@ -158,6 +158,7 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
     
     try {
       console.log("Iniciando validação do certificado...");
+      console.log("Tamanho do certificado em base64:", certificateFile?.length || 0);
       
       if (!certificateFile || !currentConfig.senha_certificado) {
         throw new Error("Certificado e senha são obrigatórios");
@@ -182,21 +183,24 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
 
       if (data.success) {
         // Salvar certificado no banco
-        const certificateData = {
-          type: selectedTab,
-          certificate_data: certificateFile,
-          certificate_password: currentConfig.senha_certificado,
-          valid_until: data.validade,
-          is_valid: true
-        };
-
         const { error: saveError } = await supabase
           .from('certificates')
-          .upsert(certificateData, {
+          .upsert({
+            type: selectedTab,
+            certificate_data: certificateFile,
+            certificate_password: currentConfig.senha_certificado,
+            valid_until: data.validade || null,
+            is_valid: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }, {
             onConflict: 'type'
           });
 
-        if (saveError) throw new Error("Erro ao salvar certificado no banco de dados");
+        if (saveError) {
+          console.error('Erro ao salvar certificado:', saveError);
+          throw new Error("Erro ao salvar certificado no banco de dados");
+        }
 
         const updatedConfig = {
           ...currentConfig,
@@ -226,17 +230,23 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
       
       // Atualizar status do certificado no banco como inválido
       try {
-        await supabase
+        const { error: saveError } = await supabase
           .from('certificates')
           .upsert({
             type: selectedTab,
             certificate_data: certificateFile,
             certificate_password: currentConfig.senha_certificado,
             is_valid: false,
-            valid_until: null
+            valid_until: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           }, {
             onConflict: 'type'
           });
+
+        if (saveError) {
+          console.error('Erro ao atualizar status do certificado:', saveError);
+        }
       } catch (dbError) {
         console.error('Erro ao atualizar status do certificado:', dbError);
       }
