@@ -13,6 +13,7 @@ interface SPNFSeData {
   prestador: {
     cnpj: string;
     inscricaoMunicipal: string;
+    tipo_documento?: string;
   };
   tomador: {
     cnpj?: string;
@@ -37,6 +38,10 @@ interface SPNFSeData {
     codigoMunicipio: string;
     responsavelRetencao?: string;
     itemListaServico: string;
+    codigoLocalPrestacao?: string;
+    issRetido: boolean;
+    exigibilidade: string;
+    operacao: string;
     aliquota: number;
     valorDeducoes?: number;
     outrasRetencoes?: number;
@@ -51,12 +56,21 @@ interface SPNFSeData {
     serie: string;
     tipo: string;
     dataEmissao: string;
+    status: string;
     tributacao: string;
   };
   options: {
     regimeEspecialTributacao?: string;
     optanteSimplesNacional: boolean;
     incentivadorCultural: boolean;
+  };
+  proxy?: {
+    host?: string;
+    port?: string;
+  };
+  wsdl?: {
+    homologacao: string;
+    producao: string;
   };
 }
 
@@ -104,7 +118,7 @@ serve(async (req) => {
         )
       `)
       .eq('id', nfseId)
-      .single();
+      .maybeSingle();
 
     if (nfseError) {
       console.error('Erro ao buscar NFS-e:', nfseError);
@@ -115,7 +129,7 @@ serve(async (req) => {
     const { data: companyInfo, error: companyError } = await supabase
       .from('company_info')
       .select('*')
-      .single();
+      .maybeSingle();
 
     if (companyError) {
       console.error('Erro ao buscar dados da empresa:', companyError);
@@ -128,7 +142,7 @@ serve(async (req) => {
       .select('*')
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (spError) {
       console.error('Erro ao buscar configurações SP:', spError);
@@ -152,6 +166,7 @@ serve(async (req) => {
       prestador: {
         cnpj: companyInfo.cnpj.replace(/\D/g, ''),
         inscricaoMunicipal: companyInfo.inscricao_municipal,
+        tipo_documento: spSettings.tipo_documento_prestador
       },
       tomador: {
         cnpj: nfse.client.document?.replace(/\D/g, ''),
@@ -173,9 +188,13 @@ serve(async (req) => {
         codigoServico: nfse.codigo_servico,
         discriminacao: nfse.discriminacao_servicos,
         codigoMunicipio: companyInfo.endereco_codigo_municipio,
+        codigoLocalPrestacao: spSettings.servico_codigo_local_prestacao,
+        issRetido: spSettings.servico_iss_retido,
+        exigibilidade: spSettings.servico_exigibilidade,
+        operacao: spSettings.servico_operacao,
         responsavelRetencao: nfse.responsavel_retencao,
         itemListaServico: spSettings.servico_codigo_item_lista || nfse.codigo_servico,
-        aliquota: spSettings.aliquota_servico || 0,
+        aliquota: spSettings.servico_aliquota || 0,
         valorDeducoes: nfse.deducoes,
         outrasRetencoes: nfse.outras_retencoes,
       },
@@ -184,6 +203,7 @@ serve(async (req) => {
         serie: rpsData.serie_rps_padrao,
         tipo: rpsData.tipo_rps,
         dataEmissao: new Date().toISOString(),
+        status: spSettings.rps_status || 'N',
         tributacao: nfse.tributacao_rps,
       },
       options: {
@@ -191,6 +211,14 @@ serve(async (req) => {
         optanteSimplesNacional: spSettings.codigo_regime_tributario === '1',
         incentivadorCultural: nfse.prestador_incentivador_cultural,
       },
+      proxy: {
+        host: spSettings.proxy_host,
+        port: spSettings.proxy_port
+      },
+      wsdl: {
+        homologacao: spSettings.wsdl_homologacao,
+        producao: spSettings.wsdl_producao
+      }
     };
 
     // If intermediário is configured, add it
