@@ -53,15 +53,38 @@ export const NFSeForm: React.FC<NFSeFormProps> = ({
     vendedor_id: "",
     comissao_percentual: 0,
     numero_rps: "",
-    serie_rps: "1"
+    serie_rps: "1",
+    responsavel_retencao: "cliente",
+    local_servico: "tomador",
+    optante_mei: false,
+    prestador_incentivador_cultural: false,
+    tributacao_rps: "T",
+    enviar_email_tomador: true,
+    enviar_email_intermediario: false,
+    intermediario_servico: false,
+    aliquota_pis: 0,
+    aliquota_cofins: 0,
+    aliquota_csll: 0,
+    outras_retencoes: 0,
+    codigo_regime_especial_tributacao: null
   });
 
   useEffect(() => {
     if (initialData) {
-      setFormData({
+      setFormData(prev => ({
+        ...prev,
         ...initialData,
-        natureza_operacao: initialData.natureza_operacao || "1"
-      });
+        valor_servicos: initialData.valor_servicos || 0,
+        deducoes: initialData.deducoes || 0,
+        percentual_ir: initialData.percentual_ir || 0,
+        percentual_tributos_ibpt: initialData.percentual_tributos_ibpt || 0,
+        desconto_incondicional: initialData.desconto_incondicional || 0,
+        comissao_percentual: initialData.comissao_percentual || 0,
+        aliquota_pis: initialData.aliquota_pis || 0,
+        aliquota_cofins: initialData.aliquota_cofins || 0,
+        aliquota_csll: initialData.aliquota_csll || 0,
+        outras_retencoes: initialData.outras_retencoes || 0
+      }));
     }
   }, [initialData]);
 

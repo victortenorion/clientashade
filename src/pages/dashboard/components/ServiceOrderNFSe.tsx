@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { NFSeForm } from "./NFSeForm";
@@ -35,7 +36,43 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
   onCancel
 }) => {
   const [isLoading, setIsLoading] = useState(true);
-  const [formData, setFormData] = useState<NFSeFormData | null>(null);
+  const [formData, setFormData] = useState<NFSeFormData>({
+    client_id: "",
+    codigo_servico: "",
+    discriminacao_servicos: "",
+    valor_servicos: 0,
+    data_competencia: new Date().toISOString().split("T")[0],
+    deducoes: 0,
+    observacoes: "",
+    natureza_operacao: "1",
+    municipio_prestacao: "",
+    cnae: "",
+    retencao_ir: false,
+    percentual_ir: 0,
+    retencao_iss: false,
+    desconto_iss: false,
+    retencao_inss: false,
+    retencao_pis_cofins_csll: false,
+    percentual_tributos_ibpt: 0,
+    desconto_incondicional: 0,
+    vendedor_id: "",
+    comissao_percentual: 0,
+    numero_rps: "",
+    serie_rps: "1",
+    responsavel_retencao: "cliente",
+    local_servico: "tomador",
+    optante_mei: false,
+    prestador_incentivador_cultural: false,
+    tributacao_rps: "T",
+    enviar_email_tomador: true,
+    enviar_email_intermediario: false,
+    intermediario_servico: false,
+    aliquota_pis: 0,
+    aliquota_cofins: 0,
+    aliquota_csll: 0,
+    outras_retencoes: 0,
+    codigo_regime_especial_tributacao: null
+  });
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -86,7 +123,7 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
           const typedServiceOrder = serviceOrder as unknown as ServiceOrder;
           const servicesDescription = `OS #${typedServiceOrder.order_number} - ${typedServiceOrder.equipment || 'Equipamento não especificado'} - S/N: ${typedServiceOrder.equipment_serial_number || 'N/A'} - Serviços realizados: ${typedServiceOrder.items.map(item => item.description).join(', ')} - (Total: R$ ${typedServiceOrder.total_price.toFixed(2)})`;
 
-          let proximoNumeroRPS: string;
+          let proximoNumeroRPS: string = "1";
 
           if (spConfig) {
             if (spConfig.numero_inicial_rps && spConfig.numero_inicial_rps > 0) {
@@ -98,37 +135,19 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
             } else {
               proximoNumeroRPS = ((spConfig.ultima_rps_numero || 0) + 1).toString();
             }
-          } else {
-            proximoNumeroRPS = "1";
           }
 
-          const nfseData: NFSeFormData = {
+          setFormData(prevData => ({
+            ...prevData,
             client_id: typedServiceOrder.client.id,
             codigo_servico: companyInfo?.codigo_servico || "",
             discriminacao_servicos: servicesDescription,
             valor_servicos: typedServiceOrder.total_price,
-            data_competencia: new Date().toISOString().split("T")[0],
-            deducoes: 0,
             observacoes: `Ordem de Serviço #${typedServiceOrder.order_number}`,
-            natureza_operacao: "1",
             serie_rps: companyInfo?.serie_rps_padrao || "1",
             numero_rps: proximoNumeroRPS,
-            responsavel_retencao: "cliente",
-            local_servico: "tomador",
-            optante_mei: false,
-            prestador_incentivador_cultural: false,
-            tributacao_rps: "T",
-            enviar_email_tomador: true,
-            enviar_email_intermediario: false,
-            intermediario_servico: false,
-            aliquota_pis: 0,
-            aliquota_cofins: 0,
-            aliquota_csll: 0,
-            outras_retencoes: 0,
             codigo_regime_especial_tributacao: spSettings?.tipo_regime_especial || null
-          };
-
-          setFormData(nfseData);
+          }));
         }
       } catch (error: any) {
         console.error("Error fetching service order:", error);
@@ -155,7 +174,8 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
         .insert({
           ...data,
           service_order_id: serviceOrderId,
-          status_sefaz: "pendente"
+          status_sefaz: "pendente",
+          status_transmissao: "pendente"
         })
         .select()
         .single();
@@ -191,7 +211,7 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
     }
   };
 
-  if (isLoading || !formData) {
+  if (isLoading) {
     return <div>Carregando...</div>;
   }
 
