@@ -51,6 +51,16 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
 
         if (companyError) throw companyError;
 
+        // Buscar configurações específicas para São Paulo
+        const { data: spSettings, error: spError } = await supabase
+          .from("nfse_sp_settings")
+          .select("*")
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (spError) throw spError;
+
         // Buscar dados da ordem de serviço
         const { data: serviceOrder, error } = await supabase
           .from("service_orders")
@@ -82,7 +92,22 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
             deducoes: 0,
             observacoes: `Ordem de Serviço #${typedServiceOrder.order_number}`,
             natureza_operacao: "1",
-            serie_rps: companyInfo?.serie_rps_padrao || "1"
+            serie_rps: companyInfo?.serie_rps_padrao || "1",
+            // Campos específicos para São Paulo
+            responsavel_retencao: "cliente",
+            local_servico: "tomador",
+            optante_mei: false,
+            prestador_incentivador_cultural: false,
+            tributacao_rps: "T",
+            enviar_email_tomador: true,
+            enviar_email_intermediario: false,
+            intermediario_servico: false,
+            tipo_servico: "prestado",
+            aliquota_pis: 0,
+            aliquota_cofins: 0,
+            aliquota_csll: 0,
+            outras_retencoes: 0,
+            codigo_regime_especial_tributacao: spSettings?.tipo_regime_especial || null
           };
 
           setFormData(nfseData);
