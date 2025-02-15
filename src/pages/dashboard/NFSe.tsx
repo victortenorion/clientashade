@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { PostgrestError } from "@supabase/supabase-js";
@@ -871,4 +872,25 @@ const NFSePage = () => {
 
       <NFSeView
         nfseId={selectedNFSeId}
-        onClose={() =>
+        onClose={() => setSelectedNFSeId(null)}
+      />
+
+      <Dialog open={showLogsDialog} onOpenChange={setShowLogsDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Logs de Processamento</DialogTitle>
+          </DialogHeader>
+          <NFSeSefazLogs
+            nfseId={selectedNFSeIdForLogs}
+            onClose={() => {
+              setShowLogsDialog(false);
+              setSelectedNFSeIdForLogs(null);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default NFSePage;
