@@ -154,29 +154,33 @@ const NFSePage = () => {
     try {
       // Validar se o ID da NFS-e é válido
       if (!nfseId || nfseId.trim() === '') {
-        toast({
-          title: "Erro ao enviar NFS-e",
-          description: "ID da NFS-e inválido",
-          variant: "destructive",
-        });
-        return;
+        throw new Error('ID da NFS-e inválido');
       }
 
       // Verificar se a NFS-e existe antes de prosseguir
       const { data: nfse, error: nfseError } = await supabase
         .from("nfse")
-        .select("*")
+        .select(`
+          *,
+          client:clients(
+            name,
+            document,
+            municipal_registration,
+            street,
+            street_number,
+            complement,
+            neighborhood,
+            city,
+            state,
+            zip_code
+          )
+        `)
         .eq("id", nfseId)
         .maybeSingle();
 
       if (nfseError) throw nfseError;
       if (!nfse) {
-        toast({
-          title: "Erro ao enviar NFS-e",
-          description: "NFS-e não encontrada",
-          variant: "destructive",
-        });
-        return;
+        throw new Error('NFS-e não encontrada');
       }
 
       const { data: config, error: configError } = await supabase
@@ -187,23 +191,31 @@ const NFSePage = () => {
 
       if (configError) throw configError;
       if (!config) {
-        toast({
-          title: "Erro ao emitir NFS-e",
-          description: "Configurações da NFS-e não encontradas.",
-          variant: "destructive",
-        });
-        return;
+        throw new Error('Configurações da NFS-e não encontradas');
       }
 
       if (!config.permite_emissao_sem_certificado && !config.certificado_digital) {
-        toast({
-          title: "Erro ao emitir NFS-e",
-          description: "Configure o certificado digital antes de emitir notas fiscais.",
-          variant: "destructive",
-        });
-        return;
+        throw new Error('Configure o certificado digital antes de emitir notas fiscais.');
       }
 
+      console.log('Config encontrada:', config);
+
+      // Incrementar número do RPS
+      const { data: rpsData, error: rpsError } = await supabase
+        .rpc('increment_rps_numero')
+        .single();
+
+      if (rpsError) {
+        console.error('Erro ao incrementar RPS:', rpsError);
+        throw rpsError;
+      }
+      if (!rpsData) {
+        throw new Error('Erro ao gerar número do RPS');
+      }
+
+      console.log('RPS incrementado:', rpsData);
+
+      // Atualizar fila
       const { error: queueError } = await supabase
         .from('sefaz_transmission_queue')
         .insert({
@@ -214,40 +226,77 @@ const NFSePage = () => {
 
       if (queueError) throw queueError;
 
+      // Log de início do processamento
       await supabase.from("nfse_sefaz_logs").insert({
         nfse_id: nfseId,
         status: "processing",
         message: "Iniciando envio para SEFAZ",
-        request_payload: { nfseId },
+        request_payload: {
+          nfse: {
+            id: nfse.id,
+            numero: nfse.numero_nfse,
+            valor_servicos: nfse.valor_servicos,
+            data_emissao: nfse.data_emissao,
+            codigo_servico: nfse.codigo_servico
+          },
+          rps: {
+            numero: rpsData.ultima_rps_numero,
+            serie: rpsData.serie_rps_padrao,
+            tipo: rpsData.tipo_rps
+          },
+          cliente: nfse.client
+        },
         response_payload: null
       });
 
+      // Atualizar status da NFS-e
       const { error: updateError } = await supabase
         .from("nfse")
-        .update({ status_sefaz: "enviando" })
+        .update({
+          numero_rps: rpsData.ultima_rps_numero.toString(),
+          serie_rps: rpsData.serie_rps_padrao,
+          tipo_rps: rpsData.tipo_rps,
+          status_sefaz: "processando"
+        })
         .eq("id", nfseId);
 
       if (updateError) throw updateError;
 
+      // Chamar função de processamento
       const { data: processResponse, error: processError } = await supabase.functions.invoke('process-nfse', {
-        body: { nfseId }
+        body: { 
+          nfseId,
+          rps: {
+            numero: rpsData.ultima_rps_numero.toString(),
+            serie: rpsData.serie_rps_padrao,
+            tipo: rpsData.tipo_rps
+          }
+        }
       });
 
       if (processError) throw processError;
 
       console.log('Resposta do processamento:', processResponse);
 
+      // Log de sucesso
       await supabase.from("nfse_sefaz_logs").insert({
         nfse_id: nfseId,
         status: "success",
         message: "NFS-e enviada para processamento com sucesso",
-        request_payload: { nfseId },
+        request_payload: { 
+          nfseId,
+          rps: {
+            numero: rpsData.ultima_rps_numero.toString(),
+            serie: rpsData.serie_rps_padrao,
+            tipo: rpsData.tipo_rps
+          }
+        },
         response_payload: processResponse
       });
 
       toast({
         title: "NFS-e enviada para processamento",
-        description: `RPS número ${processResponse?.rps?.numero} gerado com sucesso.`,
+        description: `RPS número ${rpsData.ultima_rps_numero} gerado com sucesso.`,
       });
 
       setSelectedNFSeIdForLogs(nfseId);
@@ -265,6 +314,25 @@ const NFSePage = () => {
           request_payload: { nfseId },
           response_payload: { error: error.message }
         });
+
+        // Atualizar status da NFS-e em caso de erro
+        await supabase
+          .from("nfse")
+          .update({
+            status_sefaz: "erro"
+          })
+          .eq("id", nfseId);
+
+        // Atualizar status da fila em caso de erro
+        await supabase
+          .from("sefaz_transmission_queue")
+          .update({ 
+            status: "erro",
+            erro_mensagem: error.message,
+            ultima_tentativa: new Date().toISOString()
+          })
+          .eq("documento_id", nfseId)
+          .eq("tipo", "nfse");
       }
 
       toast({
