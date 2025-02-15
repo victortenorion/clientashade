@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -204,23 +205,26 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
       console.log("Enviando certificado para validação...");
       console.log("Senha sendo enviada:", currentConfig.senha_certificado);
 
-      const { data, error } = await supabase.functions.invoke('validate-certificate', {
+      const response = await supabase.functions.invoke('validate-certificate', {
         body: {
           certificado: certificateFile,
           senha: currentConfig.senha_certificado,
         }
       });
 
-      if (error) throw error;
+      if (!response.data) {
+        throw new Error("Resposta inválida do servidor");
+      }
 
-      console.log("Resposta da validação:", data);
+      console.log("Resposta da validação:", response.data);
 
-      if (data.success) {
+      if (response.data.success) {
+        // Salvar certificado no banco
         const certificateData = {
           type: selectedTab,
           certificate_data: certificateFile,
           certificate_password: currentConfig.senha_certificado,
-          valid_until: data.validade,
+          valid_until: response.data.validade,
           is_valid: true
         };
 
@@ -236,7 +240,7 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
             certificado_digital: certificateFile,
             senha_certificado: currentConfig.senha_certificado,
             certificado_valido: true,
-            certificado_validade: data.validade
+            certificado_validade: response.data.validade
           });
         } else {
           setNfceConfig({
@@ -244,22 +248,22 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
             certificado_digital: certificateFile,
             senha_certificado: currentConfig.senha_certificado,
             certificado_valido: true,
-            certificado_validade: data.validade
+            certificado_validade: response.data.validade
           });
         }
 
         toast({
           title: "Sucesso",
           description: "Certificado digital válido até " + 
-            new Date(data.validade).toLocaleDateString(),
+            new Date(response.data.validade).toLocaleDateString(),
         });
       } else {
-        throw new Error(data.message || 'Certificado inválido');
+        throw new Error(response.data.message || "Certificado inválido");
       }
     } catch (error: any) {
       console.error('Erro na validação:', error);
       
-      // Atualizar status do certificado no banco
+      // Atualizar status do certificado no banco como inválido
       try {
         await supabase
           .from('certificates')
