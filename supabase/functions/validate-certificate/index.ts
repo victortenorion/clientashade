@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import * as forge from "npm:node-forge@1.3.1";
+import { createHash } from "https://deno.land/std@0.177.0/crypto/mod.ts";
+import forge from "npm:node-forge";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -59,10 +60,10 @@ serve(async (req) => {
       console.log("Iniciando decodificação base64");
       const binaryString = atob(certificadoBase64);
       console.log("Certificado decodificado de base64, tamanho:", binaryString.length);
-      
-      // Converter string binária para Buffer compatível com node-forge
-      const buffer = forge.util.createBuffer(binaryString, 'raw');
-      const asn1 = forge.asn1.fromDer(buffer);
+
+      // Converter string binária para formato DER
+      const der = forge.util.createBuffer(binaryString, 'binary');
+      const asn1 = forge.asn1.fromDer(der);
 
       // Tentar parsear o certificado
       console.log("Tentando parsear o certificado PKCS#12...");
