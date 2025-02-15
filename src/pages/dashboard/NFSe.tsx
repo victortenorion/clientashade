@@ -439,17 +439,16 @@ const NFSePage = () => {
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleEditNFSe(nota.id)}
-                        title="Editar"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-
                       {nota.status_sefaz === "pendente" && (
                         <>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleEditNFSe(nota.id)}
+                            title="Editar"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="outline"
                             size="icon"
@@ -483,8 +482,24 @@ const NFSePage = () => {
                         </Button>
                       )}
 
-                      {(nota.status_sefaz === "processado" || nota.status_sefaz === "autorizada") && !nota.cancelada && (
-                        <div className="flex gap-2">
+                      {nota.status_sefaz === "processado" && !nota.cancelada && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => {
+                              setNfceCancelamento(nota.id);
+                              setShowCancelDialog(true);
+                            }}
+                            title="Cancelar NFS-e"
+                          >
+                            <XCircle className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+
+                      {nota.status_sefaz === "autorizada" && !nota.cancelada && (
+                        <>
                           <Button
                             variant="outline"
                             size="icon"
@@ -504,7 +519,7 @@ const NFSePage = () => {
                           >
                             <XCircle className="h-4 w-4" />
                           </Button>
-                        </div>
+                        </>
                       )}
 
                       <Button
