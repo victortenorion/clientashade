@@ -183,6 +183,7 @@ export interface NFSeFormData {
   comissao_percentual: number;
   observacoes?: string;
   responsavel_retencao: string;
+  local_servico: string;
 }
 
 export interface RPSResponse {

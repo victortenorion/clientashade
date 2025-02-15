@@ -104,7 +104,8 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
     retencao_pis_cofins_csll: false,
     desconto_incondicional: 0,
     comissao_percentual: 0,
-    responsavel_retencao: "tomador"
+    responsavel_retencao: "tomador",
+    local_servico: "tomador"
   });
   
   const { toast } = useToast();
