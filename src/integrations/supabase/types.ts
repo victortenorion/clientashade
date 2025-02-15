@@ -1064,6 +1064,7 @@ export type Database = {
           producao_intermediario: boolean | null
           proxy_host_ssl: string | null
           proxy_port_ssl: string | null
+          servico_aliquota: number | null
           servico_codigo_item_lista: string | null
           servico_codigo_local_prestacao: string | null
           servico_discriminacao_item: string | null
@@ -1096,6 +1097,7 @@ export type Database = {
           producao_intermediario?: boolean | null
           proxy_host_ssl?: string | null
           proxy_port_ssl?: string | null
+          servico_aliquota?: number | null
           servico_codigo_item_lista?: string | null
           servico_codigo_local_prestacao?: string | null
           servico_discriminacao_item?: string | null
@@ -1128,6 +1130,7 @@ export type Database = {
           producao_intermediario?: boolean | null
           proxy_host_ssl?: string | null
           proxy_port_ssl?: string | null
+          servico_aliquota?: number | null
           servico_codigo_item_lista?: string | null
           servico_codigo_local_prestacao?: string | null
           servico_discriminacao_item?: string | null

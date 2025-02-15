@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { NFSe, NFSeFormData, RPSResponse } from "./types/nfse.types";
+import { NFSe, NFSeFormData } from "./types/nfse.types";
 import { format } from "date-fns";
 import { Plus, Pencil, Trash2, Send, XCircle, Printer, List } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -30,13 +30,6 @@ import { NFSeSefazLogs } from "./components/NFSeSefazLogs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
-
-interface RPSResponse {
-  ultima_rps_numero: number;
-  serie_rps_padrao: string;
-  tipo_rps: string;
-  ambiente: string;
-}
 
 interface ProcessNFSeResponse {
   success: boolean;
