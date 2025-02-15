@@ -59,7 +59,16 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
           .limit(1)
           .maybeSingle();
 
+        // Buscar configuração do RPS
+        const { data: spConfig, error: spConfigError } = await supabase
+          .from("nfse_sp_config")
+          .select("numero_inicial_rps, ultima_rps_numero")
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
         if (spError) throw spError;
+        if (spConfigError) throw spConfigError;
 
         // Buscar dados da ordem de serviço
         const { data: serviceOrder, error } = await supabase
@@ -83,6 +92,22 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
           // Formatar a descrição dos serviços em uma única linha
           const servicesDescription = `OS #${typedServiceOrder.order_number} - ${typedServiceOrder.equipment || 'Equipamento não especificado'} - S/N: ${typedServiceOrder.equipment_serial_number || 'N/A'} - Serviços realizados: ${typedServiceOrder.items.map(item => item.description).join(', ')} - (Total: R$ ${typedServiceOrder.total_price.toFixed(2)})`;
 
+          let proximoNumeroRPS: string;
+
+          if (spConfig) {
+            if (spConfig.numero_inicial_rps && spConfig.numero_inicial_rps > 0) {
+              if (!spConfig.ultima_rps_numero || spConfig.ultima_rps_numero < spConfig.numero_inicial_rps) {
+                proximoNumeroRPS = spConfig.numero_inicial_rps.toString();
+              } else {
+                proximoNumeroRPS = (spConfig.ultima_rps_numero + 1).toString();
+              }
+            } else {
+              proximoNumeroRPS = ((spConfig.ultima_rps_numero || 0) + 1).toString();
+            }
+          } else {
+            proximoNumeroRPS = "1";
+          }
+
           const nfseData: NFSeFormData = {
             client_id: typedServiceOrder.client.id,
             codigo_servico: companyInfo?.codigo_servico || "",
@@ -93,6 +118,7 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
             observacoes: `Ordem de Serviço #${typedServiceOrder.order_number}`,
             natureza_operacao: "1",
             serie_rps: companyInfo?.serie_rps_padrao || "1",
+            numero_rps: proximoNumeroRPS,
             // Campos específicos para São Paulo
             responsavel_retencao: "cliente",
             local_servico: "tomador",
@@ -102,7 +128,6 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
             enviar_email_tomador: true,
             enviar_email_intermediario: false,
             intermediario_servico: false,
-            tipo_servico: "prestado",
             aliquota_pis: 0,
             aliquota_cofins: 0,
             aliquota_csll: 0,
@@ -144,6 +169,18 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
         .single();
 
       if (nfseError) throw nfseError;
+
+      // Atualizar o último número de RPS usado
+      const { error: updateError } = await supabase
+        .from("nfse_sp_config")
+        .update({ 
+          ultima_rps_numero: parseInt(data.numero_rps || "0", 10)
+        })
+        .eq('id', (await supabase.from('nfse_sp_config').select('id').single()).data.id);
+
+      if (updateError) {
+        console.error("Erro ao atualizar número do RPS:", updateError);
+      }
 
       toast({
         title: "NFS-e salva com sucesso",
