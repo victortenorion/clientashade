@@ -182,19 +182,30 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
       console.log("Resposta da validação:", data);
 
       if (data.success) {
-        // Salvar certificado no banco
+        // Primeiro, verificar se já existe um certificado para este tipo
+        const { data: existingCert, error: queryError } = await supabase
+          .from('certificates')
+          .select('*')
+          .eq('type', selectedTab)
+          .maybeSingle();
+
+        if (queryError) {
+          console.error('Erro ao verificar certificado existente:', queryError);
+          throw new Error("Erro ao verificar certificado existente");
+        }
+
+        // Se existir, atualizar. Se não, inserir.
         const { error: saveError } = await supabase
           .from('certificates')
           .upsert({
+            id: existingCert?.id,
             type: selectedTab,
             certificate_data: certificateFile,
             certificate_password: currentConfig.senha_certificado,
             valid_until: data.validade || null,
             is_valid: true,
-            created_at: new Date().toISOString(),
+            created_at: existingCert ? existingCert.created_at : new Date().toISOString(),
             updated_at: new Date().toISOString()
-          }, {
-            onConflict: 'type'
           });
 
         if (saveError) {
@@ -230,18 +241,23 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
       
       // Atualizar status do certificado no banco como inválido
       try {
+        const { data: existingCert } = await supabase
+          .from('certificates')
+          .select('*')
+          .eq('type', selectedTab)
+          .maybeSingle();
+
         const { error: saveError } = await supabase
           .from('certificates')
           .upsert({
+            id: existingCert?.id,
             type: selectedTab,
             certificate_data: certificateFile,
             certificate_password: currentConfig.senha_certificado,
             is_valid: false,
             valid_until: null,
-            created_at: new Date().toISOString(),
+            created_at: existingCert ? existingCert.created_at : new Date().toISOString(),
             updated_at: new Date().toISOString()
-          }, {
-            onConflict: 'type'
           });
 
         if (saveError) {
