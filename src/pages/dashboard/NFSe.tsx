@@ -1,7 +1,6 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { NFSe, NFSeFormData } from "./types/nfse.types";
+import { NFSe, NFSeFormData, RPSResponse } from "./types/nfse.types";
 import { format } from "date-fns";
 import { Plus, Pencil, Trash2, Send, XCircle, Printer, List } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -31,12 +30,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
-
-interface RPSResponse {
-  ultima_rps_numero: number;
-  serie_rps_padrao: string;
-  tipo_rps: string;
-}
 
 const NFSePage = () => {
   const { toast } = useToast();
@@ -80,82 +73,6 @@ const NFSePage = () => {
       return data;
     }
   });
-
-  const { data: nfseToEditData } = useQuery({
-    queryKey: ["nfse", nfseToEdit],
-    queryFn: async () => {
-      if (!nfseToEdit) return null;
-      
-      const { data, error } = await supabase
-        .from("nfse")
-        .select("*")
-        .eq("id", nfseToEdit)
-        .single();
-
-      if (error) throw error;
-      return data as NFSe;
-    },
-    enabled: !!nfseToEdit,
-  });
-
-  const handleDeleteNFSe = async (nfseId: string) => {
-    try {
-      console.log('Iniciando exclusão da NFS-e:', nfseId);
-
-      // Primeiro verificar se a NFS-e existe
-      const { data: nfse, error: checkError } = await supabase
-        .from("nfse")
-        .select("*")
-        .eq("id", nfseId)
-        .single();
-
-      if (checkError) {
-        throw new Error("NFS-e não encontrada");
-      }
-
-      // Excluir registros relacionados em sequência
-      await supabase
-        .from("nfse_eventos")
-        .delete()
-        .eq("nfse_id", nfseId);
-
-      await supabase
-        .from("nfse_sefaz_logs")
-        .delete()
-        .eq("nfse_id", nfseId);
-
-      await supabase
-        .from("sefaz_transmission_queue")
-        .delete()
-        .eq("documento_id", nfseId)
-        .eq("tipo", "nfse");
-
-      // Por fim, excluir a NFS-e
-      const { error: deleteError } = await supabase
-        .from("nfse")
-        .delete()
-        .eq("id", nfseId);
-
-      if (deleteError) {
-        throw deleteError;
-      }
-
-      // Atualizar o cache e a interface
-      queryClient.invalidateQueries({ queryKey: ["nfse"] });
-
-      toast({
-        title: "NFS-e excluída com sucesso"
-      });
-
-    } catch (error: any) {
-      console.error('Erro ao excluir NFS-e:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao excluir NFS-e",
-        description: error.message
-      });
-    }
-  };
 
   const handleSendToSefaz = async (nfseId: string) => {
     try {
@@ -205,7 +122,6 @@ const NFSePage = () => {
 
       console.log('Config encontrada:', config);
 
-      // Incrementar número do RPS
       const { data: rpsData, error: rpsError } = await supabase
         .rpc<RPSResponse>('increment_rps_numero')
         .single();
@@ -220,7 +136,6 @@ const NFSePage = () => {
 
       console.log('RPS incrementado:', rpsData);
 
-      // Atualizar fila
       const { error: queueError } = await supabase
         .from('sefaz_transmission_queue')
         .insert({
@@ -231,7 +146,6 @@ const NFSePage = () => {
 
       if (queueError) throw queueError;
 
-      // Log de início do processamento
       await supabase.from("nfse_sefaz_logs").insert({
         nfse_id: nfseId,
         status: "processing",
@@ -254,7 +168,6 @@ const NFSePage = () => {
         response_payload: null
       });
 
-      // Atualizar status da NFS-e
       const { error: updateError } = await supabase
         .from("nfse")
         .update({
@@ -267,7 +180,6 @@ const NFSePage = () => {
 
       if (updateError) throw updateError;
 
-      // Chamar função de processamento
       const { data: processResponse, error: processError } = await supabase.functions.invoke('process-nfse', {
         body: { 
           nfseId,
@@ -283,7 +195,6 @@ const NFSePage = () => {
 
       console.log('Resposta do processamento:', processResponse);
 
-      // Log de sucesso
       await supabase.from("nfse_sefaz_logs").insert({
         nfse_id: nfseId,
         status: "success",
@@ -320,7 +231,6 @@ const NFSePage = () => {
           response_payload: { error: error.message }
         });
 
-        // Atualizar status da NFS-e em caso de erro
         await supabase
           .from("nfse")
           .update({
@@ -328,7 +238,6 @@ const NFSePage = () => {
           })
           .eq("id", nfseId);
 
-        // Atualizar status da fila em caso de erro
         await supabase
           .from("sefaz_transmission_queue")
           .update({ 
@@ -353,7 +262,6 @@ const NFSePage = () => {
       setIsEmitindo(true);
 
       if (nfseToEdit) {
-        // Atualizar NFS-e existente
         const { error: updateError } = await supabase
           .from("nfse")
           .update({

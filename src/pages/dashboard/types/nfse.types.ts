@@ -170,3 +170,10 @@ export interface NFSeCancelamento {
   motivo: string;
   senha_certificado?: string;
 }
+
+export interface RPSResponse {
+  ultima_rps_numero: number;
+  serie_rps_padrao: string;
+  tipo_rps: string;
+  ambiente: string;
+}
