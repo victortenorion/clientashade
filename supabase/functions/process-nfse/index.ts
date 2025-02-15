@@ -41,8 +41,8 @@ serve(async (req) => {
       const { error: statusError } = await supabaseClient
         .from('nfse')
         .update({ 
-          status_transmissao: 'enviando',
-          status_sefaz: 'processando'
+          status_transmissao: 'pendente',
+          status_sefaz: 'pendente'
         })
         .eq('id', nfseId)
 
@@ -179,15 +179,6 @@ serve(async (req) => {
 
       if (eventError) throw eventError
 
-      // Atualizar status da NFS-e
-      console.log("Atualizando status da NFS-e...")
-      const { error: processError } = await supabaseClient
-        .from('nfse')
-        .update({ status_sefaz: 'processando' })
-        .eq('id', nfseId)
-
-      if (processError) throw processError
-
       // Montar XML de envio
       console.log("Montando XML de envio...")
       const xmlEnvio = `<?xml version="1.0" encoding="UTF-8"?>
@@ -249,7 +240,7 @@ serve(async (req) => {
         .from('nfse')
         .update({ 
           xml_envio: xmlEnvio,
-          status_sefaz: 'enviando'
+          status_sefaz: 'pendente'
         })
         .eq('id', nfseId)
 
@@ -271,8 +262,8 @@ serve(async (req) => {
       const { error: finalError } = await supabaseClient
         .from('nfse')
         .update({ 
-          status_transmissao: 'enviado',
-          status_sefaz: 'processado'
+          status_transmissao: 'pendente',
+          status_sefaz: 'pendente'
         })
         .eq('id', nfseId)
 
