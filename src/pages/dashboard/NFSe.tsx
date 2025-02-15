@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { PostgrestError } from "@supabase/supabase-js";
@@ -648,3 +649,4 @@ const formatMoney = (value: number | null) => {
 };
 
 export default NFSePage;
+
