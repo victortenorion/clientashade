@@ -19,6 +19,8 @@ import NFSeFromServiceOrder from "./pages/dashboard/NFSeFromServiceOrder";
 import { ClientTab } from "./pages/dashboard/components/ClientTab";
 import { NotasFiscaisTab } from "./pages/dashboard/components/NotasFiscaisTab";
 import NFSePage from "./pages/dashboard/NFSe";
+import Stores from "./pages/dashboard/Stores";
+import { SEFAZTab } from "./pages/dashboard/components/SEFAZTab";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -49,8 +51,10 @@ function AppRoutes() {
         <Route path="service-orders/:id/nfse" element={<NFSeFromServiceOrder />} />
         <Route path="nfse/new" element={<NFSeStandalone />} />
         <Route path="nfse" element={<NFSePage />} />
+        <Route path="stores" element={<Stores />} />
         <Route path="service-order-settings/area-cliente" element={<ClientTab />} />
         <Route path="service-order-settings/notas-fiscais" element={<NotasFiscaisTab />} />
+        <Route path="service-order-settings/sefaz" element={<SEFAZTab />} />
       </Route>
     </Routes>
   );
