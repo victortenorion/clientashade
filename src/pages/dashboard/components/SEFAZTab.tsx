@@ -15,7 +15,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
-import { FiscalTab } from "./FiscalTab";
 
 interface NFCeConfig {
   certificado_digital: string;
@@ -90,28 +89,30 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
         }
       });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
-      if (selectedTab === 'nfse') {
-        setNfseConfig({
-          ...nfseConfig,
-          certificado_valido: true,
-          certificado_validade: data.validade,
+      if (data.success) {
+        if (selectedTab === 'nfse') {
+          setNfseConfig({
+            ...nfseConfig,
+            certificado_valido: true,
+            certificado_validade: data.validade,
+          });
+        } else {
+          setNfceConfig({
+            ...nfceConfig,
+            certificado_valido: true,
+            certificado_validade: data.validade,
+          });
+        }
+
+        toast({
+          title: "Sucesso",
+          description: "Certificado digital válido",
         });
       } else {
-        setNfceConfig({
-          ...nfceConfig,
-          certificado_valido: true,
-          certificado_validade: data.validade,
-        });
+        throw new Error(data.message || 'Certificado inválido');
       }
-
-      toast({
-        title: "Sucesso",
-        description: "Certificado digital válido",
-      });
     } catch (error: any) {
       console.error('Erro na validação:', error);
       if (selectedTab === 'nfse') {
@@ -141,12 +142,41 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      const { data: currentConfig, error: configError } = await supabase
+        .from('nfse_config')
+        .select('*')
+        .limit(1)
+        .single();
+
+      if (configError && configError.code !== 'PGRST116') {
+        throw configError;
+      }
+
+      // Se já existe uma configuração, atualiza. Se não, insere.
+      const { error: saveError } = await supabase
+        .from('nfse_config')
+        .upsert({
+          id: currentConfig?.id,
+          certificado_digital: nfseConfig.certificado_digital,
+          senha_certificado: nfseConfig.senha_certificado,
+          ambiente: nfseConfig.ambiente,
+          inscricao_municipal: nfseConfig.inscricao_municipal,
+          regime_tributario: nfseConfig.regime_tributario,
+          regime_especial: nfseConfig.regime_especial,
+          incentivo_fiscal: nfseConfig.incentivo_fiscal,
+          certificado_valido: nfseConfig.certificado_valido,
+          certificado_validade: nfseConfig.certificado_validade
+        });
+
+      if (saveError) throw saveError;
+
       await handleSaveAllConfigs();
+
       toast({
         title: "Sucesso",
         description: "Configurações salvas com sucesso",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao salvar:', error);
       toast({
         title: "Erro",
@@ -187,6 +217,8 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                               setNfseConfig({
                                 ...nfseConfig,
                                 certificado_digital: base64,
+                                certificado_valido: false,
+                                certificado_validade: undefined
                               });
                             }
                           };
@@ -205,6 +237,8 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                         setNfseConfig({
                           ...nfseConfig,
                           senha_certificado: e.target.value,
+                          certificado_valido: false,
+                          certificado_validade: undefined
                         })
                       }
                     />
@@ -260,23 +294,6 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Versão do Schema</Label>
-                    <Select
-                      value={nfseConfig.versao_schema || "2.00"}
-                      onValueChange={(value) =>
-                        setNfseConfig({ ...nfseConfig, versao_schema: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a versão" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="2.00">2.00</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
                     <Label>Inscrição Municipal</Label>
                     <Input
                       value={nfseConfig.inscricao_municipal}
@@ -290,65 +307,36 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Código do Município</Label>
-                    <Input
-                      value={nfseConfig.codigo_municipio}
-                      onChange={(e) =>
-                        setNfseConfig({
-                          ...nfseConfig,
-                          codigo_municipio: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-2">
                     <Label>Regime Tributário</Label>
                     <Select
-                      value={nfseConfig.codigo_regime_tributario || "1"}
+                      value={nfseConfig.regime_tributario}
                       onValueChange={(value) =>
-                        setNfseConfig({
-                          ...nfseConfig,
-                          codigo_regime_tributario: value,
-                        })
+                        setNfseConfig({ ...nfseConfig, regime_tributario: value })
                       }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o regime tributário" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="1">1 - Simples Nacional</SelectItem>
-                        <SelectItem value="2">2 - Estimativa</SelectItem>
-                        <SelectItem value="3">3 - Sociedade de Profissionais</SelectItem>
-                        <SelectItem value="4">4 - MEI</SelectItem>
-                        <SelectItem value="5">5 - Outros</SelectItem>
+                        <SelectItem value="simples">Simples Nacional</SelectItem>
+                        <SelectItem value="presumido">Lucro Presumido</SelectItem>
+                        <SelectItem value="real">Lucro Real</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Operação de Tributação</Label>
-                    <Select
-                      value={nfseConfig.operacao_tributacao || "1"}
-                      onValueChange={(value) =>
+                    <Label>Número Inicial do RPS</Label>
+                    <Input
+                      type="number"
+                      value={nfseConfig.numero_inicial_rps}
+                      onChange={(e) =>
                         setNfseConfig({
                           ...nfseConfig,
-                          operacao_tributacao: value,
+                          numero_inicial_rps: parseInt(e.target.value),
                         })
                       }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a operação" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">1 - Tributação no Município</SelectItem>
-                        <SelectItem value="2">2 - Tributação Fora do Município</SelectItem>
-                        <SelectItem value="3">3 - Isenção</SelectItem>
-                        <SelectItem value="4">4 - Imune</SelectItem>
-                        <SelectItem value="5">5 - Exigibilidade Suspensa por Decisão Judicial</SelectItem>
-                        <SelectItem value="6">6 - Exigibilidade Suspensa por Procedimento Administrativo</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    />
                   </div>
 
                   <div className="flex items-center space-x-2">
