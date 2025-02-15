@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -48,7 +49,7 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
         .eq('type', selectedTab)
         .order('created_at', { ascending: false })
         .limit(1)
-        .maybeSingle();
+        .maybeSingle(); // Usando maybeSingle() em vez de single()
 
       if (error) throw error;
 
