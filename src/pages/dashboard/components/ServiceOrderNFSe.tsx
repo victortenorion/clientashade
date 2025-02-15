@@ -153,7 +153,9 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
           const valor_servicos = typedServiceOrder.total_price;
           const aliquota_iss = spSettings?.servico_aliquota || 0;
           const valor_iss = (valor_servicos * aliquota_iss) / 100;
-          const base_calculo = valor_servicos - (formData.deducoes || 0);
+          const deducoes = 0; // Valor inicial das deduções
+          const base_calculo = valor_servicos - deducoes;
+          const valor_total = base_calculo; // Valor total é igual ao valor dos serviços menos deduções
 
           setFormData(prevData => ({
             ...prevData,
@@ -161,7 +163,9 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
             codigo_servico: companyInfo?.codigo_servico || "",
             discriminacao_servicos: servicesDescription,
             valor_servicos: typedServiceOrder.total_price,
-            valor_total: typedServiceOrder.total_price,
+            valor_total,
+            base_calculo,
+            deducoes,
             observacoes: `Ordem de Serviço #${typedServiceOrder.order_number}`,
             serie_rps: companyInfo?.serie_rps_padrao || "1",
             numero_rps: proximoNumeroRPS,
@@ -170,7 +174,6 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
             cnae: companyInfo?.cnae || "",
             aliquota_iss,
             valor_iss,
-            base_calculo,
             status_transmissao: "pendente",
             status_sefaz: "pendente"
           }));
@@ -195,6 +198,10 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
     try {
       setIsLoading(true);
 
+      // Recalcular valor total considerando deduções e descontos
+      const base_calculo = data.valor_servicos - (data.deducoes || 0);
+      const valor_total = base_calculo - (data.desconto_incondicional || 0);
+
       // Preparar dados para envio
       const cleanedData = {
         ...data,
@@ -203,7 +210,8 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
         status_sefaz: "pendente",
         status_transmissao: "pendente",
         data_emissao: new Date().toISOString().split("T")[0],
-        valor_total: data.valor_servicos - (data.desconto_incondicional || 0)
+        base_calculo,
+        valor_total
       };
 
       // Validar client_id antes de enviar
