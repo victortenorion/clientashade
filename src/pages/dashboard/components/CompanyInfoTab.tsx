@@ -40,6 +40,7 @@ export const CompanyInfoTab = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isCepLoading, setIsCepLoading] = useState(false);
+  const [isCheckingRPS, setIsCheckingRPS] = useState(false);
   const [rpsConfig, setRpsConfig] = useState<RPSConfig>({
     numero_inicial_rps: 0
   });
@@ -79,27 +80,34 @@ export const CompanyInfoTab = () => {
         setCompanyInfo(data);
       }
 
-      const { data: lastNFSe, error: nfseError } = await supabase
+      const { data: lastNFSe } = await supabase
         .from('nfse')
         .select('numero_rps')
         .order('numero_rps', { ascending: false })
         .limit(1)
         .single();
 
-      const { data: spConfig, error: spConfigError } = await supabase
+      const { data: spConfig } = await supabase
         .from('nfse_sp_config')
         .select('numero_inicial_rps')
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
 
-      const nextRpsNumber = lastNFSe?.numero_rps 
-        ? parseInt(lastNFSe.numero_rps) + 1
-        : spConfig?.numero_inicial_rps || 0;
+      if (spConfig?.numero_inicial_rps) {
+        setRpsConfig({
+          numero_inicial_rps: spConfig.numero_inicial_rps
+        });
 
-      setRpsConfig({
-        numero_inicial_rps: nextRpsNumber
-      });
+        if (lastNFSe?.numero_rps && parseInt(lastNFSe.numero_rps) >= spConfig.numero_inicial_rps) {
+          toast({
+            title: "Atenção",
+            description: `Já existem NFS-e com número RPS maior que ${spConfig.numero_inicial_rps}. ` +
+            `O próximo número será ${parseInt(lastNFSe.numero_rps) + 1}.`,
+            variant: "warning"
+          });
+        }
+      }
 
     } catch (error) {
       console.error('Erro ao carregar dados da empresa:', error);
@@ -236,7 +244,28 @@ export const CompanyInfoTab = () => {
   };
 
   const handleSave = async () => {
+    setIsCheckingRPS(true);
     try {
+      const { data: lastNFSe } = await supabase
+        .from('nfse')
+        .select('numero_rps')
+        .order('numero_rps', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (lastNFSe?.numero_rps && parseInt(lastNFSe.numero_rps) >= rpsConfig.numero_inicial_rps) {
+        const confirmContinue = window.confirm(
+          `ATENÇÃO: Já existem NFS-e com número RPS maior que ${rpsConfig.numero_inicial_rps}. ` +
+          `O próximo número será ${parseInt(lastNFSe.numero_rps) + 1}. ` +
+          `Deseja continuar mesmo assim?`
+        );
+
+        if (!confirmContinue) {
+          setIsCheckingRPS(false);
+          return;
+        }
+      }
+
       const { error } = await supabase
         .from('company_info')
         .upsert(companyInfo);
@@ -284,6 +313,8 @@ export const CompanyInfoTab = () => {
         description: "Não foi possível salvar os dados da empresa.",
         variant: "destructive"
       });
+    } finally {
+      setIsCheckingRPS(false);
     }
   };
 
