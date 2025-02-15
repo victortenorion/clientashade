@@ -158,6 +158,7 @@ const NFSePage = () => {
       if (error) throw error;
 
       const formData: NFSeFormData = {
+        id: data.id,
         client_id: data.client_id,
         codigo_servico: data.codigo_servico,
         discriminacao_servicos: data.discriminacao_servicos,

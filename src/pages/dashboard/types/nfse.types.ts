@@ -1,3 +1,4 @@
+
 export interface NFSe {
   id: string;
   numero_nfse: number;
@@ -49,6 +50,7 @@ export interface NFSeEvento {
 }
 
 export interface NFSeFormData {
+  id?: string; // Added this field
   client_id: string;
   codigo_servico: string;
   discriminacao_servicos: string;
@@ -91,3 +93,4 @@ export interface RPSResponse {
   serie_rps_padrao: string;
   tipo_rps: string;
 }
+
