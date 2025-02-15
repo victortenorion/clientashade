@@ -1,5 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import * as pkcs12 from "https://deno.land/x/pkcs12@v0.1.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,7 +17,10 @@ serve(async (req) => {
     
     if (!certificado || !senha) {
       return new Response(
-        JSON.stringify({ error: 'Certificado e senha são obrigatórios' }),
+        JSON.stringify({ 
+          success: false, 
+          message: 'Certificado e senha são obrigatórios' 
+        }),
         { 
           status: 400, 
           headers: { 
@@ -28,25 +32,57 @@ serve(async (req) => {
     }
 
     try {
-      // Decodifica o certificado base64
-      const certificateBuffer = Uint8Array.from(atob(certificado.split(',')[1]), c => c.charCodeAt(0))
+      // Log para debug
+      console.log("Recebido certificado de tamanho:", certificado.length)
       
-      // Tenta importar o certificado PKCS#12
-      const pkcs12 = await crypto.subtle.importPkcs12(
-        certificateBuffer,
-        senha,
-        ["sign"]
-      );
+      // Decodifica o certificado base64
+      const certificateBuffer = Uint8Array.from(atob(certificado), c => c.charCodeAt(0))
+      
+      console.log("Tamanho do buffer do certificado:", certificateBuffer.length)
+
+      // Tenta parsear o certificado PKCS#12
+      const result = await pkcs12.parse(certificateBuffer, senha)
+      
+      if (!result) {
+        throw new Error("Falha ao parsear o certificado")
+      }
+
+      console.log("Certificado parseado com sucesso")
 
       // Extrai informações do certificado
-      const certificateInfo = {
-        valid: true,
-        message: 'Certificado válido',
-        validUntil: new Date(Date.now() + (365 * 24 * 60 * 60 * 1000)).toISOString() // Exemplo: 1 ano
-      };
+      const cert = result.cert
+      
+      if (!cert) {
+        throw new Error("Certificado não encontrado no arquivo")
+      }
 
+      // Verifica a validade do certificado
+      const notBefore = new Date(cert.notBefore)
+      const notAfter = new Date(cert.notAfter)
+      const now = new Date()
+
+      if (now < notBefore || now > notAfter) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: 'Certificado expirado ou ainda não válido' 
+          }),
+          { 
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders 
+            } 
+          }
+        )
+      }
+
+      // Certificado válido
       return new Response(
-        JSON.stringify(certificateInfo),
+        JSON.stringify({
+          success: true,
+          message: 'Certificado válido',
+          validade: notAfter.toISOString()
+        }),
         { 
           headers: { 
             'Content-Type': 'application/json',
@@ -57,7 +93,10 @@ serve(async (req) => {
     } catch (error) {
       console.error('Erro ao validar certificado:', error);
       return new Response(
-        JSON.stringify({ valid: false, message: 'Certificado ou senha inválidos' }),
+        JSON.stringify({ 
+          success: false, 
+          message: 'Certificado ou senha inválidos. Detalhes: ' + error.message 
+        }),
         { 
           headers: { 
             'Content-Type': 'application/json',
@@ -69,7 +108,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Erro na requisição:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        success: false, 
+        message: 'Erro interno: ' + error.message 
+      }),
       { 
         status: 500, 
         headers: { 
