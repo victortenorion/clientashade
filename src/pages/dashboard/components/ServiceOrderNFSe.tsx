@@ -72,18 +72,18 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
     aliquota_csll: 0,
     outras_retencoes: 0,
     codigo_regime_especial_tributacao: null,
-    data_emissao: new Date().toISOString().split("T")[0], // Adicionado campo data_emissao
-    status_transmissao: "pendente", // Adicionado valor inicial
-    status_sefaz: "pendente", // Adicionado valor inicial
-    aliquota_iss: 0, // Adicionado campo aliquota_iss
-    valor_iss: 0, // Adicionado campo valor_iss
-    base_calculo: 0, // Adicionado campo base_calculo
-    valor_pis: 0, // Adicionado campo valor_pis
-    valor_cofins: 0, // Adicionado campo valor_cofins
-    valor_inss: 0, // Adicionado campo valor_inss
-    valor_ir: 0, // Adicionado campo valor_ir
-    valor_csll: 0, // Adicionado campo valor_csll
-    valor_total: 0 // Adicionado campo valor_total
+    data_emissao: new Date().toISOString().split("T")[0],
+    status_transmissao: "pendente",
+    status_sefaz: "pendente",
+    aliquota_iss: 0,
+    valor_iss: 0,
+    base_calculo: 0,
+    valor_pis: 0,
+    valor_cofins: 0,
+    valor_inss: 0,
+    valor_ir: 0,
+    valor_csll: 0,
+    valor_total: 0
   });
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -155,7 +155,7 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
           const valor_iss = (valor_servicos * aliquota_iss) / 100;
           const deducoes = 0; // Valor inicial das deduções
           const base_calculo = valor_servicos - deducoes;
-          const valor_total = base_calculo; // Valor total é igual ao valor dos serviços menos deduções
+          const valor_total = valor_servicos - deducoes; // Valor total inicial é igual ao valor dos serviços menos deduções
 
           setFormData(prevData => ({
             ...prevData,
@@ -163,7 +163,7 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
             codigo_servico: companyInfo?.codigo_servico || "",
             discriminacao_servicos: servicesDescription,
             valor_servicos: typedServiceOrder.total_price,
-            valor_total,
+            valor_total, // Definindo o valor total inicial
             base_calculo,
             deducoes,
             observacoes: `Ordem de Serviço #${typedServiceOrder.order_number}`,
@@ -209,7 +209,6 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
         service_order_id: serviceOrderId,
         status_sefaz: "pendente",
         status_transmissao: "pendente",
-        data_emissao: new Date().toISOString().split("T")[0],
         base_calculo,
         valor_total
       };
