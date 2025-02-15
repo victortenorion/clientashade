@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import { Buffer } from "https://deno.land/std@0.168.0/node/buffer.ts";
@@ -37,12 +36,12 @@ serve(async (req) => {
 
       console.log("Cliente Supabase criado, atualizando status...")
 
-      // Atualizar status de transmissão para 'enviando'
+      // Atualizar status inicial para 'processando'
       const { error: statusError } = await supabaseClient
         .from('nfse')
         .update({ 
           status_transmissao: 'pendente',
-          status_sefaz: 'pendente'
+          status_sefaz: 'processando'
         })
         .eq('id', nfseId)
 
@@ -234,13 +233,13 @@ serve(async (req) => {
   </RPS>
 </PedidoEnvioLoteRPS>`
 
-      // Salvar XML de envio
+      // Salvar XML de envio e atualizar status para 'enviando'
       console.log("Salvando XML de envio...")
       const { error: xmlError } = await supabaseClient
         .from('nfse')
         .update({ 
           xml_envio: xmlEnvio,
-          status_sefaz: 'pendente'
+          status_sefaz: 'enviando'
         })
         .eq('id', nfseId)
 
@@ -258,12 +257,12 @@ serve(async (req) => {
 
       if (queueError) throw queueError
 
-      // Após o processamento bem-sucedido
+      // Após o processamento bem-sucedido, atualizar para 'processado'
       const { error: finalError } = await supabaseClient
         .from('nfse')
         .update({ 
-          status_transmissao: 'pendente',
-          status_sefaz: 'pendente'
+          status_transmissao: 'enviado',
+          status_sefaz: 'processado'
         })
         .eq('id', nfseId)
 
