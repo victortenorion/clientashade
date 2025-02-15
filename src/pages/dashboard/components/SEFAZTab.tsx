@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -79,6 +80,56 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
   const [selectedTab, setSelectedTab] = useState("nfse");
   const [isSaving, setIsSaving] = useState(false);
 
+  useEffect(() => {
+    loadCertificate();
+  }, [selectedTab]);
+
+  const loadCertificate = async () => {
+    try {
+      const { data: certificate, error } = await supabase
+        .from('certificates')
+        .select('*')
+        .eq('type', selectedTab)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error) {
+        if (error.code !== 'PGRST116') { // Não encontrado
+          console.error('Erro ao carregar certificado:', error);
+          toast({
+            title: "Erro",
+            description: "Erro ao carregar certificado do banco de dados",
+            variant: "destructive"
+          });
+        }
+        return;
+      }
+
+      if (certificate) {
+        if (selectedTab === 'nfse') {
+          setNfseConfig({
+            ...nfseConfig,
+            certificado_digital: certificate.certificate_data,
+            senha_certificado: certificate.certificate_password,
+            certificado_valido: certificate.is_valid,
+            certificado_validade: certificate.valid_until
+          });
+        } else {
+          setNfceConfig({
+            ...nfceConfig,
+            certificado_digital: certificate.certificate_data,
+            senha_certificado: certificate.certificate_password,
+            certificado_valido: certificate.is_valid,
+            certificado_validade: certificate.valid_until
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao carregar certificado:', error);
+    }
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -155,6 +206,22 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
       console.log("Resposta da validação:", data);
 
       if (data.success) {
+        // Salvar certificado no banco
+        const { error: saveError } = await supabase
+          .from('certificates')
+          .upsert({
+            type: selectedTab,
+            certificate_data: config.certificado_digital,
+            certificate_password: config.senha_certificado,
+            valid_until: data.validade,
+            is_valid: true
+          });
+
+        if (saveError) {
+          console.error("Erro ao salvar certificado:", saveError);
+          throw new Error("Erro ao salvar certificado no banco de dados");
+        }
+
         if (selectedTab === 'nfse') {
           setNfseConfig({
             ...nfseConfig,
@@ -184,6 +251,21 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
     } catch (error: any) {
       console.error('Erro na validação:', error);
       
+      // Marcar certificado como inválido no banco
+      try {
+        await supabase
+          .from('certificates')
+          .upsert({
+            type: selectedTab,
+            certificate_data: config.certificado_digital,
+            certificate_password: config.senha_certificado,
+            is_valid: false,
+            valid_until: null
+          });
+      } catch (dbError) {
+        console.error('Erro ao atualizar status do certificado:', dbError);
+      }
+
       if (selectedTab === 'nfse') {
         setNfseConfig({
           ...nfseConfig,

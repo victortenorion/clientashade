@@ -9,6 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      certificates: {
+        Row: {
+          certificate_data: string
+          certificate_password: string
+          created_at: string | null
+          id: string
+          is_valid: boolean | null
+          type: string
+          updated_at: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          certificate_data: string
+          certificate_password: string
+          created_at?: string | null
+          id?: string
+          is_valid?: boolean | null
+          type: string
+          updated_at?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          certificate_data?: string
+          certificate_password?: string
+          created_at?: string | null
+          id?: string
+          is_valid?: boolean | null
+          type?: string
+          updated_at?: string | null
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
       client_field_settings: {
         Row: {
           created_at: string
