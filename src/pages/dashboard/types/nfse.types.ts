@@ -4,13 +4,15 @@ export interface NFSe {
   tipo_registro?: string;
   numero_nfse: number;
   data_hora_nfe?: string;
+  data_emissao: string;
+  data_competencia: string;
   codigo_verificacao: string;
   tipo_rps: string;
   serie_rps: string;
   numero_rps: string;
   data_fato_gerador: string;
   inscricao_prestador: string;
-  tipo_documento_prestador: string; // 1 - CPF, 2 - CNPJ, 3 - Não Informado
+  tipo_documento_prestador: string;
   documento_prestador: string;
   razao_social_prestador: string;
   tipo_endereco_prestador: string;
@@ -29,10 +31,12 @@ export interface NFSe {
   data_quitacao_guia?: string;
   valor_servicos: number;
   valor_deducoes: number;
+  deducoes: number;
   codigo_servico: string;
   aliquota_iss: number;
   valor_iss: number;
   valor_credito: number;
+  base_calculo: number;
   iss_retido: string;
   tipo_documento_tomador: string;
   documento_tomador: string;
@@ -61,21 +65,55 @@ export interface NFSe {
   valor_inss: number;
   valor_ir: number;
   valor_csll: number;
+  aliquota_pis: number;
+  aliquota_cofins: number;
+  aliquota_csll: number;
   valor_carga_tributaria: number;
   percentual_carga_tributaria: number;
+  percentual_tributos_ibpt: number;
   fonte_carga_tributaria?: string;
   cei?: string;
   matricula_obra?: string;
   municipio_prestacao_codigo?: string;
+  municipio_prestacao?: string;
   situacao_aceite?: string;
   encapsulamento?: string;
   valor_total_recebido?: number;
   tipo_consolidacao?: string;
   nfse_consolidada?: string;
   discriminacao_servicos: string;
+  observacoes?: string;
   client_id: string;
   status_sefaz: string;
   status_transmissao: string;
+  ambiente?: string;
+  valor_total: number;
+  excluida?: boolean;
+  cancelada?: boolean;
+  natureza_operacao: string;
+  cnae?: string;
+  retencao_ir: boolean;
+  percentual_ir: number;
+  retencao_iss: boolean;
+  desconto_iss: boolean;
+  retencao_inss: boolean;
+  retencao_pis_cofins_csll: boolean;
+  desconto_incondicional: number;
+  vendedor_id?: string;
+  comissao_percentual: number;
+  outras_retencoes: number;
+  clients?: {
+    name: string;
+    document: string;
+    email: string;
+    street: string;
+    street_number: string;
+    complement: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+    zip_code: string;
+  };
 }
 
 export interface NFSeFormData {
@@ -85,6 +123,7 @@ export interface NFSeFormData {
   serie_rps: string;
   numero_rps: string;
   data_emissao: string;
+  data_competencia: string;
   inscricao_prestador: string;
   tipo_documento_prestador: string;
   documento_prestador: string;
@@ -92,7 +131,11 @@ export interface NFSeFormData {
   discriminacao_servicos: string;
   valor_servicos: number;
   valor_deducoes: number;
+  deducoes: number;
   aliquota_iss: number;
+  aliquota_pis: number;
+  aliquota_cofins: number;
+  aliquota_csll: number;
   valor_iss: number;
   iss_retido: string;
   tipo_documento_tomador: string;
@@ -117,18 +160,42 @@ export interface NFSeFormData {
   valor_inss: number;
   valor_ir: number;
   valor_csll: number;
+  outras_retencoes: number;
   valor_carga_tributaria: number;
   percentual_carga_tributaria: number;
+  percentual_tributos_ibpt: number;
   municipio_prestacao_codigo?: string;
+  municipio_prestacao?: string;
   valor_total: number;
   status_transmissao: string;
   status_sefaz: string;
   situacao_nota: string;
   opcao_simples: string;
+  natureza_operacao: string;
+  cnae?: string;
+  retencao_ir: boolean;
+  percentual_ir: number;
+  retencao_iss: boolean;
+  desconto_iss: boolean;
+  retencao_inss: boolean;
+  retencao_pis_cofins_csll: boolean;
+  desconto_incondicional: number;
+  vendedor_id?: string;
+  comissao_percentual: number;
+  observacoes?: string;
 }
 
 export interface RPSResponse {
   ultima_rps_numero: number;
   serie_rps_padrao: string;
   tipo_rps: string;
+}
+
+export interface NFSeEvento {
+  id: string;
+  nfse_id: string;
+  tipo_evento: string;
+  status: string;
+  descricao: string;
+  data_evento: string;
 }
