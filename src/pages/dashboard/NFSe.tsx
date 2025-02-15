@@ -70,24 +70,82 @@ const NFSePage = () => {
       }
 
       return data;
-    },
-    staleTime: 0,
-    refetchOnWindowFocus: true
+    }
   });
 
-  const { data: nfseConfig } = useQuery({
-    queryKey: ["nfse_config"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("nfse_config")
-        .select("*")
-        .limit(1)
-        .single();
+  const handleDeleteNFSe = async (nfseId: string) => {
+    try {
+      console.log('Iniciando exclusão da NFS-e:', nfseId);
 
-      if (error) throw error;
-      return data;
-    },
-  });
+      // Primeiro deletar todos os registros relacionados
+      const { error: eventosError } = await supabase
+        .from("nfse_eventos")
+        .delete()
+        .eq("nfse_id", nfseId);
+
+      if (eventosError) {
+        console.error('Erro ao excluir eventos:', eventosError);
+        throw eventosError;
+      }
+
+      const { error: logsError } = await supabase
+        .from("nfse_sefaz_logs")
+        .delete()
+        .eq("nfse_id", nfseId);
+
+      if (logsError) {
+        console.error('Erro ao excluir logs:', logsError);
+        throw logsError;
+      }
+
+      const { error: queueError } = await supabase
+        .from("sefaz_transmission_queue")
+        .delete()
+        .eq("documento_id", nfseId)
+        .eq("tipo", "nfse");
+
+      if (queueError) {
+        console.error('Erro ao excluir da fila:', queueError);
+        throw queueError;
+      }
+
+      // Por fim, excluir a NFS-e
+      const { error: nfseError } = await supabase
+        .from("nfse")
+        .delete()
+        .eq("id", nfseId);
+
+      if (nfseError) {
+        console.error('Erro ao excluir NFS-e:', nfseError);
+        throw nfseError;
+      }
+
+      console.log('NFS-e excluída com sucesso');
+
+      // Atualizar o cache e a UI
+      queryClient.setQueryData(["nfse", searchTerm], (oldData: any) => {
+        if (!oldData) return [];
+        return oldData.filter((nota: any) => nota.id !== nfseId);
+      });
+
+      // Invalidar a query para forçar uma nova busca
+      await queryClient.invalidateQueries({ queryKey: ["nfse"] });
+
+      toast({
+        title: "NFS-e excluída com sucesso",
+      });
+
+      // Forçar atualização dos dados
+      await refetch();
+    } catch (error: any) {
+      console.error('Erro ao excluir NFS-e:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao excluir NFS-e",
+        description: error.message,
+      });
+    }
+  };
 
   const handleSendToSefaz = async (nfseId: string) => {
     try {
@@ -296,74 +354,6 @@ const NFSePage = () => {
     });
   };
 
-  const handleDeleteNFSe = async (nfseId: string) => {
-    try {
-      const { data: nfse, error: nfseError } = await supabase
-        .from("nfse")
-        .select("status_sefaz, cancelada")
-        .eq("id", nfseId)
-        .single();
-
-      if (nfseError) throw nfseError;
-
-      if (nfse.status_sefaz !== "pendente" && !nfse.cancelada) {
-        toast({
-          variant: "destructive",
-          title: "Erro ao excluir NFS-e",
-          description: "Apenas NFS-e pendentes ou canceladas podem ser excluídas",
-        });
-        return;
-      }
-
-      const promises = [
-        supabase
-          .from("nfse_eventos")
-          .delete()
-          .eq("nfse_id", nfseId),
-        
-        supabase
-          .from("nfse_sefaz_logs")
-          .delete()
-          .eq("nfse_id", nfseId),
-        
-        supabase
-          .from("sefaz_transmission_queue")
-          .delete()
-          .eq("documento_id", nfseId)
-          .eq("tipo", "nfse")
-      ];
-
-      await Promise.all(promises);
-
-      const { error: deleteError } = await supabase
-        .from("nfse")
-        .delete()
-        .eq("id", nfseId);
-
-      if (deleteError) throw deleteError;
-
-      await queryClient.invalidateQueries({ queryKey: ["nfse"] });
-      
-      queryClient.setQueryData(["nfse", searchTerm], (oldData: any) => {
-        if (!oldData) return oldData;
-        return oldData.filter((nota: any) => nota.id !== nfseId);
-      });
-
-      toast({
-        title: "NFS-e excluída com sucesso",
-      });
-
-      refetch();
-    } catch (error: any) {
-      console.error('Erro ao excluir NFS-e:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao excluir NFS-e",
-        description: error.message,
-      });
-    }
-  };
-
   const handleCancelEnvio = async (nfseId: string) => {
     try {
       const { error: nfseError } = await supabase
@@ -473,33 +463,15 @@ const NFSePage = () => {
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <div className="flex gap-2">
-                      {nota.status_sefaz === "pendente" && (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleEditNFSe(nota.id)}
-                            title="Editar"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleDeleteNFSe(nota.id)}
-                            title="Excluir"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleSendToSefaz(nota.id)}
-                            title="Enviar para SEFAZ"
-                          >
-                            <Send className="h-4 w-4" />
-                          </Button>
-                        </>
+                      {(nota.status_sefaz === "pendente" || nota.cancelada) && (
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleDeleteNFSe(nota.id)}
+                          title="Excluir"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       )}
 
                       {nota.status_sefaz === "enviando" && (
