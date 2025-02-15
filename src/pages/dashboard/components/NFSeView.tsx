@@ -1,4 +1,3 @@
-
 import { format } from "date-fns";
 import {
   Dialog,
@@ -19,14 +18,15 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { NFSe, NFSeEvento } from "../types/nfse.types";
-import { FileText } from "lucide-react";
+import { FileText, Pencil } from "lucide-react";
 
 interface Props {
   nfseId: string | null;
   onClose: () => void;
+  onEdit?: (nfseId: string) => void;
 }
 
-export const NFSeView = ({ nfseId, onClose }: Props) => {
+export const NFSeView = ({ nfseId, onClose, onEdit }: Props) => {
   const { data: nfse, isLoading: isLoadingNFSe } = useQuery({
     queryKey: ["nfse", nfseId],
     queryFn: async () => {
@@ -85,6 +85,12 @@ export const NFSeView = ({ nfseId, onClose }: Props) => {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleEdit = () => {
+    if (nfseId && onEdit) {
+      onEdit(nfseId);
+    }
   };
 
   return (
@@ -211,7 +217,11 @@ export const NFSeView = ({ nfseId, onClose }: Props) => {
           </div>
         )}
 
-        <DialogFooter>
+        <DialogFooter className="flex justify-between">
+          <Button variant="outline" onClick={handleEdit}>
+            <Pencil className="h-4 w-4 mr-2" />
+            Editar
+          </Button>
           <Button variant="outline" onClick={handlePrint}>
             <FileText className="h-4 w-4 mr-2" />
             Visualizar

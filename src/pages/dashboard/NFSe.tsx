@@ -42,6 +42,7 @@ const NFSePage = () => {
   const [nfseCancelamento, setNfseCancelamento] = useState<string | null>(null);
   const [showLogsDialog, setShowLogsDialog] = useState(false);
   const [selectedNFSeIdForLogs, setSelectedNFSeIdForLogs] = useState<string | null>(null);
+  const [nfseToEdit, setNfseToEdit] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -332,11 +333,9 @@ const NFSePage = () => {
     });
   };
 
-  const handleEditNFSe = async (nfseId: string) => {
-    toast({
-      title: "Em desenvolvimento",
-      description: "A funcionalidade de edição será implementada em breve.",
-    });
+  const handleEditNFSe = (nfseId: string) => {
+    setNfseToEdit(nfseId);
+    setSelectedNFSeId(null);
   };
 
   const handleCancelEnvio = async (nfseId: string) => {
@@ -581,7 +580,22 @@ const NFSePage = () => {
       <NFSeView
         nfseId={selectedNFSeId}
         onClose={() => setSelectedNFSeId(null)}
+        onEdit={handleEditNFSe}
       />
+
+      <Dialog open={!!nfseToEdit} onOpenChange={() => setNfseToEdit(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar NFS-e</DialogTitle>
+          </DialogHeader>
+          <NFSeForm
+            onSubmit={handleEmitirNFSe}
+            onCancel={() => setNfseToEdit(null)}
+            isLoading={isEmitindo}
+            submitButtonText="Salvar Alterações"
+          />
+        </DialogContent>
+      </Dialog>
 
       <NFSeSefazLogs
         nfseId={selectedNFSeIdForLogs}
