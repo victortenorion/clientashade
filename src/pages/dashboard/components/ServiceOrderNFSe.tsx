@@ -16,6 +16,18 @@ interface ServiceOrder {
   items: ServiceOrderItem[];
   client: {
     id: string;
+    name: string;
+    document: string;
+    email: string;
+    street: string;
+    street_number: string;
+    complement: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+    zip_code: string;
+    municipal_registration: string;
+    state_registration: string;
   };
 }
 
@@ -38,51 +50,45 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState<NFSeFormData>({
     client_id: "",
+    tipo_rps: "RPS",
+    serie_rps: "1",
+    numero_rps: "",
+    data_emissao: new Date().toISOString().split("T")[0],
+    inscricao_prestador: "",
+    tipo_documento_prestador: "2", // 2 = CNPJ
+    documento_prestador: "",
     codigo_servico: "",
     discriminacao_servicos: "",
     valor_servicos: 0,
-    data_competencia: new Date().toISOString().split("T")[0],
-    deducoes: 0,
-    observacoes: "",
-    natureza_operacao: "1", // 1 = Tributação no município de São Paulo
-    municipio_prestacao: "",
-    cnae: "",
-    retencao_ir: false,
-    percentual_ir: 0,
-    retencao_iss: false,
-    desconto_iss: false,
-    retencao_inss: false,
-    retencao_pis_cofins_csll: false,
-    percentual_tributos_ibpt: 0,
-    desconto_incondicional: 0,
-    vendedor_id: "",
-    comissao_percentual: 0,
-    numero_rps: "",
-    serie_rps: "1",
-    responsavel_retencao: "cliente",
-    local_servico: "tomador",
-    optante_mei: false,
-    prestador_incentivador_cultural: false,
-    tributacao_rps: "T", // T = Tributado em São Paulo
-    enviar_email_tomador: true,
-    enviar_email_intermediario: false,
-    intermediario_servico: false,
-    aliquota_pis: 0,
-    aliquota_cofins: 0,
-    aliquota_csll: 0,
-    outras_retencoes: 0,
-    codigo_regime_especial_tributacao: null,
-    status_transmissao: "pendente",
-    status_sefaz: "pendente",
+    valor_deducoes: 0,
     aliquota_iss: 0,
     valor_iss: 0,
-    base_calculo: 0,
+    iss_retido: "N",
+    tipo_documento_tomador: "2", // 2 = CNPJ
+    documento_tomador: "",
+    razao_social_tomador: "",
+    inscricao_municipal_tomador: "",
+    inscricao_estadual_tomador: "",
+    endereco_tomador: "",
+    numero_endereco_tomador: "",
+    complemento_endereco_tomador: "",
+    bairro_tomador: "",
+    cidade_tomador: "",
+    uf_tomador: "",
+    cep_tomador: "",
+    email_tomador: "",
     valor_pis: 0,
     valor_cofins: 0,
     valor_inss: 0,
     valor_ir: 0,
     valor_csll: 0,
-    valor_total: 0
+    valor_carga_tributaria: 0,
+    percentual_carga_tributaria: 0,
+    valor_total: 0,
+    status_transmissao: "pendente",
+    status_sefaz: "pendente",
+    situacao_nota: "T",
+    opcao_simples: "4"
   });
   
   const { toast } = useToast();
@@ -93,7 +99,20 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
       try {
         const { data: companyInfo, error: companyError } = await supabase
           .from("company_info")
-          .select("codigo_servico, serie_rps_padrao, endereco_cidade, cnae")
+          .select(`
+            cnpj,
+            inscricao_municipal,
+            razao_social,
+            endereco_logradouro,
+            endereco_numero,
+            endereco_complemento,
+            endereco_bairro,
+            endereco_cidade,
+            endereco_uf,
+            endereco_cep,
+            email,
+            codigo_servico
+          `)
           .maybeSingle();
 
         if (companyError) throw companyError;
@@ -124,16 +143,30 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
             equipment_serial_number,
             total_price,
             items:service_order_items(description, price),
-            client:clients(id)
+            client:clients(
+              id,
+              name,
+              document,
+              email,
+              street,
+              street_number,
+              complement,
+              neighborhood,
+              city,
+              state,
+              zip_code,
+              municipal_registration,
+              state_registration
+            )
           `)
           .eq("id", serviceOrderId)
           .single();
 
         if (error) throw error;
 
-        if (serviceOrder) {
+        if (serviceOrder && companyInfo) {
           const typedServiceOrder = serviceOrder as unknown as ServiceOrder;
-          const servicesDescription = `OS #${typedServiceOrder.order_number} - ${typedServiceOrder.equipment || 'Equipamento não especificado'} - S/N: ${typedServiceOrder.equipment_serial_number || 'N/A'} - Serviços realizados: ${typedServiceOrder.items.map(item => item.description).join(', ')} - (Total: R$ ${typedServiceOrder.total_price.toFixed(2)})`;
+          const servicesDescription = `OS #${typedServiceOrder.order_number} - ${typedServiceOrder.equipment || 'Equipamento não especificado'} - S/N: ${typedServiceOrder.equipment_serial_number || 'N/A'} - Serviços realizados: ${typedServiceOrder.items.map(item => item.description).join(', ')}`;
 
           let proximoNumeroRPS: string = "1";
 
@@ -149,37 +182,37 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
             }
           }
 
-          // Calcular valores de impostos baseados nas configurações
           const valor_servicos = typedServiceOrder.total_price;
           const aliquota_iss = spSettings?.servico_aliquota || 0;
           const valor_iss = (valor_servicos * aliquota_iss) / 100;
-          const deducoes = 0;
-          const base_calculo = valor_servicos - deducoes;
-          const valor_total = base_calculo;
 
           setFormData(prevData => ({
             ...prevData,
             client_id: typedServiceOrder.client.id,
-            codigo_servico: companyInfo?.codigo_servico || "",
+            codigo_servico: companyInfo.codigo_servico || "",
             discriminacao_servicos: servicesDescription,
             valor_servicos: typedServiceOrder.total_price,
-            valor_total,
-            base_calculo,
-            deducoes,
-            observacoes: `Ordem de Serviço #${typedServiceOrder.order_number}`,
-            serie_rps: companyInfo?.serie_rps_padrao || "1",
+            valor_total: typedServiceOrder.total_price,
             numero_rps: proximoNumeroRPS,
-            codigo_regime_especial_tributacao: spSettings?.tipo_regime_especial || null,
-            municipio_prestacao: companyInfo?.endereco_cidade || "",
-            cnae: companyInfo?.cnae || "",
             aliquota_iss,
             valor_iss,
-            status_transmissao: "pendente",
-            status_sefaz: "pendente",
-            natureza_operacao: "1", // Tributação no município
-            tributacao_rps: "T", // Tributado em São Paulo
-            responsavel_retencao: "cliente",
-            local_servico: "tomador"
+            // Dados do prestador
+            inscricao_prestador: companyInfo.inscricao_municipal || "",
+            documento_prestador: companyInfo.cnpj || "",
+            // Dados do tomador
+            tipo_documento_tomador: typedServiceOrder.client.document.length > 11 ? "2" : "1",
+            documento_tomador: typedServiceOrder.client.document,
+            razao_social_tomador: typedServiceOrder.client.name,
+            inscricao_municipal_tomador: typedServiceOrder.client.municipal_registration,
+            inscricao_estadual_tomador: typedServiceOrder.client.state_registration,
+            endereco_tomador: typedServiceOrder.client.street,
+            numero_endereco_tomador: typedServiceOrder.client.street_number,
+            complemento_endereco_tomador: typedServiceOrder.client.complement || "",
+            bairro_tomador: typedServiceOrder.client.neighborhood,
+            cidade_tomador: typedServiceOrder.client.city,
+            uf_tomador: typedServiceOrder.client.state,
+            cep_tomador: typedServiceOrder.client.zip_code,
+            email_tomador: typedServiceOrder.client.email || ""
           }));
         }
       } catch (error: any) {
@@ -202,35 +235,21 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
     try {
       setIsLoading(true);
 
-      // Recalcular valor total considerando deduções e descontos
-      const base_calculo = data.valor_servicos - (data.deducoes || 0);
-      const valor_total = base_calculo - (data.desconto_incondicional || 0);
-
-      // Preparar dados para envio
-      const cleanedData = {
-        ...data,
-        vendedor_id: data.vendedor_id || null,
-        service_order_id: serviceOrderId,
-        status_sefaz: "pendente",
-        status_transmissao: "pendente",
-        base_calculo,
-        valor_total
-      };
-
-      // Validar client_id antes de enviar
-      if (!cleanedData.client_id) {
+      if (!data.client_id) {
         throw new Error("ID do cliente é obrigatório");
       }
 
       const { data: nfse, error: nfseError } = await supabase
         .from("nfse")
-        .insert(cleanedData)
+        .insert({
+          ...data,
+          service_order_id: serviceOrderId
+        })
         .select()
         .single();
 
       if (nfseError) throw nfseError;
 
-      // Buscar o ID da configuração antes de atualizar
       const { data: configData, error: configError } = await supabase
         .from("nfse_sp_config")
         .select("id")
