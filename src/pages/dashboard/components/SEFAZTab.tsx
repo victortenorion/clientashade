@@ -195,7 +195,7 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
         // Primeiro, verificar se já existe um certificado para este tipo
         const { data: existingCert, error: queryError } = await supabase
           .from('certificates')
-          .select('id')
+          .select('id, created_at')
           .eq('type', selectedTab)
           .order('created_at', { ascending: false })
           .limit(1)
@@ -255,7 +255,7 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
       try {
         const { data: existingCert } = await supabase
           .from('certificates')
-          .select('id')
+          .select('id, created_at')
           .eq('type', selectedTab)
           .order('created_at', { ascending: false })
           .limit(1)
