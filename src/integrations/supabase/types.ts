@@ -626,7 +626,9 @@ export type Database = {
           cancelada: boolean | null
           client_id: string
           cnae: string | null
+          codigo_atividade: string | null
           codigo_servico: string
+          codigo_tributacao_municipio: string | null
           comissao_percentual: number | null
           created_at: string | null
           data_cancelamento: string | null
@@ -636,15 +638,21 @@ export type Database = {
           desconto_incondicional: number | null
           desconto_iss: boolean | null
           discriminacao_servicos: string
+          enviar_email_intermediario: boolean | null
+          enviar_email_tomador: boolean | null
           id: string
+          local_servico: string | null
           motivo_cancelamento: string | null
           municipio_prestacao: string | null
           natureza_operacao: string | null
           numero_nfse: number
           numero_rps: string | null
           observacoes: string | null
+          optante_mei: boolean | null
           percentual_ir: number | null
           percentual_tributos_ibpt: number | null
+          prestador_incentivador_cultural: boolean | null
+          responsavel_retencao: string | null
           retencao_inss: boolean | null
           retencao_ir: boolean | null
           retencao_iss: boolean | null
@@ -656,6 +664,7 @@ export type Database = {
           substituido_rps_serie: string | null
           substituido_rps_tipo: string | null
           tipo_rps: string | null
+          tributacao_rps: string | null
           updated_at: string | null
           valor_comissao: number | null
           valor_inss: number | null
@@ -675,7 +684,9 @@ export type Database = {
           cancelada?: boolean | null
           client_id: string
           cnae?: string | null
+          codigo_atividade?: string | null
           codigo_servico: string
+          codigo_tributacao_municipio?: string | null
           comissao_percentual?: number | null
           created_at?: string | null
           data_cancelamento?: string | null
@@ -685,15 +696,21 @@ export type Database = {
           desconto_incondicional?: number | null
           desconto_iss?: boolean | null
           discriminacao_servicos: string
+          enviar_email_intermediario?: boolean | null
+          enviar_email_tomador?: boolean | null
           id?: string
+          local_servico?: string | null
           motivo_cancelamento?: string | null
           municipio_prestacao?: string | null
           natureza_operacao?: string | null
           numero_nfse?: number
           numero_rps?: string | null
           observacoes?: string | null
+          optante_mei?: boolean | null
           percentual_ir?: number | null
           percentual_tributos_ibpt?: number | null
+          prestador_incentivador_cultural?: boolean | null
+          responsavel_retencao?: string | null
           retencao_inss?: boolean | null
           retencao_ir?: boolean | null
           retencao_iss?: boolean | null
@@ -705,6 +722,7 @@ export type Database = {
           substituido_rps_serie?: string | null
           substituido_rps_tipo?: string | null
           tipo_rps?: string | null
+          tributacao_rps?: string | null
           updated_at?: string | null
           valor_comissao?: number | null
           valor_inss?: number | null
@@ -724,7 +742,9 @@ export type Database = {
           cancelada?: boolean | null
           client_id?: string
           cnae?: string | null
+          codigo_atividade?: string | null
           codigo_servico?: string
+          codigo_tributacao_municipio?: string | null
           comissao_percentual?: number | null
           created_at?: string | null
           data_cancelamento?: string | null
@@ -734,15 +754,21 @@ export type Database = {
           desconto_incondicional?: number | null
           desconto_iss?: boolean | null
           discriminacao_servicos?: string
+          enviar_email_intermediario?: boolean | null
+          enviar_email_tomador?: boolean | null
           id?: string
+          local_servico?: string | null
           motivo_cancelamento?: string | null
           municipio_prestacao?: string | null
           natureza_operacao?: string | null
           numero_nfse?: number
           numero_rps?: string | null
           observacoes?: string | null
+          optante_mei?: boolean | null
           percentual_ir?: number | null
           percentual_tributos_ibpt?: number | null
+          prestador_incentivador_cultural?: boolean | null
+          responsavel_retencao?: string | null
           retencao_inss?: boolean | null
           retencao_ir?: boolean | null
           retencao_iss?: boolean | null
@@ -754,6 +780,7 @@ export type Database = {
           substituido_rps_serie?: string | null
           substituido_rps_tipo?: string | null
           tipo_rps?: string | null
+          tributacao_rps?: string | null
           updated_at?: string | null
           valor_comissao?: number | null
           valor_inss?: number | null
@@ -976,6 +1003,39 @@ export type Database = {
           numero_inicial_rps?: number | null
           ultima_rps_numero?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      nfse_sp_settings: {
+        Row: {
+          codigo_regime_tributario: string | null
+          created_at: string
+          id: string
+          inscricao_municipal: string | null
+          lote_rps_numero: number | null
+          tipo_documento: string | null
+          updated_at: string
+          versao_schema: string | null
+        }
+        Insert: {
+          codigo_regime_tributario?: string | null
+          created_at?: string
+          id?: string
+          inscricao_municipal?: string | null
+          lote_rps_numero?: number | null
+          tipo_documento?: string | null
+          updated_at?: string
+          versao_schema?: string | null
+        }
+        Update: {
+          codigo_regime_tributario?: string | null
+          created_at?: string
+          id?: string
+          inscricao_municipal?: string | null
+          lote_rps_numero?: number | null
+          tipo_documento?: string | null
+          updated_at?: string
+          versao_schema?: string | null
         }
         Relationships: []
       }

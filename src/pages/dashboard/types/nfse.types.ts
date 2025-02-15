@@ -41,6 +41,16 @@ export interface NFSe {
   vendedor_id: string | null;
   comissao_percentual: number;
   valor_comissao: number;
+  // Novos campos específicos para São Paulo
+  responsavel_retencao: string;
+  local_servico: string;
+  codigo_atividade: string | null;
+  codigo_tributacao_municipio: string | null;
+  optante_mei: boolean;
+  prestador_incentivador_cultural: boolean;
+  tributacao_rps: string;
+  enviar_email_tomador: boolean;
+  enviar_email_intermediario: boolean;
 }
 
 export interface NFSeEvento {
@@ -66,6 +76,17 @@ export interface NFSeConfig {
   regime_tributario: string | null;
   regime_especial: string | null;
   incentivo_fiscal: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NFSeSPSettings {
+  id: string;
+  inscricao_municipal: string | null;
+  codigo_regime_tributario: string;
+  tipo_documento: string;
+  lote_rps_numero: number;
+  versao_schema: string;
   created_at: string;
   updated_at: string;
 }
@@ -102,6 +123,16 @@ export interface NFSeFormData {
   comissao_percentual?: number;
   numero_rps?: string;
   serie_rps?: string;
+  // Novos campos específicos para São Paulo
+  responsavel_retencao?: string;
+  local_servico?: string;
+  codigo_atividade?: string;
+  codigo_tributacao_municipio?: string;
+  optante_mei?: boolean;
+  prestador_incentivador_cultural?: boolean;
+  tributacao_rps?: string;
+  enviar_email_tomador?: boolean;
+  enviar_email_intermediario?: boolean;
 }
 
 export interface NFSeCancelamento {
