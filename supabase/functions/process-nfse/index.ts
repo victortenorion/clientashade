@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import { Buffer } from "https://deno.land/std@0.168.0/node/buffer.ts";
@@ -37,7 +38,7 @@ serve(async (req) => {
       console.log("Cliente Supabase criado, atualizando status...")
 
       // Atualizar status de transmissão para 'enviando'
-      const { error: updateError } = await supabaseClient
+      const { error: statusError } = await supabaseClient
         .from('nfse')
         .update({ 
           status_transmissao: 'enviando',
@@ -45,9 +46,9 @@ serve(async (req) => {
         })
         .eq('id', nfseId)
 
-      if (updateError) {
-        console.error("Erro ao atualizar status:", updateError)
-        throw updateError
+      if (statusError) {
+        console.error("Erro ao atualizar status:", statusError)
+        throw statusError
       }
 
       // Primeiro, buscar o certificado válido mais recente
@@ -180,12 +181,12 @@ serve(async (req) => {
 
       // Atualizar status da NFS-e
       console.log("Atualizando status da NFS-e...")
-      const { error: updateError } = await supabaseClient
+      const { error: processError } = await supabaseClient
         .from('nfse')
         .update({ status_sefaz: 'processando' })
         .eq('id', nfseId)
 
-      if (updateError) throw updateError
+      if (processError) throw processError
 
       // Montar XML de envio
       console.log("Montando XML de envio...")
@@ -267,7 +268,7 @@ serve(async (req) => {
       if (queueError) throw queueError
 
       // Após o processamento bem-sucedido
-      const { error: finalUpdateError } = await supabaseClient
+      const { error: finalError } = await supabaseClient
         .from('nfse')
         .update({ 
           status_transmissao: 'enviado',
@@ -275,7 +276,7 @@ serve(async (req) => {
         })
         .eq('id', nfseId)
 
-      if (finalUpdateError) throw finalUpdateError
+      if (finalError) throw finalError
 
       console.log("Processamento concluído com sucesso")
       return new Response(
