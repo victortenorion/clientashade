@@ -111,6 +111,13 @@ export interface NFSeSPSettings {
   wsdl_homologacao_url: string;
 }
 
+export interface RPSResponse {
+  ultima_rps_numero: number;
+  serie_rps_padrao: string;
+  tipo_rps: string;
+  ambiente: string;
+}
+
 export interface NFSeServico {
   id: string;
   codigo: string;
@@ -164,26 +171,4 @@ export interface NFSeFormData {
 export interface NFSeCancelamento {
   motivo: string;
   senha_certificado?: string;
-}
-
-export interface RPSResponse {
-  ultima_rps_numero: number;
-  serie_rps_padrao: string;
-  tipo_rps: string;
-  ambiente: string;
-}
-
-export interface NFSeWithClient extends NFSe {
-  clients: {
-    name: string;
-    document: string;
-    email?: string;
-    street?: string;
-    street_number?: string;
-    complement?: string;
-    neighborhood?: string;
-    city?: string;
-    state?: string;
-    zip_code?: string;
-  };
 }

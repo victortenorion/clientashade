@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { PostgrestError } from "@supabase/supabase-js";
@@ -12,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { NFSe, NFSeFormData } from "./types/nfse.types";
+import { NFSe, NFSeFormData, RPSResponse } from "./types/nfse.types";
 import { format } from "date-fns";
 import { Plus, Pencil, Trash2, Send, XCircle, Printer, List } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
