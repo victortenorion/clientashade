@@ -1,3 +1,4 @@
+
 import { format } from "date-fns";
 import {
   Dialog,
@@ -16,9 +17,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { NFSe, NFSeEvento } from "../types/nfse.types";
-import { FileText, Pencil } from "lucide-react";
+import { FileText, Pencil, ExternalLink } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface Props {
   nfseId: string | null;
@@ -27,6 +29,8 @@ interface Props {
 }
 
 export const NFSeView = ({ nfseId, onClose, onEdit }: Props) => {
+  const { toast } = useToast();
+
   const { data: nfse, isLoading: isLoadingNFSe } = useQuery({
     queryKey: ["nfse", nfseId],
     queryFn: async () => {
@@ -75,22 +79,41 @@ export const NFSeView = ({ nfseId, onClose, onEdit }: Props) => {
     enabled: !!nfseId,
   });
 
-  const formatMoney = (value: number | null) => {
-    if (value === null) return "R$ 0,00";
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
-  };
-
   const handlePrint = () => {
-    window.print();
+    if (nfse?.status_sefaz !== 'autorizada') {
+      toast({
+        title: "Não é possível imprimir",
+        description: "A NFS-e precisa estar autorizada para ser impressa.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!nfse.codigo_verificacao || !nfse.inscricao_prestador) {
+      toast({
+        title: "Dados insuficientes",
+        description: "Não foi possível gerar o link de impressão. Verifique se o código de verificação e inscrição do prestador estão presentes.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const url = `https://nfe.prefeitura.sp.gov.br/contribuinte/notaprint.aspx?inscricao=${nfse.inscricao_prestador}&nf=${nfse.numero_nfse}&verificacao=${nfse.codigo_verificacao}`;
+    window.open(url, '_blank');
   };
 
   const handleEdit = () => {
     if (nfseId && onEdit) {
       onEdit(nfseId);
     }
+  };
+
+  const formatMoney = (value: number | null) => {
+    if (value === null) return "R$ 0,00";
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
   };
 
   return (
@@ -222,9 +245,22 @@ export const NFSeView = ({ nfseId, onClose, onEdit }: Props) => {
             <Pencil className="h-4 w-4 mr-2" />
             Editar
           </Button>
-          <Button variant="outline" onClick={handlePrint}>
-            <FileText className="h-4 w-4 mr-2" />
-            Visualizar
+          <Button 
+            variant="outline" 
+            onClick={handlePrint}
+            disabled={nfse?.status_sefaz !== 'autorizada'}
+          >
+            {nfse?.status_sefaz === 'autorizada' ? (
+              <>
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Imprimir no Portal
+              </>
+            ) : (
+              <>
+                <FileText className="h-4 w-4 mr-2" />
+                Visualizar
+              </>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

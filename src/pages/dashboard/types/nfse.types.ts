@@ -41,6 +41,8 @@ export interface NFSe {
   vendedor_id: string | null;
   comissao_percentual: number;
   valor_comissao: number;
+  codigo_verificacao: string | null;
+  inscricao_prestador: string | null;
   clients?: {
     name: string;
     document: string;
