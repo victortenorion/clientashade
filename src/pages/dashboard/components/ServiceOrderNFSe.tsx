@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { NFSeForm } from "./NFSeForm";
@@ -54,6 +53,7 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
     serie_rps: "1",
     numero_rps: "",
     data_emissao: new Date().toISOString().split("T")[0],
+    data_competencia: new Date().toISOString().split("T")[0],
     inscricao_prestador: "",
     tipo_documento_prestador: "2", // 2 = CNPJ
     documento_prestador: "",
@@ -61,7 +61,11 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
     discriminacao_servicos: "",
     valor_servicos: 0,
     valor_deducoes: 0,
+    deducoes: 0,
     aliquota_iss: 0,
+    aliquota_pis: 0,
+    aliquota_cofins: 0,
+    aliquota_csll: 0,
     valor_iss: 0,
     iss_retido: "N",
     tipo_documento_tomador: "2", // 2 = CNPJ
@@ -82,13 +86,25 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
     valor_inss: 0,
     valor_ir: 0,
     valor_csll: 0,
+    outras_retencoes: 0,
     valor_carga_tributaria: 0,
     percentual_carga_tributaria: 0,
+    percentual_tributos_ibpt: 0,
     valor_total: 0,
     status_transmissao: "pendente",
     status_sefaz: "pendente",
     situacao_nota: "T",
-    opcao_simples: "4"
+    opcao_simples: "4",
+    natureza_operacao: "1",
+    retencao_ir: false,
+    percentual_ir: 0,
+    retencao_iss: false,
+    desconto_iss: false,
+    retencao_inss: false,
+    retencao_pis_cofins_csll: false,
+    desconto_incondicional: 0,
+    comissao_percentual: 0,
+    responsavel_retencao: "tomador"
   });
   
   const { toast } = useToast();

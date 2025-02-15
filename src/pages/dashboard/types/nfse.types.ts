@@ -1,4 +1,3 @@
-
 export interface NFSe {
   id: string;
   tipo_registro?: string;
@@ -183,6 +182,7 @@ export interface NFSeFormData {
   vendedor_id?: string;
   comissao_percentual: number;
   observacoes?: string;
+  responsavel_retencao: string;
 }
 
 export interface RPSResponse {
