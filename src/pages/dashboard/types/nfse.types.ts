@@ -1,3 +1,4 @@
+
 export interface NFSe {
   id: string;
   numero_nfse: number;
@@ -176,4 +177,19 @@ export interface RPSResponse {
   serie_rps_padrao: string;
   tipo_rps: string;
   ambiente: string;
+}
+
+export interface NFSeWithClient extends NFSe {
+  clients: {
+    name: string;
+    document: string;
+    email?: string;
+    street?: string;
+    street_number?: string;
+    complement?: string;
+    neighborhood?: string;
+    city?: string;
+    state?: string;
+    zip_code?: string;
+  };
 }

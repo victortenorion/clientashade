@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -46,7 +45,7 @@ const NFSePage = () => {
 
   const queryClient = useQueryClient();
 
-  const { data: notas, isLoading, refetch } = useQuery({
+  const { data: notas, isLoading, refetch } = useQuery<NFSeWithClient[], Error>({
     queryKey: ["nfse", searchTerm],
     queryFn: async () => {
       const query = supabase
@@ -70,7 +69,7 @@ const NFSePage = () => {
         throw error;
       }
 
-      return data as NFSe[];
+      return data as NFSeWithClient[];
     }
   });
 
@@ -394,6 +393,38 @@ const NFSePage = () => {
       title: "Impressão",
       description: "Funcionalidade de impressão será implementada em breve.",
     });
+  };
+
+  const handleCancelEnvio = async (nfseId: string) => {
+    try {
+      const { error: updateError } = await supabase
+        .from("nfse")
+        .update({
+          status_sefaz: "pendente"
+        })
+        .eq("id", nfseId);
+
+      if (updateError) throw updateError;
+
+      await supabase.from("nfse_eventos").insert({
+        nfse_id: nfseId,
+        tipo_evento: "cancelamento_envio",
+        descricao: "Envio cancelado pelo usuário",
+        status: "concluido"
+      });
+
+      toast({
+        title: "Envio cancelado com sucesso",
+      });
+
+      refetch();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao cancelar envio",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
