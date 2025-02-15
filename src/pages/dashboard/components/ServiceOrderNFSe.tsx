@@ -153,14 +153,6 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
             cnpj,
             inscricao_municipal,
             razao_social,
-            endereco_logradouro,
-            endereco_numero,
-            endereco_complemento,
-            endereco_bairro,
-            endereco_cidade,
-            endereco_uf,
-            endereco_cep,
-            email,
             codigo_servico
           `)
           .maybeSingle();
@@ -247,18 +239,9 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
             aliquota_iss,
             valor_iss,
             // Dados do prestador
-            documento_prestador: companyInfo.cnpj || "",
             inscricao_prestador: companyInfo.inscricao_municipal || "",
+            documento_prestador: companyInfo.cnpj || "",
             razao_social_prestador: companyInfo.razao_social || "",
-            tipo_endereco_prestador: "R",
-            endereco_prestador: companyInfo.endereco_logradouro || "",
-            numero_endereco_prestador: companyInfo.endereco_numero || "",
-            complemento_endereco_prestador: companyInfo.endereco_complemento || "",
-            bairro_prestador: companyInfo.endereco_bairro || "",
-            cidade_prestador: companyInfo.endereco_cidade || "",
-            uf_prestador: companyInfo.endereco_uf || "",
-            cep_prestador: companyInfo.endereco_cep || "",
-            email_prestador: companyInfo.email || "",
             // Dados do tomador
             tipo_documento_tomador: typedServiceOrder.client.document.length > 11 ? "2" : "1",
             documento_tomador: typedServiceOrder.client.document,
