@@ -139,7 +139,8 @@ const NFSePage = () => {
         throw new Error('Erro ao gerar número do RPS');
       }
 
-      console.log('RPS incrementado:', rpsData);
+      const rpsResponse = rpsData as RPSResponse;
+      console.log('RPS incrementado:', rpsResponse);
 
       const { error: queueError } = await supabase
         .from('sefaz_transmission_queue')
@@ -164,9 +165,9 @@ const NFSePage = () => {
             codigo_servico: nfse.codigo_servico
           },
           rps: {
-            numero: rpsData.ultima_rps_numero,
-            serie: rpsData.serie_rps_padrao,
-            tipo: rpsData.tipo_rps
+            numero: rpsResponse.ultima_rps_numero,
+            serie: rpsResponse.serie_rps_padrao,
+            tipo: rpsResponse.tipo_rps
           },
           cliente: nfse.clients
         },
@@ -176,9 +177,9 @@ const NFSePage = () => {
       const { error: updateError } = await supabase
         .from("nfse")
         .update({
-          numero_rps: rpsData.ultima_rps_numero.toString(),
-          serie_rps: rpsData.serie_rps_padrao,
-          tipo_rps: rpsData.tipo_rps,
+          numero_rps: rpsResponse.ultima_rps_numero.toString(),
+          serie_rps: rpsResponse.serie_rps_padrao,
+          tipo_rps: rpsResponse.tipo_rps,
           status_sefaz: "processando"
         })
         .eq("id", nfseId);
@@ -189,9 +190,9 @@ const NFSePage = () => {
         body: { 
           nfseId,
           rps: {
-            numero: rpsData.ultima_rps_numero.toString(),
-            serie: rpsData.serie_rps_padrao,
-            tipo: rpsData.tipo_rps
+            numero: rpsResponse.ultima_rps_numero.toString(),
+            serie: rpsResponse.serie_rps_padrao,
+            tipo: rpsResponse.tipo_rps
           }
         }
       });
@@ -207,9 +208,9 @@ const NFSePage = () => {
         request_payload: { 
           nfseId,
           rps: {
-            numero: rpsData.ultima_rps_numero.toString(),
-            serie: rpsData.serie_rps_padrao,
-            tipo: rpsData.tipo_rps
+            numero: rpsResponse.ultima_rps_numero.toString(),
+            serie: rpsResponse.serie_rps_padrao,
+            tipo: rpsResponse.tipo_rps
           }
         },
         response_payload: processResponse
@@ -217,7 +218,7 @@ const NFSePage = () => {
 
       toast({
         title: "NFS-e enviada para processamento",
-        description: `RPS número ${rpsData.ultima_rps_numero} gerado com sucesso.`,
+        description: `RPS número ${rpsResponse.ultima_rps_numero} gerado com sucesso.`,
       });
 
       setSelectedNFSeIdForLogs(nfseId);
