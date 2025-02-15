@@ -438,28 +438,62 @@ const NFSePage = () => {
     }
 
     const headers = [
-      "Número",
-      "Cliente",
+      "Número NFS-e",
       "Data Emissão",
+      "Data Competência",
+      "Razão Social Cliente",
+      "CNPJ/CPF Cliente",
+      "Valor Serviços",
+      "Valor Deduções",
+      "Base de Cálculo",
+      "Alíquota ISS (%)",
+      "Valor ISS",
+      "PIS",
+      "COFINS",
+      "INSS",
+      "IR",
+      "CSLL",
+      "Outras Retenções",
       "Valor Total",
-      "Status",
+      "Status SEFAZ",
+      "Status Transmissão",
       "Situação",
+      "Código do Serviço",
+      "Discriminação dos Serviços"
     ];
 
     const csvData = notas
       .filter(nota => !nota.excluida)
       .map((nota) => [
         nota.numero_nfse,
-        nota.clients?.name,
         format(new Date(nota.data_emissao), "dd/MM/yyyy HH:mm"),
-        nota.valor_total,
+        format(new Date(nota.data_competencia), "dd/MM/yyyy"),
+        nota.razao_social_tomador,
+        nota.documento_tomador,
+        formatMoney(nota.valor_servicos).replace("R$", "").trim(),
+        formatMoney(nota.valor_deducoes || 0).replace("R$", "").trim(),
+        formatMoney(nota.base_calculo || 0).replace("R$", "").trim(),
+        nota.aliquota_iss ? `${nota.aliquota_iss}` : "0",
+        formatMoney(nota.valor_iss || 0).replace("R$", "").trim(),
+        formatMoney(nota.valor_pis || 0).replace("R$", "").trim(),
+        formatMoney(nota.valor_cofins || 0).replace("R$", "").trim(),
+        formatMoney(nota.valor_inss || 0).replace("R$", "").trim(),
+        formatMoney(nota.valor_ir || 0).replace("R$", "").trim(),
+        formatMoney(nota.valor_csll || 0).replace("R$", "").trim(),
+        formatMoney(nota.outras_retencoes || 0).replace("R$", "").trim(),
+        formatMoney(nota.valor_total).replace("R$", "").trim(),
         nota.status_sefaz,
-        nota.cancelada ? "Cancelada" : "Ativa",
+        nota.status_transmissao,
+        nota.cancelada ? "Cancelada" : nota.excluida ? "Excluída" : "Ativa",
+        nota.codigo_servico,
+        `"${nota.discriminacao_servicos?.replace(/"/g, '""')}"` // Escapa aspas duplas para CSV
       ]);
 
-    const csvContent = [
-      headers.join(","),
-      ...csvData.map(row => row.join(",")),
+    // Adiciona BOM para Excel reconhecer caracteres especiais
+    const BOM = "\uFEFF";
+    const csvContent = BOM + [
+      headers.join(";"),
+      ...csvData.map(row => row.join(";")),
     ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
