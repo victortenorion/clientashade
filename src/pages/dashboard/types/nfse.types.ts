@@ -1,3 +1,4 @@
+
 export interface NFSe {
   id: string;
   numero_nfse: number;
@@ -101,6 +102,13 @@ export interface NFSeSPSettings {
   servico_codigo_item_lista: string | null;
   servico_discriminacao_item: string | null;
   servico_valor_item: number;
+  servico_valor_deducao: number;
+  servico_valor_base_calculo: number;
+  servico_percentual_reducao_base_calculo: number;
+  proxy_port_ssl: string | null;
+  proxy_host_ssl: string | null;
+  wsdl_producao_url: string;
+  wsdl_homologacao_url: string;
 }
 
 export interface NFSeServico {

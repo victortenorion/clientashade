@@ -1062,13 +1062,20 @@ export type Database = {
           lote_rps_numero: number | null
           operacao_tributacao: string | null
           producao_intermediario: boolean | null
+          proxy_host_ssl: string | null
+          proxy_port_ssl: string | null
           servico_codigo_item_lista: string | null
           servico_discriminacao_item: string | null
+          servico_percentual_reducao_base_calculo: number | null
+          servico_valor_base_calculo: number | null
+          servico_valor_deducao: number | null
           servico_valor_item: number | null
           tipo_documento: string | null
           tipo_regime_especial: string | null
           updated_at: string
           versao_schema: string | null
+          wsdl_homologacao_url: string | null
+          wsdl_producao_url: string | null
         }
         Insert: {
           codigo_regime_tributario?: string | null
@@ -1083,13 +1090,20 @@ export type Database = {
           lote_rps_numero?: number | null
           operacao_tributacao?: string | null
           producao_intermediario?: boolean | null
+          proxy_host_ssl?: string | null
+          proxy_port_ssl?: string | null
           servico_codigo_item_lista?: string | null
           servico_discriminacao_item?: string | null
+          servico_percentual_reducao_base_calculo?: number | null
+          servico_valor_base_calculo?: number | null
+          servico_valor_deducao?: number | null
           servico_valor_item?: number | null
           tipo_documento?: string | null
           tipo_regime_especial?: string | null
           updated_at?: string
           versao_schema?: string | null
+          wsdl_homologacao_url?: string | null
+          wsdl_producao_url?: string | null
         }
         Update: {
           codigo_regime_tributario?: string | null
@@ -1104,13 +1118,20 @@ export type Database = {
           lote_rps_numero?: number | null
           operacao_tributacao?: string | null
           producao_intermediario?: boolean | null
+          proxy_host_ssl?: string | null
+          proxy_port_ssl?: string | null
           servico_codigo_item_lista?: string | null
           servico_discriminacao_item?: string | null
+          servico_percentual_reducao_base_calculo?: number | null
+          servico_valor_base_calculo?: number | null
+          servico_valor_deducao?: number | null
           servico_valor_item?: number | null
           tipo_documento?: string | null
           tipo_regime_especial?: string | null
           updated_at?: string
           versao_schema?: string | null
+          wsdl_homologacao_url?: string | null
+          wsdl_producao_url?: string | null
         }
         Relationships: []
       }

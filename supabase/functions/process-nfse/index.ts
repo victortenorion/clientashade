@@ -45,6 +45,8 @@ interface SPNFSeData {
     aliquota: number;
     valorDeducoes?: number;
     outrasRetencoes?: number;
+    baseCalculo?: number;
+    percentualReducaoBaseCalculo?: number;
   };
   intermediario?: {
     cnpj?: string;
@@ -67,6 +69,8 @@ interface SPNFSeData {
   proxy?: {
     host?: string;
     port?: string;
+    host_ssl?: string;
+    port_ssl?: string;
   };
   wsdl?: {
     homologacao: string;
@@ -195,7 +199,9 @@ serve(async (req) => {
         responsavelRetencao: nfse.responsavel_retencao,
         itemListaServico: spSettings.servico_codigo_item_lista || nfse.codigo_servico,
         aliquota: spSettings.servico_aliquota || 0,
-        valorDeducoes: nfse.deducoes,
+        valorDeducoes: spSettings.servico_valor_deducao || 0,
+        baseCalculo: spSettings.servico_valor_base_calculo,
+        percentualReducaoBaseCalculo: spSettings.servico_percentual_reducao_base_calculo,
         outrasRetencoes: nfse.outras_retencoes,
       },
       rps: {
@@ -213,11 +219,13 @@ serve(async (req) => {
       },
       proxy: {
         host: spSettings.proxy_host,
-        port: spSettings.proxy_port
+        port: spSettings.proxy_port,
+        host_ssl: spSettings.proxy_host_ssl,
+        port_ssl: spSettings.proxy_port_ssl
       },
       wsdl: {
-        homologacao: spSettings.wsdl_homologacao,
-        producao: spSettings.wsdl_producao
+        homologacao: spSettings.wsdl_homologacao_url,
+        producao: spSettings.wsdl_producao_url
       }
     };
 
