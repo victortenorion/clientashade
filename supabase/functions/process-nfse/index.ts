@@ -47,25 +47,28 @@ serve(async (req) => {
         )
       `)
       .eq('id', nfseId)
-      .single()
+      .maybeSingle()
 
     if (nfseError) throw nfseError
+    if (!nfse) throw new Error('NFS-e não encontrada')
 
     // Buscar configurações da NFS-e SP
     const { data: spSettings, error: spError } = await supabaseClient
       .from('nfse_sp_settings')
       .select('*')
-      .single()
+      .maybeSingle()
 
     if (spError) throw spError
+    if (!spSettings) throw new Error('Configurações da NFS-e SP não encontradas')
 
     // Buscar certificado digital
     const { data: nfseConfig, error: configError } = await supabaseClient
       .from('nfse_config')
       .select('*')
-      .single()
+      .maybeSingle()
 
     if (configError) throw configError
+    if (!nfseConfig) throw new Error('Configurações da NFS-e não encontradas')
 
     if (!nfseConfig.certificado_digital || !nfseConfig.senha_certificado) {
       throw new Error('Certificado digital não configurado')
@@ -75,7 +78,7 @@ serve(async (req) => {
     const certBuffer = Buffer.from(nfseConfig.certificado_digital, 'base64')
 
     // Registrar evento de início do processamento
-    await supabaseClient
+    const { error: eventError } = await supabaseClient
       .from('nfse_eventos')
       .insert({
         nfse_id: nfseId,
@@ -84,11 +87,15 @@ serve(async (req) => {
         status: 'processando'
       })
 
+    if (eventError) throw eventError
+
     // Atualizar status da NFS-e
-    await supabaseClient
+    const { error: updateError } = await supabaseClient
       .from('nfse')
       .update({ status_sefaz: 'processando' })
       .eq('id', nfseId)
+
+    if (updateError) throw updateError
 
     // Montar XML de envio
     const xmlEnvio = `<?xml version="1.0" encoding="UTF-8"?>
@@ -145,7 +152,7 @@ serve(async (req) => {
 </PedidoEnvioLoteRPS>`
 
     // Salvar XML de envio
-    await supabaseClient
+    const { error: xmlError } = await supabaseClient
       .from('nfse')
       .update({ 
         xml_envio: xmlEnvio,
@@ -153,14 +160,18 @@ serve(async (req) => {
       })
       .eq('id', nfseId)
 
+    if (xmlError) throw xmlError
+
     // Registrar na fila de transmissão
-    await supabaseClient
+    const { error: queueError } = await supabaseClient
       .from('sefaz_transmission_queue')
       .insert({
         tipo: 'nfse',
         documento_id: nfseId,
         status: 'pendente'
       })
+
+    if (queueError) throw queueError
 
     return new Response(
       JSON.stringify({
