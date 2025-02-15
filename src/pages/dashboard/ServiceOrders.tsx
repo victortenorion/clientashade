@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -215,8 +216,9 @@ const ServiceOrders = () => {
               <DialogTitle>Emitir NFC-e</DialogTitle>
             </DialogHeader>
             <NFCeForm
-              serviceOrder={selectedServiceOrder}
-              onClose={closeNFCeForm}
+              onSubmit={handleNFCeSubmit}
+              onCancel={() => setIsNFCeFormOpen(false)}
+              isLoading={false}
             />
           </DialogContent>
         </Dialog>
