@@ -74,6 +74,23 @@ const NFSePage = () => {
     }
   });
 
+  const { data: nfseToEditData } = useQuery({
+    queryKey: ["nfse", nfseToEdit],
+    queryFn: async () => {
+      if (!nfseToEdit) return null;
+      
+      const { data, error } = await supabase
+        .from("nfse")
+        .select("*")
+        .eq("id", nfseToEdit)
+        .single();
+
+      if (error) throw error;
+      return data as NFSe;
+    },
+    enabled: !!nfseToEdit,
+  });
+
   const handleDeleteNFSe = async (nfseId: string) => {
     try {
       console.log('Iniciando exclusão da NFS-e:', nfseId);
@@ -225,59 +242,97 @@ const NFSePage = () => {
     try {
       setIsEmitindo(true);
 
-      const { data: config, error: configError } = await supabase
-        .from("nfse_config")
-        .select("*")
-        .maybeSingle();
+      if (nfseToEdit) {
+        // Atualizar NFS-e existente
+        const { error: updateError } = await supabase
+          .from("nfse")
+          .update({
+            client_id: formData.client_id,
+            codigo_servico: formData.codigo_servico,
+            discriminacao_servicos: formData.discriminacao_servicos,
+            valor_servicos: formData.valor_servicos,
+            data_competencia: formData.data_competencia,
+            observacoes: formData.observacoes,
+            deducoes: formData.deducoes || 0,
+            natureza_operacao: formData.natureza_operacao,
+            municipio_prestacao: formData.municipio_prestacao,
+            cnae: formData.cnae,
+            retencao_ir: formData.retencao_ir,
+            percentual_ir: formData.percentual_ir,
+            retencao_iss: formData.retencao_iss,
+            desconto_iss: formData.desconto_iss,
+            retencao_inss: formData.retencao_inss,
+            retencao_pis_cofins_csll: formData.retencao_pis_cofins_csll,
+            percentual_tributos_ibpt: formData.percentual_tributos_ibpt,
+            desconto_incondicional: formData.desconto_incondicional,
+            vendedor_id: formData.vendedor_id,
+            comissao_percentual: formData.comissao_percentual,
+            numero_rps: formData.numero_rps,
+            serie_rps: formData.serie_rps,
+          })
+          .eq("id", nfseToEdit);
 
-      if (configError) throw configError;
+        if (updateError) throw updateError;
 
-      if (!config || !config.certificado_digital) {
         toast({
-          title: "Erro ao emitir NFS-e",
-          description: "Configure o certificado digital antes de emitir notas fiscais.",
-          variant: "destructive",
+          title: "NFS-e atualizada com sucesso",
         });
-        return;
+      } else {
+        const { data: config, error: configError } = await supabase
+          .from("nfse_config")
+          .select("*")
+          .maybeSingle();
+
+        if (configError) throw configError;
+
+        if (!config || !config.certificado_digital) {
+          toast({
+            title: "Erro ao emitir NFS-e",
+            description: "Configure o certificado digital antes de emitir notas fiscais.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const { data: servico, error: servicoError } = await supabase
+          .from("nfse_servicos")
+          .select("*")
+          .eq("codigo", formData.codigo_servico)
+          .maybeSingle();
+
+        if (servicoError) throw servicoError;
+
+        const { data: nfse, error: nfseError } = await supabase
+          .from("nfse")
+          .insert({
+            client_id: formData.client_id,
+            codigo_servico: formData.codigo_servico,
+            discriminacao_servicos: formData.discriminacao_servicos,
+            valor_servicos: formData.valor_servicos,
+            data_competencia: formData.data_competencia,
+            observacoes: formData.observacoes,
+            deducoes: formData.deducoes || 0,
+            aliquota_iss: servico?.aliquota_iss,
+            ambiente: config.ambiente,
+            status_sefaz: "pendente",
+          })
+          .select()
+          .maybeSingle();
+
+        if (nfseError) throw nfseError;
+
+        toast({
+          title: "NFS-e gerada com sucesso",
+          description: `NFS-e número ${nfse.numero_nfse} foi gerada e está aguardando processamento.`,
+        });
       }
 
-      const { data: servico, error: servicoError } = await supabase
-        .from("nfse_servicos")
-        .select("*")
-        .eq("codigo", formData.codigo_servico)
-        .maybeSingle();
-
-      if (servicoError) throw servicoError;
-
-      const { data: nfse, error: nfseError } = await supabase
-        .from("nfse")
-        .insert({
-          client_id: formData.client_id,
-          codigo_servico: formData.codigo_servico,
-          discriminacao_servicos: formData.discriminacao_servicos,
-          valor_servicos: formData.valor_servicos,
-          data_competencia: formData.data_competencia,
-          observacoes: formData.observacoes,
-          deducoes: formData.deducoes || 0,
-          aliquota_iss: servico?.aliquota_iss,
-          ambiente: config.ambiente,
-          status_sefaz: "pendente",
-        })
-        .select()
-        .maybeSingle();
-
-      if (nfseError) throw nfseError;
-
-      toast({
-        title: "NFS-e gerada com sucesso",
-        description: `NFS-e número ${nfse.numero_nfse} foi gerada e está aguardando processamento.`,
-      });
-
+      setNfseToEdit(null);
       setShowEmissaoDialog(false);
       refetch();
     } catch (error: any) {
       toast({
-        title: "Erro ao emitir NFS-e",
+        title: "Erro ao salvar NFS-e",
         description: error.message,
         variant: "destructive",
       });
@@ -593,6 +648,30 @@ const NFSePage = () => {
             onCancel={() => setNfseToEdit(null)}
             isLoading={isEmitindo}
             submitButtonText="Salvar Alterações"
+            initialData={nfseToEditData ? {
+              client_id: nfseToEditData.client_id,
+              codigo_servico: nfseToEditData.codigo_servico,
+              discriminacao_servicos: nfseToEditData.discriminacao_servicos,
+              valor_servicos: nfseToEditData.valor_servicos,
+              data_competencia: nfseToEditData.data_competencia,
+              observacoes: nfseToEditData.observacoes || "",
+              deducoes: nfseToEditData.deducoes || 0,
+              natureza_operacao: nfseToEditData.natureza_operacao || "1",
+              municipio_prestacao: nfseToEditData.municipio_prestacao || "",
+              cnae: nfseToEditData.cnae || "",
+              retencao_ir: nfseToEditData.retencao_ir || false,
+              percentual_ir: nfseToEditData.percentual_ir || 0,
+              retencao_iss: nfseToEditData.retencao_iss || false,
+              desconto_iss: nfseToEditData.desconto_iss || false,
+              retencao_inss: nfseToEditData.retencao_inss || false,
+              retencao_pis_cofins_csll: nfseToEditData.retencao_pis_cofins_csll || false,
+              percentual_tributos_ibpt: nfseToEditData.percentual_tributos_ibpt || 0,
+              desconto_incondicional: nfseToEditData.desconto_incondicional || 0,
+              vendedor_id: nfseToEditData.vendedor_id || "",
+              comissao_percentual: nfseToEditData.comissao_percentual || 0,
+              numero_rps: nfseToEditData.numero_rps || "",
+              serie_rps: nfseToEditData.serie_rps || "1",
+            } : undefined}
           />
         </DialogContent>
       </Dialog>
