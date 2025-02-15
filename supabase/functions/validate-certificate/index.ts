@@ -16,6 +16,7 @@ serve(async (req) => {
     const { certificado, senha } = await req.json()
     
     console.log("Iniciando processo de validação do certificado");
+    console.log("Senha recebida:", senha);
     
     if (!certificado || !senha) {
       console.log("Certificado ou senha não fornecidos");
@@ -82,20 +83,6 @@ serve(async (req) => {
           }),
           { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
         );
-      }
-
-      // Verifica se é um certificado tipo A1 com capacidade de assinatura digital
-      if (cert.keyUsage) {
-        console.log("Usos permitidos do certificado:", cert.keyUsage);
-        if (!cert.keyUsage.includes('digitalSignature')) {
-          return new Response(
-            JSON.stringify({ 
-              success: false, 
-              message: 'O certificado deve ter permissão para assinatura digital' 
-            }),
-            { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-          );
-        }
       }
 
       // Sucesso na validação
