@@ -55,7 +55,7 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
     retencao_pis_cofins_csll: false,
     percentual_tributos_ibpt: 0,
     desconto_incondicional: 0,
-    vendedor_id: "",
+    vendedor_id: null, // Alterado para null em vez de string vazia
     comissao_percentual: 0,
     numero_rps: "",
     serie_rps: "1",
@@ -169,25 +169,46 @@ export const ServiceOrderNFSe: React.FC<ServiceOrderNFSeProps> = ({
     try {
       setIsLoading(true);
 
+      // Remover campos UUID vazios ou undefined antes de enviar
+      const cleanedData = {
+        ...data,
+        vendedor_id: data.vendedor_id || null,
+        service_order_id: serviceOrderId,
+        status_sefaz: "pendente",
+        status_transmissao: "pendente"
+      };
+
+      // Validar client_id antes de enviar
+      if (!cleanedData.client_id) {
+        throw new Error("ID do cliente é obrigatório");
+      }
+
       const { data: nfse, error: nfseError } = await supabase
         .from("nfse")
-        .insert({
-          ...data,
-          service_order_id: serviceOrderId,
-          status_sefaz: "pendente",
-          status_transmissao: "pendente"
-        })
+        .insert(cleanedData)
         .select()
         .single();
 
       if (nfseError) throw nfseError;
+
+      // Buscar o ID da configuração antes de atualizar
+      const { data: configData, error: configError } = await supabase
+        .from("nfse_sp_config")
+        .select("id")
+        .limit(1)
+        .single();
+
+      if (configError) {
+        console.error("Erro ao buscar configuração:", configError);
+        throw configError;
+      }
 
       const { error: updateError } = await supabase
         .from("nfse_sp_config")
         .update({ 
           ultima_rps_numero: parseInt(data.numero_rps || "0", 10)
         })
-        .eq('id', (await supabase.from('nfse_sp_config').select('id').single()).data.id);
+        .eq('id', configData.id);
 
       if (updateError) {
         console.error("Erro ao atualizar número do RPS:", updateError);
