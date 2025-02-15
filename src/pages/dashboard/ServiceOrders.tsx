@@ -35,13 +35,11 @@ import {
   CardTitle,
   CardContent,
 } from "@/components/ui/card";
-import { Plus, Trash2, Pencil, Receipt, FileText } from "lucide-react";
+import { Plus, Trash2, Pencil, Receipt } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { NFCeForm } from "./components/NFCeForm";
-import { NFSeForm } from "./components/NFSeForm";
 import { NFCeFormData } from "./types/nfce.types";
-import { NFSeFormData } from "./types/nfse.types";
 
 interface ServiceOrder {
   id: string;
@@ -133,7 +131,6 @@ const ServiceOrders = () => {
   const [stores, setStores] = useState<{ id: string; name: string; }[]>([]);
   const [currentUser, setCurrentUser] = useState<{ id: string; email?: string; user_metadata?: { full_name?: string; name?: string; } } | null>(null);
   const [showNFCeDialog, setShowNFCeDialog] = useState(false);
-  const [showNFSeDialog, setShowNFSeDialog] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<ServiceOrder | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -615,10 +612,6 @@ const ServiceOrders = () => {
     setShowNFCeDialog(true);
   };
 
-  const handleGenerateNFSe = (order: ServiceOrder) => {
-    navigate(`/dashboard/nfse/from-service-order/${order.id}`);
-  };
-
   const handleNFCeSubmit = async (data: NFCeFormData) => {
     try {
       toast({
@@ -635,20 +628,8 @@ const ServiceOrders = () => {
     }
   };
 
-  const handleNFSeSubmit = async (data: NFSeFormData) => {
-    try {
-      toast({
-        title: "NFS-e emitida com sucesso",
-      });
-      setShowNFSeDialog(false);
-      setSelectedOrder(null);
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao emitir NFS-e",
-        description: error.message,
-      });
-    }
+  const handleGenerateNFSe = (order: ServiceOrder) => {
+    navigate(`/dashboard/nfse/from-service-order/${order.id}`);
   };
 
   useEffect(() => {
@@ -1056,21 +1037,6 @@ const ServiceOrders = () => {
             <NFCeForm
               onSubmit={handleNFCeSubmit}
               onCancel={() => setShowNFCeDialog(false)}
-              isLoading={false}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showNFSeDialog} onOpenChange={setShowNFSeDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Emitir NFS-e</DialogTitle>
-          </DialogHeader>
-          {selectedOrder && (
-            <NFSeForm
-              onSubmit={handleNFSeSubmit}
-              onCancel={() => setShowNFSeDialog(false)}
               isLoading={false}
             />
           )}
