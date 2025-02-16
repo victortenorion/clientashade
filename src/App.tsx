@@ -2,7 +2,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import ClientLogin from "./pages/ClientLogin";
+import { ClientLogin } from "./pages/ClientLogin";
 import Dashboard from "./pages/Dashboard";
 import Home from "./pages/dashboard/Home";
 import Clients from "./pages/dashboard/Clients";
@@ -18,41 +18,45 @@ import NFSe from "./pages/dashboard/NFSe";
 import NFSeForm from "./pages/dashboard/NFSeForm";
 import CustomerArea from "./pages/dashboard/CustomerArea";
 import Stores from "./pages/dashboard/Stores";
-import ClientProtectedRoute from "./components/ClientProtectedRoute";
+import { ClientProtectedRoute } from "./components/ClientProtectedRoute";
+import { Toaster } from "./components/ui/toaster";
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/client-login" element={<ClientLogin />} />
-        <Route path="/dashboard" element={<Dashboard />}>
-          <Route index element={<Home />} />
-          <Route path="clients" element={<Clients />} />
-          <Route path="users" element={<Users />} />
-          <Route path="products" element={<Products />} />
-          <Route path="stores" element={<Stores />} />
-          <Route path="service-orders" element={<ServiceOrders />} />
-          <Route path="service-orders/new" element={<ServiceOrderForm />} />
-          <Route path="service-orders/:id/edit" element={<ServiceOrderEdit />} />
-          <Route path="service-order-settings/*" element={<ServiceOrderSettings />} />
-          <Route path="nfce" element={<NFCe />} />
-          <Route path="nfce/new" element={<NFCeForm />} />
-          <Route path="nfse" element={<NFSe />} />
-          <Route path="nfse/new" element={<NFSeForm />} />
-          <Route path="customer-area" element={<CustomerArea />} />
-        </Route>
-        <Route
-          path="/customer-area/:clientId"
-          element={
-            <ClientProtectedRoute>
-              <CustomerArea />
-            </ClientProtectedRoute>
-          }
-        />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </Router>
+    <>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/client-login" element={<ClientLogin />} />
+          <Route path="/dashboard" element={<Dashboard />}>
+            <Route index element={<Home />} />
+            <Route path="clients" element={<Clients />} />
+            <Route path="users" element={<Users />} />
+            <Route path="products" element={<Products />} />
+            <Route path="stores" element={<Stores />} />
+            <Route path="service-orders" element={<ServiceOrders />} />
+            <Route path="service-orders/new" element={<ServiceOrderForm />} />
+            <Route path="service-orders/:id" element={<ServiceOrderEdit />} />
+            <Route path="service-order-settings/*" element={<ServiceOrderSettings />} />
+            <Route path="nfce" element={<NFCe />} />
+            <Route path="nfce/new" element={<NFCeForm />} />
+            <Route path="nfse" element={<NFSe />} />
+            <Route path="nfse/new" element={<NFSeForm />} />
+            <Route path="customer-area" element={<CustomerArea />} />
+          </Route>
+          <Route
+            path="/customer-area/:clientId"
+            element={
+              <ClientProtectedRoute>
+                <CustomerArea />
+              </ClientProtectedRoute>
+            }
+          />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Router>
+      <Toaster />
+    </>
   );
 }
 
