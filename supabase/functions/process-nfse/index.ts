@@ -31,10 +31,14 @@ serve(async (req) => {
         *,
         nfse_sp_settings!inner (
           *,
-          certificates!certificates_id (
+          certificates (
             certificate_data,
             certificate_password
           )
+        ),
+        company_info (
+          cnpj,
+          inscricao_municipal
         )
       `)
       .eq('id', nfseId)
@@ -54,6 +58,11 @@ serve(async (req) => {
       throw new Error('Configurações da NFS-e não encontradas');
     }
 
+    const companyInfo = nfse.company_info?.[0];
+    if (!companyInfo) {
+      throw new Error('Informações da empresa não encontradas');
+    }
+
     const endpoint = settings.ambiente === 'producao'
       ? 'https://nfe.prefeitura.sp.gov.br/ws/lotenfe.asmx'
       : 'https://nfeh.prefeitura.sp.gov.br/ws/lotenfe.asmx';
@@ -71,12 +80,12 @@ serve(async (req) => {
           <ConsultaNFe xmlns="http://www.prefeitura.sp.gov.br/nfe">
             <Cabecalho Versao="1">
               <CPFCNPJRemetente>
-                <CNPJ>${settings.cnpj}</CNPJ>
+                <CNPJ>${companyInfo.cnpj}</CNPJ>
               </CPFCNPJRemetente>
             </Cabecalho>
             <Detalhe>
               <ChaveNFe>
-                <InscricaoPrestador>${settings.inscricao_municipal}</InscricaoPrestador>
+                <InscricaoPrestador>${companyInfo.inscricao_municipal}</InscricaoPrestador>
                 <NumeroNFe>${nfse.numero_nfse}</NumeroNFe>
               </ChaveNFe>
             </Detalhe>
