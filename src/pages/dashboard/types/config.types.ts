@@ -23,7 +23,8 @@ export interface NFSeConfig {
   incentivo_fiscal: boolean;
   certificado_valido: boolean;
   certificado_validade?: string;
-  numero_inicial_rps: string; // Alterado de number para string
+  numero_inicial_rps: string;
+  numero_inicial_nfse?: string;
   aliquota_servico: number;
   versao_schema: string;
   lote_rps_numero: number;
@@ -35,14 +36,14 @@ export interface NFSeConfig {
   senha_emissor: string;
   lote_envio_maximo: number;
   url_provedor: string;
-  proxy_host: string;
-  proxy_porta: string;
-  proxy_usuario: string;
-  proxy_senha: string;
+  proxy_host?: string;
+  proxy_porta?: string;
+  proxy_usuario?: string;
+  proxy_senha?: string;
   numero_lote: number;
   usar_certificado_gov: boolean;
-  caminho_certificado_gov: string;
-  senha_certificado_gov: string;
+  caminho_certificado_gov?: string;
+  senha_certificado_gov?: string;
   rps_tipo: string;
   rps_serie: string;
   tipo_contribuinte: string;
@@ -52,8 +53,8 @@ export interface NFSeConfig {
   enviar_email_tomador: boolean;
   alerta_envio_email: boolean;
   substituir_nfse: boolean;
-  substituida_numero: string;
-  substituida_serie: string;
+  substituida_numero?: string;
+  substituida_serie?: string;
   usar_tributacao_aproximada: boolean;
   percentual_tributos_aproximado: number;
   local_servico: string;
@@ -70,4 +71,52 @@ export interface FiscalConfig {
   service_code: string;
   cnae: string;
   tax_regime: string;
+}
+
+export interface ValidateCertificateResponse {
+  success: boolean;
+  message: string;
+  validade?: string;
+  info?: {
+    validoAte: string;
+    validoDe: string;
+    possuiChavePrivada: boolean;
+    emissor: Array<{type: string, value: string}>;
+    subject: Array<{type: string, value: string}>;
+  };
+}
+
+export interface NFSeServiceCode {
+  id: string;
+  code: string;
+  description: string;
+  aliquota_iss?: number;
+}
+
+export interface CompanySettings {
+  razao_social: string;
+  nome_fantasia: string;
+  cnpj: string;
+  inscricao_municipal: string;
+  inscricao_estadual: string;
+  endereco: {
+    logradouro: string;
+    numero: string;
+    complemento?: string;
+    bairro: string;
+    cidade: string;
+    uf: string;
+    cep: string;
+    codigo_municipio: string;
+  };
+  regime_tributario: string;
+  cnae: string;
+  codigo_servico: string;
+}
+
+export interface RPSSettings {
+  serie: string;
+  tipo: string;
+  numero_inicial: number;
+  lote_atual: number;
 }
