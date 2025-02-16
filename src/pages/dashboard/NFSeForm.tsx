@@ -64,6 +64,10 @@ export default function NFSeForm() {
       servico_exigibilidade: '1',
       servico_operacao: '1',
       operacao_tributacao: '1',
+      valor_servicos: 0,
+      base_calculo: 0,
+      aliquota_iss: 0,
+      valor_iss: 0
     }
   });
 
@@ -133,7 +137,7 @@ export default function NFSeForm() {
         .from('nfse_sp_settings')
         .select(`
           *,
-          certificates (
+          certificates!nfse_sp_settings_certificates_id_fkey (
             id,
             certificate_data,
             certificate_password,
@@ -151,7 +155,8 @@ export default function NFSeForm() {
     }
   });
 
-  const formatCurrency = (value: number): string => {
+  const formatCurrency = (value: number | undefined): string => {
+    if (value === undefined || value === null) return 'R$ 0,00';
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
