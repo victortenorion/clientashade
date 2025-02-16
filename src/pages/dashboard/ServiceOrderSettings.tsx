@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { StatusTab } from "./components/StatusTab";
 import { SEFAZTab } from "./components/SEFAZTab";
@@ -39,11 +40,24 @@ const ServiceOrderSettings = () => {
     certificado_validade: undefined,
     numero_inicial_rps: 1,
     aliquota_servico: 0,
-    versao_schema: "",
+    versao_schema: "2.00",
     lote_rps_numero: 1,
     operacao_tributacao: "",
     codigo_regime_tributario: "",
-    tipo_regime_especial: ""
+    tipo_regime_especial: "",
+    codigo_cidade_prestacao: "",
+    usuario_emissor: "",
+    senha_emissor: "",
+    lote_envio_maximo: 50,
+    url_provedor: "https://nfe.prefeitura.sp.gov.br/ws/lotenfe.asmx",
+    proxy_host: "",
+    proxy_porta: "",
+    proxy_usuario: "",
+    proxy_senha: "",
+    numero_lote: 1,
+    usar_certificado_gov: false,
+    caminho_certificado_gov: "",
+    senha_certificado_gov: ""
   });
 
   const [fiscalConfig, setFiscalConfig] = useState<FiscalConfig>({
