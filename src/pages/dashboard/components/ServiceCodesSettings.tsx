@@ -46,6 +46,27 @@ export function ServiceCodesSettings() {
 
   useEffect(() => {
     loadServiceCodes();
+
+    // Subscribe to real-time updates
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'nfse_service_codes'
+        },
+        (payload) => {
+          console.log('Received real-time update:', payload);
+          loadServiceCodes(); // Reload the data when changes occur
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const loadServiceCodes = async () => {
