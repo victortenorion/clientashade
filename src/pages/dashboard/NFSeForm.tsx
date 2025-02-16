@@ -146,14 +146,14 @@ export default function NFSeForm() {
       // Determinar o código do serviço com prioridade apropriada
       const codigoServico = 
         serviceOrder.codigo_servico || // Primeiro tenta da ordem de serviço
-        (companyInfo && companyInfo.codigo_servico) || // Depois tenta da empresa
+        companyInfo.codigo_servico || // Depois tenta da empresa
         ''; // Fallback para vazio se nenhum dos dois existir
 
       form.reset({
         codigo_servico: codigoServico,
         discriminacao_servicos: serviceOrder.discriminacao_servico || '',
         servico_discriminacao_item: serviceOrder.servico_discriminacao_item || '',
-        servico_codigo_item_lista: serviceOrder.servico_codigo_item_lista || '',
+        servico_codigo_item_lista: serviceOrder.servico_codigo_item_lista || companyInfo.codigo_servico_lc116 || '',
         servico_codigo_municipio: serviceOrder.servico_codigo_municipio || companyInfo.endereco_codigo_municipio || '',
         servico_codigo_local_prestacao: serviceOrder.servico_codigo_local_prestacao || '',
         servico_valor_item: serviceOrder.servico_valor_item || 0,
