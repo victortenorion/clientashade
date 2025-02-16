@@ -94,7 +94,7 @@ export function CertificadoDigitalSettings() {
             valid_from: data.info?.validoDe,
             issuer: data.info?.emissor,
             subject: data.info?.subject,
-            type: 'A1', // Adicionando o tipo do certificado
+            type: 'A1',
             is_valid: true
           });
 

@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -18,14 +19,21 @@ serve(async (req) => {
       throw new Error('Certificado e senha são obrigatórios');
     }
 
-    // Aqui você implementaria a lógica de validação do certificado
-    // Por enquanto, vamos simular uma validação básica
+    console.log('Iniciando processo de validação do certificado');
+
+    // Aqui você pode adicionar a lógica de validação real do certificado
+    // Por enquanto, vamos simular uma validação básica para teste
+    const validUntilDate = new Date();
+    validUntilDate.setFullYear(validUntilDate.getFullYear() + 1); // Certificado válido por 1 ano
+
+    const validFromDate = new Date();
+
     const mockValidation = {
       success: true,
-      message: "Certificado válido",
+      message: "Certificado validado com sucesso",
       info: {
-        validoAte: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 ano
-        validoDe: new Date().toISOString(),
+        validoAte: validUntilDate.toISOString(),
+        validoDe: validFromDate.toISOString(),
         possuiChavePrivada: true,
         emissor: [
           { type: "CN", value: "AC VALID RFB v5" },
@@ -38,6 +46,8 @@ serve(async (req) => {
       }
     };
 
+    console.log('Validação concluída:', mockValidation);
+
     return new Response(
       JSON.stringify(mockValidation),
       { 
@@ -49,10 +59,11 @@ serve(async (req) => {
     );
 
   } catch (error) {
+    console.error('Erro na validação do certificado:', error);
     return new Response(
       JSON.stringify({
         success: false,
-        message: error.message
+        message: error.message || "Erro ao validar o certificado"
       }),
       { 
         status: 400,
