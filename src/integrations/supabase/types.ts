@@ -1572,6 +1572,8 @@ export type Database = {
           created_at: string
           description: string
           id: string
+          nfse_code: string | null
+          nfse_description: string | null
           updated_at: string
         }
         Insert: {
@@ -1580,6 +1582,8 @@ export type Database = {
           created_at?: string
           description: string
           id?: string
+          nfse_code?: string | null
+          nfse_description?: string | null
           updated_at?: string
         }
         Update: {
@@ -1588,6 +1592,8 @@ export type Database = {
           created_at?: string
           description?: string
           id?: string
+          nfse_code?: string | null
+          nfse_description?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -1662,20 +1668,28 @@ export type Database = {
       }
       service_orders: {
         Row: {
+          aliquota_iss: number | null
+          base_calculo: number | null
           client_id: string
+          codigo_servico: string | null
           completion_date: string | null
           created_at: string
           created_by_type: string
           description: string
+          discriminacao_servico: string | null
           equipment: string | null
           equipment_serial_number: string | null
           exit_date: string | null
           expected_date: string | null
           id: string
+          inss_retido: boolean | null
           internal_notes: string | null
           invoice_key: string | null
           invoice_number: string | null
+          ir_retido: boolean | null
+          iss_retido: boolean | null
           order_number: number
+          pis_cofins_csll_retido: boolean | null
           priority: string | null
           problem: string | null
           reception_notes: string | null
@@ -1686,22 +1700,32 @@ export type Database = {
           total_price: number
           tracking_code: string | null
           updated_at: string
+          valor_deducoes: number | null
+          valor_iss: number | null
         }
         Insert: {
+          aliquota_iss?: number | null
+          base_calculo?: number | null
           client_id: string
+          codigo_servico?: string | null
           completion_date?: string | null
           created_at?: string
           created_by_type?: string
           description: string
+          discriminacao_servico?: string | null
           equipment?: string | null
           equipment_serial_number?: string | null
           exit_date?: string | null
           expected_date?: string | null
           id?: string
+          inss_retido?: boolean | null
           internal_notes?: string | null
           invoice_key?: string | null
           invoice_number?: string | null
+          ir_retido?: boolean | null
+          iss_retido?: boolean | null
           order_number?: number
+          pis_cofins_csll_retido?: boolean | null
           priority?: string | null
           problem?: string | null
           reception_notes?: string | null
@@ -1712,22 +1736,32 @@ export type Database = {
           total_price?: number
           tracking_code?: string | null
           updated_at?: string
+          valor_deducoes?: number | null
+          valor_iss?: number | null
         }
         Update: {
+          aliquota_iss?: number | null
+          base_calculo?: number | null
           client_id?: string
+          codigo_servico?: string | null
           completion_date?: string | null
           created_at?: string
           created_by_type?: string
           description?: string
+          discriminacao_servico?: string | null
           equipment?: string | null
           equipment_serial_number?: string | null
           exit_date?: string | null
           expected_date?: string | null
           id?: string
+          inss_retido?: boolean | null
           internal_notes?: string | null
           invoice_key?: string | null
           invoice_number?: string | null
+          ir_retido?: boolean | null
+          iss_retido?: boolean | null
           order_number?: number
+          pis_cofins_csll_retido?: boolean | null
           priority?: string | null
           problem?: string | null
           reception_notes?: string | null
@@ -1738,6 +1772,8 @@ export type Database = {
           total_price?: number
           tracking_code?: string | null
           updated_at?: string
+          valor_deducoes?: number | null
+          valor_iss?: number | null
         }
         Relationships: [
           {
