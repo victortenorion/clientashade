@@ -44,7 +44,6 @@ export default function NFSeForm() {
   const queryParams = new URLSearchParams(location.search);
   const serviceOrderId = queryParams.get('service_order_id');
 
-  // Fetch service order data if serviceOrderId is present
   const { data: serviceOrder } = useQuery({
     queryKey: ['service-order', serviceOrderId],
     queryFn: async () => {
@@ -95,7 +94,6 @@ export default function NFSeForm() {
     },
   });
 
-  // Pre-fill form with service order data when available
   useEffect(() => {
     if (serviceOrder) {
       form.reset({
@@ -114,7 +112,6 @@ export default function NFSeForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      // Lógica para salvar os dados da NFS-e
       console.log("Dados do formulário:", values);
       toast({
         title: "Sucesso!",
@@ -146,11 +143,17 @@ export default function NFSeForm() {
                 <FormField
                   control={form.control}
                   name="valor_servicos"
-                  render={({ field }) => (
+                  render={({ field: { onChange, ...field } }) => (
                     <FormItem>
                       <FormLabel>Valor dos Serviços</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="0.00" {...field} />
+                        <Input 
+                          type="number" 
+                          placeholder="0.00" 
+                          step="any"
+                          onChange={(e) => onChange(Number(e.target.value))}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -159,11 +162,17 @@ export default function NFSeForm() {
                 <FormField
                   control={form.control}
                   name="base_calculo"
-                  render={({ field }) => (
+                  render={({ field: { onChange, ...field } }) => (
                     <FormItem>
                       <FormLabel>Base de Cálculo</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="0.00" {...field} />
+                        <Input 
+                          type="number" 
+                          placeholder="0.00" 
+                          step="any"
+                          onChange={(e) => onChange(Number(e.target.value))}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -175,11 +184,17 @@ export default function NFSeForm() {
                 <FormField
                   control={form.control}
                   name="aliquota_iss"
-                  render={({ field }) => (
+                  render={({ field: { onChange, ...field } }) => (
                     <FormItem>
                       <FormLabel>Alíquota ISS (%)</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="0.00" {...field} />
+                        <Input 
+                          type="number" 
+                          placeholder="0.00" 
+                          step="any"
+                          onChange={(e) => onChange(Number(e.target.value))}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -188,11 +203,17 @@ export default function NFSeForm() {
                 <FormField
                   control={form.control}
                   name="valor_iss"
-                  render={({ field }) => (
+                  render={({ field: { onChange, ...field } }) => (
                     <FormItem>
                       <FormLabel>Valor ISS</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="0.00" {...field} />
+                        <Input 
+                          type="number" 
+                          placeholder="0.00" 
+                          step="any"
+                          onChange={(e) => onChange(Number(e.target.value))}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
