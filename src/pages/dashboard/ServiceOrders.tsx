@@ -133,8 +133,14 @@ export default function ServiceOrders() {
           *,
           client:client_id (
             name,
-            address,
-            phone
+            street,
+            street_number,
+            complement,
+            neighborhood,
+            city,
+            state,
+            phone_landline,
+            mobile_phone
           ),
           status:status_id (
             name
@@ -144,6 +150,16 @@ export default function ServiceOrders() {
         .single();
 
       if (error) throw error;
+
+      const clientAddress = order.client ? [
+        order.client.street,
+        order.client.street_number,
+        order.client.complement,
+        order.client.neighborhood,
+        `${order.client.city}/${order.client.state}`
+      ].filter(Boolean).join(', ') : 'N/A';
+
+      const clientPhone = order.client ? (order.client.mobile_phone || order.client.phone_landline || 'N/A') : 'N/A';
 
       const printWindow = window.open('', '_blank');
       if (!printWindow) {
@@ -175,6 +191,8 @@ export default function ServiceOrders() {
             </div>
             <div class="info">
               <div><strong>Cliente:</strong> ${order.client?.name || 'N/A'}</div>
+              <div><strong>Endereço:</strong> ${clientAddress}</div>
+              <div><strong>Telefone:</strong> ${clientPhone}</div>
               <div><strong>Data:</strong> ${format(new Date(order.created_at), 'dd/MM/yyyy HH:mm')}</div>
               <div><strong>Status:</strong> ${order.status?.name || 'N/A'}</div>
               <div><strong>Descrição:</strong> ${order.description || 'N/A'}</div>
