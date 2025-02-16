@@ -16,8 +16,11 @@ export type Database = {
           created_at: string | null
           id: string
           is_valid: boolean | null
+          issuer: string | null
+          subject: string | null
           type: string
           updated_at: string | null
+          valid_from: string | null
           valid_until: string | null
         }
         Insert: {
@@ -26,8 +29,11 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_valid?: boolean | null
+          issuer?: string | null
+          subject?: string | null
           type: string
           updated_at?: string | null
+          valid_from?: string | null
           valid_until?: string | null
         }
         Update: {
@@ -36,8 +42,11 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_valid?: boolean | null
+          issuer?: string | null
+          subject?: string | null
           type?: string
           updated_at?: string | null
+          valid_from?: string | null
           valid_until?: string | null
         }
         Relationships: []
@@ -1384,6 +1393,36 @@ export type Database = {
           },
         ]
       }
+      nfse_service_codes: {
+        Row: {
+          active: boolean | null
+          aliquota_iss: number | null
+          code: string
+          created_at: string
+          description: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          aliquota_iss?: number | null
+          code: string
+          created_at?: string
+          description: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          aliquota_iss?: number | null
+          code?: string
+          created_at?: string
+          description?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       nfse_servicos: {
         Row: {
           aliquota_iss: number | null
@@ -1437,32 +1476,46 @@ export type Database = {
       }
       nfse_sp_settings: {
         Row: {
+          aliquota_iss_padrao: number | null
           ambiente: string | null
           certificado_id: string | null
           certificates_id: string | null
           codigo_regime_tributario: string | null
+          codigo_tributacao_municipio: string | null
           config_status: string | null
           cpf_responsavel: string | null
           created_at: string
+          descricao_servico_padrao: string | null
+          fonte_tributos: string | null
           id: string
           inscricao_municipal: string | null
           intermediario_cnpj: string | null
           intermediario_email: string | null
           intermediario_inscricao_municipal: string | null
+          iss_retencao_fonte: boolean | null
           iss_retido_intermediario: boolean | null
           lote_rps_numero: number | null
+          mensagem_complementar: string | null
           mensagem_verificacao: string | null
+          modo_contingencia: boolean | null
+          natureza_operacao: string | null
+          numero_ultimo_lote: number | null
+          numero_ultimo_rps: number | null
           operacao_tributacao: string | null
+          optante_simples_nacional: boolean | null
           producao_intermediario: boolean | null
           proxy_host: string | null
           proxy_host_ssl: string | null
           proxy_port: string | null
           proxy_port_ssl: string | null
+          regime_tributario: string | null
           rps_serie: string | null
           rps_situacao: string | null
           rps_status: string | null
           rps_tipo: string | null
+          serie_rps_padrao: string | null
           servico_aliquota: number | null
+          servico_codigo_cnae: string | null
           servico_codigo_item_lista: string | null
           servico_codigo_local_prestacao: string | null
           servico_codigo_municipio: string | null
@@ -1479,6 +1532,7 @@ export type Database = {
           tipo_documento: string | null
           tipo_documento_prestador: string | null
           tipo_regime_especial: string | null
+          tipo_rps_padrao: string | null
           ultima_verificacao: string | null
           updated_at: string
           versao_schema: string | null
@@ -1488,32 +1542,46 @@ export type Database = {
           wsdl_producao_url: string | null
         }
         Insert: {
+          aliquota_iss_padrao?: number | null
           ambiente?: string | null
           certificado_id?: string | null
           certificates_id?: string | null
           codigo_regime_tributario?: string | null
+          codigo_tributacao_municipio?: string | null
           config_status?: string | null
           cpf_responsavel?: string | null
           created_at?: string
+          descricao_servico_padrao?: string | null
+          fonte_tributos?: string | null
           id?: string
           inscricao_municipal?: string | null
           intermediario_cnpj?: string | null
           intermediario_email?: string | null
           intermediario_inscricao_municipal?: string | null
+          iss_retencao_fonte?: boolean | null
           iss_retido_intermediario?: boolean | null
           lote_rps_numero?: number | null
+          mensagem_complementar?: string | null
           mensagem_verificacao?: string | null
+          modo_contingencia?: boolean | null
+          natureza_operacao?: string | null
+          numero_ultimo_lote?: number | null
+          numero_ultimo_rps?: number | null
           operacao_tributacao?: string | null
+          optante_simples_nacional?: boolean | null
           producao_intermediario?: boolean | null
           proxy_host?: string | null
           proxy_host_ssl?: string | null
           proxy_port?: string | null
           proxy_port_ssl?: string | null
+          regime_tributario?: string | null
           rps_serie?: string | null
           rps_situacao?: string | null
           rps_status?: string | null
           rps_tipo?: string | null
+          serie_rps_padrao?: string | null
           servico_aliquota?: number | null
+          servico_codigo_cnae?: string | null
           servico_codigo_item_lista?: string | null
           servico_codigo_local_prestacao?: string | null
           servico_codigo_municipio?: string | null
@@ -1530,6 +1598,7 @@ export type Database = {
           tipo_documento?: string | null
           tipo_documento_prestador?: string | null
           tipo_regime_especial?: string | null
+          tipo_rps_padrao?: string | null
           ultima_verificacao?: string | null
           updated_at?: string
           versao_schema?: string | null
@@ -1539,32 +1608,46 @@ export type Database = {
           wsdl_producao_url?: string | null
         }
         Update: {
+          aliquota_iss_padrao?: number | null
           ambiente?: string | null
           certificado_id?: string | null
           certificates_id?: string | null
           codigo_regime_tributario?: string | null
+          codigo_tributacao_municipio?: string | null
           config_status?: string | null
           cpf_responsavel?: string | null
           created_at?: string
+          descricao_servico_padrao?: string | null
+          fonte_tributos?: string | null
           id?: string
           inscricao_municipal?: string | null
           intermediario_cnpj?: string | null
           intermediario_email?: string | null
           intermediario_inscricao_municipal?: string | null
+          iss_retencao_fonte?: boolean | null
           iss_retido_intermediario?: boolean | null
           lote_rps_numero?: number | null
+          mensagem_complementar?: string | null
           mensagem_verificacao?: string | null
+          modo_contingencia?: boolean | null
+          natureza_operacao?: string | null
+          numero_ultimo_lote?: number | null
+          numero_ultimo_rps?: number | null
           operacao_tributacao?: string | null
+          optante_simples_nacional?: boolean | null
           producao_intermediario?: boolean | null
           proxy_host?: string | null
           proxy_host_ssl?: string | null
           proxy_port?: string | null
           proxy_port_ssl?: string | null
+          regime_tributario?: string | null
           rps_serie?: string | null
           rps_situacao?: string | null
           rps_status?: string | null
           rps_tipo?: string | null
+          serie_rps_padrao?: string | null
           servico_aliquota?: number | null
+          servico_codigo_cnae?: string | null
           servico_codigo_item_lista?: string | null
           servico_codigo_local_prestacao?: string | null
           servico_codigo_municipio?: string | null
@@ -1581,6 +1664,7 @@ export type Database = {
           tipo_documento?: string | null
           tipo_documento_prestador?: string | null
           tipo_regime_especial?: string | null
+          tipo_rps_padrao?: string | null
           ultima_verificacao?: string | null
           updated_at?: string
           versao_schema?: string | null
@@ -2156,6 +2240,12 @@ export type Database = {
             }
             Returns: Json
           }
+      increment_rps_sp_numero: {
+        Args: {
+          p_settings_id: string
+        }
+        Returns: number
+      }
       user_has_all_permissions: {
         Args: {
           user_uuid: string
