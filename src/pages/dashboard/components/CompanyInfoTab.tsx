@@ -52,7 +52,7 @@ interface CompanyInfo {
 
 interface RPSConfig {
   numero_inicial_rps: number;
-  numero_inicial_nfse: number;
+  numero_inicial_nfse: string;
 }
 
 export const CompanyInfoTab = () => {
@@ -62,7 +62,7 @@ export const CompanyInfoTab = () => {
   const [isCheckingRPS, setIsCheckingRPS] = useState(false);
   const [rpsConfig, setRpsConfig] = useState<RPSConfig>({
     numero_inicial_rps: 0,
-    numero_inicial_nfse: 0
+    numero_inicial_nfse: ''
   });
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
     id: "",
@@ -134,7 +134,7 @@ export const CompanyInfoTab = () => {
       if (spConfig) {
         setRpsConfig({
           numero_inicial_rps: spConfig.numero_inicial_rps || 0,
-          numero_inicial_nfse: spConfig.numero_inicial_nfse || 0
+          numero_inicial_nfse: spConfig.numero_inicial_nfse?.toString() || ''
         });
 
         if (lastNFSe?.numero_rps && parseInt(lastNFSe.numero_rps) >= spConfig.numero_inicial_rps) {
@@ -304,7 +304,7 @@ export const CompanyInfoTab = () => {
         }
       }
 
-      if (lastNFSe?.numero_nfse && parseInt(lastNFSe.numero_nfse) >= rpsConfig.numero_inicial_nfse) {
+      if (lastNFSe?.numero_nfse && rpsConfig.numero_inicial_nfse && lastNFSe.numero_nfse >= rpsConfig.numero_inicial_nfse) {
         const confirmContinue = window.confirm(
           `ATENÇÃO: Já existem NFS-e com número maior que ${rpsConfig.numero_inicial_nfse}. ` +
           `O próximo número será ${parseInt(lastNFSe.numero_nfse) + 1}. ` +
@@ -625,13 +625,11 @@ export const CompanyInfoTab = () => {
               <div className="space-y-2">
                 <Label>Número Inicial da NFS-e</Label>
                 <Input
-                  type="number"
-                  min="0"
-                  value={rpsConfig.numero_inicial_nfse === 0 ? '' : rpsConfig.numero_inicial_nfse}
+                  value={rpsConfig.numero_inicial_nfse}
                   onChange={(e) =>
                     setRpsConfig({
                       ...rpsConfig,
-                      numero_inicial_nfse: e.target.value === '' ? 0 : parseInt(e.target.value)
+                      numero_inicial_nfse: e.target.value
                     })
                   }
                   placeholder="Digite o número inicial da NFS-e"
