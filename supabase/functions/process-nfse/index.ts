@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
@@ -26,14 +25,14 @@ serve(async (req) => {
 
     console.log('Buscando NFS-e com ID:', nfseId);
 
-    // Modificada a query para usar subquery e pegar apenas o certificado mais recente
+    // Modificada a query para usar JOIN lateral e pegar apenas o certificado mais recente
     const { data: nfse, error: nfseError } = await supabaseClient
       .from('nfse')
       .select(`
         *,
         nfse_sp_settings!inner (
           *,
-          certificates:certificates (
+          certificates!inner (
             certificate_data,
             certificate_password
           )
@@ -44,8 +43,6 @@ serve(async (req) => {
         )
       `)
       .eq('id', nfseId)
-      .order('created_at.desc', { foreignTable: 'nfse_sp_settings.certificates' })
-      .limit(1, { foreignTable: 'nfse_sp_settings.certificates' })
       .maybeSingle();
 
     if (nfseError) {
