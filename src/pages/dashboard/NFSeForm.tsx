@@ -144,34 +144,31 @@ export default function NFSeForm() {
       });
 
       // Determinar o código do serviço com prioridade apropriada
-      const codigoServico = 
-        serviceOrder.codigo_servico || // Primeiro tenta da ordem de serviço
-        companyInfo.codigo_servico || // Depois tenta da empresa
-        ''; // Fallback para vazio se nenhum dos dois existir
+      const codigoServico = serviceOrder?.codigo_servico ?? companyInfo?.codigo_servico ?? '';
 
       form.reset({
         codigo_servico: codigoServico,
-        discriminacao_servicos: serviceOrder.discriminacao_servico || '',
-        servico_discriminacao_item: serviceOrder.servico_discriminacao_item || '',
-        servico_codigo_item_lista: serviceOrder.servico_codigo_item_lista || companyInfo.codigo_servico_lc116 || '',
-        servico_codigo_municipio: serviceOrder.servico_codigo_municipio || companyInfo.endereco_codigo_municipio || '',
-        servico_codigo_local_prestacao: serviceOrder.servico_codigo_local_prestacao || '',
-        servico_valor_item: serviceOrder.servico_valor_item || 0,
-        servico_exigibilidade: serviceOrder.servico_exigibilidade || fiscalConfig.config.servico_exigibilidade || '1',
-        servico_operacao: serviceOrder.servico_operacao || fiscalConfig.config.servico_operacao || '1',
-        valor_servicos: serviceOrder.total_price || 0,
-        base_calculo: serviceOrder.base_calculo || serviceOrder.total_price || 0,
-        aliquota_iss: serviceOrder.aliquota_iss || fiscalConfig.config.aliquota_servico || 0,
-        valor_iss: (serviceOrder.base_calculo || serviceOrder.total_price || 0) * (serviceOrder.aliquota_iss || fiscalConfig.config.aliquota_servico || 0) / 100,
-        iss_retido: serviceOrder.iss_retido || false,
-        regime_especial_tributacao: serviceOrder.regime_especial || fiscalConfig.config.regime_especial || '1',
-        tipo_regime_especial: fiscalConfig.config.tipo_regime_especial || '',
-        operacao_tributacao: serviceOrder.operacao_tributacao || fiscalConfig.config.operacao_tributacao || '1',
-        optante_simples_nacional: fiscalConfig.config.optante_simples_nacional || false,
-        incentivador_cultural: fiscalConfig.config.incentivador_cultural || false,
+        discriminacao_servicos: serviceOrder?.discriminacao_servico ?? '',
+        servico_discriminacao_item: serviceOrder?.servico_discriminacao_item ?? '',
+        servico_codigo_item_lista: serviceOrder?.servico_codigo_item_lista ?? companyInfo?.codigo_servico_lc116 ?? '',
+        servico_codigo_municipio: serviceOrder?.servico_codigo_municipio ?? companyInfo?.endereco_codigo_municipio ?? '',
+        servico_codigo_local_prestacao: serviceOrder?.servico_codigo_local_prestacao ?? '',
+        servico_valor_item: serviceOrder?.servico_valor_item ?? 0,
+        servico_exigibilidade: serviceOrder?.servico_exigibilidade ?? fiscalConfig.config.servico_exigibilidade ?? '1',
+        servico_operacao: serviceOrder?.servico_operacao ?? fiscalConfig.config.servico_operacao ?? '1',
+        valor_servicos: serviceOrder?.total_price ?? 0,
+        base_calculo: serviceOrder?.base_calculo ?? serviceOrder?.total_price ?? 0,
+        aliquota_iss: serviceOrder?.aliquota_iss ?? fiscalConfig.config.aliquota_servico ?? 0,
+        valor_iss: (serviceOrder?.base_calculo ?? serviceOrder?.total_price ?? 0) * (serviceOrder?.aliquota_iss ?? fiscalConfig.config.aliquota_servico ?? 0) / 100,
+        iss_retido: serviceOrder?.iss_retido ?? false,
+        regime_especial_tributacao: serviceOrder?.regime_especial ?? fiscalConfig.config.regime_especial ?? '1',
+        tipo_regime_especial: fiscalConfig.config.tipo_regime_especial ?? '',
+        operacao_tributacao: serviceOrder?.operacao_tributacao ?? fiscalConfig.config.operacao_tributacao ?? '1',
+        optante_simples_nacional: fiscalConfig.config.optante_simples_nacional ?? false,
+        incentivador_cultural: fiscalConfig.config.incentivador_cultural ?? false,
         tipo_tributacao: 'T',
-        tipo_rps: fiscalConfig.config.rps_tipo || 'RPS',
-        serie_rps: fiscalConfig.config.rps_serie || '1',
+        tipo_rps: fiscalConfig.config.rps_tipo ?? 'RPS',
+        serie_rps: fiscalConfig.config.rps_serie ?? '1',
       });
     }
   }, [serviceOrderId, navigate, toast, serviceOrder, companyInfo, fiscalConfig, form]);
