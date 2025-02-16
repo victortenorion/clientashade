@@ -84,21 +84,29 @@ export function CertificadoDigitalSettings() {
           return;
         }
 
+        // Preparar os dados do certificado para salvar
+        const certData = {
+          certificate_data: base64String,
+          certificate_password: certificatePassword,
+          valid_until: data.info?.validoAte,
+          valid_from: data.info?.validoDe,
+          issuer: JSON.stringify(data.info?.emissor), // Convertendo array para JSON string
+          subject: JSON.stringify(data.info?.subject), // Convertendo array para JSON string
+          type: 'A1',
+          is_valid: true
+        };
+
+        console.log('Dados do certificado a serem salvos:', certData);
+
         // Salvar o certificado validado
         const { error: saveError } = await supabase
           .from("certificates")
-          .insert({
-            certificate_data: base64String,
-            certificate_password: certificatePassword,
-            valid_until: data.info?.validoAte,
-            valid_from: data.info?.validoDe,
-            issuer: data.info?.emissor,
-            subject: data.info?.subject,
-            type: 'A1',
-            is_valid: true
-          });
+          .insert(certData);
 
-        if (saveError) throw saveError;
+        if (saveError) {
+          console.error('Erro ao salvar certificado:', saveError);
+          throw saveError;
+        }
 
         setCertificateInfo({
           validade: data.info?.validoAte,
