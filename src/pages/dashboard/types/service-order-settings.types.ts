@@ -55,6 +55,8 @@ export interface ServiceOrder {
   expected_date: string;
   completion_date: string;
   exit_date: string;
+  reception_notes?: string;
+  internal_notes?: string;
   status: {
     name: string;
     color: string;
@@ -70,4 +72,7 @@ export interface ServiceOrder {
   aliquota_iss: number;
   base_calculo: number;
   valor_deducoes: number;
+  rps_numero?: number;
+  rps_serie?: string;
+  rps_tipo?: string;
 }
