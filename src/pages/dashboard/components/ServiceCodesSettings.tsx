@@ -1,52 +1,15 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Search, Plus, Pencil, Save, X, Trash2, Download, Upload, ArrowUpDown } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-
-interface ServiceCode {
-  id: string;
-  code: string;
-  description: string;
-  aliquota_iss: number;
-  active: boolean;
-}
-
-interface ServiceCodeFormData {
-  code: string;
-  description: string;
-  aliquota_iss: number;
-}
-
-interface ImportPreviewData extends ServiceCodeFormData {
-  isValid: boolean;
-  error?: string;
-}
-
-type SortOrder = 'asc' | 'desc';
-type SortField = 'code' | 'description' | 'aliquota_iss';
+import { Search, Plus, Download, Upload } from "lucide-react";
+import { ServiceCode, ServiceCodeFormData, ImportPreviewData, SortField, SortOrder } from "./service-codes/types";
+import { ServiceCodeForm } from "./service-codes/ServiceCodeForm";
+import { DeleteServiceCodeDialog } from "./service-codes/DeleteServiceCodeDialog";
+import { ImportPreviewDialog } from "./service-codes/ImportPreviewDialog";
+import { ServiceCodesTable } from "./service-codes/ServiceCodesTable";
 
 export function ServiceCodesSettings() {
   const { toast } = useToast();
@@ -180,7 +143,6 @@ export function ServiceCodesSettings() {
       }
 
       if (selectedCode) {
-        // Atualizar código existente
         const { error } = await supabase
           .from("nfse_service_codes")
           .update({
@@ -197,7 +159,6 @@ export function ServiceCodesSettings() {
           description: "Código de serviço atualizado com sucesso",
         });
       } else {
-        // Criar novo código
         const { error } = await supabase.from("nfse_service_codes").insert([
           {
             code: formData.code,
@@ -376,14 +337,6 @@ export function ServiceCodesSettings() {
     });
   };
 
-  const renderSortIcon = (field: SortField) => {
-    return (
-      <ArrowUpDown 
-        className={`h-4 w-4 inline ml-1 ${sortField === field ? 'opacity-100' : 'opacity-50'}`}
-      />
-    );
-  };
-
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -436,196 +389,38 @@ export function ServiceCodesSettings() {
             </Button>
           </div>
 
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead 
-                    className="w-[100px] cursor-pointer"
-                    onClick={() => handleSort('code')}
-                  >
-                    Código {renderSortIcon('code')}
-                  </TableHead>
-                  <TableHead 
-                    className="cursor-pointer"
-                    onClick={() => handleSort('description')}
-                  >
-                    Descrição {renderSortIcon('description')}
-                  </TableHead>
-                  <TableHead 
-                    className="w-[120px] text-right cursor-pointer"
-                    onClick={() => handleSort('aliquota_iss')}
-                  >
-                    Alíquota ISS {renderSortIcon('aliquota_iss')}
-                  </TableHead>
-                  <TableHead className="w-[120px]">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center py-4">
-                      <div className="flex items-center justify-center">
-                        <Loader2 className="h-6 w-6 animate-spin" />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : getSortedAndFilteredCodes().length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
-                      Nenhum código de serviço encontrado
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  getSortedAndFilteredCodes().map((code) => (
-                    <TableRow key={code.id}>
-                      <TableCell className="font-medium">{code.code}</TableCell>
-                      <TableCell>{code.description}</TableCell>
-                      <TableCell className="text-right">
-                        {code.aliquota_iss?.toFixed(2)}%
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleOpenDialog(code)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(code)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+          <ServiceCodesTable
+            isLoading={isLoading}
+            codes={getSortedAndFilteredCodes()}
+            sortField={sortField}
+            onSort={handleSort}
+            onEdit={handleOpenDialog}
+            onDelete={handleDelete}
+          />
+
+          <ServiceCodeForm
+            isOpen={isDialogOpen}
+            onClose={() => setIsDialogOpen(false)}
+            onSave={handleSaveServiceCode}
+            formData={formData}
+            setFormData={setFormData}
+            selectedCode={selectedCode}
+          />
+
+          <DeleteServiceCodeDialog
+            isOpen={isDeleteDialogOpen}
+            onClose={() => setIsDeleteDialogOpen(false)}
+            onConfirm={confirmDelete}
+            codeToDelete={codeToDelete}
+          />
+
+          <ImportPreviewDialog
+            isOpen={isImportPreviewOpen}
+            onClose={() => setIsImportPreviewOpen(false)}
+            onConfirm={confirmImport}
+            importPreviewData={importPreviewData}
+          />
         </div>
-
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {selectedCode ? "Editar Código de Serviço" : "Novo Código de Serviço"}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="code">Código</Label>
-                <Input
-                  id="code"
-                  value={formData.code}
-                  onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Descrição</Label>
-                <Input
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="aliquota">Alíquota ISS (%)</Label>
-                <Input
-                  id="aliquota"
-                  type="number"
-                  step="0.01"
-                  value={formData.aliquota_iss}
-                  onChange={(e) =>
-                    setFormData({ ...formData, aliquota_iss: parseFloat(e.target.value) || 0 })
-                  }
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                <X className="h-4 w-4 mr-2" />
-                Cancelar
-              </Button>
-              <Button onClick={handleSaveServiceCode}>
-                <Save className="h-4 w-4 mr-2" />
-                Salvar
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Excluir código de serviço</AlertDialogTitle>
-              <AlertDialogDescription>
-                Tem certeza que deseja excluir o código de serviço{" "}
-                <span className="font-medium">{codeToDelete?.code}</span>?
-                Esta ação não pode ser desfeita.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>
-                Cancelar
-              </AlertDialogCancel>
-              <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                Excluir
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        <Dialog open={isImportPreviewOpen} onOpenChange={setIsImportPreviewOpen}>
-          <DialogContent className="max-w-3xl">
-            <DialogHeader>
-              <DialogTitle>Prévia da Importação</DialogTitle>
-            </DialogHeader>
-            <div className="max-h-[400px] overflow-y-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[100px]">Código</TableHead>
-                    <TableHead>Descrição</TableHead>
-                    <TableHead className="w-[120px] text-right">Alíquota ISS</TableHead>
-                    <TableHead className="w-[120px]">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {importPreviewData.map((item, index) => (
-                    <TableRow key={index} className={item.isValid ? "" : "bg-destructive/10"}>
-                      <TableCell>{item.code}</TableCell>
-                      <TableCell>{item.description}</TableCell>
-                      <TableCell className="text-right">{item.aliquota_iss}%</TableCell>
-                      <TableCell>
-                        {item.isValid ? (
-                          <span className="text-green-600">Válido</span>
-                        ) : (
-                          <span className="text-destructive text-sm">{item.error}</span>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsImportPreviewOpen(false)}>
-                <X className="h-4 w-4 mr-2" />
-                Cancelar
-              </Button>
-              <Button onClick={confirmImport}>
-                <Upload className="h-4 w-4 mr-2" />
-                Confirmar Importação
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </CardContent>
     </Card>
   );
