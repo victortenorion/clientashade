@@ -81,6 +81,7 @@ export default function ServiceOrderForm() {
       const { data: clientsData, error } = await supabase
         .from('clients')
         .select('*')
+        .eq('excluida', false)
         .order('name');
 
       if (error) throw error;
@@ -151,6 +152,10 @@ export default function ServiceOrderForm() {
         throw new Error("Status inicial não encontrado");
       }
 
+      if (!formData.client_id) {
+        throw new Error("Por favor, selecione um cliente");
+      }
+
       // Primeiro, buscar a loja do usuário
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
@@ -163,10 +168,6 @@ export default function ServiceOrderForm() {
 
       if (storeError) throw storeError;
       if (!storeData?.store_id) throw new Error("Usuário não está associado a uma loja");
-
-      if (!formData.client_id) {
-        throw new Error("Por favor, selecione um cliente");
-      }
 
       // Criar a ordem com os dados do formulário
       const { data, error } = await supabase
