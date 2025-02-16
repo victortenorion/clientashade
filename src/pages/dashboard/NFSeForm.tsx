@@ -1,27 +1,30 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useNavigate, useParams } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
+import { NFSeConfig } from "@/pages/dashboard/types/config.types";
+import { Button } from "@/components/ui/button";
+import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
   Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
+  Input,
+  Switch,
+  Separator,
+  Textarea,
+} from "@/components/ui";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useNavigate, useParams } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase";
-import { useQuery } from "@tanstack/react-query";
-import { NFSeConfig } from "../types/config.types";
+
+interface ServiceOrder {
+  id: string;
+  client_id: string;
+  // ... outros campos se necessário
+}
 
 const formSchema = z.object({
   codigo_servico: z.string().min(2, {
@@ -74,8 +77,30 @@ export default function NFSeForm() {
     }
   });
 
+  // Buscar dados da ordem de serviço
+  const { data: serviceOrder } = useQuery<ServiceOrder>({
+    queryKey: ['service-order', serviceOrderId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('service_orders')
+        .select(`
+          *,
+          status (
+            name,
+            color
+          )
+        `)
+        .eq('id', serviceOrderId)
+        .single();
+      
+      if (error) throw error;
+      return data as ServiceOrder;
+    },
+    enabled: !!serviceOrderId
+  });
+
   // Buscar configurações fiscais que incluem o certificado
-  const { data: fiscalConfig } = useQuery({
+  const { data: fiscalConfig } = useQuery<{ config: NFSeConfig }>({
     queryKey: ['fiscal-config'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -85,7 +110,7 @@ export default function NFSeForm() {
         .single();
       
       if (error) throw error;
-      return data?.config as NFSeConfig;
+      return data as { config: NFSeConfig };
     }
   });
 
@@ -96,18 +121,22 @@ export default function NFSeForm() {
         throw new Error('Configurações da NFS-e não encontradas');
       }
 
-      if (!fiscalConfig?.certificado_digital) {
+      if (!fiscalConfig?.config.certificado_digital) {
         throw new Error('Certificado digital não configurado. Por favor, configure o certificado na aba SEFAZ.');
       }
 
-      if (!fiscalConfig.certificado_valido) {
+      if (!fiscalConfig.config.certificado_valido) {
         throw new Error('Certificado digital inválido ou expirado. Por favor, verifique o certificado na aba SEFAZ.');
+      }
+
+      if (!serviceOrder?.client_id) {
+        throw new Error('Cliente não encontrado na ordem de serviço');
       }
 
       // Incrementa o número do RPS
       const { data: incrementResult, error: incrementError } = await supabase
         .rpc('increment_rps_sp_numero', {
-          p_settings_id: nfseSettings?.id
+          p_settings_id: nfseSettings.id
         });
 
       if (incrementError) throw incrementError;
@@ -120,7 +149,7 @@ export default function NFSeForm() {
         .from('nfse')
         .insert([{
           service_order_id: serviceOrderId,
-          client_id: serviceOrder?.client_id,
+          client_id: serviceOrder.client_id,
           codigo_servico: data.codigo_servico,
           discriminacao_servicos: data.discriminacao_servicos,
           servico_discriminacao_item: data.servico_discriminacao_item,
@@ -205,29 +234,6 @@ export default function NFSeForm() {
       serie_rps: "",
     },
   });
-
-  const { data: serviceOrder } = useQuery(
-    ['service-order', serviceOrderId],
-    async () => {
-      const { data, error } = await supabase
-        .from('service_orders')
-        .select(`
-          *,
-          status (
-            name,
-            color
-          )
-        `)
-        .eq('id', serviceOrderId)
-        .single();
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      return data;
-    }
-  );
 
   return (
     <div className="container mx-auto py-10">
