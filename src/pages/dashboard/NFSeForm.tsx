@@ -20,20 +20,29 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
-import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
 const formSchema = z.object({
+  tipo_rnps: z.string().default('RPS'),
+  operacao: z.string().default('A'),
+  tributacao_rps: z.string().default('T'),
+  status_rps: z.string().default('1'),
   valor_servicos: z.string().transform((val) => Number(val)),
-  base_calculo: z.string().transform((val) => Number(val)),
-  aliquota_iss: z.string().transform((val) => Number(val)),
-  valor_iss: z.string().transform((val) => Number(val)),
-  iss_retido: z.boolean(),
-  codigo_servico: z.string(),
+  valor_deducoes: z.string().transform((val) => Number(val)),
+  valor_pis: z.string().transform((val) => Number(val)),
+  valor_cofins: z.string().transform((val) => Number(val)),
+  valor_inss: z.string().transform((val) => Number(val)),
+  valor_ir: z.string().transform((val) => Number(val)),
+  valor_csll: z.string().transform((val) => Number(val)),
+  codigo_atividade: z.string(),
+  aliquota_servicos: z.string().transform((val) => Number(val)),
+  tipo_recolhimento: z.string().default('A'),
+  codigo_municipio_prestacao: z.string().optional(),
+  cidade_prestacao: z.string().optional(),
   discriminacao_servicos: z.string(),
+  iss_retido: z.boolean(),
 });
 
 export default function NFSeForm() {
@@ -84,13 +93,24 @@ export default function NFSeForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      tipo_rnps: 'RPS',
+      operacao: 'A',
+      tributacao_rps: 'T',
+      status_rps: '1',
       valor_servicos: "0",
-      base_calculo: "0",
-      aliquota_iss: "0",
-      valor_iss: "0",
-      iss_retido: false,
-      codigo_servico: "",
+      valor_deducoes: "0",
+      valor_pis: "0",
+      valor_cofins: "0",
+      valor_inss: "0",
+      valor_ir: "0",
+      valor_csll: "0",
+      codigo_atividade: "",
+      aliquota_servicos: "0",
+      tipo_recolhimento: 'A',
+      codigo_municipio_prestacao: "",
+      cidade_prestacao: "",
       discriminacao_servicos: "",
+      iss_retido: false,
     },
   });
 
@@ -98,12 +118,18 @@ export default function NFSeForm() {
     if (serviceOrder) {
       form.reset({
         valor_servicos: String(serviceOrder.total_price || 0),
-        base_calculo: String(serviceOrder.base_calculo || serviceOrder.total_price || 0),
-        aliquota_iss: String(serviceOrder.aliquota_iss || 0),
-        valor_iss: String(serviceOrder.valor_iss || 0),
+        discriminacao_servicos: serviceOrder.discriminacao_servico || '',
         iss_retido: serviceOrder.iss_retido || false,
-        codigo_servico: serviceOrder.codigo_servico || '',
-        discriminacao_servicos: serviceOrder.discriminacao_servico || ''
+        codigo_atividade: serviceOrder.codigo_servico || '',
+        aliquota_servicos: String(serviceOrder.aliquota_iss || 0),
+        valor_deducoes: "0",
+        valor_pis: "0",
+        valor_cofins: "0",
+        valor_inss: "0",
+        valor_ir: "0",
+        valor_csll: "0",
+        codigo_municipio_prestacao: serviceOrder.codigo_municipio_prestacao || '',
+        cidade_prestacao: serviceOrder.cidade_prestacao || '',
       });
     }
   }, [serviceOrder]);
@@ -132,8 +158,8 @@ export default function NFSeForm() {
     <div className="container max-w-4xl mx-auto py-10">
       <Card>
         <CardHeader>
-          <CardTitle>Gerar Nota Fiscal de Serviço Eletrônica (NFS-e)</CardTitle>
-          <CardDescription>Preencha os dados abaixo para gerar a NFS-e.</CardDescription>
+          <CardTitle>Gerar NFS-e (Prefeitura de São Paulo)</CardTitle>
+          <CardDescription>Preencha os dados para gerar a NFS-e.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -146,12 +172,7 @@ export default function NFSeForm() {
                     <FormItem>
                       <FormLabel>Valor dos Serviços</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="text"
-                          inputMode="decimal"
-                          placeholder="0.00" 
-                          {...field}
-                        />
+                        <Input type="text" placeholder="0,00" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -159,17 +180,96 @@ export default function NFSeForm() {
                 />
                 <FormField
                   control={form.control}
-                  name="base_calculo"
+                  name="aliquota_servicos"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Base de Cálculo</FormLabel>
+                      <FormLabel>Alíquota (%)</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="text"
-                          inputMode="decimal"
-                          placeholder="0.00" 
-                          {...field}
-                        />
+                        <Input type="text" placeholder="0,00" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="valor_deducoes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Deduções</FormLabel>
+                      <FormControl>
+                        <Input type="text" placeholder="0,00" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="valor_pis"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>PIS</FormLabel>
+                      <FormControl>
+                        <Input type="text" placeholder="0,00" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="valor_cofins"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>COFINS</FormLabel>
+                      <FormControl>
+                        <Input type="text" placeholder="0,00" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="valor_inss"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>INSS</FormLabel>
+                      <FormControl>
+                        <Input type="text" placeholder="0,00" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="valor_ir"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>IR</FormLabel>
+                      <FormControl>
+                        <Input type="text" placeholder="0,00" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="valor_csll"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CSLL</FormLabel>
+                      <FormControl>
+                        <Input type="text" placeholder="0,00" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -180,17 +280,12 @@ export default function NFSeForm() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="aliquota_iss"
+                  name="codigo_atividade"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Alíquota ISS (%)</FormLabel>
+                      <FormLabel>Código de Serviço</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="text"
-                          inputMode="decimal"
-                          placeholder="0.00" 
-                          {...field}
-                        />
+                        <Input type="text" placeholder="Ex: 02178" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -198,17 +293,12 @@ export default function NFSeForm() {
                 />
                 <FormField
                   control={form.control}
-                  name="valor_iss"
+                  name="codigo_municipio_prestacao"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Valor ISS</FormLabel>
+                      <FormLabel>Código do Município</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="text"
-                          inputMode="decimal"
-                          placeholder="0.00" 
-                          {...field}
-                        />
+                        <Input type="text" placeholder="Ex: 3550308" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -220,36 +310,22 @@ export default function NFSeForm() {
                 control={form.control}
                 name="iss_retido"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                     <FormControl>
                       <Checkbox
                         checked={field.value}
                         onCheckedChange={field.onChange}
                       />
                     </FormControl>
-                    <div className="space-y-0.5 leading-none">
+                    <div className="space-y-1 leading-none">
                       <FormLabel>ISS Retido</FormLabel>
-                      <FormDescription>Marque se o ISS é retido na fonte.</FormDescription>
+                      <FormDescription>
+                        Marque esta opção se o ISS será retido pelo tomador
+                      </FormDescription>
                     </div>
                   </FormItem>
                 )}
               />
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="codigo_servico"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Código de Serviço</FormLabel>
-                      <FormControl>
-                        <Input type="text" placeholder="Ex: 14.05" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
 
               <FormField
                 control={form.control}

@@ -762,6 +762,7 @@ export type Database = {
           aliquota_iss: number | null
           aliquota_pis: number | null
           aliquota_servico: number | null
+          aliquota_servicos: number | null
           ambiente: string | null
           bairro_prestador: string | null
           bairro_tomador: string | null
@@ -770,11 +771,13 @@ export type Database = {
           cei: string | null
           cep_prestador: string | null
           cep_tomador: string | null
+          cidade_prestacao: string | null
           cidade_prestador: string | null
           cidade_tomador: string | null
           client_id: string
           cnae: string | null
           codigo_atividade: string | null
+          codigo_municipio_prestacao: string | null
           codigo_pais_prestador: string | null
           codigo_pais_tomador: string | null
           codigo_proprio: string | null
@@ -790,6 +793,7 @@ export type Database = {
           data_cancelamento: string | null
           data_competencia: string
           data_emissao: string
+          data_emissao_nfse: string | null
           data_emissao_rps: string | null
           data_exclusao: string | null
           data_hora_nfe: string | null
@@ -838,6 +842,7 @@ export type Database = {
           numero_rps: string
           observacoes: string | null
           opcao_simples: string | null
+          operacao: string | null
           operacao_tributacao: string | null
           optante_mei: boolean | null
           outras_retencoes: number | null
@@ -862,6 +867,7 @@ export type Database = {
           rps_numero: string | null
           rps_serie: string | null
           rps_tipo: string | null
+          senha_emissor: string | null
           serie_rps: string
           service_order_id: string | null
           servico_codigo_item_lista: string | null
@@ -887,8 +893,10 @@ export type Database = {
           tipo_documento_tomador: string | null
           tipo_endereco_prestador: string | null
           tipo_endereco_tomador: string | null
+          tipo_recolhimento: string | null
           tipo_regime_especial: string | null
           tipo_registro: string | null
+          tipo_rnps: string | null
           tipo_rps: string
           tipo_servico: string | null
           tributacao_rps: string | null
@@ -896,16 +904,24 @@ export type Database = {
           uf_tomador: string | null
           unidade_codigo: string | null
           updated_at: string | null
+          usuario_emissor: string | null
           valor_base_calculo: number | null
           valor_cofins: number | null
+          valor_cofins_rps: number | null
           valor_comissao: number | null
           valor_credito: number | null
           valor_csll: number | null
+          valor_csll_rps: number | null
+          valor_deducoes_rps: number | null
           valor_inss: number | null
+          valor_inss_rps: number | null
           valor_ir: number | null
+          valor_ir_rps: number | null
           valor_iss: number | null
           valor_pis: number | null
+          valor_pis_rps: number | null
           valor_servicos: number
+          valor_servicos_rps: number | null
           valor_total: number | null
           valor_total_recebido: number | null
           valor_tributos_ibpt: number | null
@@ -921,6 +937,7 @@ export type Database = {
           aliquota_iss?: number | null
           aliquota_pis?: number | null
           aliquota_servico?: number | null
+          aliquota_servicos?: number | null
           ambiente?: string | null
           bairro_prestador?: string | null
           bairro_tomador?: string | null
@@ -929,11 +946,13 @@ export type Database = {
           cei?: string | null
           cep_prestador?: string | null
           cep_tomador?: string | null
+          cidade_prestacao?: string | null
           cidade_prestador?: string | null
           cidade_tomador?: string | null
           client_id: string
           cnae?: string | null
           codigo_atividade?: string | null
+          codigo_municipio_prestacao?: string | null
           codigo_pais_prestador?: string | null
           codigo_pais_tomador?: string | null
           codigo_proprio?: string | null
@@ -949,6 +968,7 @@ export type Database = {
           data_cancelamento?: string | null
           data_competencia: string
           data_emissao?: string
+          data_emissao_nfse?: string | null
           data_emissao_rps?: string | null
           data_exclusao?: string | null
           data_hora_nfe?: string | null
@@ -997,6 +1017,7 @@ export type Database = {
           numero_rps: string
           observacoes?: string | null
           opcao_simples?: string | null
+          operacao?: string | null
           operacao_tributacao?: string | null
           optante_mei?: boolean | null
           outras_retencoes?: number | null
@@ -1021,6 +1042,7 @@ export type Database = {
           rps_numero?: string | null
           rps_serie?: string | null
           rps_tipo?: string | null
+          senha_emissor?: string | null
           serie_rps: string
           service_order_id?: string | null
           servico_codigo_item_lista?: string | null
@@ -1046,8 +1068,10 @@ export type Database = {
           tipo_documento_tomador?: string | null
           tipo_endereco_prestador?: string | null
           tipo_endereco_tomador?: string | null
+          tipo_recolhimento?: string | null
           tipo_regime_especial?: string | null
           tipo_registro?: string | null
+          tipo_rnps?: string | null
           tipo_rps?: string
           tipo_servico?: string | null
           tributacao_rps?: string | null
@@ -1055,16 +1079,24 @@ export type Database = {
           uf_tomador?: string | null
           unidade_codigo?: string | null
           updated_at?: string | null
+          usuario_emissor?: string | null
           valor_base_calculo?: number | null
           valor_cofins?: number | null
+          valor_cofins_rps?: number | null
           valor_comissao?: number | null
           valor_credito?: number | null
           valor_csll?: number | null
+          valor_csll_rps?: number | null
+          valor_deducoes_rps?: number | null
           valor_inss?: number | null
+          valor_inss_rps?: number | null
           valor_ir?: number | null
+          valor_ir_rps?: number | null
           valor_iss?: number | null
           valor_pis?: number | null
+          valor_pis_rps?: number | null
           valor_servicos: number
+          valor_servicos_rps?: number | null
           valor_total?: number | null
           valor_total_recebido?: number | null
           valor_tributos_ibpt?: number | null
@@ -1080,6 +1112,7 @@ export type Database = {
           aliquota_iss?: number | null
           aliquota_pis?: number | null
           aliquota_servico?: number | null
+          aliquota_servicos?: number | null
           ambiente?: string | null
           bairro_prestador?: string | null
           bairro_tomador?: string | null
@@ -1088,11 +1121,13 @@ export type Database = {
           cei?: string | null
           cep_prestador?: string | null
           cep_tomador?: string | null
+          cidade_prestacao?: string | null
           cidade_prestador?: string | null
           cidade_tomador?: string | null
           client_id?: string
           cnae?: string | null
           codigo_atividade?: string | null
+          codigo_municipio_prestacao?: string | null
           codigo_pais_prestador?: string | null
           codigo_pais_tomador?: string | null
           codigo_proprio?: string | null
@@ -1108,6 +1143,7 @@ export type Database = {
           data_cancelamento?: string | null
           data_competencia?: string
           data_emissao?: string
+          data_emissao_nfse?: string | null
           data_emissao_rps?: string | null
           data_exclusao?: string | null
           data_hora_nfe?: string | null
@@ -1156,6 +1192,7 @@ export type Database = {
           numero_rps?: string
           observacoes?: string | null
           opcao_simples?: string | null
+          operacao?: string | null
           operacao_tributacao?: string | null
           optante_mei?: boolean | null
           outras_retencoes?: number | null
@@ -1180,6 +1217,7 @@ export type Database = {
           rps_numero?: string | null
           rps_serie?: string | null
           rps_tipo?: string | null
+          senha_emissor?: string | null
           serie_rps?: string
           service_order_id?: string | null
           servico_codigo_item_lista?: string | null
@@ -1205,8 +1243,10 @@ export type Database = {
           tipo_documento_tomador?: string | null
           tipo_endereco_prestador?: string | null
           tipo_endereco_tomador?: string | null
+          tipo_recolhimento?: string | null
           tipo_regime_especial?: string | null
           tipo_registro?: string | null
+          tipo_rnps?: string | null
           tipo_rps?: string
           tipo_servico?: string | null
           tributacao_rps?: string | null
@@ -1214,16 +1254,24 @@ export type Database = {
           uf_tomador?: string | null
           unidade_codigo?: string | null
           updated_at?: string | null
+          usuario_emissor?: string | null
           valor_base_calculo?: number | null
           valor_cofins?: number | null
+          valor_cofins_rps?: number | null
           valor_comissao?: number | null
           valor_credito?: number | null
           valor_csll?: number | null
+          valor_csll_rps?: number | null
+          valor_deducoes_rps?: number | null
           valor_inss?: number | null
+          valor_inss_rps?: number | null
           valor_ir?: number | null
+          valor_ir_rps?: number | null
           valor_iss?: number | null
           valor_pis?: number | null
+          valor_pis_rps?: number | null
           valor_servicos?: number
+          valor_servicos_rps?: number | null
           valor_total?: number | null
           valor_total_recebido?: number | null
           valor_tributos_ibpt?: number | null
