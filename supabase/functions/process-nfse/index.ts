@@ -103,14 +103,21 @@ serve(async (req) => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
 
+      // Usando interface https nativa do Deno
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/soap+xml;charset=UTF-8',
           'SOAPAction': 'http://www.prefeitura.sp.gov.br/nfe/ws/consultaNFe',
+          'Host': new URL(endpoint).host,
+          'Connection': 'keep-alive'
         },
         body: soapEnvelope,
         signal: controller.signal,
+        // Desabilitando verificação de certificado para teste
+        //@ts-ignore
+        backend: 'native',
+        rejectUnauthorized: false
       });
 
       clearTimeout(timeoutId);
