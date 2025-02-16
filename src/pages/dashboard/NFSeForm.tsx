@@ -367,10 +367,13 @@ export default function NFSeForm() {
                   <FormLabel>Valor dos Serviços</FormLabel>
                   <FormControl>
                     <Input
-                      type="number"
-                      step="0.01"
                       {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
+                      placeholder="0,00"
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9,]/g, '');
+                        field.onChange(Number(value.replace(',', '.')));
+                      }}
+                      value={field.value.toString().replace('.', ',')}
                     />
                   </FormControl>
                 </FormItem>
@@ -385,10 +388,13 @@ export default function NFSeForm() {
                   <FormLabel>Base de Cálculo</FormLabel>
                   <FormControl>
                     <Input
-                      type="number"
-                      step="0.01"
                       {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
+                      placeholder="0,00"
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9,]/g, '');
+                        field.onChange(Number(value.replace(',', '.')));
+                      }}
+                      value={field.value.toString().replace('.', ',')}
                     />
                   </FormControl>
                 </FormItem>
@@ -403,10 +409,13 @@ export default function NFSeForm() {
                   <FormLabel>Alíquota ISS (%)</FormLabel>
                   <FormControl>
                     <Input
-                      type="number"
-                      step="0.01"
                       {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
+                      placeholder="0,00"
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9,]/g, '');
+                        field.onChange(Number(value.replace(',', '.')));
+                      }}
+                      value={field.value.toString().replace('.', ',')}
                     />
                   </FormControl>
                 </FormItem>
@@ -421,10 +430,13 @@ export default function NFSeForm() {
                   <FormLabel>Valor ISS</FormLabel>
                   <FormControl>
                     <Input
-                      type="number"
-                      step="0.01"
                       {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
+                      placeholder="0,00"
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9,]/g, '');
+                        field.onChange(Number(value.replace(',', '.')));
+                      }}
+                      value={field.value.toString().replace('.', ',')}
                     />
                   </FormControl>
                 </FormItem>
