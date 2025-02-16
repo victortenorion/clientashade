@@ -6,19 +6,15 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { NFSeConfig } from "@/pages/dashboard/types/config.types";
 import { Button } from "@/components/ui/button";
-import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
+import { FormField, FormItem, FormLabel, FormControl, Form, FormMessage } from "@/components/ui/form";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import {
-  Form,
-  FormMessage,
-  Input,
-  Switch,
-  Separator,
-  Textarea,
-} from "@/components/ui";
-import { Checkbox } from "@/components/ui/checkbox";
 
 interface ServiceOrder {
   id: string;
