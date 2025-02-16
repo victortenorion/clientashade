@@ -2100,6 +2100,12 @@ export type Database = {
         }
         Returns: string
       }
+      get_nfse_with_latest_certificate: {
+        Args: {
+          p_nfse_id: string
+        }
+        Returns: Json
+      }
       increment_rps_numero:
         | {
             Args: Record<PropertyKey, never>
