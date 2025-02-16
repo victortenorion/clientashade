@@ -18,7 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, FilePdf, FileText, Send } from "lucide-react";
+import { Plus, FileText, Send, File } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface NFSe {
@@ -191,7 +191,7 @@ const NFSe = () => {
                       size="sm"
                       onClick={() => console.log("Visualizar PDF")}
                     >
-                      <FilePdf className="h-4 w-4 mr-2" />
+                      <File className="h-4 w-4 mr-2" />
                       PDF
                     </Button>
                   </TableCell>
