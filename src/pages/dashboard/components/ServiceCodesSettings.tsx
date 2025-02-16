@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Search, Plus, Pencil, Save, X, Trash2, Download, Upload } from "lucide-react";
+import { Loader2, Search, Plus, Pencil, Save, X, Trash2, Download, Upload, ArrowUpDown } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
@@ -45,6 +45,9 @@ interface ImportPreviewData extends ServiceCodeFormData {
   error?: string;
 }
 
+type SortOrder = 'asc' | 'desc';
+type SortField = 'code' | 'description' | 'aliquota_iss';
+
 export function ServiceCodesSettings() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
@@ -61,6 +64,8 @@ export function ServiceCodesSettings() {
     description: "",
     aliquota_iss: 0,
   });
+  const [sortField, setSortField] = useState<SortField>('code');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
 
   useEffect(() => {
     loadServiceCodes();
@@ -349,6 +354,36 @@ export function ServiceCodesSettings() {
       code.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const getSortedAndFilteredCodes = () => {
+    let filtered = serviceCodes.filter(
+      (code) =>
+        code.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        code.description.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    return filtered.sort((a, b) => {
+      const multiplier = sortOrder === 'asc' ? 1 : -1;
+      if (sortField === 'code') {
+        return a.code.localeCompare(b.code) * multiplier;
+      }
+      if (sortField === 'description') {
+        return a.description.localeCompare(b.description) * multiplier;
+      }
+      if (sortField === 'aliquota_iss') {
+        return (a.aliquota_iss - b.aliquota_iss) * multiplier;
+      }
+      return 0;
+    });
+  };
+
+  const renderSortIcon = (field: SortField) => {
+    return (
+      <ArrowUpDown 
+        className={`h-4 w-4 inline ml-1 ${sortField === field ? 'opacity-100' : 'opacity-50'}`}
+      />
+    );
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -396,9 +431,24 @@ export function ServiceCodesSettings() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[100px]">Código</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead className="w-[120px] text-right">Alíquota ISS</TableHead>
+                  <TableHead 
+                    className="w-[100px] cursor-pointer"
+                    onClick={() => handleSort('code')}
+                  >
+                    Código {renderSortIcon('code')}
+                  </TableHead>
+                  <TableHead 
+                    className="cursor-pointer"
+                    onClick={() => handleSort('description')}
+                  >
+                    Descrição {renderSortIcon('description')}
+                  </TableHead>
+                  <TableHead 
+                    className="w-[120px] text-right cursor-pointer"
+                    onClick={() => handleSort('aliquota_iss')}
+                  >
+                    Alíquota ISS {renderSortIcon('aliquota_iss')}
+                  </TableHead>
                   <TableHead className="w-[120px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -411,14 +461,14 @@ export function ServiceCodesSettings() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ) : filteredCodes.length === 0 ? (
+                ) : getSortedAndFilteredCodes().length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
                       Nenhum código de serviço encontrado
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredCodes.map((code) => (
+                  getSortedAndFilteredCodes().map((code) => (
                     <TableRow key={code.id}>
                       <TableCell className="font-medium">{code.code}</TableCell>
                       <TableCell>{code.description}</TableCell>
