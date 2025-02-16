@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { format } from "date-fns";
 
@@ -38,6 +38,7 @@ interface ServiceOrder {
 export default function ServiceOrders() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: serviceOrders, isLoading } = useQuery({
     queryKey: ['serviceOrders'],
@@ -88,7 +89,10 @@ export default function ServiceOrders() {
 
   const handleEdit = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    navigate(`/dashboard/service-orders/${id}/edit`);
+    toast({
+      title: "Em breve",
+      description: "A funcionalidade de edição estará disponível em breve."
+    });
   };
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
@@ -105,6 +109,9 @@ export default function ServiceOrders() {
         toast({
           title: "Ordem de serviço excluída com sucesso"
         });
+
+        // Atualiza a lista após deletar
+        queryClient.invalidateQueries({ queryKey: ['serviceOrders'] });
       } catch (error: any) {
         toast({
           variant: "destructive",
@@ -115,14 +122,89 @@ export default function ServiceOrders() {
     }
   };
 
-  const handlePrint = (e: React.MouseEvent, id: string) => {
+  const handlePrint = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    // Implementar impressão da OS
+    try {
+      // Busca os dados da ordem de serviço
+      const { data: order, error } = await supabase
+        .from('service_orders')
+        .select(`
+          *,
+          client:client_id (
+            name,
+            address,
+            phone
+          ),
+          status:status_id (
+            name
+          )
+        `)
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+
+      // Abre uma nova janela para impressão
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Por favor, permita popups para imprimir a ordem de serviço."
+        });
+        return;
+      }
+
+      // Template HTML para impressão
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Ordem de Serviço #${order.order_number}</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; }
+              .header { text-align: center; margin-bottom: 20px; }
+              .info { margin-bottom: 20px; }
+              .info div { margin: 5px 0; }
+              @media print {
+                button { display: none; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>Ordem de Serviço #${order.order_number}</h1>
+            </div>
+            <div class="info">
+              <div><strong>Cliente:</strong> ${order.client?.name || 'N/A'}</div>
+              <div><strong>Data:</strong> ${format(new Date(order.created_at), 'dd/MM/yyyy HH:mm')}</div>
+              <div><strong>Status:</strong> ${order.status?.name || 'N/A'}</div>
+              <div><strong>Descrição:</strong> ${order.description || 'N/A'}</div>
+              <div><strong>Valor Total:</strong> ${new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+              }).format(order.total_price)}</div>
+            </div>
+            <button onclick="window.print()">Imprimir</button>
+          </body>
+        </html>
+      `);
+      
+      printWindow.document.close();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao gerar impressão",
+        description: error.message
+      });
+    }
   };
 
   const handleDownloadNFSe = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    // Implementar download da NFS-e quando disponível
+    toast({
+      title: "Em breve",
+      description: "O download da NFS-e estará disponível após a integração com a Prefeitura de SP."
+    });
   };
 
   return (
