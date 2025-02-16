@@ -254,6 +254,7 @@ export type Database = {
           codigo_regime_especial: string | null
           codigo_regime_tributario: string | null
           codigo_servico: string | null
+          codigo_servico_lc116: string | null
           created_at: string
           data_inicio_atividade: string | null
           email: string | null
@@ -294,6 +295,7 @@ export type Database = {
           codigo_regime_especial?: string | null
           codigo_regime_tributario?: string | null
           codigo_servico?: string | null
+          codigo_servico_lc116?: string | null
           created_at?: string
           data_inicio_atividade?: string | null
           email?: string | null
@@ -334,6 +336,7 @@ export type Database = {
           codigo_regime_especial?: string | null
           codigo_regime_tributario?: string | null
           codigo_servico?: string | null
+          codigo_servico_lc116?: string | null
           created_at?: string
           data_inicio_atividade?: string | null
           email?: string | null

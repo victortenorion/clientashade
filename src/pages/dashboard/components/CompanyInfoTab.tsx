@@ -20,6 +20,7 @@ interface CompanyInfo {
   cnae: string | null;
   regime_tributario: string | null;
   codigo_servico: string | null;
+  codigo_servico_lc116: string | null;
   endereco_cep: string | null;
   endereco_logradouro: string | null;
   endereco_numero: string | null;
@@ -71,6 +72,7 @@ export const CompanyInfoTab = () => {
     cnae: "",
     regime_tributario: "",
     codigo_servico: "",
+    codigo_servico_lc116: "",
     endereco_cep: "",
     endereco_logradouro: "",
     endereco_numero: "",
@@ -455,7 +457,17 @@ export const CompanyInfoTab = () => {
                 onChange={(e) =>
                   setCompanyInfo({ ...companyInfo, codigo_servico: e.target.value })
                 }
-                placeholder="Digite o código de serviço"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Código do Serviço conforme LC 116</Label>
+              <Input
+                value={companyInfo.codigo_servico_lc116 || ""}
+                onChange={(e) =>
+                  setCompanyInfo({ ...companyInfo, codigo_servico_lc116: e.target.value })
+                }
+                placeholder="Digite o código do serviço conforme LC 116"
               />
             </div>
           </div>
