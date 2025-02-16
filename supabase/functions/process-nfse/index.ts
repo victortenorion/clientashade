@@ -25,34 +25,46 @@ serve(async (req) => {
 
     const { nfseId } = await req.json() as NFSeData;
 
-    // Buscar dados da NFS-e incluindo as configurações
-    const { data: nfse, error: nfseError } = await supabaseClient
+    // Primeiro, verificar se a NFS-e existe
+    const { data: nfseBasic, error: nfseBasicError } = await supabaseClient
       .from('nfse')
-      .select(`
-        *,
-        settings:nfse_sp_settings!nfse_sp_settings_id (
-          *,
-          certificate:certificates!certificates_id (
-            certificate_data,
-            certificate_password
-          )
-        )
-      `)
+      .select('*')
       .eq('id', nfseId)
-      .single();
+      .maybeSingle();
 
-    if (nfseError) {
-      console.error('Erro ao buscar NFS-e:', nfseError);
+    if (nfseBasicError) {
+      console.error('Erro ao buscar NFS-e básica:', nfseBasicError);
+      throw new Error('Erro ao buscar NFS-e');
+    }
+
+    if (!nfseBasic) {
       throw new Error('NFS-e não encontrada');
     }
 
-    if (!nfse.settings) {
+    // Buscar configurações da NFS-e
+    const { data: settings, error: settingsError } = await supabaseClient
+      .from('nfse_sp_settings')
+      .select(`
+        *,
+        certificates!certificates_id (
+          certificate_data,
+          certificate_password
+        )
+      `)
+      .maybeSingle();
+
+    if (settingsError) {
+      console.error('Erro ao buscar configurações:', settingsError);
+      throw new Error('Erro ao buscar configurações da NFS-e');
+    }
+
+    if (!settings) {
       throw new Error('Configurações da NFS-e não encontradas');
     }
 
     // Verificar status atual
     const response = await fetch(
-      nfse.settings.ambiente === 'producao'
+      settings.ambiente === 'producao'
         ? 'https://nfe.prefeitura.sp.gov.br/ws/lotenfe.asmx'
         : 'https://nfeh.prefeitura.sp.gov.br/ws/lotenfe.asmx',
       {
@@ -71,13 +83,13 @@ serve(async (req) => {
           <ConsultaNFe xmlns="http://www.prefeitura.sp.gov.br/nfe">
             <Cabecalho Versao="1">
               <CPFCNPJRemetente>
-                <CNPJ>${nfse.settings.cnpj}</CNPJ>
+                <CNPJ>${settings.cnpj}</CNPJ>
               </CPFCNPJRemetente>
             </Cabecalho>
             <Detalhe>
               <ChaveNFe>
-                <InscricaoPrestador>${nfse.settings.inscricao_municipal}</InscricaoPrestador>
-                <NumeroNFe>${nfse.numero_nfse}</NumeroNFe>
+                <InscricaoPrestador>${settings.inscricao_municipal}</InscricaoPrestador>
+                <NumeroNFe>${nfseBasic.numero_nfse}</NumeroNFe>
               </ChaveNFe>
             </Detalhe>
           </ConsultaNFe>
