@@ -31,14 +31,13 @@ function App() {
         <Route path="/login" element={<LoginForm />} />
         <Route path="/client-login" element={<ClientLogin />} />
         <Route 
-          path="/client-area/:os_id" 
+          path="/client-area/:clientId" 
           element={
             <ClientProtectedRoute>
               <CustomerArea />
             </ClientProtectedRoute>
           } 
         />
-        <Route path="/customer-area" element={<CustomerArea />} />
         <Route path="/dashboard" element={<Dashboard />}>
           <Route index element={<Home />} />
           <Route path="users" element={<Users />} />
@@ -49,7 +48,7 @@ function App() {
           <Route path="service-orders/new" element={<ServiceOrderForm />} />
           <Route path="service-orders/:id" element={<ServiceOrderEdit />} />
           <Route path="service-order-settings/*" element={<ServiceOrderSettings />} />
-          <Route path="customer-area" element={<CustomerArea />} />
+          <Route path="client-area" element={<CustomerArea />} />
           <Route path="nfce" element={<NFCe />} />
           <Route path="nfce/new" element={<NFCeForm />} />
           <Route path="nfse" element={<NFSe />} />
