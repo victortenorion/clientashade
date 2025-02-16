@@ -64,6 +64,27 @@ export default function NFSeForm() {
   const navigate = useNavigate();
   const { serviceOrderId, id: nfseId } = useParams();
 
+  const { data: serviceOrder } = useQuery({
+    queryKey: ['service-order', serviceOrderId],
+    queryFn: async () => {
+      if (!serviceOrderId) return null;
+
+      const { data, error } = await supabase
+        .from('service_orders')
+        .select('*')
+        .eq('id', serviceOrderId)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Erro ao buscar ordem de serviço:', error);
+        throw error;
+      }
+
+      return data;
+    },
+    enabled: !!serviceOrderId
+  });
+
   const { data: nfseData } = useQuery({
     queryKey: ['nfse', nfseId],
     queryFn: async () => {
