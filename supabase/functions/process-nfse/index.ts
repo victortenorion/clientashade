@@ -24,12 +24,14 @@ serve(async (req) => {
 
     const { nfseId } = await req.json() as NFSeData;
 
+    console.log('Buscando NFS-e com ID:', nfseId);
+
     // Buscar NFS-e com suas configurações em uma única query
     const { data: nfse, error: nfseError } = await supabaseClient
       .from('nfse')
       .select(`
         *,
-        nfse_sp_settings!inner (
+        nfse_sp_settings (
           *,
           certificates (
             certificate_data,
@@ -46,14 +48,21 @@ serve(async (req) => {
 
     if (nfseError) {
       console.error('Erro ao buscar NFS-e:', nfseError);
-      throw new Error('Erro ao buscar NFS-e');
+      throw new Error(`Erro ao buscar NFS-e: ${nfseError.message}`);
     }
 
     if (!nfse) {
       throw new Error('NFS-e não encontrada');
     }
 
-    const settings = nfse.nfse_sp_settings;
+    console.log('NFS-e encontrada:', {
+      id: nfse.id,
+      numero: nfse.numero_nfse,
+      settings: nfse.nfse_sp_settings ? 'presente' : 'ausente',
+      company_info: nfse.company_info ? 'presente' : 'ausente'
+    });
+
+    const settings = nfse.nfse_sp_settings?.[0];
     if (!settings) {
       throw new Error('Configurações da NFS-e não encontradas');
     }
@@ -61,6 +70,10 @@ serve(async (req) => {
     const companyInfo = nfse.company_info?.[0];
     if (!companyInfo) {
       throw new Error('Informações da empresa não encontradas');
+    }
+
+    if (!companyInfo.cnpj || !companyInfo.inscricao_municipal) {
+      throw new Error('CNPJ ou Inscrição Municipal não configurados');
     }
 
     const endpoint = settings.ambiente === 'producao'
