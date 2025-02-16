@@ -32,11 +32,18 @@ serve(async (req) => {
 
     console.log('Buscando NFS-e com ID:', nfseId);
 
-    // Primeiro buscar os dados da NFS-e com configurações e certificado
-    const { data: nfse, error: nfseError } = await supabaseClient.rpc(
-      'get_nfse_with_latest_certificate',
-      { p_nfse_id: nfseId }
-    );
+    // Primeiro buscar os dados da NFS-e com todas as configurações necessárias
+    const { data: nfse, error: nfseError } = await supabaseClient
+      .from('nfse')
+      .select(`
+        *,
+        nfse_sp_settings:nfse_sp_settings_id (*),
+        fiscal_config:fiscal_config (
+          config
+        )
+      `)
+      .eq('id', nfseId)
+      .single();
 
     if (nfseError) {
       console.error('Erro ao buscar NFS-e:', nfseError);
@@ -49,22 +56,23 @@ serve(async (req) => {
 
     console.log('NFS-e encontrada:', {
       id: nfse.id,
-      numero: nfse.numero_nfse,
-      settings: nfse.settings ? 'presente' : 'ausente',
-      company_info: nfse.company_info ? 'presente' : 'ausente'
+      settings: nfse.nfse_sp_settings ? 'presente' : 'ausente',
+      fiscal_config: nfse.fiscal_config ? 'presente' : 'ausente'
     });
+
+    const settings = nfse.nfse_sp_settings;
+    const fiscalConfig = nfse.fiscal_config?.config;
 
     // Verificar dados obrigatórios
     const requiredFields = [
-      { field: 'settings', value: nfse.settings, message: 'Configurações da NFS-e' },
-      { field: 'company_info', value: nfse.company_info, message: 'Informações da empresa' },
-      { field: 'settings.certificate', value: nfse.settings?.certificate, message: 'Certificado digital' },
-      { field: 'settings.certificate.certificate_data', value: nfse.settings?.certificate?.certificate_data, message: 'Dados do certificado' },
-      { field: 'settings.certificate.certificate_password', value: nfse.settings?.certificate?.certificate_password, message: 'Senha do certificado' },
-      { field: 'settings.usuario_emissor', value: nfse.settings?.usuario_emissor, message: 'Usuário do emissor' },
-      { field: 'settings.senha_emissor', value: nfse.settings?.senha_emissor, message: 'Senha do emissor' },
-      { field: 'company_info.cnpj', value: nfse.company_info?.cnpj, message: 'CNPJ' },
-      { field: 'company_info.inscricao_municipal', value: nfse.company_info?.inscricao_municipal, message: 'Inscrição Municipal' }
+      { field: 'settings', value: settings, message: 'Configurações da NFS-e' },
+      { field: 'fiscal_config', value: fiscalConfig, message: 'Configurações fiscais' },
+      { field: 'fiscal_config.certificado_digital', value: fiscalConfig?.certificado_digital, message: 'Certificado digital' },
+      { field: 'fiscal_config.senha_certificado', value: fiscalConfig?.senha_certificado, message: 'Senha do certificado' },
+      { field: 'settings.usuario_emissor', value: settings?.usuario_emissor, message: 'Usuário do emissor' },
+      { field: 'settings.senha_emissor', value: settings?.senha_emissor, message: 'Senha do emissor' },
+      { field: 'settings.codigo_municipio', value: settings?.codigo_municipio, message: 'Código do município' },
+      { field: 'settings.inscricao_municipal', value: settings?.inscricao_municipal, message: 'Inscrição Municipal' }
     ];
 
     for (const field of requiredFields) {
@@ -74,21 +82,19 @@ serve(async (req) => {
       }
     }
 
-    const endpoint = nfse.settings.ambiente === 'producao'
+    const endpoint = settings.ambiente === 'producao'
       ? 'https://nfe.prefeitura.sp.gov.br/ws/lotenfe.asmx'
       : 'https://nfeh.prefeitura.sp.gov.br/ws/lotenfe.asmx';
 
     console.log('Tentando acessar endpoint:', endpoint);
-    console.log('Ambiente:', nfse.settings.ambiente);
+    console.log('Ambiente:', settings.ambiente);
 
-    const cnpjLimpo = nfse.company_info.cnpj.replace(/\D/g, '');
-    const inscricaoMunicipalLimpa = nfse.company_info.inscricao_municipal.replace(/\D/g, '');
+    const inscricaoMunicipalLimpa = settings.inscricao_municipal.replace(/\D/g, '');
 
-    console.log('CNPJ formatado:', cnpjLimpo);
     console.log('Inscrição Municipal formatada:', inscricaoMunicipalLimpa);
 
     // Criar credenciais em Base64
-    const credentials = encode(`${nfse.settings.usuario_emissor}:${nfse.settings.senha_emissor}`);
+    const credentials = encode(`${settings.usuario_emissor}:${settings.senha_emissor}`);
 
     const soapEnvelope = `<?xml version="1.0" encoding="UTF-8"?>
 <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
@@ -100,7 +106,7 @@ serve(async (req) => {
         <ConsultaNFe xmlns="http://www.prefeitura.sp.gov.br/nfe" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
           <Cabecalho Versao="1">
             <CPFCNPJRemetente>
-              <CNPJ>${cnpjLimpo}</CNPJ>
+              <CNPJ>${settings.codigo_municipio}</CNPJ>
             </CPFCNPJRemetente>
           </Cabecalho>
           <Detalhe>
@@ -138,14 +144,14 @@ serve(async (req) => {
       };
 
       // Adicionando certificado se disponível
-      if (nfse.settings.certificate?.certificate_data) {
+      if (fiscalConfig.certificado_digital) {
         console.log('Usando certificado digital');
         httpsOptions = {
           ...httpsOptions,
           //@ts-ignore
-          cert: nfse.settings.certificate.certificate_data,
-          key: nfse.settings.certificate.certificate_data,
-          passphrase: nfse.settings.certificate.certificate_password,
+          cert: fiscalConfig.certificado_digital,
+          key: fiscalConfig.certificado_digital,
+          passphrase: fiscalConfig.senha_certificado,
           rejectUnauthorized: false,
         };
       }
