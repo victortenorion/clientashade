@@ -25,42 +25,36 @@ serve(async (req) => {
 
     const { nfseId } = await req.json() as NFSeData;
 
-    // Primeiro, verificar se a NFS-e existe
-    const { data: nfseBasic, error: nfseBasicError } = await supabaseClient
+    // Primeiro, buscar NFS-e com suas configurações
+    const { data: nfse, error: nfseError } = await supabaseClient
       .from('nfse')
-      .select('*')
+      .select(`
+        *,
+        nfse_sp_settings!nfse_sp_settings_id (
+          *,
+          certificates!certificates_id (
+            certificate_data,
+            certificate_password
+          )
+        )
+      `)
       .eq('id', nfseId)
       .maybeSingle();
 
-    if (nfseBasicError) {
-      console.error('Erro ao buscar NFS-e básica:', nfseBasicError);
+    if (nfseError) {
+      console.error('Erro ao buscar NFS-e:', nfseError);
       throw new Error('Erro ao buscar NFS-e');
     }
 
-    if (!nfseBasic) {
+    if (!nfse) {
       throw new Error('NFS-e não encontrada');
     }
 
-    // Buscar configurações da NFS-e
-    const { data: settings, error: settingsError } = await supabaseClient
-      .from('nfse_sp_settings')
-      .select(`
-        *,
-        certificates!certificates_id (
-          certificate_data,
-          certificate_password
-        )
-      `)
-      .maybeSingle();
-
-    if (settingsError) {
-      console.error('Erro ao buscar configurações:', settingsError);
-      throw new Error('Erro ao buscar configurações da NFS-e');
-    }
-
-    if (!settings) {
+    if (!nfse.nfse_sp_settings) {
       throw new Error('Configurações da NFS-e não encontradas');
     }
+
+    const settings = nfse.nfse_sp_settings;
 
     // Verificar status atual
     const response = await fetch(
@@ -89,7 +83,7 @@ serve(async (req) => {
             <Detalhe>
               <ChaveNFe>
                 <InscricaoPrestador>${settings.inscricao_municipal}</InscricaoPrestador>
-                <NumeroNFe>${nfseBasic.numero_nfse}</NumeroNFe>
+                <NumeroNFe>${nfse.numero_nfse}</NumeroNFe>
               </ChaveNFe>
             </Detalhe>
           </ConsultaNFe>

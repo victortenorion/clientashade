@@ -1310,6 +1310,7 @@ export type Database = {
       nfse_sp_settings: {
         Row: {
           certificado_id: string | null
+          certificates_id: string | null
           codigo_regime_tributario: string | null
           config_status: string | null
           cpf_responsavel: string | null
@@ -1359,6 +1360,7 @@ export type Database = {
         }
         Insert: {
           certificado_id?: string | null
+          certificates_id?: string | null
           codigo_regime_tributario?: string | null
           config_status?: string | null
           cpf_responsavel?: string | null
@@ -1408,6 +1410,7 @@ export type Database = {
         }
         Update: {
           certificado_id?: string | null
+          certificates_id?: string | null
           codigo_regime_tributario?: string | null
           config_status?: string | null
           cpf_responsavel?: string | null
@@ -1459,6 +1462,13 @@ export type Database = {
           {
             foreignKeyName: "nfse_sp_settings_certificado_id_fkey"
             columns: ["certificado_id"]
+            isOneToOne: false
+            referencedRelation: "certificates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nfse_sp_settings_certificates_id_fkey"
+            columns: ["certificates_id"]
             isOneToOne: false
             referencedRelation: "certificates"
             referencedColumns: ["id"]
