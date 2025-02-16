@@ -17,6 +17,7 @@ import ServiceOrders from "./pages/dashboard/ServiceOrders";
 import ServiceOrderSettings from "./pages/dashboard/ServiceOrderSettings";
 import CustomerArea from "./pages/dashboard/CustomerArea";
 import NFCe from "./pages/dashboard/NFCe";
+import NFSe from "./pages/dashboard/NFSe";
 import NotFound from "./pages/NotFound";
 import ClientLogin from "./pages/ClientLogin";
 import { LoginForm } from "./components/LoginForm";
@@ -49,6 +50,7 @@ function App() {
                   <Route path="service-order-settings/*" element={<ServiceOrderSettings />} />
                   <Route path="customer-area" element={<CustomerArea />} />
                   <Route path="nfce" element={<NFCe />} />
+                  <Route path="nfse" element={<NFSe />} />
                 </Route>
                 <Route 
                   path="/customer-area" 
