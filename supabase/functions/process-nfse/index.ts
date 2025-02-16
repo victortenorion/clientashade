@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -77,6 +78,11 @@ serve(async (req) => {
       throw new Error('Informações da empresa não encontradas');
     }
 
+    // Verificar usuário e senha do emissor
+    if (!nfse.settings.usuario_emissor || !nfse.settings.senha_emissor) {
+      throw new Error('Usuário e senha do emissor são obrigatórios');
+    }
+
     const endpoint = nfse.settings.ambiente === 'producao'
       ? 'https://nfe.prefeitura.sp.gov.br/ws/lotenfe.asmx'
       : 'https://nfeh.prefeitura.sp.gov.br/ws/lotenfe.asmx';
@@ -89,6 +95,9 @@ serve(async (req) => {
 
     console.log('CNPJ formatado:', cnpjLimpo);
     console.log('Inscrição Municipal formatada:', inscricaoMunicipalLimpa);
+
+    // Criar credenciais em Base64
+    const credentials = encode(`${nfse.settings.usuario_emissor}:${nfse.settings.senha_emissor}`);
 
     const soapEnvelope = `<?xml version="1.0" encoding="UTF-8"?>
 <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
@@ -126,10 +135,11 @@ serve(async (req) => {
         headers: {
           'Content-Type': 'application/soap+xml;charset=UTF-8',
           'SOAPAction': 'http://www.prefeitura.sp.gov.br/nfe/ws/consultaNFe',
-          'User-Agent': 'Mozilla/5.0', // Adicionado User-Agent
+          'User-Agent': 'Mozilla/5.0',
           'Accept': '*/*',
           'Connection': 'keep-alive',
           'Accept-Encoding': 'gzip, deflate, br',
+          'Authorization': `Basic ${credentials}`
         },
         body: soapEnvelope,
         signal: controller.signal,
