@@ -68,7 +68,9 @@ export function NFSeSPSettings() {
         const { data, error } = await supabase
           .from("nfse_sp_settings")
           .select("*")
-          .maybeSingle();  // Changed this line to use maybeSingle()
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
 
         if (error) throw error;
 
