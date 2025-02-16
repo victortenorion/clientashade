@@ -36,6 +36,7 @@ function App() {
             <Route path="stores" element={<Stores />} />
             <Route path="service-orders" element={<ServiceOrders />} />
             <Route path="service-orders/new" element={<ServiceOrderForm />} />
+            <Route path="service-orders/:id/edit" element={<ServiceOrderEdit />} />
             <Route path="service-orders/:id" element={<ServiceOrderEdit />} />
             <Route path="service-order-settings/*" element={<ServiceOrderSettings />} />
             <Route path="nfce" element={<NFCe />} />
