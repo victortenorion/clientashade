@@ -155,6 +155,19 @@ export default function NFSeForm() {
     }
   });
 
+  const { data: nfseSpConfig } = useQuery({
+    queryKey: ['nfseSpConfig'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('nfse_sp_config')
+        .select('*')
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    }
+  });
+
   const formatCurrency = (value: number | undefined): string => {
     if (value === undefined || value === null) return 'R$ 0,00';
     return new Intl.NumberFormat('pt-BR', {
@@ -276,6 +289,13 @@ export default function NFSeForm() {
         throw new Error('Ordem de serviço não encontrada ou cliente não definido');
       }
 
+      const { data: incrementResult, error: incrementError } = await supabase
+        .rpc('increment_rps_sp_numero', {
+          p_settings_id: nfseSettings?.id
+        });
+
+      if (incrementError) throw incrementError;
+
       const { error: nfseError } = await supabase
         .from('nfse')
         .insert([{
@@ -305,6 +325,7 @@ export default function NFSeForm() {
           serie_rps: data.serie_rps,
           status_rps: 'P',
           nfse_sp_settings_id: nfseSettings?.id,
+          numero_rps: incrementResult
         }]);
 
       if (nfseError) throw nfseError;
