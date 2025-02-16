@@ -38,12 +38,13 @@ serve(async (req) => {
       .select(`
         *,
         nfse_sp_settings:nfse_sp_settings_id (*),
-        fiscal_config:fiscal_config (
+        fiscal_config (
+          id,
           config
         )
       `)
       .eq('id', nfseId)
-      .single();
+      .maybeSingle();
 
     if (nfseError) {
       console.error('Erro ao buscar NFS-e:', nfseError);
