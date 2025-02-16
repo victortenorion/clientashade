@@ -657,6 +657,7 @@ export type Database = {
           aliquota_csll: number | null
           aliquota_iss: number | null
           aliquota_pis: number | null
+          aliquota_servico: number | null
           ambiente: string | null
           bairro_prestador: string | null
           bairro_tomador: string | null
@@ -748,10 +749,14 @@ export type Database = {
           retencao_ir: boolean | null
           retencao_iss: boolean | null
           retencao_pis_cofins_csll: boolean | null
+          rps_numero: string | null
+          rps_serie: string | null
+          rps_tipo: string | null
           serie_rps: string
           service_order_id: string | null
           situacao_aceite: string | null
           situacao_nota: string | null
+          situacao_rps: string | null
           status_processamento: string | null
           status_sefaz: string | null
           status_transmissao: string | null
@@ -773,6 +778,7 @@ export type Database = {
           uf_tomador: string | null
           unidade_codigo: string | null
           updated_at: string | null
+          valor_base_calculo: number | null
           valor_cofins: number | null
           valor_comissao: number | null
           valor_credito: number | null
@@ -794,6 +800,7 @@ export type Database = {
           aliquota_csll?: number | null
           aliquota_iss?: number | null
           aliquota_pis?: number | null
+          aliquota_servico?: number | null
           ambiente?: string | null
           bairro_prestador?: string | null
           bairro_tomador?: string | null
@@ -885,10 +892,14 @@ export type Database = {
           retencao_ir?: boolean | null
           retencao_iss?: boolean | null
           retencao_pis_cofins_csll?: boolean | null
+          rps_numero?: string | null
+          rps_serie?: string | null
+          rps_tipo?: string | null
           serie_rps: string
           service_order_id?: string | null
           situacao_aceite?: string | null
           situacao_nota?: string | null
+          situacao_rps?: string | null
           status_processamento?: string | null
           status_sefaz?: string | null
           status_transmissao?: string | null
@@ -910,6 +921,7 @@ export type Database = {
           uf_tomador?: string | null
           unidade_codigo?: string | null
           updated_at?: string | null
+          valor_base_calculo?: number | null
           valor_cofins?: number | null
           valor_comissao?: number | null
           valor_credito?: number | null
@@ -931,6 +943,7 @@ export type Database = {
           aliquota_csll?: number | null
           aliquota_iss?: number | null
           aliquota_pis?: number | null
+          aliquota_servico?: number | null
           ambiente?: string | null
           bairro_prestador?: string | null
           bairro_tomador?: string | null
@@ -1022,10 +1035,14 @@ export type Database = {
           retencao_ir?: boolean | null
           retencao_iss?: boolean | null
           retencao_pis_cofins_csll?: boolean | null
+          rps_numero?: string | null
+          rps_serie?: string | null
+          rps_tipo?: string | null
           serie_rps?: string
           service_order_id?: string | null
           situacao_aceite?: string | null
           situacao_nota?: string | null
+          situacao_rps?: string | null
           status_processamento?: string | null
           status_sefaz?: string | null
           status_transmissao?: string | null
@@ -1047,6 +1064,7 @@ export type Database = {
           uf_tomador?: string | null
           unidade_codigo?: string | null
           updated_at?: string | null
+          valor_base_calculo?: number | null
           valor_cofins?: number | null
           valor_comissao?: number | null
           valor_credito?: number | null
@@ -1278,6 +1296,7 @@ export type Database = {
       }
       nfse_sp_settings: {
         Row: {
+          certificado_id: string | null
           codigo_regime_tributario: string | null
           config_status: string | null
           cpf_responsavel: string | null
@@ -1296,7 +1315,10 @@ export type Database = {
           proxy_host_ssl: string | null
           proxy_port: string | null
           proxy_port_ssl: string | null
+          rps_serie: string | null
+          rps_situacao: string | null
           rps_status: string | null
+          rps_tipo: string | null
           servico_aliquota: number | null
           servico_codigo_item_lista: string | null
           servico_codigo_local_prestacao: string | null
@@ -1323,6 +1345,7 @@ export type Database = {
           wsdl_producao_url: string | null
         }
         Insert: {
+          certificado_id?: string | null
           codigo_regime_tributario?: string | null
           config_status?: string | null
           cpf_responsavel?: string | null
@@ -1341,7 +1364,10 @@ export type Database = {
           proxy_host_ssl?: string | null
           proxy_port?: string | null
           proxy_port_ssl?: string | null
+          rps_serie?: string | null
+          rps_situacao?: string | null
           rps_status?: string | null
+          rps_tipo?: string | null
           servico_aliquota?: number | null
           servico_codigo_item_lista?: string | null
           servico_codigo_local_prestacao?: string | null
@@ -1368,6 +1394,7 @@ export type Database = {
           wsdl_producao_url?: string | null
         }
         Update: {
+          certificado_id?: string | null
           codigo_regime_tributario?: string | null
           config_status?: string | null
           cpf_responsavel?: string | null
@@ -1386,7 +1413,10 @@ export type Database = {
           proxy_host_ssl?: string | null
           proxy_port?: string | null
           proxy_port_ssl?: string | null
+          rps_serie?: string | null
+          rps_situacao?: string | null
           rps_status?: string | null
+          rps_tipo?: string | null
           servico_aliquota?: number | null
           servico_codigo_item_lista?: string | null
           servico_codigo_local_prestacao?: string | null
@@ -1412,7 +1442,15 @@ export type Database = {
           wsdl_producao?: string | null
           wsdl_producao_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "nfse_sp_settings_certificado_id_fkey"
+            columns: ["certificado_id"]
+            isOneToOne: false
+            referencedRelation: "certificates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
