@@ -80,7 +80,7 @@ export default function ServiceOrders() {
   });
 
   const handleCreateNew = () => {
-    navigate("/dashboard/service-orders/create");
+    navigate("/dashboard/service-orders/new");
   };
 
   const handleViewDetails = (id: string) => {
