@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -24,6 +23,7 @@ export default function ServiceOrderForm() {
   const [loading, setLoading] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [loadingCompanyInfo, setLoadingCompanyInfo] = useState(true);
+  const [initialStatusId, setInitialStatusId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     client_id: "",
@@ -49,7 +49,32 @@ export default function ServiceOrderForm() {
   useEffect(() => {
     loadClients();
     loadCompanyInfo();
+    loadInitialStatus();
   }, []);
+
+  const loadInitialStatus = async () => {
+    try {
+      const { data: statusData, error } = await supabase
+        .from('service_order_statuses')
+        .select('id')
+        .eq('is_active', true)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .single();
+
+      if (error) throw error;
+      if (statusData) {
+        setInitialStatusId(statusData.id);
+      }
+    } catch (error: any) {
+      console.error('Erro ao carregar status inicial:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar status inicial",
+        description: error.message
+      });
+    }
+  };
 
   const loadClients = async () => {
     try {
@@ -122,6 +147,10 @@ export default function ServiceOrderForm() {
     setLoading(true);
 
     try {
+      if (!initialStatusId) {
+        throw new Error("Status inicial não encontrado");
+      }
+
       // Primeiro, buscar a loja do usuário
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
@@ -145,7 +174,7 @@ export default function ServiceOrderForm() {
         .insert([
           {
             store_id: storeData.store_id,
-            status_id: 1, // Assumindo que 1 é o status inicial
+            status_id: initialStatusId,
             total_price: 0,
             ...formData
           }
