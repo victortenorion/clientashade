@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 import forge from "npm:node-forge";
@@ -81,6 +80,27 @@ async function sendToSEFAZ(xml: string, ambiente: string): Promise<any> {
     console.error('Erro ao enviar para SEFAZ:', error);
     throw error;
   }
+}
+
+async function parseXMLResponse(xmlResponse: string) {
+  const parser = new DOMParser();
+  const xmlDoc = parser.parseFromString(xmlResponse, "text/xml");
+  
+  // Extrair informações relevantes do XML de retorno
+  const codigoErro = xmlDoc.querySelector("Erro")?.textContent;
+  const mensagemErro = xmlDoc.querySelector("MensagemErro")?.textContent;
+  const numeroNota = xmlDoc.querySelector("NumeroNFe")?.textContent;
+  const codigoVerificacao = xmlDoc.querySelector("CodigoVerificacao")?.textContent;
+  
+  return {
+    sucesso: !codigoErro,
+    numeroNota,
+    codigoVerificacao,
+    erro: codigoErro ? {
+      codigo: codigoErro,
+      mensagem: mensagemErro
+    } : null
+  };
 }
 
 serve(async (req) => {
@@ -183,40 +203,77 @@ serve(async (req) => {
       const sefazResponse = await sendToSEFAZ(xmlAssinado, nfse.ambiente);
       console.log('Resposta SEFAZ:', sefazResponse);
 
-      // Atualizar status e salvar XML
-      await supabaseClient
-        .from('nfse')
-        .update({
-          xml_envio: xmlAssinado,
-          xml_retorno: sefazResponse,
-          status_sefaz: 'processando'
-        })
-        .eq('id', nfseId);
+      // Processar resposta da SEFAZ
+      const parsedResponse = await parseXMLResponse(sefazResponse);
+      
+      if (parsedResponse.sucesso) {
+        // Atualizar NFS-e com dados de sucesso
+        await supabaseClient
+          .from('nfse')
+          .update({
+            xml_envio: xmlAssinado,
+            xml_retorno: sefazResponse,
+            status_sefaz: 'autorizada',
+            numero_nfse: parsedResponse.numeroNota,
+            codigo_verificacao: parsedResponse.codigoVerificacao
+          })
+          .eq('id', nfseId);
 
-      // Registrar log
-      await supabaseClient
-        .from('nfse_sefaz_logs')
-        .insert({
-          nfse_id: nfseId,
-          status: 'enviado',
-          message: 'NFS-e enviada para SEFAZ',
-          request_payload: xmlAssinado,
-          response_payload: sefazResponse
-        });
+        // Registrar log de sucesso
+        await supabaseClient
+          .from('nfse_sefaz_logs')
+          .insert({
+            nfse_id: nfseId,
+            status: 'autorizada',
+            message: 'NFS-e autorizada com sucesso',
+            request_payload: xmlAssinado,
+            response_payload: {
+              xml: sefazResponse,
+              parsed: parsedResponse
+            }
+          });
 
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: 'NFS-e enviada para SEFAZ com sucesso'
-        }),
-        { 
-          headers: { 
-            ...corsHeaders, 
-            'Content-Type': 'application/json' 
-          } 
-        }
-      );
+        // TODO: Implementar geração de PDF
+        // TODO: Implementar envio de e-mail
 
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: 'NFS-e autorizada com sucesso',
+            data: {
+              numeroNota: parsedResponse.numeroNota,
+              codigoVerificacao: parsedResponse.codigoVerificacao
+            }
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } else {
+        // Atualizar NFS-e com dados de erro
+        await supabaseClient
+          .from('nfse')
+          .update({
+            xml_envio: xmlAssinado,
+            xml_retorno: sefazResponse,
+            status_sefaz: 'rejeitada'
+          })
+          .eq('id', nfseId);
+
+        // Registrar log de erro
+        await supabaseClient
+          .from('nfse_sefaz_logs')
+          .insert({
+            nfse_id: nfseId,
+            status: 'rejeitada',
+            message: `Erro: ${parsedResponse.erro?.mensagem}`,
+            request_payload: xmlAssinado,
+            response_payload: {
+              xml: sefazResponse,
+              parsed: parsedResponse
+            }
+          });
+
+        throw new Error(parsedResponse.erro?.mensagem || 'Erro ao processar NFS-e');
+      }
     } catch (error) {
       // Registrar erro no log
       await supabaseClient

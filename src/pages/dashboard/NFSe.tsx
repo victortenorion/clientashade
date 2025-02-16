@@ -18,7 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, FileText, Send, File } from "lucide-react";
+import { Plus, FileText, Send, File, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface NFSe {
@@ -36,6 +36,7 @@ interface NFSe {
 
 const NFSe = () => {
   const [loading, setLoading] = useState(true);
+  const [processando, setProcessando] = useState<string | null>(null);
   const [notas, setNotas] = useState<NFSe[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
@@ -75,8 +76,9 @@ const NFSe = () => {
 
   const handleSendToSEFAZ = async (id: string) => {
     try {
-      const { error } = await supabase.functions.invoke('transmit-nfse', {
-        body: { nfseId: id }
+      setProcessando(id);
+      const { error } = await supabase.functions.invoke("process-nfse", {
+        body: { nfseId: id },
       });
 
       if (error) throw error;
@@ -93,12 +95,27 @@ const NFSe = () => {
         title: "Erro ao enviar NFS-e",
         description: error.message,
       });
+    } finally {
+      setProcessando(null);
     }
   };
 
   useEffect(() => {
     fetchNFSe();
   }, [searchTerm]);
+
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case "autorizada":
+        return "default";
+      case "rejeitada":
+        return "destructive";
+      case "processando":
+        return "secondary";
+      default:
+        return "outline";
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -135,7 +152,10 @@ const NFSe = () => {
             {loading ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center">
-                  Carregando...
+                  <div className="flex items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                    <span className="ml-2">Carregando...</span>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : notas.length === 0 ? (
@@ -159,11 +179,10 @@ const NFSe = () => {
                     })}
                   </TableCell>
                   <TableCell>
-                    <Badge 
-                      variant={nota.status_sefaz === "autorizada" ? "default" : 
-                              nota.status_sefaz === "rejeitada" ? "destructive" : 
-                              "secondary"}
-                    >
+                    <Badge variant={getStatusBadgeVariant(nota.status_sefaz)}>
+                      {nota.status_sefaz === "processando" && (
+                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                      )}
                       {nota.status_sefaz}
                     </Badge>
                   </TableCell>
@@ -173,8 +192,13 @@ const NFSe = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => handleSendToSEFAZ(nota.id)}
+                        disabled={processando === nota.id}
                       >
-                        <Send className="h-4 w-4 mr-2" />
+                        {processando === nota.id ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Send className="h-4 w-4 mr-2" />
+                        )}
                         Transmitir
                       </Button>
                     )}
