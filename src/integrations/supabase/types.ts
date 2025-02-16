@@ -2252,6 +2252,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      verify_nfse_required_data: {
+        Args: {
+          p_nfse_id: string
+        }
+        Returns: {
+          missing_field: string
+          field_value: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

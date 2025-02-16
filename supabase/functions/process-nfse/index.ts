@@ -11,6 +11,11 @@ interface NFSeData {
   nfseId: string;
 }
 
+interface MissingFieldData {
+  missing_field: string | null;
+  field_value: string | null;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -25,6 +30,23 @@ serve(async (req) => {
     const { nfseId } = await req.json() as NFSeData;
 
     console.log('Buscando NFS-e com ID:', nfseId);
+
+    // Verificar dados obrigatórios primeiro
+    const { data: missingFields, error: verifyError } = await supabaseClient
+      .rpc('verify_nfse_required_data', { p_nfse_id: nfseId });
+
+    if (verifyError) {
+      console.error('Erro ao verificar dados da NFS-e:', verifyError);
+      throw new Error(`Erro ao verificar dados da NFS-e: ${verifyError.message}`);
+    }
+
+    if (missingFields && missingFields.length > 0) {
+      const missing = missingFields as MissingFieldData[];
+      const missingFieldsList = missing.map(field => 
+        `${field.missing_field} (valor atual: ${field.field_value})`
+      ).join(', ');
+      throw new Error(`Dados obrigatórios faltando: ${missingFieldsList}`);
+    }
 
     const { data: nfse, error: nfseError } = await supabaseClient.rpc(
       'get_nfse_with_latest_certificate',
@@ -53,10 +75,6 @@ serve(async (req) => {
 
     if (!nfse.company_info) {
       throw new Error('Informações da empresa não encontradas');
-    }
-
-    if (!nfse.company_info.cnpj || !nfse.company_info.inscricao_municipal) {
-      throw new Error('CNPJ ou Inscrição Municipal não configurados');
     }
 
     const endpoint = nfse.settings.ambiente === 'producao'
@@ -103,7 +121,6 @@ serve(async (req) => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-      // Usando interface https nativa do Deno
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -114,7 +131,6 @@ serve(async (req) => {
         },
         body: soapEnvelope,
         signal: controller.signal,
-        // Desabilitando verificação de certificado para teste
         //@ts-ignore
         backend: 'native',
         rejectUnauthorized: false
