@@ -314,21 +314,57 @@ const NFSe = () => {
     try {
       const { data: notasProcessando } = await supabase
         .from("nfse")
-        .select("*")
+        .select("id, numero_nfse, updated_at, nfse_sp_settings_id")
         .eq("status_sefaz", "processando");
 
       if (notasProcessando && notasProcessando.length > 0) {
         for (const nota of notasProcessando) {
+          if (!nota.nfse_sp_settings_id) {
+            console.error(`Nota ${nota.numero_nfse} sem configurações NFSe-SP vinculadas`);
+            
+            await supabase
+              .from("nfse")
+              .update({
+                status_sefaz: "rejeitada",
+                updated_at: new Date().toISOString()
+              })
+              .eq("id", nota.id);
+            
+            continue;
+          }
+
           const processandoHa = new Date().getTime() - new Date(nota.updated_at).getTime();
           if (processandoHa > 5 * 60 * 1000) {
             console.log(`Nota ${nota.numero_nfse} em processamento há muito tempo, verificando status...`);
             
-            const { error } = await supabase.functions.invoke("process-nfse", {
-              body: { nfseId: nota.id },
-            });
+            try {
+              const { error } = await supabase.functions.invoke("process-nfse", {
+                body: { nfseId: nota.id }
+              });
 
-            if (error) {
-              console.error(`Erro ao verificar nota ${nota.numero_nfse}:`, error);
+              if (error) {
+                console.error(`Erro ao verificar nota ${nota.numero_nfse}:`, error);
+                
+                await supabase
+                  .from("nfse")
+                  .update({
+                    status_sefaz: "rejeitada",
+                    updated_at: new Date().toISOString()
+                  })
+                  .eq("id", nota.id);
+                
+                await supabase
+                  .from("nfse_sefaz_logs")
+                  .insert({
+                    nfse_id: nota.id,
+                    status: "rejeitada",
+                    message: error.message,
+                    request_payload: { error: true },
+                    response_payload: { error: error.message }
+                  });
+              }
+            } catch (err: any) {
+              console.error(`Erro ao processar nota ${nota.numero_nfse}:`, err);
             }
           }
         }
