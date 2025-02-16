@@ -44,8 +44,9 @@ serve(async (req) => {
     console.log('NFS-e encontrada:', {
       id: nfse.id,
       numero: nfse.numero_nfse,
-      settings: nfse.nfse_sp_settings ? 'presente' : 'ausente',
-      company_info: nfse.company_info ? 'presente' : 'ausente'
+      settings: nfse.settings ? 'presente' : 'ausente',
+      company_info: nfse.company_info ? 'presente' : 'ausente',
+      certificate: nfse.settings?.certificate ? 'presente' : 'ausente'
     });
 
     if (!nfse.settings) {
@@ -54,6 +55,14 @@ serve(async (req) => {
 
     if (!nfse.company_info) {
       throw new Error('Informações da empresa não encontradas');
+    }
+
+    if (!nfse.settings.certificate) {
+      throw new Error('Certificado digital não encontrado');
+    }
+
+    if (!nfse.settings.certificate.certificate_data || !nfse.settings.certificate.certificate_password) {
+      throw new Error('Dados do certificado digital incompletos');
     }
 
     if (!nfse.company_info.cnpj || !nfse.company_info.inscricao_municipal) {
@@ -93,20 +102,39 @@ serve(async (req) => {
   </soap:Body>
 </soap:Envelope>`;
 
-    console.log('Enviando requisição SOAP:', soapEnvelope);
+    console.log('Enviando requisição SOAP com certificado digital');
 
     try {
-      // Using fetch instead of raw TCP connection
-      const response = await fetch(endpoint, {
+      // Decodificar o certificado base64
+      const certificateData = atob(nfse.settings.certificate.certificate_data);
+      const certificatePassword = nfse.settings.certificate.certificate_password;
+
+      // Criar um buffer do certificado
+      const certBuffer = new Uint8Array(certificateData.length);
+      for (let i = 0; i < certificateData.length; i++) {
+        certBuffer[i] = certificateData.charCodeAt(i);
+      }
+
+      // Preparar as opções da requisição com o certificado
+      const requestOptions = {
         method: 'POST',
         headers: {
           'Content-Type': 'text/xml;charset=UTF-8',
           'SOAPAction': 'http://www.prefeitura.sp.gov.br/nfe/ws/consultaNFe',
         },
         body: soapEnvelope,
-      });
+        // Adicionar o certificado para autenticação mútua
+        cert: certBuffer,
+        key: certBuffer,
+        passphrase: certificatePassword,
+      };
+
+      console.log('Enviando requisição com certificado configurado');
+      
+      const response = await fetch(endpoint, requestOptions);
 
       if (!response.ok) {
+        console.error('Erro na resposta HTTP:', response.status, response.statusText);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
