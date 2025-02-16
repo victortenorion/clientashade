@@ -242,6 +242,24 @@ const NFSe = () => {
   };
 
   const handleOpenDeleteDialog = (nota: NFSe) => {
+    if (nota.status_sefaz === "autorizada") {
+      toast({
+        variant: "destructive",
+        title: "Não é possível excluir",
+        description: "Notas fiscais autorizadas não podem ser excluídas. Use a opção de cancelamento se necessário.",
+      });
+      return;
+    }
+
+    if (nota.cancelada) {
+      toast({
+        variant: "destructive",
+        title: "Não é possível excluir",
+        description: "Notas fiscais canceladas não podem ser excluídas.",
+      });
+      return;
+    }
+
     setSelectedNota(nota);
     setDeleteDialogOpen(true);
   };
@@ -249,9 +267,26 @@ const NFSe = () => {
   const handleDelete = async (id: string) => {
     try {
       setExcluindo(id);
+
+      const { data: nota, error: notaError } = await supabase
+        .from('nfse')
+        .select('status_sefaz, cancelada')
+        .eq('id', id)
+        .single();
+
+      if (notaError) throw notaError;
+
+      if (nota.status_sefaz === "autorizada" || nota.cancelada) {
+        throw new Error("Esta nota não pode ser excluída devido ao seu status atual.");
+      }
+
       const { error } = await supabase
         .from('nfse')
-        .update({ excluida: true, data_exclusao: new Date().toISOString() })
+        .update({ 
+          excluida: true, 
+          data_exclusao: new Date().toISOString(),
+          motivo_exclusao: "Excluída pelo usuário"
+        })
         .eq('id', id);
 
       if (error) throw error;
@@ -497,7 +532,9 @@ const NFSe = () => {
                         variant="destructive"
                         size="sm"
                         onClick={() => handleOpenDeleteDialog(nota)}
-                        disabled={excluindo === nota.id}
+                        disabled={excluindo === nota.id || 
+                                nota.status_sefaz === "autorizada" || 
+                                nota.cancelada}
                       >
                         {excluindo === nota.id ? (
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
