@@ -269,6 +269,59 @@ export default function NFSeForm() {
     }
   };
 
+  const onSaveDraft = async (data: NFSeFormData) => {
+    setIsLoading(true);
+    try {
+      const { error: nfseError } = await supabase
+        .from('nfse')
+        .insert([{
+          service_order_id: serviceOrderId,
+          client_id: serviceOrder?.client_id,
+          codigo_servico: data.codigo_servico,
+          discriminacao_servicos: data.discriminacao_servicos,
+          servico_discriminacao_item: data.servico_discriminacao_item,
+          servico_codigo_item_lista: data.servico_codigo_item_lista,
+          servico_codigo_municipio: data.servico_codigo_municipio,
+          servico_codigo_local_prestacao: data.servico_codigo_local_prestacao,
+          servico_valor_item: data.servico_valor_item,
+          servico_exigibilidade: data.servico_exigibilidade,
+          servico_operacao: data.servico_operacao,
+          valor_servicos: data.valor_servicos,
+          base_calculo: data.base_calculo,
+          aliquota_iss: data.aliquota_iss,
+          valor_iss: data.valor_iss,
+          iss_retido: data.iss_retido,
+          regime_especial_tributacao: data.regime_especial_tributacao,
+          tipo_regime_especial: data.tipo_regime_especial,
+          operacao_tributacao: data.operacao_tributacao,
+          optante_mei: data.optante_simples_nacional,
+          prestador_incentivador_cultural: data.incentivador_cultural,
+          tributacao_rps: data.tipo_tributacao,
+          tipo_rps: data.tipo_rps,
+          serie_rps: data.serie_rps,
+          status_rps: 'P',
+          nfse_sp_settings_id: nfseSettings?.id,
+        }]);
+
+      if (nfseError) throw nfseError;
+
+      toast({
+        title: "NFS-e salva com sucesso",
+        description: "O rascunho da NFS-e foi salvo"
+      });
+
+      navigate('/dashboard/nfse');
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar NFS-e",
+        description: error.message
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -547,6 +600,14 @@ export default function NFSeForm() {
               onClick={() => navigate(-1)}
             >
               Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={form.handleSubmit(onSaveDraft)}
+              disabled={isLoading}
+            >
+              {isLoading ? "Salvando..." : "Salvar NFS-e"}
             </Button>
             <Button type="submit" disabled={isLoading}>
               {isLoading ? "Emitindo..." : "Emitir NFS-e"}
