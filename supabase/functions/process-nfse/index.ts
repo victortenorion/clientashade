@@ -90,41 +90,49 @@ serve(async (req) => {
     console.log('Enviando requisição SOAP:', soapEnvelope);
 
     try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'text/xml;charset=UTF-8',
-          'SOAPAction': 'http://www.prefeitura.sp.gov.br/nfe/ws/consultaNFe',
-          'Accept': '*/*'
-        },
-        body: soapEnvelope,
-        // Adicionar opções para lidar com certificados auto-assinados em desenvolvimento
-        ...(settings.ambiente === 'homologacao' && {
-          //@ts-ignore - Deno suporta essa opção mas o TS não reconhece
-          rejectUnauthorized: false
-        })
+      // Usar o cliente HTTP nativo do Deno
+      const conn = await Deno.connect({ hostname: settings.ambiente === 'producao' ? 'nfe.prefeitura.sp.gov.br' : 'nfeh.prefeitura.sp.gov.br', port: 443 });
+      const tlsConn = await Deno.startTls(conn, {
+        hostname: settings.ambiente === 'producao' ? 'nfe.prefeitura.sp.gov.br' : 'nfeh.prefeitura.sp.gov.br',
+        // Em homologação, não validamos o certificado
+        certFile: settings.ambiente === 'producao' ? undefined : null
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Erro na resposta da SEFAZ:', {
-          status: response.status,
-          statusText: response.statusText,
-          body: errorText
-        });
-        throw new Error(`Erro na consulta à SEFAZ: ${response.status} - ${response.statusText}`);
-      }
+      const requestHeaders = [
+        'POST /ws/lotenfe.asmx HTTP/1.1',
+        `Host: ${settings.ambiente === 'producao' ? 'nfe.prefeitura.sp.gov.br' : 'nfeh.prefeitura.sp.gov.br'}`,
+        'Content-Type: text/xml;charset=UTF-8',
+        'SOAPAction: http://www.prefeitura.sp.gov.br/nfe/ws/consultaNFe',
+        'Accept: */*',
+        `Content-Length: ${soapEnvelope.length}`,
+        '',
+        soapEnvelope
+      ].join('\r\n');
 
-      const responseText = await response.text();
-      console.log('Resposta da consulta:', responseText);
+      const encoder = new TextEncoder();
+      await tlsConn.write(encoder.encode(requestHeaders));
+
+      // Ler a resposta
+      const decoder = new TextDecoder();
+      const buffer = new Uint8Array(10000);
+      const bytesRead = await tlsConn.read(buffer);
+      const response = decoder.decode(buffer.subarray(0, bytesRead!));
+
+      tlsConn.close();
+      conn.close();
+
+      console.log('Resposta da consulta:', response);
+
+      // Extrair o corpo da resposta HTTP
+      const responseBody = response.split('\r\n\r\n')[1] || '';
 
       // Processar resposta e atualizar status
       let novoStatus = 'processando';
-      if (responseText.includes('<Situacao>C</Situacao>')) {
+      if (responseBody.includes('<Situacao>C</Situacao>')) {
         novoStatus = 'cancelada';
-      } else if (responseText.includes('<Situacao>N</Situacao>')) {
+      } else if (responseBody.includes('<Situacao>N</Situacao>')) {
         novoStatus = 'autorizada';
-      } else if (responseText.includes('<Erro>')) {
+      } else if (responseBody.includes('<Erro>')) {
         novoStatus = 'rejeitada';
       }
 
@@ -148,7 +156,7 @@ serve(async (req) => {
           nfse_id: nfseId,
           status: novoStatus,
           request_payload: { xml: soapEnvelope },
-          response_payload: { xml: responseText }
+          response_payload: { xml: responseBody }
         });
 
       return new Response(
