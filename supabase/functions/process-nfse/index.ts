@@ -32,23 +32,7 @@ serve(async (req) => {
 
     console.log('Buscando NFS-e com ID:', nfseId);
 
-    // Verificar dados obrigatórios primeiro
-    const { data: missingFields, error: verifyError } = await supabaseClient
-      .rpc('verify_nfse_required_data', { p_nfse_id: nfseId });
-
-    if (verifyError) {
-      console.error('Erro ao verificar dados da NFS-e:', verifyError);
-      throw new Error(`Erro ao verificar dados da NFS-e: ${verifyError.message}`);
-    }
-
-    if (missingFields && missingFields.length > 0) {
-      const missing = missingFields as MissingFieldData[];
-      const missingFieldsList = missing.map(field => 
-        `${field.missing_field} (valor atual: ${field.field_value})`
-      ).join(', ');
-      throw new Error(`Dados obrigatórios faltando: ${missingFieldsList}`);
-    }
-
+    // Primeiro buscar os dados da NFS-e com configurações e certificado
     const { data: nfse, error: nfseError } = await supabaseClient.rpc(
       'get_nfse_with_latest_certificate',
       { p_nfse_id: nfseId }
@@ -70,17 +54,24 @@ serve(async (req) => {
       company_info: nfse.company_info ? 'presente' : 'ausente'
     });
 
-    if (!nfse.settings) {
-      throw new Error('Configurações da NFS-e não encontradas');
-    }
+    // Verificar dados obrigatórios
+    const requiredFields = [
+      { field: 'settings', value: nfse.settings, message: 'Configurações da NFS-e' },
+      { field: 'company_info', value: nfse.company_info, message: 'Informações da empresa' },
+      { field: 'settings.certificate', value: nfse.settings?.certificate, message: 'Certificado digital' },
+      { field: 'settings.certificate.certificate_data', value: nfse.settings?.certificate?.certificate_data, message: 'Dados do certificado' },
+      { field: 'settings.certificate.certificate_password', value: nfse.settings?.certificate?.certificate_password, message: 'Senha do certificado' },
+      { field: 'settings.usuario_emissor', value: nfse.settings?.usuario_emissor, message: 'Usuário do emissor' },
+      { field: 'settings.senha_emissor', value: nfse.settings?.senha_emissor, message: 'Senha do emissor' },
+      { field: 'company_info.cnpj', value: nfse.company_info?.cnpj, message: 'CNPJ' },
+      { field: 'company_info.inscricao_municipal', value: nfse.company_info?.inscricao_municipal, message: 'Inscrição Municipal' }
+    ];
 
-    if (!nfse.company_info) {
-      throw new Error('Informações da empresa não encontradas');
-    }
-
-    // Verificar usuário e senha do emissor
-    if (!nfse.settings.usuario_emissor || !nfse.settings.senha_emissor) {
-      throw new Error('Usuário e senha do emissor são obrigatórios');
+    for (const field of requiredFields) {
+      if (!field.value) {
+        console.error(`Campo obrigatório faltando: ${field.field}`);
+        throw new Error(`${field.message} não encontrado(a)`);
+      }
     }
 
     const endpoint = nfse.settings.ambiente === 'producao'
