@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -85,6 +86,9 @@ const NFSe = () => {
           xml_envio,
           xml_retorno,
           pdf_url,
+          cancelada,
+          data_cancelamento,
+          motivo_cancelamento,
           clients (
             name,
             email
