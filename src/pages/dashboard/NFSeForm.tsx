@@ -151,6 +151,17 @@ export default function NFSeForm() {
     }
   });
 
+  const formatCurrency = (value: number): string => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
+  };
+
+  const parseCurrency = (value: string): number => {
+    return Number(value.replace(/[^0-9,]/g, '').replace(',', '.'));
+  };
+
   useEffect(() => {
     if (companyInfo && fiscalConfig?.config) {
       console.log('Setting form values with:', {
@@ -368,12 +379,13 @@ export default function NFSeForm() {
                   <FormControl>
                     <Input
                       {...field}
-                      placeholder="0,00"
+                      placeholder="R$ 0,00"
                       onChange={(e) => {
                         const value = e.target.value.replace(/[^0-9,]/g, '');
-                        field.onChange(Number(value.replace(',', '.')));
+                        const numericValue = Number(value.replace(',', '.'));
+                        field.onChange(numericValue);
                       }}
-                      value={field.value.toString().replace('.', ',')}
+                      value={formatCurrency(field.value)}
                     />
                   </FormControl>
                 </FormItem>
