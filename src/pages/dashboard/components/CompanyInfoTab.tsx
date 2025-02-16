@@ -127,7 +127,7 @@ export const CompanyInfoTab = () => {
 
       const { data: spConfig } = await supabase
         .from('nfse_sp_config')
-        .select('numero_inicial_rps, numero_inicial_nfse')
+        .select('numero_inicial_rps')
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
@@ -135,7 +135,7 @@ export const CompanyInfoTab = () => {
       if (spConfig) {
         setRpsConfig({
           numero_inicial_rps: spConfig.numero_inicial_rps?.toString() || '',
-          numero_inicial_nfse: spConfig.numero_inicial_nfse?.toString() || ''
+          numero_inicial_nfse: ''
         });
 
         if (lastNFSe?.numero_rps && parseInt(lastNFSe.numero_rps) >= parseInt(spConfig.numero_inicial_rps)) {
@@ -305,19 +305,6 @@ export const CompanyInfoTab = () => {
         }
       }
 
-      if (lastNFSe?.numero_nfse && rpsConfig.numero_inicial_nfse && lastNFSe.numero_nfse >= rpsConfig.numero_inicial_nfse) {
-        const confirmContinue = window.confirm(
-          `ATENÇÃO: Já existem NFS-e com número maior que ${rpsConfig.numero_inicial_nfse}. ` +
-          `O próximo número será ${parseInt(lastNFSe.numero_nfse) + 1}. ` +
-          `Deseja continuar mesmo assim?`
-        );
-
-        if (!confirmContinue) {
-          setIsCheckingRPS(false);
-          return;
-        }
-      }
-
       const { error } = await supabase
         .from('company_info')
         .upsert(companyInfo);
@@ -333,23 +320,22 @@ export const CompanyInfoTab = () => {
 
       if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
 
+      const configData = {
+        numero_inicial_rps: rpsConfig.numero_inicial_rps,
+        numero_inicial_nfse: rpsConfig.numero_inicial_nfse || null
+      };
+
       if (currentConfig) {
         const { error: updateError } = await supabase
           .from('nfse_sp_config')
-          .update({ 
-            numero_inicial_rps: rpsConfig.numero_inicial_rps,
-            numero_inicial_nfse: rpsConfig.numero_inicial_nfse
-          })
+          .update(configData)
           .eq('id', currentConfig.id);
 
         if (updateError) throw updateError;
       } else {
         const { error: insertError } = await supabase
           .from('nfse_sp_config')
-          .insert([{ 
-            numero_inicial_rps: rpsConfig.numero_inicial_rps,
-            numero_inicial_nfse: rpsConfig.numero_inicial_nfse
-          }]);
+          .insert([configData]);
 
         if (insertError) throw insertError;
       }

@@ -1470,6 +1470,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          numero_inicial_nfse: string | null
           numero_inicial_rps: number | null
           ultima_rps_numero: number
           updated_at: string
@@ -1477,6 +1478,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          numero_inicial_nfse?: string | null
           numero_inicial_rps?: number | null
           ultima_rps_numero?: number
           updated_at?: string
@@ -1484,6 +1486,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          numero_inicial_nfse?: string | null
           numero_inicial_rps?: number | null
           ultima_rps_numero?: number
           updated_at?: string
