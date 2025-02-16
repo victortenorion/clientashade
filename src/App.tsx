@@ -30,7 +30,11 @@ function App() {
         <Route path="/auth" element={<LoginForm />} />
         <Route path="/login" element={<LoginForm />} />
         <Route path="/client-login" element={<ClientLogin />} />
-        <Route path="/client-area/:os_id" element={<CustomerArea />} />
+        <Route path="/client-area/:os_id" element={
+          <ClientProtectedRoute>
+            <CustomerArea />
+          </ClientProtectedRoute>
+        } />
         <Route path="/dashboard" element={<Dashboard />}>
           <Route index element={<Home />} />
           <Route path="users" element={<Users />} />
