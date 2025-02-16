@@ -143,8 +143,8 @@ export default function NFSeForm() {
         fiscalConfig
       });
 
-      // Determinar o código do serviço com prioridade apropriada
-      const codigoServico = serviceOrder?.codigo_servico ?? companyInfo?.codigo_servico ?? '';
+      // Garantir que o código do serviço seja uma string
+      const codigoServico = String(serviceOrder?.codigo_servico ?? companyInfo?.codigo_servico ?? '');
 
       form.reset({
         codigo_servico: codigoServico,
