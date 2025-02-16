@@ -12,6 +12,7 @@ import NFSe from "./pages/dashboard/NFSe";
 import ServiceOrders from "./pages/dashboard/ServiceOrders";
 import ServiceOrderForm from "./pages/dashboard/ServiceOrderForm";
 import ServiceOrderEdit from "./pages/dashboard/ServiceOrderEdit";
+import { ServiceOrderDetails } from "./pages/dashboard/components/ServiceOrderDetails";
 import ServiceOrderSettings from "./pages/dashboard/ServiceOrderSettings";
 import CustomerArea from "./pages/dashboard/CustomerArea";
 import { ClientProtectedRoute } from "./components/ClientProtectedRoute";
@@ -42,6 +43,7 @@ function App() {
             <Route path="nfse" element={<NFSe />} />
             <Route path="service-orders" element={<ServiceOrders />} />
             <Route path="service-orders/create" element={<ServiceOrderForm />} />
+            <Route path="service-orders/:id" element={<ServiceOrderDetails />} />
             <Route path="service-orders/:id/edit" element={<ServiceOrderEdit />} />
             <Route path="service-order-settings/*" element={<ServiceOrderSettings />} />
           </Route>
