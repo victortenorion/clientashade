@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -170,7 +171,7 @@ export default function ServiceOrderForm() {
       if (!storeData?.store_id) throw new Error("Usuário não está associado a uma loja");
 
       // Criar a ordem com os dados do formulário
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("service_orders")
         .insert([
           {
@@ -179,19 +180,17 @@ export default function ServiceOrderForm() {
             total_price: 0,
             ...formData
           }
-        ])
-        .select()
-        .single();
+        ]);
 
       if (error) throw error;
 
       toast({
         title: "Ordem de serviço criada",
-        description: "Redirecionando para edição..."
+        description: "Redirecionando para lista de ordens..."
       });
 
-      // Redirecionar para a página de detalhes da ordem
-      navigate(`/dashboard/service-orders/${data.id}`);
+      // Redirecionar para a lista de ordens
+      navigate("/dashboard/service-orders");
     } catch (error: any) {
       toast({
         variant: "destructive",
