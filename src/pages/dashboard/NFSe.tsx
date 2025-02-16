@@ -32,7 +32,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { navigate } from "@remix-run/react";
+import { useNavigate } from "react-router-dom";
 
 interface NFSe {
   id: string;
@@ -71,6 +71,7 @@ const NFSe = () => {
   const [motivoCancelamento, setMotivoCancelamento] = useState("");
   const [cancelando, setCancelando] = useState<string | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const fetchNFSe = async () => {
     try {
