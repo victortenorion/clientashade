@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
@@ -13,9 +12,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Search, Plus, Pencil, Save, X } from "lucide-react";
+import { Loader2, Search, Plus, Pencil, Save, X, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ServiceCode {
   id: string;
@@ -38,6 +47,8 @@ export function ServiceCodesSettings() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCode, setSelectedCode] = useState<ServiceCode | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [codeToDelete, setCodeToDelete] = useState<ServiceCode | null>(null);
   const [formData, setFormData] = useState<ServiceCodeFormData>({
     code: "",
     description: "",
@@ -109,6 +120,40 @@ export function ServiceCodesSettings() {
       setSelectedCode(null);
     }
     setIsDialogOpen(true);
+  };
+
+  const handleDelete = async (code: ServiceCode) => {
+    setCodeToDelete(code);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!codeToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from("nfse_service_codes")
+        .delete()
+        .eq("id", codeToDelete.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Código de serviço excluído com sucesso",
+      });
+
+      setIsDeleteDialogOpen(false);
+      setCodeToDelete(null);
+      loadServiceCodes();
+    } catch (error: any) {
+      console.error("Erro ao excluir código:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível excluir o código de serviço",
+      });
+    }
   };
 
   const handleSaveServiceCode = async () => {
@@ -209,7 +254,7 @@ export function ServiceCodesSettings() {
                   <TableHead className="w-[100px]">Código</TableHead>
                   <TableHead>Descrição</TableHead>
                   <TableHead className="w-[120px] text-right">Alíquota ISS</TableHead>
-                  <TableHead className="w-[100px]">Ações</TableHead>
+                  <TableHead className="w-[120px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -236,13 +281,22 @@ export function ServiceCodesSettings() {
                         {code.aliquota_iss?.toFixed(2)}%
                       </TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleOpenDialog(code)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleOpenDialog(code)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(code)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -301,6 +355,27 @@ export function ServiceCodesSettings() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir código de serviço</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir o código de serviço{" "}
+                <span className="font-medium">{codeToDelete?.code}</span>?
+                Esta ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>
+                Cancelar
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );
