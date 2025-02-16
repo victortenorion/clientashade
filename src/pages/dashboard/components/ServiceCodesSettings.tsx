@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Search, Plus, Pencil, Save, X, Trash2 } from "lucide-react";
+import { Loader2, Search, Plus, Pencil, Save, X, Trash2, Download, Upload } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
@@ -221,6 +221,69 @@ export function ServiceCodesSettings() {
       code.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleExport = () => {
+    const csvContent = [
+      ["Código", "Descrição", "Alíquota ISS"],
+      ...serviceCodes.map(code => [
+        code.code,
+        code.description,
+        code.aliquota_iss.toString()
+      ])
+    ].map(row => row.join(",")).join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "codigos-servico.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const text = e.target?.result as string;
+        const rows = text.split("\n").slice(1); // Skip header row
+        const newCodes = rows.map(row => {
+          const [code, description, aliquota_iss] = row.split(",");
+          return {
+            code: code.trim(),
+            description: description.trim(),
+            aliquota_iss: parseFloat(aliquota_iss),
+            active: true
+          };
+        });
+
+        const { error } = await supabase
+          .from("nfse_service_codes")
+          .insert(newCodes);
+
+        if (error) throw error;
+
+        toast({
+          title: "Sucesso",
+          description: `${newCodes.length} códigos de serviço importados com sucesso`,
+        });
+
+        loadServiceCodes();
+      } catch (error: any) {
+        console.error("Erro ao importar códigos:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Erro ao importar códigos de serviço",
+        });
+      }
+    };
+    reader.readAsText(file);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -240,6 +303,23 @@ export function ServiceCodesSettings() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-8"
               />
+            </div>
+            <Button onClick={handleExport} variant="outline">
+              <Download className="h-4 w-4 mr-2" />
+              Exportar
+            </Button>
+            <div className="relative">
+              <input
+                type="file"
+                accept=".csv"
+                onChange={handleImport}
+                className="hidden"
+                id="import-csv"
+              />
+              <Button onClick={() => document.getElementById("import-csv")?.click()} variant="outline">
+                <Upload className="h-4 w-4 mr-2" />
+                Importar
+              </Button>
             </div>
             <Button onClick={() => handleOpenDialog()} variant="default">
               <Plus className="h-4 w-4 mr-2" />
