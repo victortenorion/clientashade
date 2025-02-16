@@ -19,7 +19,12 @@ import { z } from "zod";
 interface ServiceOrder {
   id: string;
   client_id: string;
-  // ... outros campos se necessário
+}
+
+interface FiscalConfigData {
+  id: string;
+  type: string;
+  config: NFSeConfig;
 }
 
 const formSchema = z.object({
@@ -90,7 +95,7 @@ export default function NFSeForm() {
   });
 
   // Buscar configurações fiscais que incluem o certificado
-  const { data: fiscalConfig } = useQuery<{ config: NFSeConfig }>({
+  const { data: fiscalConfig } = useQuery<FiscalConfigData>({
     queryKey: ['fiscal-config'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -100,7 +105,7 @@ export default function NFSeForm() {
         .single();
       
       if (error) throw error;
-      return data as { config: NFSeConfig };
+      return data as FiscalConfigData;
     }
   });
 
