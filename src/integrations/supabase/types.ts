@@ -95,6 +95,8 @@ export type Database = {
           city: string | null
           client_login: string | null
           client_password: string | null
+          codigo_municipio_tomador: string | null
+          codigo_pais_tomador: string | null
           codigo_servico: string | null
           complement: string | null
           contact_info: string | null
@@ -105,6 +107,10 @@ export type Database = {
           fantasy_name: string | null
           fax: string | null
           id: string
+          indicador_incentivo_fiscal: boolean | null
+          inscricao_estadual_tomador: string | null
+          inscricao_municipal_tomador: string | null
+          inscricao_suframa: string | null
           mobile_phone: string | null
           municipal_registration: string | null
           name: string
@@ -114,12 +120,17 @@ export type Database = {
           phone: string | null
           phone_carrier: string | null
           phone_landline: string | null
+          regime_especial_tributacao: string | null
           state: string | null
           state_registration: string | null
           state_registration_exempt: boolean | null
           store_id: string | null
           street: string | null
           street_number: string | null
+          tipo_documento_prestador: string | null
+          tipo_documento_tomador: string | null
+          tipo_endereco_tomador: string | null
+          tipo_tomador: string | null
           updated_at: string
           website: string | null
           zip_code: string | null
@@ -128,6 +139,8 @@ export type Database = {
           city?: string | null
           client_login?: string | null
           client_password?: string | null
+          codigo_municipio_tomador?: string | null
+          codigo_pais_tomador?: string | null
           codigo_servico?: string | null
           complement?: string | null
           contact_info?: string | null
@@ -138,6 +151,10 @@ export type Database = {
           fantasy_name?: string | null
           fax?: string | null
           id?: string
+          indicador_incentivo_fiscal?: boolean | null
+          inscricao_estadual_tomador?: string | null
+          inscricao_municipal_tomador?: string | null
+          inscricao_suframa?: string | null
           mobile_phone?: string | null
           municipal_registration?: string | null
           name: string
@@ -147,12 +164,17 @@ export type Database = {
           phone?: string | null
           phone_carrier?: string | null
           phone_landline?: string | null
+          regime_especial_tributacao?: string | null
           state?: string | null
           state_registration?: string | null
           state_registration_exempt?: boolean | null
           store_id?: string | null
           street?: string | null
           street_number?: string | null
+          tipo_documento_prestador?: string | null
+          tipo_documento_tomador?: string | null
+          tipo_endereco_tomador?: string | null
+          tipo_tomador?: string | null
           updated_at?: string
           website?: string | null
           zip_code?: string | null
@@ -161,6 +183,8 @@ export type Database = {
           city?: string | null
           client_login?: string | null
           client_password?: string | null
+          codigo_municipio_tomador?: string | null
+          codigo_pais_tomador?: string | null
           codigo_servico?: string | null
           complement?: string | null
           contact_info?: string | null
@@ -171,6 +195,10 @@ export type Database = {
           fantasy_name?: string | null
           fax?: string | null
           id?: string
+          indicador_incentivo_fiscal?: boolean | null
+          inscricao_estadual_tomador?: string | null
+          inscricao_municipal_tomador?: string | null
+          inscricao_suframa?: string | null
           mobile_phone?: string | null
           municipal_registration?: string | null
           name?: string
@@ -180,12 +208,17 @@ export type Database = {
           phone?: string | null
           phone_carrier?: string | null
           phone_landline?: string | null
+          regime_especial_tributacao?: string | null
           state?: string | null
           state_registration?: string | null
           state_registration_exempt?: boolean | null
           store_id?: string | null
           street?: string | null
           street_number?: string | null
+          tipo_documento_prestador?: string | null
+          tipo_documento_tomador?: string | null
+          tipo_endereco_tomador?: string | null
+          tipo_tomador?: string | null
           updated_at?: string
           website?: string | null
           zip_code?: string | null

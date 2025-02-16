@@ -42,6 +42,18 @@ export interface ClientFormData {
   phone?: string;
   fax?: string;
   contact_info?: string;
+  // Novos campos para NFS-e SP
+  tipo_documento_prestador?: string;
+  tipo_documento_tomador?: string;
+  inscricao_estadual_tomador?: string;
+  inscricao_municipal_tomador?: string;
+  tipo_endereco_tomador?: string;
+  inscricao_suframa?: string;
+  codigo_pais_tomador?: string;
+  codigo_municipio_tomador?: string;
+  tipo_tomador?: string;
+  regime_especial_tributacao?: string;
+  indicador_incentivo_fiscal?: boolean;
 }
 
 export interface DeleteDialogState {
@@ -82,4 +94,16 @@ export interface Client {
   phone?: string;
   fax?: string;
   contact_info?: string;
+  // Novos campos para NFS-e SP
+  tipo_documento_prestador?: string;
+  tipo_documento_tomador?: string;
+  inscricao_estadual_tomador?: string;
+  inscricao_municipal_tomador?: string;
+  tipo_endereco_tomador?: string;
+  inscricao_suframa?: string;
+  codigo_pais_tomador?: string;
+  codigo_municipio_tomador?: string;
+  tipo_tomador?: string;
+  regime_especial_tributacao?: string;
+  indicador_incentivo_fiscal?: boolean;
 }
