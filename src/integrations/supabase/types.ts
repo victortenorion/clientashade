@@ -1499,6 +1499,7 @@ export type Database = {
           ambiente: string | null
           certificado_id: string | null
           certificates_id: string | null
+          codigo_municipio: string | null
           codigo_regime_tributario: string | null
           codigo_tributacao_municipio: string | null
           config_status: string | null
@@ -1567,6 +1568,7 @@ export type Database = {
           ambiente?: string | null
           certificado_id?: string | null
           certificates_id?: string | null
+          codigo_municipio?: string | null
           codigo_regime_tributario?: string | null
           codigo_tributacao_municipio?: string | null
           config_status?: string | null
@@ -1635,6 +1637,7 @@ export type Database = {
           ambiente?: string | null
           certificado_id?: string | null
           certificates_id?: string | null
+          codigo_municipio?: string | null
           codigo_regime_tributario?: string | null
           codigo_tributacao_municipio?: string | null
           config_status?: string | null
