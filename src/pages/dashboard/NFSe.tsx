@@ -95,6 +95,7 @@ const NFSe = () => {
             email
           )
         `)
+        .eq('excluida', false)
         .ilike("clients.name", `%${searchTerm}%`);
 
       if (error) throw error;
