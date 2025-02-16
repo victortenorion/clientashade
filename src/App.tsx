@@ -1,24 +1,24 @@
 
 import { Routes, Route } from "react-router-dom";
-import { Index } from "@/pages/Index";
-import { Dashboard } from "@/pages/dashboard/Dashboard";
+import Index from "@/pages/Index";
+import Dashboard from "@/pages/dashboard/Dashboard";
 import { LoginForm } from "@/components/LoginForm";
-import { NotFound } from "@/pages/NotFound";
+import NotFound from "@/pages/NotFound";
 import { Toaster } from "@/components/ui/toaster";
-import { Home } from "@/pages/dashboard/Home";
-import { ServiceOrders } from "@/pages/dashboard/ServiceOrders";
-import { ServiceOrderForm } from "@/pages/dashboard/ServiceOrderForm";
-import { ServiceOrderEdit } from "@/pages/dashboard/ServiceOrderEdit";
-import { ServiceOrderSettings } from "@/pages/dashboard/ServiceOrderSettings";
-import { CustomerArea } from "@/pages/dashboard/CustomerArea";
-import { NFCe } from "@/pages/dashboard/NFCe";
-import { NFSeForm } from "@/pages/dashboard/NFSeForm";
-import { NFCeForm } from "@/pages/dashboard/NFCeForm";
-import { NFSe } from "@/pages/dashboard/NFSe";
-import { Users } from "@/pages/dashboard/Users";
-import { Clients } from "@/pages/dashboard/Clients";
-import { Products } from "@/pages/dashboard/Products";
-import { Stores } from "@/pages/dashboard/Stores";
+import Home from "@/pages/dashboard/Home";
+import ServiceOrders from "@/pages/dashboard/ServiceOrders";
+import ServiceOrderForm from "@/pages/dashboard/ServiceOrderForm";
+import ServiceOrderEdit from "@/pages/dashboard/ServiceOrderEdit";
+import ServiceOrderSettings from "@/pages/dashboard/ServiceOrderSettings";
+import CustomerArea from "@/pages/dashboard/CustomerArea";
+import NFCe from "@/pages/dashboard/NFCe";
+import NFSeForm from "@/pages/dashboard/NFSeForm";
+import NFCeForm from "@/pages/dashboard/NFCeForm";
+import NFSe from "@/pages/dashboard/NFSe";
+import Users from "@/pages/dashboard/Users";
+import Clients from "@/pages/dashboard/Clients";
+import Products from "@/pages/dashboard/Products";
+import Stores from "@/pages/dashboard/Stores";
 import { ClientProtectedRoute } from "@/components/ClientProtectedRoute";
 import { ClientLogin } from "@/pages/ClientLogin";
 
@@ -30,11 +30,7 @@ function App() {
         <Route path="/auth" element={<LoginForm />} />
         <Route path="/login" element={<LoginForm />} />
         <Route path="/client-login" element={<ClientLogin />} />
-        <Route path="/client-area/:os_id" element={
-          <ClientProtectedRoute>
-            <CustomerArea />
-          </ClientProtectedRoute>
-        } />
+        <Route path="/client-area/:os_id" element={<CustomerArea />} />
         <Route path="/dashboard" element={<Dashboard />}>
           <Route index element={<Home />} />
           <Route path="users" element={<Users />} />

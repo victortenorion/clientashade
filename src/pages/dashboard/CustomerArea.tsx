@@ -22,7 +22,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-const CustomerArea = () => {
+export default function CustomerArea() {
   const { clientId } = useParams();
   const [serviceOrders, setServiceOrders] = useState<ServiceOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +47,6 @@ const CustomerArea = () => {
 
       if (error) throw error;
 
-      // Convert the data to match ServiceOrder type
       const formattedOrders: ServiceOrder[] = (data || []).map(order => ({
         ...order,
         status: {
@@ -145,6 +144,4 @@ const CustomerArea = () => {
       </div>
     </div>
   );
-};
-
-export default CustomerArea;
+}
