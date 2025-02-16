@@ -14,7 +14,7 @@ import ServiceOrderForm from "./pages/dashboard/ServiceOrderForm";
 import ServiceOrderEdit from "./pages/dashboard/ServiceOrderEdit";
 import ServiceOrderSettings from "./pages/dashboard/ServiceOrderSettings";
 import CustomerArea from "./pages/dashboard/CustomerArea";
-import ClientProtectedRoute from "./components/ClientProtectedRoute";
+import { ClientProtectedRoute } from "./components/ClientProtectedRoute";
 import NotFound from "./pages/NotFound";
 import ClientLogin from "./pages/ClientLogin";
 import { Toaster } from "./components/ui/toaster";
