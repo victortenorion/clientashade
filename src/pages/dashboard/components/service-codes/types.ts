@@ -18,5 +18,11 @@ export interface ImportPreviewData extends ServiceCodeFormData {
   error?: string;
 }
 
+export interface PaginationState {
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
 export type SortOrder = 'asc' | 'desc';
 export type SortField = 'code' | 'description' | 'aliquota_iss';

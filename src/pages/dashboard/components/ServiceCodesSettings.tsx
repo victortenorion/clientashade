@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, Plus, Download, Upload } from "lucide-react";
-import { ServiceCode, ServiceCodeFormData, ImportPreviewData, SortField, SortOrder } from "./service-codes/types";
+import { ServiceCode, ServiceCodeFormData, ImportPreviewData, SortField, SortOrder, PaginationState } from "./service-codes/types";
 import { ServiceCodeForm } from "./service-codes/ServiceCodeForm";
 import { DeleteServiceCodeDialog } from "./service-codes/DeleteServiceCodeDialog";
 import { ImportPreviewDialog } from "./service-codes/ImportPreviewDialog";
@@ -29,6 +29,11 @@ export function ServiceCodesSettings() {
   });
   const [sortField, setSortField] = useState<SortField>('code');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const [pagination, setPagination] = useState<PaginationState>({
+    page: 1,
+    pageSize: 10,
+    total: 0,
+  });
 
   useEffect(() => {
     loadServiceCodes();
@@ -58,14 +63,18 @@ export function ServiceCodesSettings() {
   const loadServiceCodes = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
+      const { data, count, error } = await supabase
         .from("nfse_service_codes")
-        .select("*")
-        .order("code");
+        .select("*", { count: 'exact' })
+        .range(
+          (pagination.page - 1) * pagination.pageSize, 
+          pagination.page * pagination.pageSize - 1
+        );
 
       if (error) throw error;
 
       setServiceCodes(data || []);
+      setPagination(prev => ({ ...prev, total: count || 0 }));
     } catch (error: any) {
       console.error("Erro ao carregar códigos:", error);
       toast({
@@ -76,6 +85,14 @@ export function ServiceCodesSettings() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handlePageChange = (page: number) => {
+    setPagination(prev => ({ ...prev, page }));
+  };
+
+  const handlePageSizeChange = (pageSize: number) => {
+    setPagination(prev => ({ ...prev, pageSize, page: 1 }));
   };
 
   const handleOpenDialog = (code?: ServiceCode) => {
@@ -396,6 +413,9 @@ export function ServiceCodesSettings() {
             onSort={handleSort}
             onEdit={handleOpenDialog}
             onDelete={handleDelete}
+            pagination={pagination}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
           />
 
           <ServiceCodeForm
