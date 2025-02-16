@@ -26,7 +26,6 @@ serve(async (req) => {
 
     console.log('Buscando NFS-e com ID:', nfseId);
 
-    // Usando RPC para buscar a NFS-e com o certificado mais recente
     const { data: nfse, error: nfseError } = await supabaseClient.rpc(
       'get_nfse_with_latest_certificate',
       { p_nfse_id: nfseId }
@@ -65,44 +64,49 @@ serve(async (req) => {
       : 'https://nfeh.prefeitura.sp.gov.br/ws/lotenfe.asmx';
 
     console.log('Tentando acessar endpoint:', endpoint);
+    console.log('Ambiente:', nfse.settings.ambiente);
 
-    // Configurar payload SOAP com melhor formatação
+    const cnpjLimpo = nfse.company_info.cnpj.replace(/\D/g, '');
+    const inscricaoMunicipalLimpa = nfse.company_info.inscricao_municipal.replace(/\D/g, '');
+
+    console.log('CNPJ formatado:', cnpjLimpo);
+    console.log('Inscrição Municipal formatada:', inscricaoMunicipalLimpa);
+
     const soapEnvelope = `<?xml version="1.0" encoding="UTF-8"?>
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <soap:Header/>
-  <soap:Body>
+<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+  <soap12:Body>
     <ConsultaNFe xmlns="http://www.prefeitura.sp.gov.br/nfe">
       <VersaoSchema>1</VersaoSchema>
       <MensagemXML>
         <![CDATA[<?xml version="1.0" encoding="UTF-8"?>
-        <ConsultaNFe xmlns="http://www.prefeitura.sp.gov.br/nfe">
+        <ConsultaNFe xmlns="http://www.prefeitura.sp.gov.br/nfe" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
           <Cabecalho Versao="1">
             <CPFCNPJRemetente>
-              <CNPJ>${nfse.company_info.cnpj.replace(/\D/g, '')}</CNPJ>
+              <CNPJ>${cnpjLimpo}</CNPJ>
             </CPFCNPJRemetente>
           </Cabecalho>
           <Detalhe>
             <ChaveNFe>
-              <InscricaoPrestador>${nfse.company_info.inscricao_municipal.replace(/\D/g, '')}</InscricaoPrestador>
+              <InscricaoPrestador>${inscricaoMunicipalLimpa}</InscricaoPrestador>
               <NumeroNFe>${nfse.numero_nfse}</NumeroNFe>
             </ChaveNFe>
           </Detalhe>
         </ConsultaNFe>]]>
       </MensagemXML>
     </ConsultaNFe>
-  </soap:Body>
-</soap:Envelope>`;
+  </soap12:Body>
+</soap12:Envelope>`;
 
     console.log('Enviando requisição SOAP:', soapEnvelope);
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos timeout
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
-          'Content-Type': 'text/xml;charset=UTF-8',
+          'Content-Type': 'application/soap+xml;charset=UTF-8',
           'SOAPAction': 'http://www.prefeitura.sp.gov.br/nfe/ws/consultaNFe',
         },
         body: soapEnvelope,
