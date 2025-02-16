@@ -113,6 +113,7 @@ export type Database = {
           created_at: string
           document: string | null
           email: string | null
+          excluida: boolean | null
           fantasy_name: string | null
           fax: string | null
           id: string
@@ -157,6 +158,7 @@ export type Database = {
           created_at?: string
           document?: string | null
           email?: string | null
+          excluida?: boolean | null
           fantasy_name?: string | null
           fax?: string | null
           id?: string
@@ -201,6 +203,7 @@ export type Database = {
           created_at?: string
           document?: string | null
           email?: string | null
+          excluida?: boolean | null
           fantasy_name?: string | null
           fax?: string | null
           id?: string
