@@ -17,7 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, FileText, Send, File, Loader2, Mail, Eye, X } from "lucide-react";
+import { Plus, FileText, Send, File, Loader2, Mail, Eye, X, Trash2, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -58,6 +58,7 @@ const NFSe = () => {
   const [processando, setProcessando] = useState<string | null>(null);
   const [enviandoEmail, setEnviandoEmail] = useState<string | null>(null);
   const [gerandoPDF, setGerandoPDF] = useState<string | null>(null);
+  const [excluindo, setExcluindo] = useState<string | null>(null);
   const [notas, setNotas] = useState<NFSe[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [xmlDialogOpen, setXmlDialogOpen] = useState(false);
@@ -65,6 +66,7 @@ const NFSe = () => {
   const [selectedXml, setSelectedXml] = useState<{ envio: string; retorno: string } | null>(null);
   const [selectedNota, setSelectedNota] = useState<NFSe | null>(null);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [motivoCancelamento, setMotivoCancelamento] = useState("");
   const [cancelando, setCancelando] = useState<string | null>(null);
   const { toast } = useToast();
@@ -239,6 +241,39 @@ const NFSe = () => {
     setCancelDialogOpen(true);
   };
 
+  const handleOpenDeleteDialog = (nota: NFSe) => {
+    setSelectedNota(nota);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      setExcluindo(id);
+      const { error } = await supabase
+        .from('nfse')
+        .update({ excluida: true, data_exclusao: new Date().toISOString() })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "NFS-e excluída com sucesso",
+        description: "A nota fiscal foi marcada como excluída.",
+      });
+
+      fetchNFSe();
+      setDeleteDialogOpen(false);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao excluir NFS-e",
+        description: error.message,
+      });
+    } finally {
+      setExcluindo(null);
+    }
+  };
+
   const verificarStatusProcessamento = async () => {
     try {
       const { data: notasProcessando } = await supabase
@@ -375,6 +410,19 @@ const NFSe = () => {
                         Detalhes
                       </Button>
 
+                      {nota.status_sefaz !== "autorizada" && !nota.cancelada && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                        >
+                          <a href={`/dashboard/nfse/${nota.id}`}>
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Editar
+                          </a>
+                        </Button>
+                      )}
+
                       {!nota.cancelada && (
                         <>
                           {nota.status_sefaz === "pendente" && (
@@ -444,6 +492,20 @@ const NFSe = () => {
                           )}
                         </>
                       )}
+
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleOpenDeleteDialog(nota)}
+                        disabled={excluindo === nota.id}
+                      >
+                        {excluindo === nota.id ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4 mr-2" />
+                        )}
+                        Excluir
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -580,6 +642,34 @@ const NFSe = () => {
                 </>
               ) : (
                 "Confirmar Cancelamento"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir NFS-e</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta NFS-e? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => selectedNota && handleDelete(selectedNota.id)}
+              disabled={excluindo === selectedNota?.id}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {excluindo === selectedNota?.id ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                "Confirmar Exclusão"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
