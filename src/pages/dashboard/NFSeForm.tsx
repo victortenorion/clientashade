@@ -73,9 +73,10 @@ export default function NFSeForm() {
       const { data, error } = await supabase
         .from('company_info')
         .select('*')
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      console.log('Company Info:', data); // Debug
       return data;
     }
   });
@@ -136,8 +137,20 @@ export default function NFSeForm() {
     }
 
     if (serviceOrder && companyInfo && fiscalConfig?.config) {
+      console.log('Setting form values with:', {
+        serviceOrder,
+        companyInfo,
+        fiscalConfig
+      });
+
+      // Determinar o código do serviço com prioridade apropriada
+      const codigoServico = 
+        serviceOrder.codigo_servico || // Primeiro tenta da ordem de serviço
+        (companyInfo && companyInfo.codigo_servico) || // Depois tenta da empresa
+        ''; // Fallback para vazio se nenhum dos dois existir
+
       form.reset({
-        codigo_servico: serviceOrder.codigo_servico || companyInfo.codigo_servico || '',
+        codigo_servico: codigoServico,
         discriminacao_servicos: serviceOrder.discriminacao_servico || '',
         servico_discriminacao_item: serviceOrder.servico_discriminacao_item || '',
         servico_codigo_item_lista: serviceOrder.servico_codigo_item_lista || '',
