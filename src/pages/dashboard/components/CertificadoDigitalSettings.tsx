@@ -95,6 +95,7 @@ export function CertificadoDigitalSettings() {
           return;
         }
 
+        // Create a strict object matching our interface
         const certificateData: CertificateData = {
           certificate_data: base64String,
           certificate_password: certificatePassword,
@@ -102,13 +103,16 @@ export function CertificadoDigitalSettings() {
           valid_from: data.info?.validoDe || null,
           issuer: data.info?.emissor ? JSON.stringify(data.info.emissor) : null,
           subject: data.info?.subject ? JSON.stringify(data.info.subject) : null,
-          type: 'A1' as CertificateType,
+          type: 'A1', // Explicitly set as string literal
           is_valid: true
         };
 
+        console.log('Attempting to insert certificate with type:', certificateData.type);
+
+        // Insert the data
         const { error: insertError } = await supabase
-          .from("certificates")
-          .insert([certificateData]);
+          .from('certificates')
+          .insert(certificateData);
 
         if (insertError) {
           console.error('Erro ao salvar certificado:', insertError);
