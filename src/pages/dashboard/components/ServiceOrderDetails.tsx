@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -32,6 +31,14 @@ interface ServiceOrderDetails {
   exit_date: string;
   total_price: number;
   created_at: string;
+  rps_numero: number;
+  rps_serie: string;
+  rps_tipo: string;
+  codigo_servico: string;
+  discriminacao_servico: string;
+  iss_retido: boolean;
+  base_calculo: number;
+  aliquota_iss: number;
   items: {
     id: string;
     description: string;
@@ -197,6 +204,38 @@ export const ServiceOrderDetails = () => {
                 </span>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="print:shadow-none print:border-none">
+          <CardHeader>
+            <CardTitle>Informações Fiscais</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p><strong>RPS Número:</strong> {order.rps_numero || 'Não gerado'}</p>
+                <p><strong>RPS Série:</strong> {order.rps_serie || 'N/A'}</p>
+                <p><strong>RPS Tipo:</strong> {order.rps_tipo || 'N/A'}</p>
+              </div>
+              <div>
+                <p><strong>Código do Serviço:</strong> {order.codigo_servico || 'N/A'}</p>
+                <p><strong>ISS Retido:</strong> {order.iss_retido ? 'Sim' : 'Não'}</p>
+                <p><strong>Alíquota ISS:</strong> {order.aliquota_iss ? `${order.aliquota_iss}%` : 'N/A'}</p>
+                <p><strong>Base de Cálculo:</strong> {order.base_calculo ? 
+                  order.base_calculo.toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                  }) : 'N/A'}
+                </p>
+              </div>
+            </div>
+            {order.discriminacao_servico && (
+              <div className="mt-4">
+                <p><strong>Discriminação do Serviço:</strong></p>
+                <p className="mt-1">{order.discriminacao_servico}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
