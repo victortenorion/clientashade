@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -302,7 +301,6 @@ export default function ServiceOrderForm() {
                 onChange={handleChange}
                 placeholder="Descrição detalhada do serviço para a nota fiscal"
                 rows={3}
-                required
               />
             </div>
 
