@@ -65,7 +65,7 @@ export default function NFSeForm() {
   const navigate = useNavigate();
   const { serviceOrderId } = useParams();
 
-  // Buscar configurações da NFS-e com retry
+  // Buscar configurações da NFS-e com retry e fallback
   const { data: nfseSettings, error: nfseError } = useQuery({
     queryKey: ['nfse-sp-settings'],
     queryFn: async () => {
@@ -73,7 +73,7 @@ export default function NFSeForm() {
         .from('nfse_sp_settings')
         .select(`
           *,
-          certificates (
+          certificates!left (
             id,
             certificate_data,
             certificate_password,
@@ -81,57 +81,64 @@ export default function NFSeForm() {
             is_valid
           )
         `)
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.error('Erro ao buscar configurações NFS-e:', error);
         throw error;
       }
+
+      if (!data) {
+        throw new Error('Configurações da NFS-e não encontradas. Por favor, configure primeiro.');
+      }
+
       return data;
     },
-    retry: 3
+    retry: 3,
+    retryDelay: 1000
+  });
+
+  // Buscar dados da ordem de serviço
+  const { data: serviceOrder, error: serviceOrderError } = useQuery({
+    queryKey: ['service-order', serviceOrderId],
+    queryFn: async () => {
+      if (!serviceOrderId) return null;
+
+      const { data, error } = await supabase
+        .from('service_orders')
+        .select('*')
+        .eq('id', serviceOrderId)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Erro ao buscar ordem de serviço:', error);
+        throw error;
+      }
+
+      return data;
+    },
+    enabled: !!serviceOrderId
   });
 
   useEffect(() => {
     if (nfseError) {
+      console.error('Erro nas configurações:', nfseError);
       toast({
         variant: "destructive",
         title: "Erro ao carregar configurações",
         description: "Verifique se as configurações da NFS-e foram definidas."
       });
     }
-  }, [nfseError, toast]);
 
-  // Buscar dados da ordem de serviço
-  const { data: serviceOrder } = useQuery<ServiceOrder>({
-    queryKey: ['service-order', serviceOrderId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('service_orders')
-        .select('*')
-        .eq('id', serviceOrderId)
-        .single();
-      
-      if (error) throw error;
-      return data as ServiceOrder;
-    },
-    enabled: !!serviceOrderId
-  });
-
-  // Buscar configurações fiscais que incluem o certificado
-  const { data: fiscalConfig } = useQuery<FiscalConfigData>({
-    queryKey: ['fiscal-config'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('fiscal_config')
-        .select('*')
-        .eq('type', 'nfse')
-        .single();
-      
-      if (error) throw error;
-      return data as FiscalConfigData;
+    if (serviceOrderError) {
+      console.error('Erro na ordem de serviço:', serviceOrderError);
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar ordem de serviço",
+        description: "Não foi possível carregar os dados da ordem de serviço."
+      });
     }
-  });
+  }, [nfseError, serviceOrderError, toast]);
 
   const onSubmit = async (data: NFSeFormData) => {
     setIsLoading(true);
@@ -150,6 +157,12 @@ export default function NFSeForm() {
         throw new Error('Cliente não encontrado na ordem de serviço');
       }
 
+      console.log('Iniciando criação da NFS-e...', {
+        serviceOrderId,
+        nfseSettingsId: nfseSettings.id,
+        clientId: serviceOrder.client_id
+      });
+
       // Incrementa o número do RPS
       const { data: incrementResult, error: incrementError } = await supabase
         .rpc('increment_rps_sp_numero', {
@@ -160,6 +173,8 @@ export default function NFSeForm() {
         console.error('Erro ao incrementar número RPS:', incrementError);
         throw incrementError;
       }
+
+      console.log('Número RPS incrementado:', incrementResult);
 
       const dataCompetencia = new Date().toISOString().split('T')[0];
       const regimeEspecialTributacao = data.regime_especial_tributacao || '1';
@@ -207,12 +222,17 @@ export default function NFSeForm() {
         throw nfseError;
       }
 
+      console.log('NFS-e criada com sucesso:', nfse);
+
       // Processa a NFS-e
       const { error: processError } = await supabase.functions.invoke('transmit-nfse', {
         body: { nfseId: nfse.id }
       });
 
-      if (processError) throw processError;
+      if (processError) {
+        console.error('Erro ao processar NFS-e:', processError);
+        throw processError;
+      }
 
       toast({
         title: "NFS-e enviada com sucesso",
