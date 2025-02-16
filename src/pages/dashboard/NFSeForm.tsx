@@ -231,6 +231,22 @@ export default function NFSeForm() {
         throw new Error('Certificado digital inválido ou expirado');
       }
 
+      if (!nfseSettings.certificates_id) {
+        throw new Error('Certificado digital não configurado. Por favor, configure o certificado nas configurações da NFS-e SP.');
+      }
+
+      // Incrementa o número do RPS
+      const { data: incrementResult, error: incrementError } = await supabase
+        .rpc('increment_rps_sp_numero', {
+          p_settings_id: nfseSettings?.id
+        });
+
+      if (incrementError) throw incrementError;
+
+      const dataCompetencia = new Date().toISOString().split('T')[0];
+      const regimeEspecialTributacao = data.regime_especial_tributacao || '1';
+
+      // Cria a NFS-e primeiro
       const { data: nfse, error: nfseError } = await supabase
         .from('nfse')
         .insert([{
@@ -250,7 +266,7 @@ export default function NFSeForm() {
           aliquota_iss: data.aliquota_iss,
           valor_iss: data.valor_iss,
           iss_retido: data.iss_retido,
-          regime_especial_tributacao: data.regime_especial_tributacao,
+          regime_especial_tributacao: regimeEspecialTributacao,
           tipo_regime_especial: data.tipo_regime_especial,
           operacao_tributacao: data.operacao_tributacao,
           optante_mei: data.optante_simples_nacional,
@@ -258,17 +274,27 @@ export default function NFSeForm() {
           tributacao_rps: data.tipo_tributacao,
           tipo_rps: data.tipo_rps,
           serie_rps: data.serie_rps,
-          status_rps: 'N',
+          status_rps: 'P',
+          status_sefaz: 'processando',
           nfse_sp_settings_id: nfseSettings.id,
+          numero_rps: incrementResult,
+          data_competencia: dataCompetencia
         }])
         .select()
         .single();
 
       if (nfseError) throw nfseError;
 
+      // Agora processa a NFS-e
+      const { error: processError } = await supabase.functions.invoke('process-nfse', {
+        body: { nfseId: nfse.id }
+      });
+
+      if (processError) throw processError;
+
       toast({
-        title: "NFS-e gerada com sucesso",
-        description: `NFS-e número ${nfse.numero_nfse} criada`
+        title: "NFS-e enviada com sucesso",
+        description: "A NFS-e foi enviada para processamento"
       });
 
       navigate('/dashboard/nfse');
