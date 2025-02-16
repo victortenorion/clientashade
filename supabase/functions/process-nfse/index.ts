@@ -121,21 +121,35 @@ serve(async (req) => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-      const response = await fetch(endpoint, {
+      let httpsOptions = {
         method: 'POST',
         headers: {
           'Content-Type': 'application/soap+xml;charset=UTF-8',
           'SOAPAction': 'http://www.prefeitura.sp.gov.br/nfe/ws/consultaNFe',
-          'Host': new URL(endpoint).host,
-          'Connection': 'keep-alive'
+          'User-Agent': 'Mozilla/5.0', // Adicionado User-Agent
+          'Accept': '*/*',
+          'Connection': 'keep-alive',
+          'Accept-Encoding': 'gzip, deflate, br',
         },
         body: soapEnvelope,
         signal: controller.signal,
-        //@ts-ignore
-        backend: 'native',
-        rejectUnauthorized: false
-      });
+        mode: 'cors' as RequestMode,
+      };
 
+      // Adicionando certificado se disponível
+      if (nfse.settings.certificate?.certificate_data) {
+        console.log('Usando certificado digital');
+        httpsOptions = {
+          ...httpsOptions,
+          //@ts-ignore
+          cert: nfse.settings.certificate.certificate_data,
+          key: nfse.settings.certificate.certificate_data,
+          passphrase: nfse.settings.certificate.certificate_password,
+          rejectUnauthorized: false,
+        };
+      }
+
+      const response = await fetch(endpoint, httpsOptions);
       clearTimeout(timeoutId);
 
       if (!response.ok) {
@@ -143,7 +157,8 @@ serve(async (req) => {
         console.error('Resposta com erro da SEFAZ:', {
           status: response.status,
           statusText: response.statusText,
-          body: errorText
+          body: errorText,
+          headers: Object.fromEntries(response.headers.entries())
         });
         throw new Error(`Erro HTTP ${response.status}: ${errorText}`);
       }
@@ -177,7 +192,10 @@ serve(async (req) => {
         .insert({
           nfse_id: nfseId,
           status: novoStatus,
-          request_payload: { xml: soapEnvelope },
+          request_payload: { 
+            xml: soapEnvelope,
+            headers: httpsOptions.headers
+          },
           response_payload: { xml: responseText }
         });
 
