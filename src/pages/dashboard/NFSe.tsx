@@ -17,7 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, FileText, Send, File, Loader2, Mail, Eye } from "lucide-react";
+import { Plus, FileText, Send, File, Loader2, Mail, Eye, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -144,7 +144,6 @@ const NFSe = () => {
 
       if (error) throw error;
 
-      // Criar link temporário para download
       const linkSource = data.pdf;
       const downloadLink = document.createElement("a");
       downloadLink.href = linkSource;
@@ -249,9 +248,8 @@ const NFSe = () => {
 
       if (notasProcessando && notasProcessando.length > 0) {
         for (const nota of notasProcessando) {
-          // Se a nota está em processamento há mais de 5 minutos, tentar atualizar
           const processandoHa = new Date().getTime() - new Date(nota.updated_at).getTime();
-          if (processandoHa > 5 * 60 * 1000) { // 5 minutos
+          if (processandoHa > 5 * 60 * 1000) {
             console.log(`Nota ${nota.numero_nfse} em processamento há muito tempo, verificando status...`);
             
             const { error } = await supabase.functions.invoke("process-nfse", {
@@ -274,13 +272,10 @@ const NFSe = () => {
   }, [searchTerm]);
 
   useEffect(() => {
-    // Primeira verificação
     verificarStatusProcessamento();
 
-    // Configurar verificação periódica
     const interval = setInterval(verificarStatusProcessamento, 30000);
 
-    // Limpar intervalo quando o componente for desmontado
     return () => clearInterval(interval);
   }, []);
 
@@ -361,86 +356,95 @@ const NFSe = () => {
                   <TableCell>
                     <Badge 
                       variant={nota.cancelada ? "destructive" : getStatusBadgeVariant(nota.status_sefaz)}
+                      className="flex w-fit items-center gap-1"
                     >
-                      {nota.cancelada ? "Cancelada" : nota.status_sefaz}
                       {nota.status_sefaz === "processando" && (
-                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                        <Loader2 className="h-3 w-3 animate-spin" />
                       )}
+                      {nota.cancelada ? "Cancelada" : nota.status_sefaz}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleViewDetails(nota)}
-                    >
-                      <Eye className="h-4 w-4 mr-2" />
-                      Detalhes
-                    </Button>
-                    {!nota.cancelada && (
-                      <>
-                        {nota.status_sefaz === "pendente" && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleSendToSEFAZ(nota.id)}
-                            disabled={processando === nota.id}
-                          >
-                            {processando === nota.id ? (
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            ) : (
-                              <Send className="h-4 w-4 mr-2" />
-                            )}
-                            Transmitir
-                          </Button>
-                        )}
-                        {nota.status_sefaz === "autorizada" && (
-                          <>
+                  <TableCell>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewDetails(nota)}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        Detalhes
+                      </Button>
+
+                      {!nota.cancelada && (
+                        <>
+                          {nota.status_sefaz === "pendente" && (
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleViewXML(nota)}
+                              onClick={() => handleSendToSEFAZ(nota.id)}
+                              disabled={processando === nota.id}
                             >
-                              <FileText className="h-4 w-4 mr-2" />
-                              XML
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleGeneratePDF(nota.id)}
-                              disabled={gerandoPDF === nota.id}
-                            >
-                              {gerandoPDF === nota.id ? (
+                              {processando === nota.id ? (
                                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                               ) : (
-                                <File className="h-4 w-4 mr-2" />
+                                <Send className="h-4 w-4 mr-2" />
                               )}
-                              PDF
+                              Transmitir
                             </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleResendEmail(nota.id)}
-                              disabled={enviandoEmail === nota.id}
-                            >
-                              {enviandoEmail === nota.id ? (
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              ) : (
-                                <Mail className="h-4 w-4 mr-2" />
-                              )}
-                              Email
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleOpenCancelDialog(nota)}
-                            >
-                              Cancelar
-                            </Button>
-                          </>
-                        )}
-                      </>
-                    )}
+                          )}
+
+                          {nota.status_sefaz === "autorizada" && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewXML(nota)}
+                              >
+                                <FileText className="h-4 w-4 mr-2" />
+                                XML
+                              </Button>
+
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleGeneratePDF(nota.id)}
+                                disabled={gerandoPDF === nota.id}
+                              >
+                                {gerandoPDF === nota.id ? (
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                ) : (
+                                  <File className="h-4 w-4 mr-2" />
+                                )}
+                                PDF
+                              </Button>
+
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleResendEmail(nota.id)}
+                                disabled={enviandoEmail === nota.id}
+                              >
+                                {enviandoEmail === nota.id ? (
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                ) : (
+                                  <Mail className="h-4 w-4 mr-2" />
+                                )}
+                                Email
+                              </Button>
+
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleOpenCancelDialog(nota)}
+                              >
+                                <X className="h-4 w-4 mr-2" />
+                                Cancelar
+                              </Button>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
