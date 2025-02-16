@@ -67,7 +67,7 @@ const ServiceOrders = () => {
         client_name: order.clients?.name || 'Cliente não encontrado',
         status: order.status?.name || 'Sem status',
         total: order.total_price || 0,
-        nfce_issued: false // Você pode ajustar isso baseado em sua lógica de negócio
+        nfce_issued: false
       }));
 
       setServiceOrders(formattedOrders);
@@ -229,8 +229,12 @@ const ServiceOrders = () => {
               <DialogTitle>Emitir NFC-e</DialogTitle>
             </DialogHeader>
             <NFCeForm
-              serviceOrder={selectedServiceOrder}
-              onClose={closeNFCeForm}
+              onSubmit={(data) => {
+                console.log("NFCe data:", data);
+                closeNFCeForm();
+              }}
+              onCancel={closeNFCeForm}
+              isLoading={false}
             />
           </DialogContent>
         </Dialog>
