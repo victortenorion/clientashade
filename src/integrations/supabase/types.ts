@@ -16,8 +16,11 @@ export type Database = {
           created_at: string | null
           id: string
           is_valid: boolean | null
+          issuer: string | null
+          subject: string | null
           type: string
           updated_at: string | null
+          valid_from: string | null
           valid_until: string | null
         }
         Insert: {
@@ -26,8 +29,11 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_valid?: boolean | null
+          issuer?: string | null
+          subject?: string | null
           type: string
           updated_at?: string | null
+          valid_from?: string | null
           valid_until?: string | null
         }
         Update: {
@@ -36,8 +42,11 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_valid?: boolean | null
+          issuer?: string | null
+          subject?: string | null
           type?: string
           updated_at?: string | null
+          valid_from?: string | null
           valid_until?: string | null
         }
         Relationships: []
