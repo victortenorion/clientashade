@@ -734,6 +734,7 @@ export type Database = {
           opcao_simples: string | null
           optante_mei: boolean | null
           outras_retencoes: number | null
+          pdf_url: string | null
           percentual_ir: number | null
           percentual_tributos_ibpt: number | null
           prestador_incentivador_cultural: boolean | null
@@ -877,6 +878,7 @@ export type Database = {
           opcao_simples?: string | null
           optante_mei?: boolean | null
           outras_retencoes?: number | null
+          pdf_url?: string | null
           percentual_ir?: number | null
           percentual_tributos_ibpt?: number | null
           prestador_incentivador_cultural?: boolean | null
@@ -1020,6 +1022,7 @@ export type Database = {
           opcao_simples?: string | null
           optante_mei?: boolean | null
           outras_retencoes?: number | null
+          pdf_url?: string | null
           percentual_ir?: number | null
           percentual_tributos_ibpt?: number | null
           prestador_incentivador_cultural?: boolean | null
