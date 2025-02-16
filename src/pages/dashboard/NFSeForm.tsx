@@ -127,24 +127,15 @@ export default function NFSeForm() {
   });
 
   useEffect(() => {
-    if (!serviceOrderId) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Ordem de serviço não encontrada"
-      });
-      navigate('/dashboard/service-orders');
-    }
-
-    if (serviceOrder && companyInfo && fiscalConfig?.config) {
+    if (companyInfo && fiscalConfig?.config) {
       console.log('Setting form values with:', {
         serviceOrder,
         companyInfo,
         fiscalConfig
       });
 
-      // Garantir que o código do serviço seja uma string
       const codigoServico = String(serviceOrder?.codigo_servico ?? companyInfo?.codigo_servico ?? '');
+      console.log('Código Serviço:', codigoServico); // Debug
 
       form.reset({
         codigo_servico: codigoServico,
@@ -171,7 +162,7 @@ export default function NFSeForm() {
         serie_rps: fiscalConfig.config.rps_serie ?? '1',
       });
     }
-  }, [serviceOrderId, navigate, toast, serviceOrder, companyInfo, fiscalConfig, form]);
+  }, [serviceOrder, companyInfo, fiscalConfig, form]);
 
   const onSubmit = async (data: NFSeFormData) => {
     setIsLoading(true);
@@ -250,7 +241,11 @@ export default function NFSeForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Código do Serviço</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select 
+                  onValueChange={field.onChange} 
+                  value={field.value}
+                  defaultValue={field.value}
+                >
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o código do serviço" />
