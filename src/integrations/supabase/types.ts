@@ -235,10 +235,15 @@ export type Database = {
       }
       company_info: {
         Row: {
+          aedf: string | null
+          certificado_id: string | null
           cnae: string | null
           cnpj: string
+          codigo_regime_especial: string | null
+          codigo_regime_tributario: string | null
           codigo_servico: string | null
           created_at: string
+          data_inicio_atividade: string | null
           email: string | null
           endereco_bairro: string | null
           endereco_cep: string | null
@@ -251,18 +256,34 @@ export type Database = {
           id: string
           inscricao_estadual: string | null
           inscricao_municipal: string | null
+          intermediario_cnpj: string | null
+          intermediario_email: string | null
+          intermediario_inscricao_municipal: string | null
+          iss_retido_intermediario: boolean | null
           nome_fantasia: string | null
+          operacao_tributacao: string | null
+          producao_intermediario: boolean | null
+          proxy_host: string | null
+          proxy_port: string | null
           razao_social: string
           regime_tributario: string | null
+          sefaz_ambiente: string | null
           serie_rps_padrao: string | null
           telefone: string | null
+          tipo_documento_prestador: string | null
+          tipo_servico: string | null
           updated_at: string
         }
         Insert: {
+          aedf?: string | null
+          certificado_id?: string | null
           cnae?: string | null
           cnpj: string
+          codigo_regime_especial?: string | null
+          codigo_regime_tributario?: string | null
           codigo_servico?: string | null
           created_at?: string
+          data_inicio_atividade?: string | null
           email?: string | null
           endereco_bairro?: string | null
           endereco_cep?: string | null
@@ -275,18 +296,34 @@ export type Database = {
           id?: string
           inscricao_estadual?: string | null
           inscricao_municipal?: string | null
+          intermediario_cnpj?: string | null
+          intermediario_email?: string | null
+          intermediario_inscricao_municipal?: string | null
+          iss_retido_intermediario?: boolean | null
           nome_fantasia?: string | null
+          operacao_tributacao?: string | null
+          producao_intermediario?: boolean | null
+          proxy_host?: string | null
+          proxy_port?: string | null
           razao_social: string
           regime_tributario?: string | null
+          sefaz_ambiente?: string | null
           serie_rps_padrao?: string | null
           telefone?: string | null
+          tipo_documento_prestador?: string | null
+          tipo_servico?: string | null
           updated_at?: string
         }
         Update: {
+          aedf?: string | null
+          certificado_id?: string | null
           cnae?: string | null
           cnpj?: string
+          codigo_regime_especial?: string | null
+          codigo_regime_tributario?: string | null
           codigo_servico?: string | null
           created_at?: string
+          data_inicio_atividade?: string | null
           email?: string | null
           endereco_bairro?: string | null
           endereco_cep?: string | null
@@ -299,14 +336,33 @@ export type Database = {
           id?: string
           inscricao_estadual?: string | null
           inscricao_municipal?: string | null
+          intermediario_cnpj?: string | null
+          intermediario_email?: string | null
+          intermediario_inscricao_municipal?: string | null
+          iss_retido_intermediario?: boolean | null
           nome_fantasia?: string | null
+          operacao_tributacao?: string | null
+          producao_intermediario?: boolean | null
+          proxy_host?: string | null
+          proxy_port?: string | null
           razao_social?: string
           regime_tributario?: string | null
+          sefaz_ambiente?: string | null
           serie_rps_padrao?: string | null
           telefone?: string | null
+          tipo_documento_prestador?: string | null
+          tipo_servico?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "company_info_certificado_id_fkey"
+            columns: ["certificado_id"]
+            isOneToOne: false
+            referencedRelation: "certificates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       customer_area_field_settings: {
         Row: {

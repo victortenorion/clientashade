@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
@@ -30,6 +31,22 @@ interface CompanyInfo {
   telefone: string | null;
   email: string | null;
   serie_rps_padrao: string | null;
+  tipo_documento_prestador: string | null;
+  codigo_regime_especial: string | null;
+  tipo_servico: string | null;
+  data_inicio_atividade: string | null;
+  certificado_id: string | null;
+  aedf: string | null;
+  proxy_host: string | null;
+  proxy_port: string | null;
+  codigo_regime_tributario: string | null;
+  operacao_tributacao: string | null;
+  sefaz_ambiente: string | null;
+  producao_intermediario: boolean;
+  iss_retido_intermediario: boolean;
+  intermediario_cnpj: string | null;
+  intermediario_inscricao_municipal: string | null;
+  intermediario_email: string | null;
 }
 
 interface RPSConfig {
@@ -65,6 +82,22 @@ export const CompanyInfoTab = () => {
     telefone: "",
     email: "",
     serie_rps_padrao: "",
+    tipo_documento_prestador: "CNPJ",
+    codigo_regime_especial: "",
+    tipo_servico: "P",
+    data_inicio_atividade: "",
+    certificado_id: "",
+    aedf: "",
+    proxy_host: "",
+    proxy_port: "",
+    codigo_regime_tributario: "1",
+    operacao_tributacao: "1",
+    sefaz_ambiente: "homologacao",
+    producao_intermediario: false,
+    iss_retido_intermediario: false,
+    intermediario_cnpj: "",
+    intermediario_inscricao_municipal: "",
+    intermediario_email: "",
   });
 
   const loadCompanyInfo = async () => {
