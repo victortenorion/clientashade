@@ -38,7 +38,7 @@ const ServiceOrderSettings = () => {
     incentivo_fiscal: false,
     certificado_valido: false,
     certificado_validade: undefined,
-    numero_inicial_rps: 1,
+    numero_inicial_rps: "1", // Alterado para string
     aliquota_servico: 0,
     versao_schema: "2.00",
     lote_rps_numero: 1,
@@ -60,7 +60,7 @@ const ServiceOrderSettings = () => {
     senha_certificado_gov: "",
     rps_tipo: "RPS",
     rps_serie: "1",
-    tipo_contribuinte: "1", // 1 = Normal
+    tipo_contribuinte: "1",
     gerar_prazos_aceite: false,
     prazo_aceite_dias: 0,
     tipo_documento_prestador: "CNPJ",
@@ -76,8 +76,8 @@ const ServiceOrderSettings = () => {
     padrao_prefeitura: "PREFEITURA DE SAO PAULO",
     gerar_guia_pagamento: false,
     codigo_servico_municipio: "",
-    fonte_tributos: "I", // I = IBPT
-    natureza_operacao: "1", // 1 = Tributação no município
+    fonte_tributos: "I",
+    natureza_operacao: "1",
     descricao_servico_padrao: ""
   });
 
