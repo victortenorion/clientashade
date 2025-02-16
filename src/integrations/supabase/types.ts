@@ -1513,7 +1513,7 @@ export type Database = {
           rps_situacao: string | null
           rps_status: string | null
           rps_tipo: string | null
-          senha_emissor: string | null
+          senha_emissor: string
           serie_rps_padrao: string | null
           servico_aliquota: number | null
           servico_codigo_cnae: string | null
@@ -1536,7 +1536,7 @@ export type Database = {
           tipo_rps_padrao: string | null
           ultima_verificacao: string | null
           updated_at: string
-          usuario_emissor: string | null
+          usuario_emissor: string
           versao_schema: string | null
           wsdl_homologacao: string | null
           wsdl_homologacao_url: string | null
@@ -1581,7 +1581,7 @@ export type Database = {
           rps_situacao?: string | null
           rps_status?: string | null
           rps_tipo?: string | null
-          senha_emissor?: string | null
+          senha_emissor: string
           serie_rps_padrao?: string | null
           servico_aliquota?: number | null
           servico_codigo_cnae?: string | null
@@ -1604,7 +1604,7 @@ export type Database = {
           tipo_rps_padrao?: string | null
           ultima_verificacao?: string | null
           updated_at?: string
-          usuario_emissor?: string | null
+          usuario_emissor: string
           versao_schema?: string | null
           wsdl_homologacao?: string | null
           wsdl_homologacao_url?: string | null
@@ -1649,7 +1649,7 @@ export type Database = {
           rps_situacao?: string | null
           rps_status?: string | null
           rps_tipo?: string | null
-          senha_emissor?: string | null
+          senha_emissor?: string
           serie_rps_padrao?: string | null
           servico_aliquota?: number | null
           servico_codigo_cnae?: string | null
@@ -1672,7 +1672,7 @@ export type Database = {
           tipo_rps_padrao?: string | null
           ultima_verificacao?: string | null
           updated_at?: string
-          usuario_emissor?: string | null
+          usuario_emissor?: string
           versao_schema?: string | null
           wsdl_homologacao?: string | null
           wsdl_homologacao_url?: string | null
