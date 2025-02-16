@@ -137,11 +137,45 @@ export default function NFSeForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      console.log("Dados do formulário:", values);
+      // Primeiro, criar a NFS-e no banco
+      const { data: nfse, error: nfseError } = await supabase
+        .from('nfse')
+        .insert({
+          service_order_id: serviceOrderId,
+          client_id: serviceOrder?.client_id,
+          valor_servicos: values.valor_servicos,
+          valor_deducoes: values.valor_deducoes,
+          valor_pis: values.valor_pis,
+          valor_cofins: values.valor_cofins,
+          valor_inss: values.valor_inss,
+          valor_ir: values.valor_ir,
+          valor_csll: values.valor_csll,
+          codigo_atividade: values.codigo_atividade,
+          aliquota_servicos: values.aliquota_servicos,
+          tipo_recolhimento: values.tipo_recolhimento,
+          codigo_municipio_prestacao: values.codigo_municipio_prestacao,
+          cidade_prestacao: values.cidade_prestacao,
+          discriminacao_servicos: values.discriminacao_servicos,
+          iss_retido: values.iss_retido,
+          status_sefaz: 'pendente'
+        })
+        .select()
+        .single();
+
+      if (nfseError) throw nfseError;
+
+      // Agora, chamar a Edge Function para processar a NFS-e
+      const { error: processError } = await supabase.functions.invoke('process-nfse', {
+        body: { nfseId: nfse.id }
+      });
+
+      if (processError) throw processError;
+
       toast({
         title: "Sucesso!",
-        description: "NFS-e gerada com sucesso.",
+        description: "NFS-e enviada para processamento.",
       });
+      
       navigate("/dashboard/nfse");
     } catch (error: any) {
       toast({

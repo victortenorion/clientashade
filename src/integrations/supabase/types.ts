@@ -104,6 +104,7 @@ export type Database = {
           city: string | null
           client_login: string | null
           client_password: string | null
+          codigo_municipio: string | null
           codigo_municipio_tomador: string | null
           codigo_pais_tomador: string | null
           codigo_servico: string | null
@@ -119,6 +120,7 @@ export type Database = {
           id: string
           indicador_incentivo_fiscal: boolean | null
           inscricao_estadual_tomador: string | null
+          inscricao_municipal: string | null
           inscricao_municipal_tomador: string | null
           inscricao_suframa: string | null
           mobile_phone: string | null
@@ -130,13 +132,16 @@ export type Database = {
           phone: string | null
           phone_carrier: string | null
           phone_landline: string | null
+          regime_especial: string | null
           regime_especial_tributacao: string | null
+          regime_tributario: string | null
           state: string | null
           state_registration: string | null
           state_registration_exempt: boolean | null
           store_id: string | null
           street: string | null
           street_number: string | null
+          tipo_documento: string | null
           tipo_documento_prestador: string | null
           tipo_documento_tomador: string | null
           tipo_endereco_tomador: string | null
@@ -149,6 +154,7 @@ export type Database = {
           city?: string | null
           client_login?: string | null
           client_password?: string | null
+          codigo_municipio?: string | null
           codigo_municipio_tomador?: string | null
           codigo_pais_tomador?: string | null
           codigo_servico?: string | null
@@ -164,6 +170,7 @@ export type Database = {
           id?: string
           indicador_incentivo_fiscal?: boolean | null
           inscricao_estadual_tomador?: string | null
+          inscricao_municipal?: string | null
           inscricao_municipal_tomador?: string | null
           inscricao_suframa?: string | null
           mobile_phone?: string | null
@@ -175,13 +182,16 @@ export type Database = {
           phone?: string | null
           phone_carrier?: string | null
           phone_landline?: string | null
+          regime_especial?: string | null
           regime_especial_tributacao?: string | null
+          regime_tributario?: string | null
           state?: string | null
           state_registration?: string | null
           state_registration_exempt?: boolean | null
           store_id?: string | null
           street?: string | null
           street_number?: string | null
+          tipo_documento?: string | null
           tipo_documento_prestador?: string | null
           tipo_documento_tomador?: string | null
           tipo_endereco_tomador?: string | null
@@ -194,6 +204,7 @@ export type Database = {
           city?: string | null
           client_login?: string | null
           client_password?: string | null
+          codigo_municipio?: string | null
           codigo_municipio_tomador?: string | null
           codigo_pais_tomador?: string | null
           codigo_servico?: string | null
@@ -209,6 +220,7 @@ export type Database = {
           id?: string
           indicador_incentivo_fiscal?: boolean | null
           inscricao_estadual_tomador?: string | null
+          inscricao_municipal?: string | null
           inscricao_municipal_tomador?: string | null
           inscricao_suframa?: string | null
           mobile_phone?: string | null
@@ -220,13 +232,16 @@ export type Database = {
           phone?: string | null
           phone_carrier?: string | null
           phone_landline?: string | null
+          regime_especial?: string | null
           regime_especial_tributacao?: string | null
+          regime_tributario?: string | null
           state?: string | null
           state_registration?: string | null
           state_registration_exempt?: boolean | null
           store_id?: string | null
           street?: string | null
           street_number?: string | null
+          tipo_documento?: string | null
           tipo_documento_prestador?: string | null
           tipo_documento_tomador?: string | null
           tipo_endereco_tomador?: string | null
@@ -1544,11 +1559,13 @@ export type Database = {
       nfse_sp_settings: {
         Row: {
           aliquota_iss_padrao: number | null
+          aliquota_servico: number | null
           ambiente: string | null
           certificado_id: string | null
           certificates_id: string | null
           codigo_municipio: string | null
           codigo_regime_tributario: string | null
+          codigo_servico_padrao: string | null
           codigo_tributacao_municipio: string | null
           config_status: string | null
           cpf_responsavel: string | null
@@ -1613,11 +1630,13 @@ export type Database = {
         }
         Insert: {
           aliquota_iss_padrao?: number | null
+          aliquota_servico?: number | null
           ambiente?: string | null
           certificado_id?: string | null
           certificates_id?: string | null
           codigo_municipio?: string | null
           codigo_regime_tributario?: string | null
+          codigo_servico_padrao?: string | null
           codigo_tributacao_municipio?: string | null
           config_status?: string | null
           cpf_responsavel?: string | null
@@ -1682,11 +1701,13 @@ export type Database = {
         }
         Update: {
           aliquota_iss_padrao?: number | null
+          aliquota_servico?: number | null
           ambiente?: string | null
           certificado_id?: string | null
           certificates_id?: string | null
           codigo_municipio?: string | null
           codigo_regime_tributario?: string | null
+          codigo_servico_padrao?: string | null
           codigo_tributacao_municipio?: string | null
           config_status?: string | null
           cpf_responsavel?: string | null
@@ -1985,7 +2006,9 @@ export type Database = {
         Row: {
           aliquota_iss: number | null
           base_calculo: number | null
+          cidade_prestacao: string | null
           client_id: string
+          codigo_municipio_prestacao: string | null
           codigo_servico: string | null
           completion_date: string | null
           created_at: string
@@ -2029,13 +2052,20 @@ export type Database = {
           total_price: number
           tracking_code: string | null
           updated_at: string
+          valor_cofins: number | null
+          valor_csll: number | null
           valor_deducoes: number | null
+          valor_inss: number | null
+          valor_ir: number | null
           valor_iss: number | null
+          valor_pis: number | null
         }
         Insert: {
           aliquota_iss?: number | null
           base_calculo?: number | null
+          cidade_prestacao?: string | null
           client_id: string
+          codigo_municipio_prestacao?: string | null
           codigo_servico?: string | null
           completion_date?: string | null
           created_at?: string
@@ -2079,13 +2109,20 @@ export type Database = {
           total_price?: number
           tracking_code?: string | null
           updated_at?: string
+          valor_cofins?: number | null
+          valor_csll?: number | null
           valor_deducoes?: number | null
+          valor_inss?: number | null
+          valor_ir?: number | null
           valor_iss?: number | null
+          valor_pis?: number | null
         }
         Update: {
           aliquota_iss?: number | null
           base_calculo?: number | null
+          cidade_prestacao?: string | null
           client_id?: string
+          codigo_municipio_prestacao?: string | null
           codigo_servico?: string | null
           completion_date?: string | null
           created_at?: string
@@ -2129,8 +2166,13 @@ export type Database = {
           total_price?: number
           tracking_code?: string | null
           updated_at?: string
+          valor_cofins?: number | null
+          valor_csll?: number | null
           valor_deducoes?: number | null
+          valor_inss?: number | null
+          valor_ir?: number | null
           valor_iss?: number | null
+          valor_pis?: number | null
         }
         Relationships: [
           {
