@@ -1309,6 +1309,7 @@ export type Database = {
       }
       nfse_sp_settings: {
         Row: {
+          ambiente: string | null
           certificado_id: string | null
           certificates_id: string | null
           codigo_regime_tributario: string | null
@@ -1359,6 +1360,7 @@ export type Database = {
           wsdl_producao_url: string | null
         }
         Insert: {
+          ambiente?: string | null
           certificado_id?: string | null
           certificates_id?: string | null
           codigo_regime_tributario?: string | null
@@ -1409,6 +1411,7 @@ export type Database = {
           wsdl_producao_url?: string | null
         }
         Update: {
+          ambiente?: string | null
           certificado_id?: string | null
           certificates_id?: string | null
           codigo_regime_tributario?: string | null

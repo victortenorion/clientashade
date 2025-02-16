@@ -24,10 +24,19 @@ serve(async (req) => {
 
     const { nfseId } = await req.json() as NFSeData;
 
-    // Primeiro, buscar NFS-e para obter o settings_id
+    // Buscar NFS-e com suas configurações em uma única query
     const { data: nfse, error: nfseError } = await supabaseClient
       .from('nfse')
-      .select('*')
+      .select(`
+        *,
+        nfse_sp_settings!inner (
+          *,
+          certificates!certificates_id (
+            certificate_data,
+            certificate_password
+          )
+        )
+      `)
       .eq('id', nfseId)
       .maybeSingle();
 
@@ -40,31 +49,8 @@ serve(async (req) => {
       throw new Error('NFS-e não encontrada');
     }
 
-    if (!nfse.nfse_sp_settings_id) {
-      console.error('NFS-e sem configuração associada:', nfse);
-      throw new Error('NFS-e sem configuração associada');
-    }
-
-    // Buscar configurações da NFS-e
-    const { data: settings, error: settingsError } = await supabaseClient
-      .from('nfse_sp_settings')
-      .select(`
-        *,
-        certificates!certificates_id (
-          certificate_data,
-          certificate_password
-        )
-      `)
-      .eq('id', nfse.nfse_sp_settings_id)
-      .maybeSingle();
-
-    if (settingsError) {
-      console.error('Erro ao buscar configurações:', settingsError);
-      throw new Error('Erro ao buscar configurações da NFS-e');
-    }
-
+    const settings = nfse.nfse_sp_settings;
     if (!settings) {
-      console.error('Configurações não encontradas para o ID:', nfse.nfse_sp_settings_id);
       throw new Error('Configurações da NFS-e não encontradas');
     }
 
