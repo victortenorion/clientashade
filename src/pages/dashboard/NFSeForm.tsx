@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -12,6 +13,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -80,6 +82,19 @@ export default function NFSeForm() {
     enabled: !!serviceOrderId
   });
 
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      valor_servicos: 0,
+      base_calculo: 0,
+      aliquota_iss: 0,
+      valor_iss: 0,
+      iss_retido: false,
+      codigo_servico: "",
+      discriminacao_servicos: "",
+    },
+  });
+
   // Pre-fill form with service order data when available
   useEffect(() => {
     if (serviceOrder) {
@@ -95,19 +110,6 @@ export default function NFSeForm() {
       });
     }
   }, [serviceOrder]);
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      valor_servicos: 0,
-      base_calculo: 0,
-      aliquota_iss: 0,
-      valor_iss: 0,
-      iss_retido: false,
-      codigo_servico: "",
-      discriminacao_servicos: "",
-    },
-  });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
