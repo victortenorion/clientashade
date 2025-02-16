@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 import forge from "npm:node-forge";
@@ -9,98 +10,6 @@ const corsHeaders = {
 
 interface NFSeData {
   nfseId: string;
-}
-
-async function signXML(xml: string, certificateData: string, certificatePassword: string): Promise<string> {
-  try {
-    // Decodificar certificado
-    const certificadoBase64 = certificateData.includes('base64,') 
-      ? certificateData.split('base64,')[1]
-      : certificateData;
-
-    const binaryString = atob(certificadoBase64);
-    const der = forge.util.createBuffer(binaryString, 'binary');
-    const asn1 = forge.asn1.fromDer(der);
-    const pkcs12 = forge.pkcs12.pkcs12FromAsn1(asn1, certificatePassword);
-
-    // Extrair chave privada
-    const keyBags = pkcs12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag })[forge.pki.oids.pkcs8ShroudedKeyBag];
-    if (!keyBags || !keyBags[0]) {
-      throw new Error('Chave privada não encontrada no certificado');
-    }
-    const privateKey = keyBags[0].key;
-
-    // Calcular hash do XML
-    const md = forge.md.sha1.create();
-    md.update(xml, 'utf8');
-    const hash = md.digest().bytes();
-
-    // Assinar o hash
-    const signature = privateKey.sign(md);
-    const signatureBase64 = forge.util.encode64(signature);
-
-    return signatureBase64;
-  } catch (error) {
-    console.error('Erro ao assinar XML:', error);
-    throw error;
-  }
-}
-
-async function sendToSEFAZ(xml: string, ambiente: string): Promise<any> {
-  const wsdlUrl = ambiente === 'producao'
-    ? 'https://nfe.prefeitura.sp.gov.br/ws/lotenfe.asmx'
-    : 'https://nfeh.prefeitura.sp.gov.br/ws/lotenfe.asmx';
-
-  const soapEnvelope = `<?xml version="1.0" encoding="UTF-8"?>
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <soap:Body>
-    <EnvioRPS xmlns="http://www.prefeitura.sp.gov.br/nfe">
-      ${xml}
-    </EnvioRPS>
-  </soap:Body>
-</soap:Envelope>`;
-
-  try {
-    const response = await fetch(wsdlUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'text/xml;charset=UTF-8',
-        'SOAPAction': 'http://www.prefeitura.sp.gov.br/nfe/ws/envioRPS'
-      },
-      body: soapEnvelope
-    });
-
-    if (!response.ok) {
-      throw new Error(`Erro na chamada SOAP: ${response.statusText}`);
-    }
-
-    const responseText = await response.text();
-    return responseText;
-  } catch (error) {
-    console.error('Erro ao enviar para SEFAZ:', error);
-    throw error;
-  }
-}
-
-async function parseXMLResponse(xmlResponse: string) {
-  const parser = new DOMParser();
-  const xmlDoc = parser.parseFromString(xmlResponse, "text/xml");
-  
-  // Extrair informações relevantes do XML de retorno
-  const codigoErro = xmlDoc.querySelector("Erro")?.textContent;
-  const mensagemErro = xmlDoc.querySelector("MensagemErro")?.textContent;
-  const numeroNota = xmlDoc.querySelector("NumeroNFe")?.textContent;
-  const codigoVerificacao = xmlDoc.querySelector("CodigoVerificacao")?.textContent;
-  
-  return {
-    sucesso: !codigoErro,
-    numeroNota,
-    codigoVerificacao,
-    erro: codigoErro ? {
-      codigo: codigoErro,
-      mensagem: mensagemErro
-    } : null
-  };
 }
 
 serve(async (req) => {
@@ -116,185 +25,126 @@ serve(async (req) => {
 
     const { nfseId } = await req.json() as NFSeData;
 
-    // Buscar dados da NFS-e
+    // Buscar dados da NFS-e incluindo as configurações
     const { data: nfse, error: nfseError } = await supabaseClient
       .from('nfse')
       .select(`
         *,
-        clients (
-          *
-        ),
-        nfse_sp_settings (
-          *
+        settings:nfse_sp_settings!nfse_sp_settings_id (
+          *,
+          certificate:certificates!certificates_id (
+            certificate_data,
+            certificate_password
+          )
         )
       `)
       .eq('id', nfseId)
       .single();
 
-    if (nfseError) throw nfseError;
-
-    // Buscar certificado
-    const { data: certificate, error: certError } = await supabaseClient
-      .from('certificates')
-      .select('*')
-      .eq('id', nfse.nfse_sp_settings.certificado_id)
-      .single();
-
-    if (certError) throw certError;
-
-    // Gerar o XML do RPS
-    const xmlTemplate = `<?xml version="1.0" encoding="UTF-8"?>
-<PedidoEnvioRPS xmlns="http://www.prefeitura.sp.gov.br/nfe">
-  <Cabecalho Versao="1" xmlns="">
-    <CPFCNPJRemetente>
-      <CNPJ>${nfse.cnpj}</CNPJ>
-    </CPFCNPJRemetente>
-  </Cabecalho>
-  <RPS xmlns="">
-    <ChaveRPS>
-      <InscricaoPrestador>${nfse.inscricao_municipal}</InscricaoPrestador>
-      <SerieRPS>${nfse.serie_rps}</SerieRPS>
-      <NumeroRPS>${nfse.numero_rps}</NumeroRPS>
-    </ChaveRPS>
-    <TipoRPS>RPS</TipoRPS>
-    <DataEmissao>${nfse.data_emissao}</DataEmissao>
-    <StatusRPS>N</StatusRPS>
-    <TributacaoRPS>T</TributacaoRPS>
-    <ValorServicos>${nfse.valor_servicos}</ValorServicos>
-    <ValorDeducoes>0.00</ValorDeducoes>
-    <ValorPIS>0.00</ValorPIS>
-    <ValorCOFINS>0.00</ValorCOFINS>
-    <ValorINSS>0.00</ValorINSS>
-    <ValorIR>0.00</ValorIR>
-    <ValorCSLL>0.00</ValorCSLL>
-    <CodigoServico>${nfse.codigo_servico}</CodigoServico>
-    <AliquotaServicos>${nfse.aliquota_servico}</AliquotaServicos>
-    <ISSRetido>false</ISSRetido>
-    <CPFCNPJTomador>
-      <CNPJ>${nfse.clients.document}</CNPJ>
-    </CPFCNPJTomador>
-    <RazaoSocialTomador>${nfse.clients.name}</RazaoSocialTomador>
-    <EnderecoTomador>
-      <TipoLogradouro>Rua</TipoLogradouro>
-      <Logradouro>${nfse.clients.street}</Logradouro>
-      <NumeroEndereco>${nfse.clients.street_number}</NumeroEndereco>
-      <ComplementoEndereco>${nfse.clients.complement || ''}</ComplementoEndereco>
-      <Bairro>${nfse.clients.neighborhood}</Bairro>
-      <Cidade>${nfse.clients.city}</Cidade>
-      <UF>${nfse.clients.state}</UF>
-      <CEP>${nfse.clients.zip_code}</CEP>
-    </EnderecoTomador>
-    <EmailTomador>${nfse.clients.email}</EmailTomador>
-    <Discriminacao>${nfse.discriminacao_servicos}</Discriminacao>
-  </RPS>
-</PedidoEnvioRPS>`;
-
-    try {
-      // Assinar XML
-      console.log('Iniciando assinatura do XML...');
-      const signature = await signXML(xmlTemplate, certificate.certificate_data, certificate.certificate_password);
-      console.log('XML assinado com sucesso');
-
-      // Atualizar XML com assinatura
-      const xmlAssinado = xmlTemplate.replace('<RPS xmlns="">', `<RPS xmlns=""><Assinatura>${signature}</Assinatura>`);
-
-      // Enviar para SEFAZ
-      console.log('Enviando para SEFAZ...');
-      const sefazResponse = await sendToSEFAZ(xmlAssinado, nfse.ambiente);
-      console.log('Resposta SEFAZ:', sefazResponse);
-
-      // Processar resposta da SEFAZ
-      const parsedResponse = await parseXMLResponse(sefazResponse);
-      
-      if (parsedResponse.sucesso) {
-        // Atualizar NFS-e com dados de sucesso
-        await supabaseClient
-          .from('nfse')
-          .update({
-            xml_envio: xmlAssinado,
-            xml_retorno: sefazResponse,
-            status_sefaz: 'autorizada',
-            numero_nfse: parsedResponse.numeroNota,
-            codigo_verificacao: parsedResponse.codigoVerificacao
-          })
-          .eq('id', nfseId);
-
-        // Registrar log de sucesso
-        await supabaseClient
-          .from('nfse_sefaz_logs')
-          .insert({
-            nfse_id: nfseId,
-            status: 'autorizada',
-            message: 'NFS-e autorizada com sucesso',
-            request_payload: xmlAssinado,
-            response_payload: {
-              xml: sefazResponse,
-              parsed: parsedResponse
-            }
-          });
-
-        // TODO: Implementar geração de PDF
-        // TODO: Implementar envio de e-mail
-
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            message: 'NFS-e autorizada com sucesso',
-            data: {
-              numeroNota: parsedResponse.numeroNota,
-              codigoVerificacao: parsedResponse.codigoVerificacao
-            }
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      } else {
-        // Atualizar NFS-e com dados de erro
-        await supabaseClient
-          .from('nfse')
-          .update({
-            xml_envio: xmlAssinado,
-            xml_retorno: sefazResponse,
-            status_sefaz: 'rejeitada'
-          })
-          .eq('id', nfseId);
-
-        // Registrar log de erro
-        await supabaseClient
-          .from('nfse_sefaz_logs')
-          .insert({
-            nfse_id: nfseId,
-            status: 'rejeitada',
-            message: `Erro: ${parsedResponse.erro?.mensagem}`,
-            request_payload: xmlAssinado,
-            response_payload: {
-              xml: sefazResponse,
-              parsed: parsedResponse
-            }
-          });
-
-        throw new Error(parsedResponse.erro?.mensagem || 'Erro ao processar NFS-e');
-      }
-    } catch (error) {
-      // Registrar erro no log
-      await supabaseClient
-        .from('nfse_sefaz_logs')
-        .insert({
-          nfse_id: nfseId,
-          status: 'erro',
-          message: error.message
-        });
-
-      throw error;
+    if (nfseError) {
+      console.error('Erro ao buscar NFS-e:', nfseError);
+      throw new Error('NFS-e não encontrada');
     }
+
+    if (!nfse.settings) {
+      throw new Error('Configurações da NFS-e não encontradas');
+    }
+
+    // Verificar status atual
+    const response = await fetch(
+      nfse.settings.ambiente === 'producao'
+        ? 'https://nfe.prefeitura.sp.gov.br/ws/lotenfe.asmx'
+        : 'https://nfeh.prefeitura.sp.gov.br/ws/lotenfe.asmx',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/xml;charset=UTF-8',
+          'SOAPAction': 'http://www.prefeitura.sp.gov.br/nfe/ws/consultaNFe',
+        },
+        body: `<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <ConsultaNFe xmlns="http://www.prefeitura.sp.gov.br/nfe">
+      <MensagemXML>
+        <![CDATA[
+          <?xml version="1.0" encoding="UTF-8"?>
+          <ConsultaNFe xmlns="http://www.prefeitura.sp.gov.br/nfe">
+            <Cabecalho Versao="1">
+              <CPFCNPJRemetente>
+                <CNPJ>${nfse.settings.cnpj}</CNPJ>
+              </CPFCNPJRemetente>
+            </Cabecalho>
+            <Detalhe>
+              <ChaveNFe>
+                <InscricaoPrestador>${nfse.settings.inscricao_municipal}</InscricaoPrestador>
+                <NumeroNFe>${nfse.numero_nfse}</NumeroNFe>
+              </ChaveNFe>
+            </Detalhe>
+          </ConsultaNFe>
+        ]]>
+      </MensagemXML>
+    </ConsultaNFe>
+  </soap:Body>
+</soap:Envelope>`
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Erro na consulta à SEFAZ: ${response.statusText}`);
+    }
+
+    const responseText = await response.text();
+    console.log('Resposta da consulta:', responseText);
+
+    // Processar resposta e atualizar status
+    let novoStatus = 'processando';
+    if (responseText.includes('<Situacao>C</Situacao>')) {
+      novoStatus = 'cancelada';
+    } else if (responseText.includes('<Situacao>N</Situacao>')) {
+      novoStatus = 'autorizada';
+    } else if (responseText.includes('<Erro>')) {
+      novoStatus = 'rejeitada';
+    }
+
+    // Atualizar status da NFS-e
+    const { error: updateError } = await supabaseClient
+      .from('nfse')
+      .update({
+        status_sefaz: novoStatus,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', nfseId);
+
+    if (updateError) {
+      throw updateError;
+    }
+
+    // Registrar log
+    await supabaseClient
+      .from('nfse_sefaz_logs')
+      .insert({
+        nfse_id: nfseId,
+        status: novoStatus,
+        request_payload: { xml: responseText },
+        response_payload: { xml: responseText }
+      });
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        status: novoStatus,
+        message: `Status da NFS-e atualizado para ${novoStatus}` 
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
 
   } catch (error) {
     console.error('Erro ao processar NFS-e:', error);
-
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
+      { 
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }

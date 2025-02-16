@@ -725,6 +725,7 @@ export type Database = {
           municipio_prestacao: string | null
           natureza_operacao: string | null
           nfse_consolidada: string | null
+          nfse_sp_settings_id: string | null
           numero_endereco_prestador: string | null
           numero_endereco_tomador: string | null
           numero_guia: string | null
@@ -869,6 +870,7 @@ export type Database = {
           municipio_prestacao?: string | null
           natureza_operacao?: string | null
           nfse_consolidada?: string | null
+          nfse_sp_settings_id?: string | null
           numero_endereco_prestador?: string | null
           numero_endereco_tomador?: string | null
           numero_guia?: string | null
@@ -1013,6 +1015,7 @@ export type Database = {
           municipio_prestacao?: string | null
           natureza_operacao?: string | null
           nfse_consolidada?: string | null
+          nfse_sp_settings_id?: string | null
           numero_endereco_prestador?: string | null
           numero_endereco_tomador?: string | null
           numero_guia?: string | null
@@ -1090,6 +1093,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nfse_nfse_sp_settings_id_fkey"
+            columns: ["nfse_sp_settings_id"]
+            isOneToOne: false
+            referencedRelation: "nfse_sp_settings"
             referencedColumns: ["id"]
           },
           {
