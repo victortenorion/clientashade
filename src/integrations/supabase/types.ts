@@ -1682,21 +1682,32 @@ export type Database = {
           exit_date: string | null
           expected_date: string | null
           id: string
+          incentivador_cultural: boolean | null
           inss_retido: boolean | null
           internal_notes: string | null
           invoice_key: string | null
           invoice_number: string | null
           ir_retido: boolean | null
           iss_retido: boolean | null
+          local_incidencia: string | null
+          local_prestacao: string | null
+          operacao_tributacao: string | null
           order_number: number
           pis_cofins_csll_retido: boolean | null
           priority: string | null
           problem: string | null
           reception_notes: string | null
+          regime_especial: string | null
+          regime_tributario: string | null
+          rps_numero: number | null
           seller_id: string | null
+          serie_rps: string | null
           shipping_company: string | null
+          situacao_rps: string | null
           status_id: string | null
           store_id: string | null
+          tipo_documento_prestador: string | null
+          tipo_rps: string | null
           total_price: number
           tracking_code: string | null
           updated_at: string
@@ -1718,21 +1729,32 @@ export type Database = {
           exit_date?: string | null
           expected_date?: string | null
           id?: string
+          incentivador_cultural?: boolean | null
           inss_retido?: boolean | null
           internal_notes?: string | null
           invoice_key?: string | null
           invoice_number?: string | null
           ir_retido?: boolean | null
           iss_retido?: boolean | null
+          local_incidencia?: string | null
+          local_prestacao?: string | null
+          operacao_tributacao?: string | null
           order_number?: number
           pis_cofins_csll_retido?: boolean | null
           priority?: string | null
           problem?: string | null
           reception_notes?: string | null
+          regime_especial?: string | null
+          regime_tributario?: string | null
+          rps_numero?: number | null
           seller_id?: string | null
+          serie_rps?: string | null
           shipping_company?: string | null
+          situacao_rps?: string | null
           status_id?: string | null
           store_id?: string | null
+          tipo_documento_prestador?: string | null
+          tipo_rps?: string | null
           total_price?: number
           tracking_code?: string | null
           updated_at?: string
@@ -1754,21 +1776,32 @@ export type Database = {
           exit_date?: string | null
           expected_date?: string | null
           id?: string
+          incentivador_cultural?: boolean | null
           inss_retido?: boolean | null
           internal_notes?: string | null
           invoice_key?: string | null
           invoice_number?: string | null
           ir_retido?: boolean | null
           iss_retido?: boolean | null
+          local_incidencia?: string | null
+          local_prestacao?: string | null
+          operacao_tributacao?: string | null
           order_number?: number
           pis_cofins_csll_retido?: boolean | null
           priority?: string | null
           problem?: string | null
           reception_notes?: string | null
+          regime_especial?: string | null
+          regime_tributario?: string | null
+          rps_numero?: number | null
           seller_id?: string | null
+          serie_rps?: string | null
           shipping_company?: string | null
+          situacao_rps?: string | null
           status_id?: string | null
           store_id?: string | null
+          tipo_documento_prestador?: string | null
+          tipo_rps?: string | null
           total_price?: number
           tracking_code?: string | null
           updated_at?: string
