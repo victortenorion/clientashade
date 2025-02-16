@@ -64,19 +64,42 @@ export default function NFSeForm() {
   const navigate = useNavigate();
   const { serviceOrderId } = useParams();
 
-  // Buscar configurações da NFS-e
-  const { data: nfseSettings } = useQuery({
+  // Buscar configurações da NFS-e com retry
+  const { data: nfseSettings, error: nfseError } = useQuery({
     queryKey: ['nfse-sp-settings'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('nfse_sp_settings')
-        .select('*')
+        .select(`
+          *,
+          certificates (
+            id,
+            certificate_data,
+            certificate_password,
+            valid_until,
+            is_valid
+          )
+        `)
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao buscar configurações NFS-e:', error);
+        throw error;
+      }
       return data;
-    }
+    },
+    retry: 3
   });
+
+  useEffect(() => {
+    if (nfseError) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar configurações",
+        description: "Verifique se as configurações da NFS-e foram definidas."
+      });
+    }
+  }, [nfseError, toast]);
 
   // Buscar dados da ordem de serviço
   const { data: serviceOrder } = useQuery<ServiceOrder>({
@@ -116,12 +139,10 @@ export default function NFSeForm() {
         throw new Error('Configurações da NFS-e não encontradas');
       }
 
-      if (!fiscalConfig?.config.certificado_digital) {
-        throw new Error('Certificado digital não configurado. Por favor, configure o certificado na aba SEFAZ.');
-      }
-
-      if (!fiscalConfig.config.certificado_valido) {
-        throw new Error('Certificado digital inválido ou expirado. Por favor, verifique o certificado na aba SEFAZ.');
+      // Verificar se há certificado válido
+      const hasCertificate = nfseSettings.certificates?.some(cert => cert.is_valid);
+      if (!hasCertificate) {
+        throw new Error('Certificado digital não configurado ou inválido. Por favor, configure o certificado na aba SEFAZ.');
       }
 
       if (!serviceOrder?.client_id) {
@@ -134,23 +155,26 @@ export default function NFSeForm() {
           p_settings_id: nfseSettings.id
         });
 
-      if (incrementError) throw incrementError;
+      if (incrementError) {
+        console.error('Erro ao incrementar número RPS:', incrementError);
+        throw incrementError;
+      }
 
       const dataCompetencia = new Date().toISOString().split('T')[0];
       const regimeEspecialTributacao = data.regime_especial_tributacao || '1';
 
-      // Cria a NFS-e primeiro
+      // Cria a NFS-e
       const { data: nfse, error: nfseError } = await supabase
         .from('nfse')
         .insert([{
           service_order_id: serviceOrderId,
           client_id: serviceOrder.client_id,
-          fiscal_config_id: fiscalConfig.id,
+          fiscal_config_id: nfseSettings.id,
           codigo_servico: data.codigo_servico,
           discriminacao_servicos: data.discriminacao_servicos,
           servico_discriminacao_item: data.servico_discriminacao_item,
           servico_codigo_item_lista: data.servico_codigo_item_lista,
-          servico_codigo_municipio: data.servico_codigo_municipio,
+          servico_codigo_municipio: data.servico_codigo_municipio || nfseSettings.codigo_municipio,
           servico_codigo_local_prestacao: data.servico_codigo_local_prestacao,
           servico_valor_item: data.servico_valor_item,
           servico_exigibilidade: data.servico_exigibilidade,
@@ -171,16 +195,19 @@ export default function NFSeForm() {
           status_rps: 'P',
           status_sefaz: 'processando',
           nfse_sp_settings_id: nfseSettings.id,
-          numero_rps: incrementResult,
+          numero_rps: incrementResult?.toString(),
           data_competencia: dataCompetencia
         }])
         .select()
         .single();
 
-      if (nfseError) throw nfseError;
+      if (nfseError) {
+        console.error('Erro ao criar NFS-e:', nfseError);
+        throw nfseError;
+      }
 
-      // Agora processa a NFS-e
-      const { error: processError } = await supabase.functions.invoke('process-nfse', {
+      // Processa a NFS-e
+      const { error: processError } = await supabase.functions.invoke('transmit-nfse', {
         body: { nfseId: nfse.id }
       });
 
@@ -193,6 +220,7 @@ export default function NFSeForm() {
 
       navigate('/dashboard/nfse');
     } catch (error: any) {
+      console.error('Erro ao gerar NFS-e:', error);
       toast({
         variant: "destructive",
         title: "Erro ao gerar NFS-e",
