@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { Plus } from "lucide-react";
+import { Eye, Edit, Trash, Printer, Download, Plus } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -86,6 +86,45 @@ export default function ServiceOrders() {
     navigate(`/dashboard/service-orders/${id}`);
   };
 
+  const handleEdit = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    navigate(`/dashboard/service-orders/${id}/edit`);
+  };
+
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (window.confirm('Tem certeza que deseja excluir esta ordem de serviço?')) {
+      try {
+        const { error } = await supabase
+          .from('service_orders')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Ordem de serviço excluída com sucesso"
+        });
+      } catch (error: any) {
+        toast({
+          variant: "destructive",
+          title: "Erro ao excluir ordem de serviço",
+          description: error.message
+        });
+      }
+    }
+  };
+
+  const handlePrint = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    // Implementar impressão da OS
+  };
+
+  const handleDownloadNFSe = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    // Implementar download da NFS-e quando disponível
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -112,6 +151,7 @@ export default function ServiceOrders() {
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Base Cálc.</TableHead>
               <TableHead className="text-right">Valor Total</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -158,6 +198,50 @@ export default function ServiceOrders() {
                     style: 'currency',
                     currency: 'BRL'
                   }).format(order.total_price)}
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2" onClick={e => e.stopPropagation()}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleViewDetails(order.id)}
+                      title="Visualizar"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => handleEdit(e, order.id)}
+                      title="Editar"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => handlePrint(e, order.id)}
+                      title="Imprimir OS"
+                    >
+                      <Printer className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => handleDownloadNFSe(e, order.id)}
+                      title="Download NFS-e"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => handleDelete(e, order.id)}
+                      title="Excluir"
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
