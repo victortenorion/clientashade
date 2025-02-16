@@ -64,6 +64,7 @@ export default function NFSeForm() {
       servico_exigibilidade: '1',
       servico_operacao: '1',
       operacao_tributacao: '1',
+      regime_especial_tributacao: '1',
       valor_servicos: 0,
       base_calculo: 0,
       aliquota_iss: 0,
@@ -298,6 +299,8 @@ export default function NFSeForm() {
 
       const dataCompetencia = new Date().toISOString().split('T')[0];
 
+      const regimeEspecialTributacao = data.regime_especial_tributacao || '1';
+
       const { error: nfseError } = await supabase
         .from('nfse')
         .insert([{
@@ -317,7 +320,7 @@ export default function NFSeForm() {
           aliquota_iss: data.aliquota_iss,
           valor_iss: data.valor_iss,
           iss_retido: data.iss_retido,
-          regime_especial_tributacao: data.regime_especial_tributacao,
+          regime_especial_tributacao: regimeEspecialTributacao,
           tipo_regime_especial: data.tipo_regime_especial,
           operacao_tributacao: data.operacao_tributacao,
           optante_mei: data.optante_simples_nacional,
