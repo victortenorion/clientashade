@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { StatusTab } from "./components/StatusTab";
 import { SEFAZTab } from "./components/SEFAZTab";
@@ -204,13 +205,16 @@ const ServiceOrderSettings = () => {
   };
 
   const renderContent = () => {
-    if (location.pathname.includes("/notas-fiscais")) {
+    const path = location.pathname;
+
+    // Verificar qual conteúdo mostrar baseado no path
+    if (path.includes("/notas-fiscais")) {
       return <NotasFiscaisTab />;
     }
-    if (location.pathname.includes("/dados-empresa")) {
+    if (path.includes("/dados-empresa")) {
       return <CompanyInfoTab />;
     }
-    if (location.pathname.includes("/sefaz")) {
+    if (path.includes("/sefaz")) {
       return (
         <SEFAZTab 
           nfceConfig={nfceConfig}
@@ -223,7 +227,7 @@ const ServiceOrderSettings = () => {
         />
       );
     }
-    if (location.pathname.includes("/area-cliente") || location.pathname.includes("/campos-visiveis")) {
+    if (path.includes("/area-cliente") || path.includes("/campos-visiveis")) {
       return <ClientTab />;
     }
     return <StatusTab />;
