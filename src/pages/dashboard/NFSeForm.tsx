@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -26,10 +27,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
 const formSchema = z.object({
-  valor_servicos: z.number(),
-  base_calculo: z.number(),
-  aliquota_iss: z.number(),
-  valor_iss: z.number(),
+  valor_servicos: z.string().transform((val) => Number(val)),
+  base_calculo: z.string().transform((val) => Number(val)),
+  aliquota_iss: z.string().transform((val) => Number(val)),
+  valor_iss: z.string().transform((val) => Number(val)),
   iss_retido: z.boolean(),
   codigo_servico: z.string(),
   discriminacao_servicos: z.string(),
@@ -83,10 +84,10 @@ export default function NFSeForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      valor_servicos: 0,
-      base_calculo: 0,
-      aliquota_iss: 0,
-      valor_iss: 0,
+      valor_servicos: "0",
+      base_calculo: "0",
+      aliquota_iss: "0",
+      valor_iss: "0",
       iss_retido: false,
       codigo_servico: "",
       discriminacao_servicos: "",
@@ -96,11 +97,10 @@ export default function NFSeForm() {
   useEffect(() => {
     if (serviceOrder) {
       form.reset({
-        ...form.getValues(),
-        valor_servicos: serviceOrder.total_price,
-        base_calculo: serviceOrder.base_calculo || serviceOrder.total_price,
-        aliquota_iss: serviceOrder.aliquota_iss || 0,
-        valor_iss: serviceOrder.valor_iss || 0,
+        valor_servicos: String(serviceOrder.total_price || 0),
+        base_calculo: String(serviceOrder.base_calculo || serviceOrder.total_price || 0),
+        aliquota_iss: String(serviceOrder.aliquota_iss || 0),
+        valor_iss: String(serviceOrder.valor_iss || 0),
         iss_retido: serviceOrder.iss_retido || false,
         codigo_servico: serviceOrder.codigo_servico || '',
         discriminacao_servicos: serviceOrder.discriminacao_servico || ''
@@ -147,7 +147,8 @@ export default function NFSeForm() {
                       <FormLabel>Valor dos Serviços</FormLabel>
                       <FormControl>
                         <Input 
-                          type="number" 
+                          type="text"
+                          inputMode="decimal"
                           placeholder="0.00" 
                           {...field}
                         />
@@ -164,7 +165,8 @@ export default function NFSeForm() {
                       <FormLabel>Base de Cálculo</FormLabel>
                       <FormControl>
                         <Input 
-                          type="number" 
+                          type="text"
+                          inputMode="decimal"
                           placeholder="0.00" 
                           {...field}
                         />
@@ -184,7 +186,8 @@ export default function NFSeForm() {
                       <FormLabel>Alíquota ISS (%)</FormLabel>
                       <FormControl>
                         <Input 
-                          type="number" 
+                          type="text"
+                          inputMode="decimal"
                           placeholder="0.00" 
                           {...field}
                         />
@@ -201,7 +204,8 @@ export default function NFSeForm() {
                       <FormLabel>Valor ISS</FormLabel>
                       <FormControl>
                         <Input 
-                          type="number" 
+                          type="text"
+                          inputMode="decimal"
                           placeholder="0.00" 
                           {...field}
                         />
