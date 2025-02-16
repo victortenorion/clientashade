@@ -24,6 +24,7 @@ export interface NFSeConfig {
   certificado_valido: boolean;
   certificado_validade?: string;
   numero_inicial_rps: number;
+  numero_inicial_nfse: number;
   aliquota_servico: number;
   versao_schema: string;
   lote_rps_numero: number;
@@ -119,3 +120,4 @@ export interface RPSSettings {
   numero_inicial: number;
   lote_atual: number;
 }
+

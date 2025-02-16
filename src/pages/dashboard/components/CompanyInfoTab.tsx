@@ -52,6 +52,7 @@ interface CompanyInfo {
 
 interface RPSConfig {
   numero_inicial_rps: number;
+  numero_inicial_nfse: number;
 }
 
 export const CompanyInfoTab = () => {
@@ -60,7 +61,8 @@ export const CompanyInfoTab = () => {
   const [isCepLoading, setIsCepLoading] = useState(false);
   const [isCheckingRPS, setIsCheckingRPS] = useState(false);
   const [rpsConfig, setRpsConfig] = useState<RPSConfig>({
-    numero_inicial_rps: 0
+    numero_inicial_rps: 0,
+    numero_inicial_nfse: 0
   });
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
     id: "",
@@ -124,14 +126,15 @@ export const CompanyInfoTab = () => {
 
       const { data: spConfig } = await supabase
         .from('nfse_sp_config')
-        .select('numero_inicial_rps')
+        .select('numero_inicial_rps, numero_inicial_nfse')
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
 
-      if (spConfig?.numero_inicial_rps) {
+      if (spConfig) {
         setRpsConfig({
-          numero_inicial_rps: spConfig.numero_inicial_rps
+          numero_inicial_rps: spConfig.numero_inicial_rps || 0,
+          numero_inicial_nfse: spConfig.numero_inicial_nfse || 0
         });
 
         if (lastNFSe?.numero_rps && parseInt(lastNFSe.numero_rps) >= spConfig.numero_inicial_rps) {
@@ -283,7 +286,7 @@ export const CompanyInfoTab = () => {
     try {
       const { data: lastNFSe } = await supabase
         .from('nfse')
-        .select('numero_rps')
+        .select('numero_rps, numero_nfse')
         .order('numero_rps', { ascending: false })
         .limit(1)
         .single();
@@ -292,6 +295,19 @@ export const CompanyInfoTab = () => {
         const confirmContinue = window.confirm(
           `ATENÇÃO: Já existem NFS-e com número RPS maior que ${rpsConfig.numero_inicial_rps}. ` +
           `O próximo número será ${parseInt(lastNFSe.numero_rps) + 1}. ` +
+          `Deseja continuar mesmo assim?`
+        );
+
+        if (!confirmContinue) {
+          setIsCheckingRPS(false);
+          return;
+        }
+      }
+
+      if (lastNFSe?.numero_nfse && parseInt(lastNFSe.numero_nfse) >= rpsConfig.numero_inicial_nfse) {
+        const confirmContinue = window.confirm(
+          `ATENÇÃO: Já existem NFS-e com número maior que ${rpsConfig.numero_inicial_nfse}. ` +
+          `O próximo número será ${parseInt(lastNFSe.numero_nfse) + 1}. ` +
           `Deseja continuar mesmo assim?`
         );
 
@@ -320,7 +336,8 @@ export const CompanyInfoTab = () => {
         const { error: updateError } = await supabase
           .from('nfse_sp_config')
           .update({ 
-            numero_inicial_rps: rpsConfig.numero_inicial_rps
+            numero_inicial_rps: rpsConfig.numero_inicial_rps,
+            numero_inicial_nfse: rpsConfig.numero_inicial_nfse
           })
           .eq('id', currentConfig.id);
 
@@ -329,7 +346,8 @@ export const CompanyInfoTab = () => {
         const { error: insertError } = await supabase
           .from('nfse_sp_config')
           .insert([{ 
-            numero_inicial_rps: rpsConfig.numero_inicial_rps
+            numero_inicial_rps: rpsConfig.numero_inicial_rps,
+            numero_inicial_nfse: rpsConfig.numero_inicial_nfse
           }]);
 
         if (insertError) throw insertError;
@@ -600,7 +618,23 @@ export const CompanyInfoTab = () => {
                       numero_inicial_rps: e.target.value === '' ? 0 : parseInt(e.target.value)
                     })
                   }
-                  placeholder="Digite o número inicial"
+                  placeholder="Digite o número inicial do RPS"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Número Inicial da NFS-e</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={rpsConfig.numero_inicial_nfse === 0 ? '' : rpsConfig.numero_inicial_nfse}
+                  onChange={(e) =>
+                    setRpsConfig({
+                      ...rpsConfig,
+                      numero_inicial_nfse: e.target.value === '' ? 0 : parseInt(e.target.value)
+                    })
+                  }
+                  placeholder="Digite o número inicial da NFS-e"
                 />
               </div>
 
