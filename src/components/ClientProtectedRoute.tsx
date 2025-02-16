@@ -1,8 +1,12 @@
 
-import { useEffect } from "react";
-import { useNavigate, Outlet } from "react-router-dom";
+import { ReactNode, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
-export const ClientProtectedRoute = () => {
+interface ClientProtectedRouteProps {
+  children: ReactNode;
+}
+
+export const ClientProtectedRoute = ({ children }: ClientProtectedRouteProps) => {
   const navigate = useNavigate();
   
   useEffect(() => {
@@ -12,5 +16,5 @@ export const ClientProtectedRoute = () => {
     }
   }, [navigate]);
 
-  return <Outlet />;
+  return <>{children}</>;
 };
