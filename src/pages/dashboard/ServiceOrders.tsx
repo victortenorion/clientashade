@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -89,10 +88,7 @@ export default function ServiceOrders() {
 
   const handleEdit = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    toast({
-      title: "Em breve",
-      description: "A funcionalidade de edição estará disponível em breve."
-    });
+    navigate(`/dashboard/service-orders/${id}/edit`);
   };
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
