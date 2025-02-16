@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { StatusTab } from "./components/StatusTab";
 import { SEFAZTab } from "./components/SEFAZTab";
@@ -57,7 +56,28 @@ const ServiceOrderSettings = () => {
     numero_lote: 1,
     usar_certificado_gov: false,
     caminho_certificado_gov: "",
-    senha_certificado_gov: ""
+    senha_certificado_gov: "",
+    rps_tipo: "RPS",
+    rps_serie: "1",
+    tipo_contribuinte: "1", // 1 = Normal
+    gerar_prazos_aceite: false,
+    prazo_aceite_dias: 0,
+    tipo_documento_prestador: "CNPJ",
+    enviar_email_tomador: true,
+    alerta_envio_email: true,
+    substituir_nfse: false,
+    substituida_numero: "",
+    substituida_serie: "",
+    usar_tributacao_aproximada: false,
+    percentual_tributos_aproximado: 0,
+    local_servico: "prestador",
+    tipo_documento_tomador: "CNPJ",
+    padrao_prefeitura: "PREFEITURA DE SAO PAULO",
+    gerar_guia_pagamento: false,
+    codigo_servico_municipio: "",
+    fonte_tributos: "I", // I = IBPT
+    natureza_operacao: "1", // 1 = Tributação no município
+    descricao_servico_padrao: ""
   });
 
   const [fiscalConfig, setFiscalConfig] = useState<FiscalConfig>({

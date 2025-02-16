@@ -30,7 +30,7 @@ export interface NFSeConfig {
   operacao_tributacao: string;
   codigo_regime_tributario: string;
   tipo_regime_especial: string;
-  // Novos campos específicos para SP
+  // Campos específicos SP
   codigo_cidade_prestacao: string;
   usuario_emissor: string;
   senha_emissor: string;
@@ -44,6 +44,28 @@ export interface NFSeConfig {
   usar_certificado_gov: boolean;
   caminho_certificado_gov?: string;
   senha_certificado_gov?: string;
+  // Novos campos importantes
+  rps_tipo: string;
+  rps_serie: string;
+  tipo_contribuinte: string;
+  gerar_prazos_aceite: boolean;
+  prazo_aceite_dias: number;
+  tipo_documento_prestador: string;
+  enviar_email_tomador: boolean;
+  alerta_envio_email: boolean;
+  substituir_nfse: boolean;
+  substituida_numero?: string;
+  substituida_serie?: string;
+  usar_tributacao_aproximada: boolean;
+  percentual_tributos_aproximado: number;
+  local_servico: string;
+  tipo_documento_tomador: string;
+  padrao_prefeitura: string;
+  gerar_guia_pagamento: boolean;
+  codigo_servico_municipio: string;
+  fonte_tributos: string;
+  natureza_operacao: string;
+  descricao_servico_padrao: string;
 }
 
 export interface FiscalConfig {
