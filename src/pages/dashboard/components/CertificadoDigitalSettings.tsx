@@ -90,9 +90,9 @@ export function CertificadoDigitalSettings() {
           certificate_password: certificatePassword,
           valid_until: data.info?.validoAte,
           valid_from: data.info?.validoDe,
-          issuer: JSON.stringify(data.info?.emissor), // Convertendo array para JSON string
-          subject: JSON.stringify(data.info?.subject), // Convertendo array para JSON string
-          type: 'A1',
+          issuer: JSON.stringify(data.info?.emissor),
+          subject: JSON.stringify(data.info?.subject),
+          type: 'a1', // Changed to lowercase to match constraint
           is_valid: true
         };
 
