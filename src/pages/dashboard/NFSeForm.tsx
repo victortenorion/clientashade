@@ -296,6 +296,8 @@ export default function NFSeForm() {
 
       if (incrementError) throw incrementError;
 
+      const dataCompetencia = new Date().toISOString().split('T')[0];
+
       const { error: nfseError } = await supabase
         .from('nfse')
         .insert([{
@@ -325,7 +327,8 @@ export default function NFSeForm() {
           serie_rps: data.serie_rps,
           status_rps: 'P',
           nfse_sp_settings_id: nfseSettings?.id,
-          numero_rps: incrementResult
+          numero_rps: incrementResult,
+          data_competencia: dataCompetencia
         }]);
 
       if (nfseError) throw nfseError;
