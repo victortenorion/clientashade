@@ -32,6 +32,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { navigate } from "@remix-run/react";
 
 interface NFSe {
   id: string;
@@ -374,6 +375,11 @@ const NFSe = () => {
     }
   };
 
+  const handleNewNFSe = () => {
+    console.log("Navegando para o formulário de nova NFS-e");
+    navigate('/dashboard/nfse/new');
+  };
+
   useEffect(() => {
     fetchNFSe();
   }, [searchTerm]);
@@ -403,7 +409,7 @@ const NFSe = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold">Notas Fiscais de Serviço</h2>
-        <Button onClick={() => console.log("Nova NFS-e")}>
+        <Button onClick={handleNewNFSe}>
           <Plus className="h-4 w-4 mr-2" />
           Nova NFS-e
         </Button>
