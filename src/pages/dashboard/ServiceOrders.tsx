@@ -22,7 +22,7 @@ interface ServiceOrder {
   created_at: string;
   client: {
     name: string;
-  };
+  } | null;
   total_price: number;
   description: string;
   status: {
@@ -65,7 +65,7 @@ export default function ServiceOrders() {
         throw error;
       }
 
-      return data as ServiceOrder[];
+      return (data || []) as ServiceOrder[];
     }
   });
 
