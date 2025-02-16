@@ -20,6 +20,8 @@ import NotFound from "./pages/NotFound";
 import ClientLogin from "./pages/ClientLogin";
 import { Toaster } from "./components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import NFSeForm from "./pages/dashboard/NFSeForm";
+import NFCeForm from "./pages/dashboard/NFCeForm";
 
 const queryClient = new QueryClient();
 
@@ -40,7 +42,9 @@ function App() {
             <Route path="products" element={<Products />} />
             <Route path="stores" element={<Stores />} />
             <Route path="nfce" element={<NFCe />} />
+            <Route path="nfce/new" element={<NFCeForm />} />
             <Route path="nfse" element={<NFSe />} />
+            <Route path="nfse/new" element={<NFSeForm />} />
             <Route path="service-orders" element={<ServiceOrders />} />
             <Route path="service-orders/create" element={<ServiceOrderForm />} />
             <Route path="service-orders/:id" element={<ServiceOrderDetails />} />
