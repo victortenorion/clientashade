@@ -36,11 +36,6 @@ CREATE OR REPLACE FUNCTION increment_rps_numero()
 RETURNS json
 LANGUAGE plpgsql
 AS $$
-DECLARE
-  ultima_rps_numero INTEGER;
-  serie_rps_padrao TEXT;
-  tipo_rps TEXT;
-  ambiente TEXT;
 BEGIN
   -- Obter configurações atuais
   SELECT nf.ultima_nfse_numero + 1, 'RPS', '1', nf.ambiente

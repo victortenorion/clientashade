@@ -30,7 +30,6 @@ export interface NFSeConfig {
   operacao_tributacao: string;
   codigo_regime_tributario: string;
   tipo_regime_especial: string;
-  // Campos específicos SP
   codigo_cidade_prestacao: string;
   usuario_emissor: string;
   senha_emissor: string;
@@ -44,7 +43,6 @@ export interface NFSeConfig {
   usar_certificado_gov: boolean;
   caminho_certificado_gov?: string;
   senha_certificado_gov?: string;
-  // Novos campos importantes
   rps_tipo: string;
   rps_serie: string;
   tipo_contribuinte: string;
@@ -85,4 +83,39 @@ export interface ValidateCertificateResponse {
     emissor: Array<{type: string, value: string}>;
     subject: Array<{type: string, value: string}>;
   };
+}
+
+export interface NFSeServiceCode {
+  id: string;
+  code: string;
+  description: string;
+  aliquota_iss?: number;
+}
+
+export interface CompanySettings {
+  razao_social: string;
+  nome_fantasia: string;
+  cnpj: string;
+  inscricao_municipal: string;
+  inscricao_estadual: string;
+  endereco: {
+    logradouro: string;
+    numero: string;
+    complemento?: string;
+    bairro: string;
+    cidade: string;
+    uf: string;
+    cep: string;
+    codigo_municipio: string;
+  };
+  regime_tributario: string;
+  cnae: string;
+  codigo_servico: string;
+}
+
+export interface RPSSettings {
+  serie: string;
+  tipo: string;
+  numero_inicial: number;
+  lote_atual: number;
 }
