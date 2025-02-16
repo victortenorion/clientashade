@@ -127,7 +127,7 @@ export const CompanyInfoTab = () => {
 
       const { data: spConfig } = await supabase
         .from('nfse_sp_config')
-        .select('numero_inicial_rps')
+        .select('numero_inicial_rps, numero_inicial_nfse')
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
@@ -135,7 +135,7 @@ export const CompanyInfoTab = () => {
       if (spConfig) {
         setRpsConfig({
           numero_inicial_rps: spConfig.numero_inicial_rps?.toString() || '',
-          numero_inicial_nfse: ''
+          numero_inicial_nfse: spConfig.numero_inicial_nfse || ''
         });
 
         if (lastNFSe?.numero_rps && parseInt(lastNFSe.numero_rps) >= parseInt(spConfig.numero_inicial_rps)) {
@@ -321,7 +321,7 @@ export const CompanyInfoTab = () => {
       if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
 
       const configData = {
-        numero_inicial_rps: rpsConfig.numero_inicial_rps,
+        numero_inicial_rps: rpsConfig.numero_inicial_rps || '0',
         numero_inicial_nfse: rpsConfig.numero_inicial_nfse || null
       };
 
