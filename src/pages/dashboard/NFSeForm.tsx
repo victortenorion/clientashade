@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
@@ -63,9 +62,29 @@ export default function NFSeForm() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { serviceOrderId } = useParams();
+  const { serviceOrderId, id: nfseId } = useParams();
 
-  // Buscar configurações da NFS-e com retry e fallback
+  const { data: nfseData } = useQuery({
+    queryKey: ['nfse', nfseId],
+    queryFn: async () => {
+      if (!nfseId) return null;
+
+      const { data, error } = await supabase
+        .from('nfse')
+        .select('*')
+        .eq('id', nfseId)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Erro ao buscar NFS-e:', error);
+        throw error;
+      }
+
+      return data;
+    },
+    enabled: !!nfseId
+  });
+
   const { data: nfseSettings, error: nfseError } = useQuery({
     queryKey: ['nfse-sp-settings'],
     queryFn: async () => {
@@ -100,27 +119,62 @@ export default function NFSeForm() {
     retryDelay: 1000
   });
 
-  // Buscar dados da ordem de serviço
-  const { data: serviceOrder, error: serviceOrderError } = useQuery({
-    queryKey: ['service-order', serviceOrderId],
-    queryFn: async () => {
-      if (!serviceOrderId) return null;
-
-      const { data, error } = await supabase
-        .from('service_orders')
-        .select('*')
-        .eq('id', serviceOrderId)
-        .maybeSingle();
-      
-      if (error) {
-        console.error('Erro ao buscar ordem de serviço:', error);
-        throw error;
-      }
-
-      return data;
-    },
-    enabled: !!serviceOrderId
+  const form = useForm<NFSeFormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      codigo_servico: "",
+      discriminacao_servicos: "",
+      servico_discriminacao_item: "",
+      servico_codigo_item_lista: "",
+      servico_codigo_municipio: "",
+      servico_codigo_local_prestacao: "",
+      servico_valor_item: "",
+      servico_exigibilidade: "",
+      servico_operacao: "",
+      valor_servicos: "",
+      base_calculo: "",
+      aliquota_iss: "",
+      valor_iss: "",
+      iss_retido: false,
+      regime_especial_tributacao: "",
+      tipo_regime_especial: "",
+      operacao_tributacao: "",
+      optante_simples_nacional: false,
+      incentivador_cultural: false,
+      tipo_tributacao: "",
+      tipo_rps: "",
+      serie_rps: "",
+    }
   });
+
+  useEffect(() => {
+    if (nfseData) {
+      form.reset({
+        codigo_servico: nfseData.codigo_servico || "",
+        discriminacao_servicos: nfseData.discriminacao_servicos || "",
+        servico_discriminacao_item: nfseData.servico_discriminacao_item || "",
+        servico_codigo_item_lista: nfseData.servico_codigo_item_lista || "",
+        servico_codigo_municipio: nfseData.servico_codigo_municipio || "",
+        servico_codigo_local_prestacao: nfseData.servico_codigo_local_prestacao || "",
+        servico_valor_item: nfseData.servico_valor_item?.toString() || "",
+        servico_exigibilidade: nfseData.servico_exigibilidade || "",
+        servico_operacao: nfseData.servico_operacao || "",
+        valor_servicos: nfseData.valor_servicos?.toString() || "",
+        base_calculo: nfseData.base_calculo?.toString() || "",
+        aliquota_iss: nfseData.aliquota_iss?.toString() || "",
+        valor_iss: nfseData.valor_iss?.toString() || "",
+        iss_retido: nfseData.iss_retido || false,
+        regime_especial_tributacao: nfseData.regime_especial_tributacao || "",
+        tipo_regime_especial: nfseData.tipo_regime_especial || "",
+        operacao_tributacao: nfseData.operacao_tributacao || "",
+        optante_simples_nacional: nfseData.optante_mei || false,
+        incentivador_cultural: nfseData.prestador_incentivador_cultural || false,
+        tipo_tributacao: nfseData.tributacao_rps || "",
+        tipo_rps: nfseData.tipo_rps || "",
+        serie_rps: nfseData.serie_rps || "",
+      });
+    }
+  }, [nfseData, form]);
 
   useEffect(() => {
     if (nfseError) {
@@ -131,16 +185,7 @@ export default function NFSeForm() {
         description: "Verifique se as configurações da NFS-e foram definidas."
       });
     }
-
-    if (serviceOrderError) {
-      console.error('Erro na ordem de serviço:', serviceOrderError);
-      toast({
-        variant: "destructive",
-        title: "Erro ao carregar ordem de serviço",
-        description: "Não foi possível carregar os dados da ordem de serviço."
-      });
-    }
-  }, [nfseError, serviceOrderError, toast]);
+  }, [nfseError, toast]);
 
   const onSubmit = async (data: NFSeFormData) => {
     setIsLoading(true);
@@ -253,34 +298,6 @@ export default function NFSeForm() {
       setIsLoading(false);
     }
   };
-
-  const form = useForm<NFSeFormData>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      codigo_servico: "",
-      discriminacao_servicos: "",
-      servico_discriminacao_item: "",
-      servico_codigo_item_lista: "",
-      servico_codigo_municipio: "",
-      servico_codigo_local_prestacao: "",
-      servico_valor_item: "",
-      servico_exigibilidade: "",
-      servico_operacao: "",
-      valor_servicos: "",
-      base_calculo: "",
-      aliquota_iss: "",
-      valor_iss: "",
-      iss_retido: false,
-      regime_especial_tributacao: "",
-      tipo_regime_especial: "",
-      operacao_tributacao: "",
-      optante_simples_nacional: false,
-      incentivador_cultural: false,
-      tipo_tributacao: "",
-      tipo_rps: "",
-      serie_rps: "",
-    },
-  });
 
   return (
     <div className="container mx-auto py-10">
