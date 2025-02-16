@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -143,15 +142,13 @@ export default function NFSeForm() {
                 <FormField
                   control={form.control}
                   name="valor_servicos"
-                  render={({ field: { onChange, ...field } }) => (
+                  render={({ field }) => (
                     <FormItem>
                       <FormLabel>Valor dos Serviços</FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
                           placeholder="0.00" 
-                          step="any"
-                          onChange={(e) => onChange(Number(e.target.value))}
                           {...field}
                         />
                       </FormControl>
@@ -162,15 +159,13 @@ export default function NFSeForm() {
                 <FormField
                   control={form.control}
                   name="base_calculo"
-                  render={({ field: { onChange, ...field } }) => (
+                  render={({ field }) => (
                     <FormItem>
                       <FormLabel>Base de Cálculo</FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
                           placeholder="0.00" 
-                          step="any"
-                          onChange={(e) => onChange(Number(e.target.value))}
                           {...field}
                         />
                       </FormControl>
@@ -184,15 +179,13 @@ export default function NFSeForm() {
                 <FormField
                   control={form.control}
                   name="aliquota_iss"
-                  render={({ field: { onChange, ...field } }) => (
+                  render={({ field }) => (
                     <FormItem>
                       <FormLabel>Alíquota ISS (%)</FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
                           placeholder="0.00" 
-                          step="any"
-                          onChange={(e) => onChange(Number(e.target.value))}
                           {...field}
                         />
                       </FormControl>
@@ -203,15 +196,13 @@ export default function NFSeForm() {
                 <FormField
                   control={form.control}
                   name="valor_iss"
-                  render={({ field: { onChange, ...field } }) => (
+                  render={({ field }) => (
                     <FormItem>
                       <FormLabel>Valor ISS</FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
                           placeholder="0.00" 
-                          step="any"
-                          onChange={(e) => onChange(Number(e.target.value))}
                           {...field}
                         />
                       </FormControl>
