@@ -40,6 +40,11 @@ interface ServiceCodeFormData {
   aliquota_iss: number;
 }
 
+interface ImportPreviewData extends ServiceCodeFormData {
+  isValid: boolean;
+  error?: string;
+}
+
 export function ServiceCodesSettings() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
@@ -48,6 +53,8 @@ export function ServiceCodesSettings() {
   const [selectedCode, setSelectedCode] = useState<ServiceCode | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isImportPreviewOpen, setIsImportPreviewOpen] = useState(false);
+  const [importPreviewData, setImportPreviewData] = useState<ImportPreviewData[]>([]);
   const [codeToDelete, setCodeToDelete] = useState<ServiceCode | null>(null);
   const [formData, setFormData] = useState<ServiceCodeFormData>({
     code: "",
@@ -215,11 +222,34 @@ export function ServiceCodesSettings() {
     }
   };
 
-  const filteredCodes = serviceCodes.filter(
-    (code) =>
-      code.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      code.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const validateServiceCode = (code: string, description: string, aliquota: number): ImportPreviewData => {
+    const data: ImportPreviewData = {
+      code,
+      description,
+      aliquota_iss: aliquota,
+      isValid: true
+    };
+
+    if (!code.trim()) {
+      data.isValid = false;
+      data.error = "Código é obrigatório";
+      return data;
+    }
+
+    if (!description.trim()) {
+      data.isValid = false;
+      data.error = "Descrição é obrigatória";
+      return data;
+    }
+
+    if (isNaN(aliquota) || aliquota < 0 || aliquota > 100) {
+      data.isValid = false;
+      data.error = "Alíquota ISS deve ser um número entre 0 e 100";
+      return data;
+    }
+
+    return data;
+  };
 
   const handleExport = () => {
     const csvContent = [
@@ -246,43 +276,78 @@ export function ServiceCodesSettings() {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = async (e) => {
+    reader.onload = (e) => {
       try {
         const text = e.target?.result as string;
         const rows = text.split("\n").slice(1); // Skip header row
-        const newCodes = rows.map(row => {
+        const preview = rows.map(row => {
           const [code, description, aliquota_iss] = row.split(",");
-          return {
-            code: code.trim(),
-            description: description.trim(),
-            aliquota_iss: parseFloat(aliquota_iss),
-            active: true
-          };
+          return validateServiceCode(
+            code.trim(),
+            description.trim(),
+            parseFloat(aliquota_iss)
+          );
         });
 
-        const { error } = await supabase
-          .from("nfse_service_codes")
-          .insert(newCodes);
-
-        if (error) throw error;
-
-        toast({
-          title: "Sucesso",
-          description: `${newCodes.length} códigos de serviço importados com sucesso`,
-        });
-
-        loadServiceCodes();
-      } catch (error: any) {
-        console.error("Erro ao importar códigos:", error);
+        setImportPreviewData(preview);
+        setIsImportPreviewOpen(true);
+      } catch (error) {
         toast({
           variant: "destructive",
           title: "Erro",
-          description: "Erro ao importar códigos de serviço",
+          description: "Erro ao ler o arquivo CSV",
         });
       }
     };
     reader.readAsText(file);
   };
+
+  const confirmImport = async () => {
+    try {
+      const validCodes = importPreviewData.filter(code => code.isValid);
+      if (validCodes.length === 0) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Nenhum código válido para importar",
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from("nfse_service_codes")
+        .insert(validCodes.map(code => ({
+          code: code.code,
+          description: code.description,
+          aliquota_iss: code.aliquota_iss,
+          active: true
+        })));
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: `${validCodes.length} códigos de serviço importados com sucesso`,
+      });
+
+      setIsImportPreviewOpen(false);
+      setImportPreviewData([]);
+      loadServiceCodes();
+    } catch (error: any) {
+      console.error("Erro ao importar códigos:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao importar códigos de serviço",
+      });
+    }
+  };
+
+  const filteredCodes = serviceCodes.filter(
+    (code) =>
+      code.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      code.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <Card>
@@ -456,6 +521,52 @@ export function ServiceCodesSettings() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <Dialog open={isImportPreviewOpen} onOpenChange={setIsImportPreviewOpen}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Prévia da Importação</DialogTitle>
+            </DialogHeader>
+            <div className="max-h-[400px] overflow-y-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[100px]">Código</TableHead>
+                    <TableHead>Descrição</TableHead>
+                    <TableHead className="w-[120px] text-right">Alíquota ISS</TableHead>
+                    <TableHead className="w-[120px]">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {importPreviewData.map((item, index) => (
+                    <TableRow key={index} className={item.isValid ? "" : "bg-destructive/10"}>
+                      <TableCell>{item.code}</TableCell>
+                      <TableCell>{item.description}</TableCell>
+                      <TableCell className="text-right">{item.aliquota_iss}%</TableCell>
+                      <TableCell>
+                        {item.isValid ? (
+                          <span className="text-green-600">Válido</span>
+                        ) : (
+                          <span className="text-destructive text-sm">{item.error}</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsImportPreviewOpen(false)}>
+                <X className="h-4 w-4 mr-2" />
+                Cancelar
+              </Button>
+              <Button onClick={confirmImport}>
+                <Upload className="h-4 w-4 mr-2" />
+                Confirmar Importação
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
