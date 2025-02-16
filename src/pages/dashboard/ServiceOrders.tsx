@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Pencil, Receipt } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 import { NFCeForm } from "./components/NFCeForm";
 
@@ -44,6 +44,20 @@ const ServiceOrders = () => {
   const fetchServiceOrders = async () => {
     try {
       setLoading(true);
+      
+      // Primeiro, buscar a loja do usuário
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+
+      const { data: storeData, error: storeError } = await supabase
+        .from("user_stores")
+        .select("store_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (storeError) throw storeError;
+      if (!storeData?.store_id) throw new Error("Usuário não está associado a uma loja");
+
       const { data, error } = await supabase
         .from("service_orders")
         .select(`
@@ -57,6 +71,7 @@ const ServiceOrders = () => {
           ),
           total_price
         `)
+        .eq('store_id', storeData.store_id)
         .ilike("clients.name", `%${searchTerm}%`);
 
       if (error) throw error;
@@ -113,6 +128,10 @@ const ServiceOrders = () => {
     navigate(`/dashboard/service-orders/${id}`);
   };
 
+  const handleNew = () => {
+    navigate("/dashboard/service-orders/create");
+  };
+
   const handleCreateNFCe = (serviceOrder: ServiceOrder) => {
     setSelectedServiceOrder(serviceOrder);
     setIsNFCeFormOpen(true);
@@ -132,7 +151,7 @@ const ServiceOrders = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold">Ordens de Serviço</h2>
-        <Button onClick={() => navigate("/dashboard/service-orders/new")}>
+        <Button onClick={handleNew}>
           <Plus className="h-4 w-4 mr-2" />
           Nova Ordem de Serviço
         </Button>

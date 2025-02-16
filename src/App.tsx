@@ -7,13 +7,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import Index from "./pages/Index";
-import Dashboard from "./pages/dashboard/Dashboard";
+import Dashboard from "./pages/Dashboard";
 import DashboardHome from "./pages/dashboard/Home";
 import Clients from "./pages/dashboard/Clients";
 import Products from "./pages/dashboard/Products";
 import Users from "./pages/dashboard/Users";
 import Stores from "./pages/dashboard/Stores";
 import ServiceOrders from "./pages/dashboard/ServiceOrders";
+import ServiceOrderForm from "./pages/dashboard/ServiceOrderForm";
 import ServiceOrderSettings from "./pages/dashboard/ServiceOrderSettings";
 import CustomerArea from "./pages/dashboard/CustomerArea";
 import NFCe from "./pages/dashboard/NFCe";
@@ -46,6 +47,7 @@ function App() {
                   <Route path="users" element={<Users />} />
                   <Route path="stores" element={<Stores />} />
                   <Route path="service-orders" element={<ServiceOrders />} />
+                  <Route path="service-orders/create" element={<ServiceOrderForm />} />
                   <Route path="service-orders/:id" element={<ServiceOrderDetails />} />
                   <Route path="service-order-settings/*" element={<ServiceOrderSettings />} />
                   <Route path="customer-area" element={<CustomerArea />} />
