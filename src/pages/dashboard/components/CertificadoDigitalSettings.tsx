@@ -20,6 +20,19 @@ interface CertificateInfo {
   status: "válido" | "expirado" | "não encontrado";
 }
 
+type CertificateType = 'A1' | 'A3';
+
+interface CertificateData {
+  certificate_data: string;
+  certificate_password: string;
+  valid_until: string | null;
+  valid_from: string | null;
+  issuer: string | null;
+  subject: string | null;
+  type: CertificateType;
+  is_valid: boolean;
+}
+
 export function CertificadoDigitalSettings() {
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
@@ -56,7 +69,6 @@ export function CertificadoDigitalSettings() {
 
       setIsUploading(true);
 
-      // Convert file to base64
       const reader = new FileReader();
       reader.onload = async (e) => {
         const base64String = e.target?.result?.toString().split(",")[1];
@@ -65,7 +77,6 @@ export function CertificadoDigitalSettings() {
           throw new Error("Erro ao ler o arquivo");
         }
 
-        // Validate certificate
         const { data, error } = await supabase.functions.invoke("validate-certificate", {
           body: {
             certificateData: base64String,
@@ -84,39 +95,25 @@ export function CertificadoDigitalSettings() {
           return;
         }
 
-        // First, try inserting without the select
+        const certificateData: CertificateData = {
+          certificate_data: base64String,
+          certificate_password: certificatePassword,
+          valid_until: data.info?.validoAte || null,
+          valid_from: data.info?.validoDe || null,
+          issuer: data.info?.emissor ? JSON.stringify(data.info.emissor) : null,
+          subject: data.info?.subject ? JSON.stringify(data.info.subject) : null,
+          type: 'A1' as CertificateType,
+          is_valid: true
+        };
+
         const { error: insertError } = await supabase
           .from("certificates")
-          .insert({
-            certificate_data: base64String,
-            certificate_password: certificatePassword,
-            valid_until: data.info?.validoAte,
-            valid_from: data.info?.validoDe,
-            issuer: JSON.stringify(data.info?.emissor),
-            subject: JSON.stringify(data.info?.subject),
-            type: 'A1',
-            is_valid: true
-          });
+          .insert([certificateData]);
 
         if (insertError) {
           console.error('Erro ao salvar certificado:', insertError);
           throw insertError;
         }
-
-        // Then fetch the latest certificate
-        const { data: latestCert, error: fetchError } = await supabase
-          .from("certificates")
-          .select()
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-
-        if (fetchError) {
-          console.error('Erro ao buscar certificado:', fetchError);
-          throw fetchError;
-        }
-
-        console.log('Certificado salvo com sucesso:', latestCert);
 
         setCertificateInfo({
           validade: data.info?.validoAte,
@@ -128,7 +125,6 @@ export function CertificadoDigitalSettings() {
           description: "Certificado digital validado e salvo com sucesso",
         });
 
-        // Clear form
         setSelectedFile(null);
         setCertificatePassword("");
         const fileInput = document.getElementById('certificate') as HTMLInputElement;
