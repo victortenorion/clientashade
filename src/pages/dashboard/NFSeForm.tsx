@@ -67,6 +67,33 @@ export default function NFSeForm() {
     }
   });
 
+  const { data: companyInfo } = useQuery({
+    queryKey: ['companyInfo'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('company_info')
+        .select('*')
+        .single();
+
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const { data: fiscalConfig } = useQuery({
+    queryKey: ['fiscalConfig'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('fiscal_config')
+        .select('*')
+        .eq('type', 'nfse')
+        .single();
+
+      if (error) throw error;
+      return data;
+    }
+  });
+
   const { data: serviceOrder } = useQuery({
     queryKey: ['serviceOrder', serviceOrderId],
     queryFn: async () => {
@@ -108,29 +135,33 @@ export default function NFSeForm() {
       navigate('/dashboard/service-orders');
     }
 
-    if (serviceOrder) {
+    if (serviceOrder && companyInfo && fiscalConfig?.config) {
       form.reset({
-        codigo_servico: serviceOrder.codigo_servico || '',
+        codigo_servico: serviceOrder.codigo_servico || companyInfo.codigo_servico || '',
         discriminacao_servicos: serviceOrder.discriminacao_servico || '',
         servico_discriminacao_item: serviceOrder.servico_discriminacao_item || '',
         servico_codigo_item_lista: serviceOrder.servico_codigo_item_lista || '',
-        servico_codigo_municipio: serviceOrder.servico_codigo_municipio || '',
+        servico_codigo_municipio: serviceOrder.servico_codigo_municipio || companyInfo.endereco_codigo_municipio || '',
         servico_codigo_local_prestacao: serviceOrder.servico_codigo_local_prestacao || '',
         servico_valor_item: serviceOrder.servico_valor_item || 0,
-        servico_exigibilidade: serviceOrder.servico_exigibilidade || '1',
-        servico_operacao: serviceOrder.servico_operacao || '1',
+        servico_exigibilidade: serviceOrder.servico_exigibilidade || fiscalConfig.config.servico_exigibilidade || '1',
+        servico_operacao: serviceOrder.servico_operacao || fiscalConfig.config.servico_operacao || '1',
         valor_servicos: serviceOrder.total_price || 0,
-        base_calculo: serviceOrder.base_calculo || 0,
-        aliquota_iss: serviceOrder.aliquota_iss || 0,
-        valor_iss: (serviceOrder.base_calculo || 0) * (serviceOrder.aliquota_iss || 0) / 100,
+        base_calculo: serviceOrder.base_calculo || serviceOrder.total_price || 0,
+        aliquota_iss: serviceOrder.aliquota_iss || fiscalConfig.config.aliquota_servico || 0,
+        valor_iss: (serviceOrder.base_calculo || serviceOrder.total_price || 0) * (serviceOrder.aliquota_iss || fiscalConfig.config.aliquota_servico || 0) / 100,
         iss_retido: serviceOrder.iss_retido || false,
-        regime_especial_tributacao: serviceOrder.regime_especial || '1',
-        optante_simples_nacional: true,
-        incentivador_cultural: false,
-        tipo_tributacao: 'T'
+        regime_especial_tributacao: serviceOrder.regime_especial || fiscalConfig.config.regime_especial || '1',
+        tipo_regime_especial: fiscalConfig.config.tipo_regime_especial || '',
+        operacao_tributacao: serviceOrder.operacao_tributacao || fiscalConfig.config.operacao_tributacao || '1',
+        optante_simples_nacional: fiscalConfig.config.optante_simples_nacional || false,
+        incentivador_cultural: fiscalConfig.config.incentivador_cultural || false,
+        tipo_tributacao: 'T',
+        tipo_rps: fiscalConfig.config.rps_tipo || 'RPS',
+        serie_rps: fiscalConfig.config.rps_serie || '1',
       });
     }
-  }, [serviceOrderId, navigate, toast, serviceOrder, form]);
+  }, [serviceOrderId, navigate, toast, serviceOrder, companyInfo, fiscalConfig, form]);
 
   const onSubmit = async (data: NFSeFormData) => {
     setIsLoading(true);
