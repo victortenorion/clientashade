@@ -84,7 +84,7 @@ export function CertificadoDigitalSettings() {
           return;
         }
 
-        // Preparar os dados do certificado para salvar
+        // Preparar os dados do certificado para salvar com tipo EXATAMENTE como 'A1'
         const certData = {
           certificate_data: base64String,
           certificate_password: certificatePassword,
@@ -92,21 +92,25 @@ export function CertificadoDigitalSettings() {
           valid_from: data.info?.validoDe,
           issuer: JSON.stringify(data.info?.emissor),
           subject: JSON.stringify(data.info?.subject),
-          type: 'A1', // Changed back to uppercase to match the constraint
+          type: 'A1',  // Exact match for the constraint
           is_valid: true
         };
 
         console.log('Dados do certificado a serem salvos:', certData);
 
         // Salvar o certificado validado
-        const { error: saveError } = await supabase
+        const { data: insertData, error: saveError } = await supabase
           .from("certificates")
-          .insert(certData);
+          .insert(certData)
+          .select()
+          .single();
 
         if (saveError) {
           console.error('Erro ao salvar certificado:', saveError);
           throw saveError;
         }
+
+        console.log('Certificado salvo com sucesso:', insertData);
 
         setCertificateInfo({
           validade: data.info?.validoAte,
