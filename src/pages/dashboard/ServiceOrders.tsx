@@ -62,6 +62,7 @@ export default function ServiceOrders() {
           base_calculo,
           aliquota_iss
         `)
+        .eq('excluida', false)
         .order('created_at', { ascending: false })
         .returns<ServiceOrder[]>();
 
@@ -97,7 +98,11 @@ export default function ServiceOrders() {
       try {
         const { error } = await supabase
           .from('service_orders')
-          .delete()
+          .update({
+            excluida: true,
+            data_exclusao: new Date().toISOString(),
+            motivo_exclusao: 'Excluída pelo usuário'
+          })
           .eq('id', id);
 
         if (error) throw error;

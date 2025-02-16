@@ -1920,10 +1920,12 @@ export type Database = {
           completion_date: string | null
           created_at: string
           created_by_type: string
+          data_exclusao: string | null
           description: string
           discriminacao_servico: string | null
           equipment: string | null
           equipment_serial_number: string | null
+          excluida: boolean | null
           exit_date: string | null
           expected_date: string | null
           id: string
@@ -1936,6 +1938,7 @@ export type Database = {
           iss_retido: boolean | null
           local_incidencia: string | null
           local_prestacao: string | null
+          motivo_exclusao: string | null
           operacao_tributacao: string | null
           order_number: number
           pis_cofins_csll_retido: boolean | null
@@ -1967,10 +1970,12 @@ export type Database = {
           completion_date?: string | null
           created_at?: string
           created_by_type?: string
+          data_exclusao?: string | null
           description: string
           discriminacao_servico?: string | null
           equipment?: string | null
           equipment_serial_number?: string | null
+          excluida?: boolean | null
           exit_date?: string | null
           expected_date?: string | null
           id?: string
@@ -1983,6 +1988,7 @@ export type Database = {
           iss_retido?: boolean | null
           local_incidencia?: string | null
           local_prestacao?: string | null
+          motivo_exclusao?: string | null
           operacao_tributacao?: string | null
           order_number?: number
           pis_cofins_csll_retido?: boolean | null
@@ -2014,10 +2020,12 @@ export type Database = {
           completion_date?: string | null
           created_at?: string
           created_by_type?: string
+          data_exclusao?: string | null
           description?: string
           discriminacao_servico?: string | null
           equipment?: string | null
           equipment_serial_number?: string | null
+          excluida?: boolean | null
           exit_date?: string | null
           expected_date?: string | null
           id?: string
@@ -2030,6 +2038,7 @@ export type Database = {
           iss_retido?: boolean | null
           local_incidencia?: string | null
           local_prestacao?: string | null
+          motivo_exclusao?: string | null
           operacao_tributacao?: string | null
           order_number?: number
           pis_cofins_csll_retido?: boolean | null
