@@ -30,6 +30,20 @@ export interface NFSeConfig {
   operacao_tributacao: string;
   codigo_regime_tributario: string;
   tipo_regime_especial: string;
+  // Novos campos específicos para SP
+  codigo_cidade_prestacao: string;
+  usuario_emissor: string;
+  senha_emissor: string;
+  lote_envio_maximo: number;
+  url_provedor: string;
+  proxy_host?: string;
+  proxy_porta?: string;
+  proxy_usuario?: string;
+  proxy_senha?: string;
+  numero_lote: number;
+  usar_certificado_gov: boolean;
+  caminho_certificado_gov?: string;
+  senha_certificado_gov?: string;
 }
 
 export interface FiscalConfig {

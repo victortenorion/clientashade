@@ -390,46 +390,96 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Inscrição Municipal</Label>
+                    <Label>URL do Provedor</Label>
                     <Input
-                      value={nfseConfig.inscricao_municipal}
+                      value={nfseConfig.url_provedor || ""}
                       onChange={(e) =>
                         setNfseConfig({
                           ...nfseConfig,
-                          inscricao_municipal: e.target.value,
+                          url_provedor: e.target.value,
+                        })
+                      }
+                      placeholder="https://nfe.prefeitura.sp.gov.br/ws/lotenfe.asmx"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Usuário Emissor</Label>
+                    <Input
+                      value={nfseConfig.usuario_emissor || ""}
+                      onChange={(e) =>
+                        setNfseConfig({
+                          ...nfseConfig,
+                          usuario_emissor: e.target.value,
                         })
                       }
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Regime Tributário</Label>
-                    <Select
-                      value={nfseConfig.regime_tributario}
-                      onValueChange={(value) =>
-                        setNfseConfig({ ...nfseConfig, regime_tributario: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o regime tributário" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="simples">Simples Nacional</SelectItem>
-                        <SelectItem value="presumido">Lucro Presumido</SelectItem>
-                        <SelectItem value="real">Lucro Real</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Número Inicial do RPS</Label>
+                    <Label>Senha Emissor</Label>
                     <Input
-                      type="number"
-                      value={nfseConfig.numero_inicial_rps}
+                      type="password"
+                      value={nfseConfig.senha_emissor || ""}
                       onChange={(e) =>
                         setNfseConfig({
                           ...nfseConfig,
-                          numero_inicial_rps: parseInt(e.target.value),
+                          senha_emissor: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Código da Cidade de Prestação</Label>
+                    <Input
+                      value={nfseConfig.codigo_cidade_prestacao || ""}
+                      onChange={(e) =>
+                        setNfseConfig({
+                          ...nfseConfig,
+                          codigo_cidade_prestacao: e.target.value,
+                        })
+                      }
+                      placeholder="3550308 (São Paulo)"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Número do Lote</Label>
+                    <Input
+                      type="number"
+                      value={nfseConfig.numero_lote || 1}
+                      onChange={(e) =>
+                        setNfseConfig({
+                          ...nfseConfig,
+                          numero_lote: parseInt(e.target.value),
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Máximo de RPS por Lote</Label>
+                    <Input
+                      type="number"
+                      value={nfseConfig.lote_envio_maximo || 50}
+                      onChange={(e) =>
+                        setNfseConfig({
+                          ...nfseConfig,
+                          lote_envio_maximo: parseInt(e.target.value),
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Versão do Schema</Label>
+                    <Input
+                      value={nfseConfig.versao_schema || "2.00"}
+                      onChange={(e) =>
+                        setNfseConfig({
+                          ...nfseConfig,
+                          versao_schema: e.target.value,
                         })
                       }
                     />
@@ -437,12 +487,101 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
 
                   <div className="flex items-center space-x-2">
                     <Switch
-                      checked={nfseConfig.incentivo_fiscal}
+                      checked={nfseConfig.usar_certificado_gov || false}
                       onCheckedChange={(checked) =>
-                        setNfseConfig({ ...nfseConfig, incentivo_fiscal: checked })
+                        setNfseConfig({ ...nfseConfig, usar_certificado_gov: checked })
                       }
                     />
-                    <Label>Incentivador Cultural</Label>
+                    <Label>Usar Certificado e-CPF do Governo</Label>
+                  </div>
+
+                  {nfseConfig.usar_certificado_gov && (
+                    <>
+                      <div className="space-y-2">
+                        <Label>Caminho do Certificado e-CPF</Label>
+                        <Input
+                          value={nfseConfig.caminho_certificado_gov || ""}
+                          onChange={(e) =>
+                            setNfseConfig({
+                              ...nfseConfig,
+                              caminho_certificado_gov: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Senha do Certificado e-CPF</Label>
+                        <Input
+                          type="password"
+                          value={nfseConfig.senha_certificado_gov || ""}
+                          onChange={(e) =>
+                            setNfseConfig({
+                              ...nfseConfig,
+                              senha_certificado_gov: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  <div className="space-y-4">
+                    <h4 className="font-semibold">Configurações de Proxy</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Host do Proxy</Label>
+                        <Input
+                          value={nfseConfig.proxy_host || ""}
+                          onChange={(e) =>
+                            setNfseConfig({
+                              ...nfseConfig,
+                              proxy_host: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Porta do Proxy</Label>
+                        <Input
+                          value={nfseConfig.proxy_porta || ""}
+                          onChange={(e) =>
+                            setNfseConfig({
+                              ...nfseConfig,
+                              proxy_porta: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Usuário do Proxy</Label>
+                        <Input
+                          value={nfseConfig.proxy_usuario || ""}
+                          onChange={(e) =>
+                            setNfseConfig({
+                              ...nfseConfig,
+                              proxy_usuario: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Senha do Proxy</Label>
+                        <Input
+                          type="password"
+                          value={nfseConfig.proxy_senha || ""}
+                          onChange={(e) =>
+                            setNfseConfig({
+                              ...nfseConfig,
+                              proxy_senha: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
