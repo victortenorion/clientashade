@@ -12,11 +12,6 @@ interface NFSeData {
   nfseId: string;
 }
 
-interface MissingFieldData {
-  missing_field: string | null;
-  field_value: string | null;
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -37,8 +32,15 @@ serve(async (req) => {
       .from('nfse')
       .select(`
         *,
-        nfse_sp_settings:nfse_sp_settings_id (*),
-        fiscal_config (
+        nfse_sp_settings:nfse_sp_settings_id (
+          id,
+          usuario_emissor,
+          senha_emissor,
+          codigo_municipio,
+          inscricao_municipal,
+          ambiente
+        ),
+        fiscal_config!inner (
           id,
           config
         )
@@ -64,23 +66,40 @@ serve(async (req) => {
     const settings = nfse.nfse_sp_settings;
     const fiscalConfig = nfse.fiscal_config?.config;
 
-    // Verificar dados obrigatórios
-    const requiredFields = [
-      { field: 'settings', value: settings, message: 'Configurações da NFS-e' },
-      { field: 'fiscal_config', value: fiscalConfig, message: 'Configurações fiscais' },
-      { field: 'fiscal_config.certificado_digital', value: fiscalConfig?.certificado_digital, message: 'Certificado digital' },
-      { field: 'fiscal_config.senha_certificado', value: fiscalConfig?.senha_certificado, message: 'Senha do certificado' },
-      { field: 'settings.usuario_emissor', value: settings?.usuario_emissor, message: 'Usuário do emissor' },
-      { field: 'settings.senha_emissor', value: settings?.senha_emissor, message: 'Senha do emissor' },
-      { field: 'settings.codigo_municipio', value: settings?.codigo_municipio, message: 'Código do município' },
-      { field: 'settings.inscricao_municipal', value: settings?.inscricao_municipal, message: 'Inscrição Municipal' }
-    ];
+    if (!settings) {
+      throw new Error('Configurações da NFS-e não encontradas');
+    }
 
-    for (const field of requiredFields) {
-      if (!field.value) {
-        console.error(`Campo obrigatório faltando: ${field.field}`);
-        throw new Error(`${field.message} não encontrado(a)`);
-      }
+    if (!fiscalConfig) {
+      throw new Error('Configurações fiscais não encontradas');
+    }
+
+    // Log para debug
+    console.log('Verificando campos obrigatórios:', {
+      usuario_emissor: settings.usuario_emissor,
+      codigo_municipio: settings.codigo_municipio,
+      inscricao_municipal: settings.inscricao_municipal,
+      certificado_digital: fiscalConfig.certificado_digital ? 'presente' : 'ausente'
+    });
+
+    // Verificar dados obrigatórios
+    if (!settings.usuario_emissor) {
+      throw new Error('Usuário do emissor não encontrado');
+    }
+    if (!settings.senha_emissor) {
+      throw new Error('Senha do emissor não encontrada');
+    }
+    if (!settings.codigo_municipio) {
+      throw new Error('Código do município não encontrado');
+    }
+    if (!settings.inscricao_municipal) {
+      throw new Error('Inscrição Municipal não encontrada');
+    }
+    if (!fiscalConfig.certificado_digital) {
+      throw new Error('Certificado digital não encontrado');
+    }
+    if (!fiscalConfig.senha_certificado) {
+      throw new Error('Senha do certificado não encontrada');
     }
 
     const endpoint = settings.ambiente === 'producao'
@@ -121,8 +140,6 @@ serve(async (req) => {
     </ConsultaNFe>
   </soap12:Body>
 </soap12:Envelope>`;
-
-    console.log('Enviando requisição SOAP:', soapEnvelope);
 
     try {
       const controller = new AbortController();
