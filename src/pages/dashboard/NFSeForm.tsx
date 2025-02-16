@@ -79,13 +79,7 @@ export default function NFSeForm() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('service_orders')
-        .select(`
-          *,
-          status (
-            name,
-            color
-          )
-        `)
+        .select('*')
         .eq('id', serviceOrderId)
         .single();
       
@@ -146,6 +140,7 @@ export default function NFSeForm() {
         .insert([{
           service_order_id: serviceOrderId,
           client_id: serviceOrder.client_id,
+          fiscal_config_id: fiscalConfig.id,
           codigo_servico: data.codigo_servico,
           discriminacao_servicos: data.discriminacao_servicos,
           servico_discriminacao_item: data.servico_discriminacao_item,

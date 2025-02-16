@@ -809,6 +809,7 @@ export type Database = {
           enviar_email_intermediario: boolean | null
           enviar_email_tomador: boolean | null
           excluida: boolean | null
+          fiscal_config_id: string | null
           fonte_carga_tributaria: string | null
           fonte_tributos: string | null
           id: string
@@ -967,6 +968,7 @@ export type Database = {
           enviar_email_intermediario?: boolean | null
           enviar_email_tomador?: boolean | null
           excluida?: boolean | null
+          fiscal_config_id?: string | null
           fonte_carga_tributaria?: string | null
           fonte_tributos?: string | null
           id?: string
@@ -1125,6 +1127,7 @@ export type Database = {
           enviar_email_intermediario?: boolean | null
           enviar_email_tomador?: boolean | null
           excluida?: boolean | null
+          fiscal_config_id?: string | null
           fonte_carga_tributaria?: string | null
           fonte_tributos?: string | null
           id?: string
@@ -1236,6 +1239,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nfse_fiscal_config_id_fkey"
+            columns: ["fiscal_config_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_config"
             referencedColumns: ["id"]
           },
           {
