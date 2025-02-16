@@ -59,4 +59,15 @@ export interface ServiceOrder {
     name: string;
     color: string;
   };
+  codigo_servico: string;
+  discriminacao_servico: string;
+  regime_tributario: string;
+  regime_especial: string;
+  iss_retido: boolean;
+  inss_retido: boolean;
+  ir_retido: boolean;
+  pis_cofins_csll_retido: boolean;
+  aliquota_iss: number;
+  base_calculo: number;
+  valor_deducoes: number;
 }

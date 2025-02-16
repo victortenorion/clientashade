@@ -29,6 +29,10 @@ interface ServiceOrder {
     name: string;
     color: string;
   } | null;
+  codigo_servico: string;
+  iss_retido: boolean;
+  base_calculo: number;
+  aliquota_iss: number;
 }
 
 export default function ServiceOrders() {
@@ -52,7 +56,11 @@ export default function ServiceOrders() {
           status:status_id (
             name,
             color
-          )
+          ),
+          codigo_servico,
+          iss_retido,
+          base_calculo,
+          aliquota_iss
         `)
         .order('created_at', { ascending: false })
         .returns<ServiceOrder[]>();
@@ -99,8 +107,10 @@ export default function ServiceOrders() {
               <TableHead>Número</TableHead>
               <TableHead>Data</TableHead>
               <TableHead>Cliente</TableHead>
-              <TableHead>Descrição</TableHead>
+              <TableHead>Cód. Serviço</TableHead>
+              <TableHead>ISS</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead className="text-right">Base Cálc.</TableHead>
               <TableHead className="text-right">Valor Total</TableHead>
             </TableRow>
           </TableHeader>
@@ -116,7 +126,12 @@ export default function ServiceOrders() {
                   {format(new Date(order.created_at), 'dd/MM/yyyy HH:mm')}
                 </TableCell>
                 <TableCell>{order.client?.name || 'N/A'}</TableCell>
-                <TableCell>{order.description}</TableCell>
+                <TableCell>{order.codigo_servico || 'N/A'}</TableCell>
+                <TableCell>
+                  <span className={order.iss_retido ? "text-yellow-600" : "text-green-600"}>
+                    {order.iss_retido ? 'Retido' : 'Normal'}
+                  </span>
+                </TableCell>
                 <TableCell>
                   {order.status ? (
                     <span
@@ -131,6 +146,12 @@ export default function ServiceOrders() {
                   ) : (
                     'Sem Status'
                   )}
+                </TableCell>
+                <TableCell className="text-right">
+                  {new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                  }).format(order.base_calculo || 0)}
                 </TableCell>
                 <TableCell className="text-right">
                   {new Intl.NumberFormat('pt-BR', {
