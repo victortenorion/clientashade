@@ -44,7 +44,7 @@ export default function ServiceOrders() {
           id,
           order_number,
           created_at,
-          client:client_id (
+          client:client_id!inner (
             name
           ),
           total_price,
@@ -54,7 +54,8 @@ export default function ServiceOrders() {
             color
           )
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .returns<ServiceOrder[]>();
 
       if (error) {
         toast({
@@ -65,7 +66,7 @@ export default function ServiceOrders() {
         throw error;
       }
 
-      return (data || []) as ServiceOrder[];
+      return data || [];
     }
   });
 
