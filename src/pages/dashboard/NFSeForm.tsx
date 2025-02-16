@@ -76,7 +76,7 @@ export default function NFSeForm() {
         .maybeSingle();
 
       if (error) throw error;
-      console.log('Company Info:', data); // Debug
+      console.log('Company Info:', data);
       return data;
     }
   });
@@ -126,16 +126,42 @@ export default function NFSeForm() {
     }
   });
 
+  const { data: nfseSettings } = useQuery({
+    queryKey: ['nfseSettings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('nfse_sp_settings')
+        .select(`
+          *,
+          certificates (
+            id,
+            certificate_data,
+            certificate_password,
+            is_valid,
+            valid_until
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      console.log('NFSe Settings:', data);
+      return data;
+    }
+  });
+
   useEffect(() => {
     if (companyInfo && fiscalConfig?.config) {
       console.log('Setting form values with:', {
         serviceOrder,
         companyInfo,
-        fiscalConfig
+        fiscalConfig,
+        nfseSettings
       });
 
       const codigoServico = String(serviceOrder?.codigo_servico ?? companyInfo?.codigo_servico ?? '');
-      console.log('Código Serviço:', codigoServico); // Debug
+      console.log('Código Serviço:', codigoServico);
 
       form.reset({
         codigo_servico: codigoServico,
@@ -162,18 +188,24 @@ export default function NFSeForm() {
         serie_rps: fiscalConfig.config.rps_serie ?? '1',
       });
     }
-  }, [serviceOrder, companyInfo, fiscalConfig, form]);
+  }, [serviceOrder, companyInfo, fiscalConfig, nfseSettings, form]);
 
   const onSubmit = async (data: NFSeFormData) => {
     setIsLoading(true);
     try {
-      if (!serviceOrder) throw new Error('Ordem de serviço não encontrada');
+      if (!nfseSettings?.id) {
+        throw new Error('Configurações da NFS-e não encontradas');
+      }
+
+      if (!nfseSettings.certificates?.is_valid) {
+        throw new Error('Certificado digital inválido ou expirado');
+      }
 
       const { data: nfse, error: nfseError } = await supabase
         .from('nfse')
         .insert([{
           service_order_id: serviceOrderId,
-          client_id: serviceOrder.client_id,
+          client_id: serviceOrder?.client_id,
           codigo_servico: data.codigo_servico,
           discriminacao_servicos: data.discriminacao_servicos,
           servico_discriminacao_item: data.servico_discriminacao_item,
@@ -196,7 +228,8 @@ export default function NFSeForm() {
           tributacao_rps: data.tipo_tributacao,
           tipo_rps: data.tipo_rps,
           serie_rps: data.serie_rps,
-          status_rps: 'N', // Normal
+          status_rps: 'N',
+          nfse_sp_settings_id: nfseSettings.id,
         }])
         .select()
         .single();
