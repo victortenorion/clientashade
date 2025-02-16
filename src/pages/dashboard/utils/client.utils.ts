@@ -36,7 +36,19 @@ export const getFieldLabel = (fieldName: string) => {
     phone_carrier: "Operadora",
     website: "Website",
     nfe_email: "Email NFe",
-    client_login: "Login do Cliente"
+    client_login: "Login do Cliente",
+    // Labels para campos NFS-e SP
+    tipo_documento_prestador: "Tipo Documento Prestador",
+    tipo_documento_tomador: "Tipo Documento Tomador",
+    inscricao_estadual_tomador: "Inscrição Estadual Tomador",
+    inscricao_municipal_tomador: "Inscrição Municipal Tomador",
+    tipo_endereco_tomador: "Tipo Endereço Tomador",
+    inscricao_suframa: "Inscrição SUFRAMA",
+    codigo_pais_tomador: "Código País Tomador",
+    codigo_municipio_tomador: "Código Município Tomador",
+    tipo_tomador: "Tipo Tomador",
+    regime_especial_tributacao: "Regime Especial Tributação",
+    indicador_incentivo_fiscal: "Indicador Incentivo Fiscal"
   };
   return labels[fieldName] || fieldName;
 };
@@ -69,6 +81,18 @@ export interface ClientFormData {
   website: string;
   nfe_email: string;
   store_id: string;
+  // Campos NFS-e SP
+  tipo_documento_prestador?: string;
+  tipo_documento_tomador?: string;
+  inscricao_estadual_tomador?: string;
+  inscricao_municipal_tomador?: string;
+  tipo_endereco_tomador?: string;
+  inscricao_suframa?: string;
+  codigo_pais_tomador?: string;
+  codigo_municipio_tomador?: string;
+  tipo_tomador?: string;
+  regime_especial_tributacao?: string;
+  indicador_incentivo_fiscal?: boolean;
 }
 
 export const defaultFormData: ClientFormData = {
@@ -99,4 +123,16 @@ export const defaultFormData: ClientFormData = {
   website: "",
   nfe_email: "",
   store_id: "",
+  // Valores padrão para campos NFS-e SP
+  tipo_documento_prestador: "CNPJ",
+  tipo_documento_tomador: "CNPJ",
+  inscricao_estadual_tomador: "",
+  inscricao_municipal_tomador: "",
+  tipo_endereco_tomador: "R",
+  inscricao_suframa: "",
+  codigo_pais_tomador: "1058", // Código do Brasil
+  codigo_municipio_tomador: "",
+  tipo_tomador: "J",
+  regime_especial_tributacao: "",
+  indicador_incentivo_fiscal: false
 };
