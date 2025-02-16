@@ -29,21 +29,23 @@ const formSchema = z.object({
   operacao: z.string().default('A'),
   tributacao_rps: z.string().default('T'),
   status_rps: z.string().default('1'),
-  valor_servicos: z.string().transform((val) => Number(val)),
-  valor_deducoes: z.string().transform((val) => Number(val)),
-  valor_pis: z.string().transform((val) => Number(val)),
-  valor_cofins: z.string().transform((val) => Number(val)),
-  valor_inss: z.string().transform((val) => Number(val)),
-  valor_ir: z.string().transform((val) => Number(val)),
-  valor_csll: z.string().transform((val) => Number(val)),
+  valor_servicos: z.number().min(0),
+  valor_deducoes: z.number().min(0),
+  valor_pis: z.number().min(0),
+  valor_cofins: z.number().min(0),
+  valor_inss: z.number().min(0),
+  valor_ir: z.number().min(0),
+  valor_csll: z.number().min(0),
   codigo_atividade: z.string(),
-  aliquota_servicos: z.string().transform((val) => Number(val)),
+  aliquota_servicos: z.number().min(0),
   tipo_recolhimento: z.string().default('A'),
   codigo_municipio_prestacao: z.string().optional(),
   cidade_prestacao: z.string().optional(),
   discriminacao_servicos: z.string(),
   iss_retido: z.boolean(),
 });
+
+type FormValues = z.infer<typeof formSchema>;
 
 export default function NFSeForm() {
   const [isLoading, setIsLoading] = useState(false);
@@ -90,22 +92,22 @@ export default function NFSeForm() {
     enabled: !!serviceOrderId
   });
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       tipo_rnps: 'RPS',
       operacao: 'A',
       tributacao_rps: 'T',
       status_rps: '1',
-      valor_servicos: "0",
-      valor_deducoes: "0",
-      valor_pis: "0",
-      valor_cofins: "0",
-      valor_inss: "0",
-      valor_ir: "0",
-      valor_csll: "0",
+      valor_servicos: 0,
+      valor_deducoes: 0,
+      valor_pis: 0,
+      valor_cofins: 0,
+      valor_inss: 0,
+      valor_ir: 0,
+      valor_csll: 0,
       codigo_atividade: "",
-      aliquota_servicos: "0",
+      aliquota_servicos: 0,
       tipo_recolhimento: 'A',
       codigo_municipio_prestacao: "",
       cidade_prestacao: "",
@@ -117,24 +119,25 @@ export default function NFSeForm() {
   useEffect(() => {
     if (serviceOrder) {
       form.reset({
-        valor_servicos: String(serviceOrder.total_price || 0),
+        ...form.getValues(),
+        valor_servicos: serviceOrder.total_price || 0,
         discriminacao_servicos: serviceOrder.discriminacao_servico || '',
         iss_retido: serviceOrder.iss_retido || false,
         codigo_atividade: serviceOrder.codigo_servico || '',
-        aliquota_servicos: String(serviceOrder.aliquota_iss || 0),
-        valor_deducoes: "0",
-        valor_pis: "0",
-        valor_cofins: "0",
-        valor_inss: "0",
-        valor_ir: "0",
-        valor_csll: "0",
+        aliquota_servicos: serviceOrder.aliquota_iss || 0,
+        valor_deducoes: 0,
+        valor_pis: 0,
+        valor_cofins: 0,
+        valor_inss: 0,
+        valor_ir: 0,
+        valor_csll: 0,
         codigo_municipio_prestacao: serviceOrder.codigo_municipio_prestacao || '',
         cidade_prestacao: serviceOrder.cidade_prestacao || '',
       });
     }
   }, [serviceOrder]);
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: FormValues) {
     setIsLoading(true);
     try {
       // Primeiro, criar a NFS-e no banco
@@ -188,6 +191,12 @@ export default function NFSeForm() {
     }
   }
 
+  const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>, field: any) => {
+    const value = e.target.value.replace(/[^0-9.,]/g, '');
+    const numericValue = parseFloat(value.replace(',', '.')) || 0;
+    field.onChange(numericValue);
+  };
+
   return (
     <div className="container max-w-4xl mx-auto py-10">
       <Card>
@@ -206,7 +215,12 @@ export default function NFSeForm() {
                     <FormItem>
                       <FormLabel>Valor dos Serviços</FormLabel>
                       <FormControl>
-                        <Input type="text" placeholder="0,00" {...field} />
+                        <Input 
+                          type="text" 
+                          placeholder="0,00" 
+                          value={field.value.toString().replace('.', ',')}
+                          onChange={(e) => handleValueChange(e, field)}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -219,7 +233,12 @@ export default function NFSeForm() {
                     <FormItem>
                       <FormLabel>Alíquota (%)</FormLabel>
                       <FormControl>
-                        <Input type="text" placeholder="0,00" {...field} />
+                        <Input 
+                          type="text" 
+                          placeholder="0,00" 
+                          value={field.value.toString().replace('.', ',')}
+                          onChange={(e) => handleValueChange(e, field)}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -228,87 +247,51 @@ export default function NFSeForm() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="valor_deducoes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Deduções</FormLabel>
-                      <FormControl>
-                        <Input type="text" placeholder="0,00" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="valor_pis"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>PIS</FormLabel>
-                      <FormControl>
-                        <Input type="text" placeholder="0,00" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="valor_cofins"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>COFINS</FormLabel>
-                      <FormControl>
-                        <Input type="text" placeholder="0,00" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {['valor_deducoes', 'valor_pis', 'valor_cofins'].map((fieldName) => (
+                  <FormField
+                    key={fieldName}
+                    control={form.control}
+                    name={fieldName as keyof FormValues}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{fieldName.split('_')[1].toUpperCase()}</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="text" 
+                            placeholder="0,00" 
+                            value={field.value.toString().replace('.', ',')}
+                            onChange={(e) => handleValueChange(e, field)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ))}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="valor_inss"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>INSS</FormLabel>
-                      <FormControl>
-                        <Input type="text" placeholder="0,00" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="valor_ir"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>IR</FormLabel>
-                      <FormControl>
-                        <Input type="text" placeholder="0,00" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="valor_csll"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CSLL</FormLabel>
-                      <FormControl>
-                        <Input type="text" placeholder="0,00" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {['valor_inss', 'valor_ir', 'valor_csll'].map((fieldName) => (
+                  <FormField
+                    key={fieldName}
+                    control={form.control}
+                    name={fieldName as keyof FormValues}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{fieldName.split('_')[1].toUpperCase()}</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="text" 
+                            placeholder="0,00" 
+                            value={field.value.toString().replace('.', ',')}
+                            onChange={(e) => handleValueChange(e, field)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ))}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
