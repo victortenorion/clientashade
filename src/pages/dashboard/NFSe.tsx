@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -18,8 +17,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, FileText, Send, File, Loader2, Mail } from "lucide-react";
+import { Plus, FileText, Send, File, Loader2, Mail, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 
 interface NFSe {
   id: string;
@@ -46,7 +47,9 @@ const NFSe = () => {
   const [notas, setNotas] = useState<NFSe[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [xmlDialogOpen, setXmlDialogOpen] = useState(false);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedXml, setSelectedXml] = useState<{ envio: string; retorno: string } | null>(null);
+  const [selectedNota, setSelectedNota] = useState<NFSe | null>(null);
   const { toast } = useToast();
 
   const fetchNFSe = async () => {
@@ -176,6 +179,11 @@ const NFSe = () => {
     setXmlDialogOpen(true);
   };
 
+  const handleViewDetails = (nota: NFSe) => {
+    setSelectedNota(nota);
+    setDetailsDialogOpen(true);
+  };
+
   useEffect(() => {
     fetchNFSe();
   }, [searchTerm]);
@@ -263,6 +271,14 @@ const NFSe = () => {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewDetails(nota)}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      Detalhes
+                    </Button>
                     {nota.status_sefaz === "pendente" && (
                       <Button
                         variant="outline"
@@ -343,6 +359,75 @@ const NFSe = () => {
               </pre>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Detalhes da NFS-e</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh]">
+            {selectedNota && (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Informações Gerais</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Número da Nota</p>
+                      <p className="font-medium">{selectedNota.numero_nfse}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Data de Emissão</p>
+                      <p className="font-medium">
+                        {new Date(selectedNota.data_emissao).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Status</p>
+                      <Badge variant={getStatusBadgeVariant(selectedNota.status_sefaz)}>
+                        {selectedNota.status_sefaz}
+                      </Badge>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Valor dos Serviços</p>
+                      <p className="font-medium">
+                        {selectedNota.valor_servicos.toLocaleString("pt-BR", {
+                          style: "currency",
+                          currency: "BRL",
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Dados do Cliente</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Nome</p>
+                      <p className="font-medium">{selectedNota.clients?.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Email</p>
+                      <p className="font-medium">{selectedNota.clients?.email}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Discriminação dos Serviços</h3>
+                  <p className="whitespace-pre-wrap bg-muted p-4 rounded-lg">
+                    {selectedNota.discriminacao_servicos}
+                  </p>
+                </div>
+              </div>
+            )}
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>
