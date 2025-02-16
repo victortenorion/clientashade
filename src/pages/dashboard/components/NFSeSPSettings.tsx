@@ -68,7 +68,7 @@ export function NFSeSPSettings() {
         const { data, error } = await supabase
           .from("nfse_sp_settings")
           .select("*")
-          .single();
+          .maybeSingle();  // Changed this line to use maybeSingle()
 
         if (error) throw error;
 
