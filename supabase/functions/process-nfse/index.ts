@@ -44,7 +44,7 @@ serve(async (req) => {
     console.log('NFS-e encontrada:', {
       id: nfse.id,
       numero: nfse.numero_nfse,
-      settings: nfse.nfse_sp_settings ? 'presente' : 'ausente',
+      settings: nfse.settings ? 'presente' : 'ausente',
       company_info: nfse.company_info ? 'presente' : 'ausente'
     });
 
@@ -66,28 +66,28 @@ serve(async (req) => {
 
     console.log('Tentando acessar endpoint:', endpoint);
 
-    // Configurar payload SOAP
+    // Configurar payload SOAP com melhor formatação
     const soapEnvelope = `<?xml version="1.0" encoding="UTF-8"?>
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <soap:Header/>
   <soap:Body>
     <ConsultaNFe xmlns="http://www.prefeitura.sp.gov.br/nfe">
+      <VersaoSchema>1</VersaoSchema>
       <MensagemXML>
-        <![CDATA[
-          <?xml version="1.0" encoding="UTF-8"?>
-          <ConsultaNFe xmlns="http://www.prefeitura.sp.gov.br/nfe">
-            <Cabecalho Versao="1">
-              <CPFCNPJRemetente>
-                <CNPJ>${nfse.company_info.cnpj}</CNPJ>
-              </CPFCNPJRemetente>
-            </Cabecalho>
-            <Detalhe>
-              <ChaveNFe>
-                <InscricaoPrestador>${nfse.company_info.inscricao_municipal}</InscricaoPrestador>
-                <NumeroNFe>${nfse.numero_nfse}</NumeroNFe>
-              </ChaveNFe>
-            </Detalhe>
-          </ConsultaNFe>
-        ]]>
+        <![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+        <ConsultaNFe xmlns="http://www.prefeitura.sp.gov.br/nfe">
+          <Cabecalho Versao="1">
+            <CPFCNPJRemetente>
+              <CNPJ>${nfse.company_info.cnpj.replace(/\D/g, '')}</CNPJ>
+            </CPFCNPJRemetente>
+          </Cabecalho>
+          <Detalhe>
+            <ChaveNFe>
+              <InscricaoPrestador>${nfse.company_info.inscricao_municipal.replace(/\D/g, '')}</InscricaoPrestador>
+              <NumeroNFe>${nfse.numero_nfse}</NumeroNFe>
+            </ChaveNFe>
+          </Detalhe>
+        </ConsultaNFe>]]>
       </MensagemXML>
     </ConsultaNFe>
   </soap:Body>
@@ -96,7 +96,9 @@ serve(async (req) => {
     console.log('Enviando requisição SOAP:', soapEnvelope);
 
     try {
-      // Usar fetch em vez de Deno.connect para ter melhor suporte a HTTPS
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos timeout
+
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -104,10 +106,19 @@ serve(async (req) => {
           'SOAPAction': 'http://www.prefeitura.sp.gov.br/nfe/ws/consultaNFe',
         },
         body: soapEnvelope,
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('Resposta com erro da SEFAZ:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
+        throw new Error(`Erro HTTP ${response.status}: ${errorText}`);
       }
 
       const responseText = await response.text();
@@ -154,6 +165,11 @@ serve(async (req) => {
 
     } catch (fetchError) {
       console.error('Erro na requisição SOAP:', fetchError);
+      
+      if (fetchError.name === 'AbortError') {
+        throw new Error('Timeout na comunicação com a SEFAZ');
+      }
+      
       throw new Error(`Erro na comunicação com a SEFAZ: ${fetchError.message}`);
     }
 
