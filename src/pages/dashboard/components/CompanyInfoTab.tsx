@@ -60,6 +60,7 @@ export const CompanyInfoTab = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isCepLoading, setIsCepLoading] = useState(false);
   const [isCheckingRPS, setIsCheckingRPS] = useState(false);
+  const [isCheckingLastNFSe, setIsCheckingLastNFSe] = useState(false);
   const [rpsConfig, setRpsConfig] = useState<RPSConfig>({
     numero_inicial_rps: 0,
     numero_inicial_nfse: ''
@@ -371,6 +372,36 @@ export const CompanyInfoTab = () => {
     }
   };
 
+  const checkLastNFSe = async () => {
+    setIsCheckingLastNFSe(true);
+    try {
+      const { data: { ultimoNumero }, error } = await supabase.functions.invoke('check-last-nfse');
+      
+      if (error) throw error;
+
+      if (ultimoNumero) {
+        setRpsConfig(prev => ({
+          ...prev,
+          numero_inicial_nfse: (parseInt(ultimoNumero) + 1).toString()
+        }));
+        
+        toast({
+          title: "Sucesso",
+          description: "Último número de NFS-e obtido com sucesso.",
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao buscar último número de NFS-e:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível obter o último número de NFS-e da prefeitura.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCheckingLastNFSe(false);
+    }
+  };
+
   useEffect(() => {
     loadCompanyInfo();
   }, []);
@@ -624,16 +655,29 @@ export const CompanyInfoTab = () => {
 
               <div className="space-y-2">
                 <Label>Número Inicial da NFS-e</Label>
-                <Input
-                  value={rpsConfig.numero_inicial_nfse}
-                  onChange={(e) =>
-                    setRpsConfig({
-                      ...rpsConfig,
-                      numero_inicial_nfse: e.target.value
-                    })
-                  }
-                  placeholder="Digite o número inicial da NFS-e"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    value={rpsConfig.numero_inicial_nfse}
+                    onChange={(e) =>
+                      setRpsConfig({
+                        ...rpsConfig,
+                        numero_inicial_nfse: e.target.value
+                      })
+                    }
+                    placeholder="Digite o número inicial da NFS-e"
+                  />
+                  <Button 
+                    variant="outline" 
+                    onClick={checkLastNFSe}
+                    disabled={isCheckingLastNFSe}
+                  >
+                    {isCheckingLastNFSe ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Buscar Último"
+                    )}
+                  </Button>
+                </div>
               </div>
 
               <div className="space-y-2">

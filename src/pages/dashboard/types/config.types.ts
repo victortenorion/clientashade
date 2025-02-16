@@ -24,7 +24,7 @@ export interface NFSeConfig {
   certificado_valido: boolean;
   certificado_validade?: string;
   numero_inicial_rps: number;
-  numero_inicial_nfse: string;
+  numero_inicial_nfse?: string;
   aliquota_servico: number;
   versao_schema: string;
   lote_rps_numero: number;
