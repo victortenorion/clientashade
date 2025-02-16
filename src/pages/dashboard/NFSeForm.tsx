@@ -272,11 +272,15 @@ export default function NFSeForm() {
   const onSaveDraft = async (data: NFSeFormData) => {
     setIsLoading(true);
     try {
+      if (!serviceOrder?.client_id) {
+        throw new Error('Ordem de serviço não encontrada ou cliente não definido');
+      }
+
       const { error: nfseError } = await supabase
         .from('nfse')
         .insert([{
           service_order_id: serviceOrderId,
-          client_id: serviceOrder?.client_id,
+          client_id: serviceOrder.client_id,
           codigo_servico: data.codigo_servico,
           discriminacao_servicos: data.discriminacao_servicos,
           servico_discriminacao_item: data.servico_discriminacao_item,
@@ -605,11 +609,14 @@ export default function NFSeForm() {
               type="button"
               variant="secondary"
               onClick={form.handleSubmit(onSaveDraft)}
-              disabled={isLoading}
+              disabled={isLoading || !serviceOrder?.client_id}
             >
               {isLoading ? "Salvando..." : "Salvar NFS-e"}
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button 
+              type="submit" 
+              disabled={isLoading || !serviceOrder?.client_id}
+            >
               {isLoading ? "Emitindo..." : "Emitir NFS-e"}
             </Button>
           </div>
