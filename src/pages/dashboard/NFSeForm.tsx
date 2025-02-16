@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
@@ -73,7 +72,7 @@ export default function NFSeForm() {
         .from('nfse_sp_settings')
         .select(`
           *,
-          certificates!left (
+          certificates!nfse_sp_settings_certificates_id_fkey (
             id,
             certificate_data,
             certificate_password,
