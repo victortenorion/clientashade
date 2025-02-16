@@ -96,49 +96,29 @@ serve(async (req) => {
     console.log('Enviando requisição SOAP:', soapEnvelope);
 
     try {
-      // Usar o cliente HTTP nativo do Deno
-      const conn = await Deno.connect({ 
-        hostname: nfse.settings.ambiente === 'producao' ? 'nfe.prefeitura.sp.gov.br' : 'nfeh.prefeitura.sp.gov.br', 
-        port: 443 
+      // Using fetch instead of raw TCP connection
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/xml;charset=UTF-8',
+          'SOAPAction': 'http://www.prefeitura.sp.gov.br/nfe/ws/consultaNFe',
+        },
+        body: soapEnvelope,
       });
-      
-      const tlsConn = await Deno.startTls(conn, {
-        hostname: nfse.settings.ambiente === 'producao' ? 'nfe.prefeitura.sp.gov.br' : 'nfeh.prefeitura.sp.gov.br',
-        certFile: nfse.settings.ambiente === 'producao' ? undefined : null
-      });
 
-      const requestHeaders = [
-        'POST /ws/lotenfe.asmx HTTP/1.1',
-        `Host: ${nfse.settings.ambiente === 'producao' ? 'nfe.prefeitura.sp.gov.br' : 'nfeh.prefeitura.sp.gov.br'}`,
-        'Content-Type: text/xml;charset=UTF-8',
-        'SOAPAction: http://www.prefeitura.sp.gov.br/nfe/ws/consultaNFe',
-        'Accept: */*',
-        `Content-Length: ${soapEnvelope.length}`,
-        '',
-        soapEnvelope
-      ].join('\r\n');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-      const encoder = new TextEncoder();
-      await tlsConn.write(encoder.encode(requestHeaders));
-
-      const decoder = new TextDecoder();
-      const buffer = new Uint8Array(10000);
-      const bytesRead = await tlsConn.read(buffer);
-      const response = decoder.decode(buffer.subarray(0, bytesRead!));
-
-      tlsConn.close();
-      conn.close();
-
-      console.log('Resposta da consulta:', response);
-
-      const responseBody = response.split('\r\n\r\n')[1] || '';
+      const responseText = await response.text();
+      console.log('Resposta da consulta:', responseText);
 
       let novoStatus = 'processando';
-      if (responseBody.includes('<Situacao>C</Situacao>')) {
+      if (responseText.includes('<Situacao>C</Situacao>')) {
         novoStatus = 'cancelada';
-      } else if (responseBody.includes('<Situacao>N</Situacao>')) {
+      } else if (responseText.includes('<Situacao>N</Situacao>')) {
         novoStatus = 'autorizada';
-      } else if (responseBody.includes('<Erro>')) {
+      } else if (responseText.includes('<Erro>')) {
         novoStatus = 'rejeitada';
       }
 
@@ -160,14 +140,14 @@ serve(async (req) => {
           nfse_id: nfseId,
           status: novoStatus,
           request_payload: { xml: soapEnvelope },
-          response_payload: { xml: responseBody }
+          response_payload: { xml: responseText }
         });
 
       return new Response(
-        JSON.stringify({ 
-          success: true, 
+        JSON.stringify({
+          success: true,
           status: novoStatus,
-          message: `Status da NFS-e atualizado para ${novoStatus}` 
+          message: `Status da NFS-e atualizado para ${novoStatus}`
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -180,7 +160,7 @@ serve(async (req) => {
     console.error('Erro ao processar NFS-e:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      { 
+      {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
