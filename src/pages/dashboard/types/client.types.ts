@@ -1,4 +1,3 @@
-
 export interface ContactPerson {
   name: string;
   email: string;
@@ -11,6 +10,16 @@ export interface Store {
   name: string;
   created_at: string;
   updated_at: string;
+  inscricao_municipal?: string;
+  tipo_documento?: string;
+  documento?: string;
+  regime_tributario?: string;
+  codigo_servico_padrao?: string;
+  cnae?: string;
+  codigo_municipio?: string;
+  iss_retido?: boolean;
+  aliquota_iss?: number;
+  incentivador_cultural?: boolean;
 }
 
 export interface ClientFormData {

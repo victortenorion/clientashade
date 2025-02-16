@@ -1900,21 +1900,51 @@ export type Database = {
       }
       stores: {
         Row: {
+          aliquota_iss: number | null
+          cnae: string | null
+          codigo_municipio: string | null
+          codigo_servico_padrao: string | null
           created_at: string
+          documento: string | null
           id: string
+          incentivador_cultural: boolean | null
+          inscricao_municipal: string | null
+          iss_retido: boolean | null
           name: string
+          regime_tributario: string | null
+          tipo_documento: string | null
           updated_at: string
         }
         Insert: {
+          aliquota_iss?: number | null
+          cnae?: string | null
+          codigo_municipio?: string | null
+          codigo_servico_padrao?: string | null
           created_at?: string
+          documento?: string | null
           id?: string
+          incentivador_cultural?: boolean | null
+          inscricao_municipal?: string | null
+          iss_retido?: boolean | null
           name: string
+          regime_tributario?: string | null
+          tipo_documento?: string | null
           updated_at?: string
         }
         Update: {
+          aliquota_iss?: number | null
+          cnae?: string | null
+          codigo_municipio?: string | null
+          codigo_servico_padrao?: string | null
           created_at?: string
+          documento?: string | null
           id?: string
+          incentivador_cultural?: boolean | null
+          inscricao_municipal?: string | null
+          iss_retido?: boolean | null
           name?: string
+          regime_tributario?: string | null
+          tipo_documento?: string | null
           updated_at?: string
         }
         Relationships: []

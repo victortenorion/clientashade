@@ -1,6 +1,9 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { IMaskInput } from "react-imask";
 import { ClientFormData, Store } from "../types/client.types";
 
 interface Props {
@@ -14,6 +17,8 @@ export const ClientStore = ({
   stores,
   onFormChange
 }: Props) => {
+  const selectedStore = stores.find(store => store.id === formData.store_id);
+
   return (
     <Card>
       <CardHeader>
@@ -38,6 +43,62 @@ export const ClientStore = ({
             ))}
           </select>
         </div>
+
+        {selectedStore && (
+          <div className="mt-4 space-y-4 border-t pt-4">
+            <h3 className="text-sm font-medium">Informações da Loja Selecionada:</h3>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Inscrição Municipal</Label>
+                <p className="text-sm text-gray-600">{selectedStore.inscricao_municipal || '-'}</p>
+              </div>
+              
+              <div>
+                <Label>Documento</Label>
+                <p className="text-sm text-gray-600">
+                  {selectedStore.tipo_documento}: {selectedStore.documento || '-'}
+                </p>
+              </div>
+
+              <div>
+                <Label>Regime Tributário</Label>
+                <p className="text-sm text-gray-600">{selectedStore.regime_tributario || '-'}</p>
+              </div>
+
+              <div>
+                <Label>CNAE</Label>
+                <p className="text-sm text-gray-600">{selectedStore.cnae || '-'}</p>
+              </div>
+
+              <div>
+                <Label>Código do Município</Label>
+                <p className="text-sm text-gray-600">{selectedStore.codigo_municipio || '-'}</p>
+              </div>
+
+              <div>
+                <Label>Alíquota ISS</Label>
+                <p className="text-sm text-gray-600">
+                  {selectedStore.aliquota_iss ? `${selectedStore.aliquota_iss}%` : '-'}
+                </p>
+              </div>
+
+              <div>
+                <Label>ISS Retido</Label>
+                <p className="text-sm text-gray-600">
+                  {selectedStore.iss_retido ? 'Sim' : 'Não'}
+                </p>
+              </div>
+
+              <div>
+                <Label>Incentivador Cultural</Label>
+                <p className="text-sm text-gray-600">
+                  {selectedStore.incentivador_cultural ? 'Sim' : 'Não'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
