@@ -103,7 +103,8 @@ export default function ServiceOrderEdit() {
         description: "As alterações foram salvas com sucesso."
       });
 
-      navigate(`/dashboard/service-orders/${id}`);
+      // Alterado aqui: redirecionar para a lista de ordens
+      navigate("/dashboard/service-orders");
     } catch (error: any) {
       toast({
         variant: "destructive",
