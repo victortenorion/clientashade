@@ -1569,27 +1569,54 @@ export type Database = {
       }
       products: {
         Row: {
+          aliquota_iss: number | null
+          codigo_cnae: string | null
+          codigo_municipio_prestacao: string | null
+          codigo_servico_sp: string | null
+          codigo_tributacao_municipio: string | null
           created_at: string
           description: string | null
+          discriminacao_padrao: string | null
+          exigibilidade_iss: string | null
           id: string
+          iss_retido: boolean | null
+          item_lista_servico: string | null
           name: string
           price: number
           stock: number | null
           updated_at: string
         }
         Insert: {
+          aliquota_iss?: number | null
+          codigo_cnae?: string | null
+          codigo_municipio_prestacao?: string | null
+          codigo_servico_sp?: string | null
+          codigo_tributacao_municipio?: string | null
           created_at?: string
           description?: string | null
+          discriminacao_padrao?: string | null
+          exigibilidade_iss?: string | null
           id?: string
+          iss_retido?: boolean | null
+          item_lista_servico?: string | null
           name: string
           price: number
           stock?: number | null
           updated_at?: string
         }
         Update: {
+          aliquota_iss?: number | null
+          codigo_cnae?: string | null
+          codigo_municipio_prestacao?: string | null
+          codigo_servico_sp?: string | null
+          codigo_tributacao_municipio?: string | null
           created_at?: string
           description?: string | null
+          discriminacao_padrao?: string | null
+          exigibilidade_iss?: string | null
           id?: string
+          iss_retido?: boolean | null
+          item_lista_servico?: string | null
           name?: string
           price?: number
           stock?: number | null
