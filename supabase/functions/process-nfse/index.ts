@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
@@ -25,25 +26,11 @@ serve(async (req) => {
 
     console.log('Buscando NFS-e com ID:', nfseId);
 
-    // Modificada a query para usar JOIN lateral e pegar apenas o certificado mais recente
-    const { data: nfse, error: nfseError } = await supabaseClient
-      .from('nfse')
-      .select(`
-        *,
-        nfse_sp_settings!inner (
-          *,
-          certificates!inner (
-            certificate_data,
-            certificate_password
-          )
-        ),
-        company_info (
-          cnpj,
-          inscricao_municipal
-        )
-      `)
-      .eq('id', nfseId)
-      .maybeSingle();
+    // Usando RPC para buscar a NFS-e com o certificado mais recente
+    const { data: nfse, error: nfseError } = await supabaseClient.rpc(
+      'get_nfse_with_latest_certificate',
+      { p_nfse_id: nfseId }
+    );
 
     if (nfseError) {
       console.error('Erro ao buscar NFS-e:', nfseError);
@@ -61,21 +48,19 @@ serve(async (req) => {
       company_info: nfse.company_info ? 'presente' : 'ausente'
     });
 
-    const settings = nfse.nfse_sp_settings?.[0];
-    if (!settings) {
+    if (!nfse.settings) {
       throw new Error('Configurações da NFS-e não encontradas');
     }
 
-    const companyInfo = nfse.company_info?.[0];
-    if (!companyInfo) {
+    if (!nfse.company_info) {
       throw new Error('Informações da empresa não encontradas');
     }
 
-    if (!companyInfo.cnpj || !companyInfo.inscricao_municipal) {
+    if (!nfse.company_info.cnpj || !nfse.company_info.inscricao_municipal) {
       throw new Error('CNPJ ou Inscrição Municipal não configurados');
     }
 
-    const endpoint = settings.ambiente === 'producao'
+    const endpoint = nfse.settings.ambiente === 'producao'
       ? 'https://nfe.prefeitura.sp.gov.br/ws/lotenfe.asmx'
       : 'https://nfeh.prefeitura.sp.gov.br/ws/lotenfe.asmx';
 
@@ -92,12 +77,12 @@ serve(async (req) => {
           <ConsultaNFe xmlns="http://www.prefeitura.sp.gov.br/nfe">
             <Cabecalho Versao="1">
               <CPFCNPJRemetente>
-                <CNPJ>${companyInfo.cnpj}</CNPJ>
+                <CNPJ>${nfse.company_info.cnpj}</CNPJ>
               </CPFCNPJRemetente>
             </Cabecalho>
             <Detalhe>
               <ChaveNFe>
-                <InscricaoPrestador>${companyInfo.inscricao_municipal}</InscricaoPrestador>
+                <InscricaoPrestador>${nfse.company_info.inscricao_municipal}</InscricaoPrestador>
                 <NumeroNFe>${nfse.numero_nfse}</NumeroNFe>
               </ChaveNFe>
             </Detalhe>
@@ -112,16 +97,19 @@ serve(async (req) => {
 
     try {
       // Usar o cliente HTTP nativo do Deno
-      const conn = await Deno.connect({ hostname: settings.ambiente === 'producao' ? 'nfe.prefeitura.sp.gov.br' : 'nfeh.prefeitura.sp.gov.br', port: 443 });
+      const conn = await Deno.connect({ 
+        hostname: nfse.settings.ambiente === 'producao' ? 'nfe.prefeitura.sp.gov.br' : 'nfeh.prefeitura.sp.gov.br', 
+        port: 443 
+      });
+      
       const tlsConn = await Deno.startTls(conn, {
-        hostname: settings.ambiente === 'producao' ? 'nfe.prefeitura.sp.gov.br' : 'nfeh.prefeitura.sp.gov.br',
-        // Em homologação, não validamos o certificado
-        certFile: settings.ambiente === 'producao' ? undefined : null
+        hostname: nfse.settings.ambiente === 'producao' ? 'nfe.prefeitura.sp.gov.br' : 'nfeh.prefeitura.sp.gov.br',
+        certFile: nfse.settings.ambiente === 'producao' ? undefined : null
       });
 
       const requestHeaders = [
         'POST /ws/lotenfe.asmx HTTP/1.1',
-        `Host: ${settings.ambiente === 'producao' ? 'nfe.prefeitura.sp.gov.br' : 'nfeh.prefeitura.sp.gov.br'}`,
+        `Host: ${nfse.settings.ambiente === 'producao' ? 'nfe.prefeitura.sp.gov.br' : 'nfeh.prefeitura.sp.gov.br'}`,
         'Content-Type: text/xml;charset=UTF-8',
         'SOAPAction: http://www.prefeitura.sp.gov.br/nfe/ws/consultaNFe',
         'Accept: */*',
@@ -133,7 +121,6 @@ serve(async (req) => {
       const encoder = new TextEncoder();
       await tlsConn.write(encoder.encode(requestHeaders));
 
-      // Ler a resposta
       const decoder = new TextDecoder();
       const buffer = new Uint8Array(10000);
       const bytesRead = await tlsConn.read(buffer);
@@ -144,10 +131,8 @@ serve(async (req) => {
 
       console.log('Resposta da consulta:', response);
 
-      // Extrair o corpo da resposta HTTP
       const responseBody = response.split('\r\n\r\n')[1] || '';
 
-      // Processar resposta e atualizar status
       let novoStatus = 'processando';
       if (responseBody.includes('<Situacao>C</Situacao>')) {
         novoStatus = 'cancelada';
@@ -157,7 +142,6 @@ serve(async (req) => {
         novoStatus = 'rejeitada';
       }
 
-      // Atualizar status da NFS-e
       const { error: updateError } = await supabaseClient
         .from('nfse')
         .update({
@@ -170,7 +154,6 @@ serve(async (req) => {
         throw updateError;
       }
 
-      // Registrar log
       await supabaseClient
         .from('nfse_sefaz_logs')
         .insert({
