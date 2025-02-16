@@ -46,9 +46,8 @@ export default function ServiceOrderEdit() {
         .single();
 
       if (error) throw error;
-      return data;
-    },
-    onSuccess: (data) => {
+
+      // Atualizar o formData aqui ao invés de usar onSuccess
       setFormData({
         description: data.description || "",
         equipment: data.equipment || "",
@@ -67,6 +66,8 @@ export default function ServiceOrderEdit() {
         base_calculo: data.base_calculo || 0,
         valor_deducoes: data.valor_deducoes || 0
       });
+
+      return data;
     }
   });
 
