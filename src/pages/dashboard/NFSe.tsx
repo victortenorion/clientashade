@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -241,9 +240,49 @@ const NFSe = () => {
     setCancelDialogOpen(true);
   };
 
+  const verificarStatusProcessamento = async () => {
+    try {
+      const { data: notasProcessando } = await supabase
+        .from("nfse")
+        .select("*")
+        .eq("status_sefaz", "processando");
+
+      if (notasProcessando && notasProcessando.length > 0) {
+        for (const nota of notasProcessando) {
+          // Se a nota está em processamento há mais de 5 minutos, tentar atualizar
+          const processandoHa = new Date().getTime() - new Date(nota.updated_at).getTime();
+          if (processandoHa > 5 * 60 * 1000) { // 5 minutos
+            console.log(`Nota ${nota.numero_nfse} em processamento há muito tempo, verificando status...`);
+            
+            const { error } = await supabase.functions.invoke("process-nfse", {
+              body: { nfseId: nota.id },
+            });
+
+            if (error) {
+              console.error(`Erro ao verificar nota ${nota.numero_nfse}:`, error);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao verificar notas em processamento:", error);
+    }
+  };
+
   useEffect(() => {
     fetchNFSe();
   }, [searchTerm]);
+
+  useEffect(() => {
+    // Primeira verificação
+    verificarStatusProcessamento();
+
+    // Configurar verificação periódica
+    const interval = setInterval(verificarStatusProcessamento, 30000);
+
+    // Limpar intervalo quando o componente for desmontado
+    return () => clearInterval(interval);
+  }, []);
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
@@ -448,7 +487,7 @@ const NFSe = () => {
                       <p className="font-medium">{selectedNota.numero_nfse}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Data de Emissão</p>
+                      <p className="text-sm text-muted-foreground">Data de Emiss��o</p>
                       <p className="font-medium">
                         {new Date(selectedNota.data_emissao).toLocaleDateString()}
                       </p>
