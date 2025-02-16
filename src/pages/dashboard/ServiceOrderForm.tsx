@@ -8,6 +8,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
 import { ArrowLeft } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 
 export default function ServiceOrderForm() {
   const navigate = useNavigate();
@@ -18,7 +19,19 @@ export default function ServiceOrderForm() {
     equipment: "",
     equipment_serial_number: "",
     problem: "",
-    priority: "normal"
+    priority: "normal",
+    // Campos NFS-e
+    codigo_servico: "",
+    discriminacao_servico: "",
+    regime_tributario: "1", // Simples Nacional
+    regime_especial: "",
+    iss_retido: false,
+    inss_retido: false,
+    ir_retido: false,
+    pis_cofins_csll_retido: false,
+    aliquota_iss: 0,
+    base_calculo: 0,
+    valor_deducoes: 0
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -26,6 +39,13 @@ export default function ServiceOrderForm() {
     setFormData(prev => ({
       ...prev,
       [name]: value
+    }));
+  };
+
+  const handleSwitchChange = (name: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: !prev[name as keyof typeof prev]
     }));
   };
 
@@ -96,51 +116,139 @@ export default function ServiceOrderForm() {
 
       <form onSubmit={handleSubmit} className="space-y-6 max-w-xl">
         <div className="space-y-4">
-          <div>
-            <Label htmlFor="equipment">Equipamento</Label>
-            <Input
-              id="equipment"
-              name="equipment"
-              value={formData.equipment}
-              onChange={handleChange}
-              placeholder="Ex: Notebook Dell"
-            />
+          {/* Informações do Equipamento */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Informações do Equipamento</h3>
+            
+            <div>
+              <Label htmlFor="equipment">Equipamento</Label>
+              <Input
+                id="equipment"
+                name="equipment"
+                value={formData.equipment}
+                onChange={handleChange}
+                placeholder="Ex: Notebook Dell"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="equipment_serial_number">Número de Série</Label>
+              <Input
+                id="equipment_serial_number"
+                name="equipment_serial_number"
+                value={formData.equipment_serial_number}
+                onChange={handleChange}
+                placeholder="Ex: ABC123XYZ"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="problem">Problema Relatado</Label>
+              <Textarea
+                id="problem"
+                name="problem"
+                value={formData.problem}
+                onChange={handleChange}
+                placeholder="Descreva o problema relatado pelo cliente"
+                rows={3}
+              />
+            </div>
           </div>
 
-          <div>
-            <Label htmlFor="equipment_serial_number">Número de Série</Label>
-            <Input
-              id="equipment_serial_number"
-              name="equipment_serial_number"
-              value={formData.equipment_serial_number}
-              onChange={handleChange}
-              placeholder="Ex: ABC123XYZ"
-            />
-          </div>
+          {/* Informações para NFS-e */}
+          <div className="space-y-4 pt-4">
+            <h3 className="text-lg font-semibold">Informações para NFS-e</h3>
+            
+            <div>
+              <Label htmlFor="codigo_servico">Código do Serviço (LC 116)</Label>
+              <Input
+                id="codigo_servico"
+                name="codigo_servico"
+                value={formData.codigo_servico}
+                onChange={handleChange}
+                placeholder="Ex: 14.01"
+                required
+              />
+            </div>
 
-          <div>
-            <Label htmlFor="problem">Problema Relatado</Label>
-            <Textarea
-              id="problem"
-              name="problem"
-              value={formData.problem}
-              onChange={handleChange}
-              placeholder="Descreva o problema relatado pelo cliente"
-              rows={3}
-            />
-          </div>
+            <div>
+              <Label htmlFor="discriminacao_servico">Discriminação do Serviço</Label>
+              <Textarea
+                id="discriminacao_servico"
+                name="discriminacao_servico"
+                value={formData.discriminacao_servico}
+                onChange={handleChange}
+                placeholder="Descrição detalhada do serviço para a nota fiscal"
+                rows={3}
+                required
+              />
+            </div>
 
-          <div>
-            <Label htmlFor="description">Descrição do Serviço</Label>
-            <Textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Descreva o serviço a ser realizado"
-              rows={3}
-              required
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="base_calculo">Base de Cálculo</Label>
+                <Input
+                  id="base_calculo"
+                  name="base_calculo"
+                  type="number"
+                  step="0.01"
+                  value={formData.base_calculo}
+                  onChange={handleChange}
+                  placeholder="0,00"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="aliquota_iss">Alíquota ISS (%)</Label>
+                <Input
+                  id="aliquota_iss"
+                  name="aliquota_iss"
+                  type="number"
+                  step="0.01"
+                  value={formData.aliquota_iss}
+                  onChange={handleChange}
+                  placeholder="0,00"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="iss_retido">ISS Retido</Label>
+                <Switch
+                  id="iss_retido"
+                  checked={formData.iss_retido}
+                  onCheckedChange={() => handleSwitchChange('iss_retido')}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Label htmlFor="inss_retido">INSS Retido</Label>
+                <Switch
+                  id="inss_retido"
+                  checked={formData.inss_retido}
+                  onCheckedChange={() => handleSwitchChange('inss_retido')}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Label htmlFor="ir_retido">IR Retido</Label>
+                <Switch
+                  id="ir_retido"
+                  checked={formData.ir_retido}
+                  onCheckedChange={() => handleSwitchChange('ir_retido')}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Label htmlFor="pis_cofins_csll_retido">PIS/COFINS/CSLL Retido</Label>
+                <Switch
+                  id="pis_cofins_csll_retido"
+                  checked={formData.pis_cofins_csll_retido}
+                  onCheckedChange={() => handleSwitchChange('pis_cofins_csll_retido')}
+                />
+              </div>
+            </div>
           </div>
         </div>
 
