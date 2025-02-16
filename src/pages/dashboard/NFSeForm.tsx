@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
@@ -11,6 +10,7 @@ import {
   FormField,
   FormItem,
   FormLabel,
+  FormDescription,
 } from "@/components/ui/form";
 import {
   Select,
@@ -28,14 +28,25 @@ import { useQuery } from "@tanstack/react-query";
 interface NFSeFormData {
   codigo_servico: string;
   discriminacao_servicos: string;
+  servico_discriminacao_item: string;
+  servico_codigo_item_lista: string;
+  servico_codigo_municipio: string;
+  servico_codigo_local_prestacao: string;
+  servico_valor_item: number;
+  servico_exigibilidade: string;
+  servico_operacao: string;
   valor_servicos: number;
   base_calculo: number;
   aliquota_iss: number;
   valor_iss: number;
   iss_retido: boolean;
   regime_especial_tributacao: string;
+  tipo_regime_especial: string;
+  operacao_tributacao: string;
   optante_simples_nacional: boolean;
   incentivador_cultural: boolean;
+  tipo_rps: string;
+  serie_rps: string;
   tipo_tributacao: string;
 }
 
@@ -44,11 +55,18 @@ export default function NFSeForm() {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  
-  const serviceOrderId = searchParams.get('service_order_id');
-  const form = useForm<NFSeFormData>();
 
-  // Buscar dados da ordem de serviço
+  const serviceOrderId = searchParams.get('service_order_id');
+  const form = useForm<NFSeFormData>({
+    defaultValues: {
+      tipo_rps: 'RPS',
+      serie_rps: '1',
+      servico_exigibilidade: '1',
+      servico_operacao: '1',
+      operacao_tributacao: '1',
+    }
+  });
+
   const { data: serviceOrder } = useQuery({
     queryKey: ['serviceOrder', serviceOrderId],
     queryFn: async () => {
@@ -67,7 +85,6 @@ export default function NFSeForm() {
     enabled: !!serviceOrderId
   });
 
-  // Buscar serviços cadastrados
   const { data: services } = useQuery({
     queryKey: ['services'],
     queryFn: async () => {
@@ -91,11 +108,17 @@ export default function NFSeForm() {
       navigate('/dashboard/service-orders');
     }
 
-    // Preencher formulário com dados da ordem de serviço
     if (serviceOrder) {
       form.reset({
         codigo_servico: serviceOrder.codigo_servico || '',
         discriminacao_servicos: serviceOrder.discriminacao_servico || '',
+        servico_discriminacao_item: serviceOrder.servico_discriminacao_item || '',
+        servico_codigo_item_lista: serviceOrder.servico_codigo_item_lista || '',
+        servico_codigo_municipio: serviceOrder.servico_codigo_municipio || '',
+        servico_codigo_local_prestacao: serviceOrder.servico_codigo_local_prestacao || '',
+        servico_valor_item: serviceOrder.servico_valor_item || 0,
+        servico_exigibilidade: serviceOrder.servico_exigibilidade || '1',
+        servico_operacao: serviceOrder.servico_operacao || '1',
         valor_servicos: serviceOrder.total_price || 0,
         base_calculo: serviceOrder.base_calculo || 0,
         aliquota_iss: serviceOrder.aliquota_iss || 0,
@@ -114,7 +137,6 @@ export default function NFSeForm() {
     try {
       if (!serviceOrder) throw new Error('Ordem de serviço não encontrada');
 
-      // Criar NFS-e
       const { data: nfse, error: nfseError } = await supabase
         .from('nfse')
         .insert([{
@@ -122,15 +144,27 @@ export default function NFSeForm() {
           client_id: serviceOrder.client_id,
           codigo_servico: data.codigo_servico,
           discriminacao_servicos: data.discriminacao_servicos,
+          servico_discriminacao_item: data.servico_discriminacao_item,
+          servico_codigo_item_lista: data.servico_codigo_item_lista,
+          servico_codigo_municipio: data.servico_codigo_municipio,
+          servico_codigo_local_prestacao: data.servico_codigo_local_prestacao,
+          servico_valor_item: data.servico_valor_item,
+          servico_exigibilidade: data.servico_exigibilidade,
+          servico_operacao: data.servico_operacao,
           valor_servicos: data.valor_servicos,
           base_calculo: data.base_calculo,
           aliquota_iss: data.aliquota_iss,
           valor_iss: data.valor_iss,
           iss_retido: data.iss_retido,
           regime_especial_tributacao: data.regime_especial_tributacao,
+          tipo_regime_especial: data.tipo_regime_especial,
+          operacao_tributacao: data.operacao_tributacao,
           optante_mei: data.optante_simples_nacional,
           prestador_incentivador_cultural: data.incentivador_cultural,
           tributacao_rps: data.tipo_tributacao,
+          tipo_rps: data.tipo_rps,
+          serie_rps: data.serie_rps,
+          status_rps: 'N', // Normal
         }])
         .select()
         .single();
@@ -195,13 +229,74 @@ export default function NFSeForm() {
 
           <FormField
             control={form.control}
-            name="discriminacao_servicos"
+            name="servico_codigo_item_lista"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Discriminação dos Serviços</FormLabel>
+                <FormLabel>Código Item Lista Serviço</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Ex: 1.01" />
+                </FormControl>
+                <FormDescription>
+                  Código do serviço conforme LC 116
+                </FormDescription>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="servico_codigo_municipio"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Código do Município</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Ex: 3550308" />
+                </FormControl>
+                <FormDescription>
+                  Código IBGE do município onde o serviço foi prestado
+                </FormDescription>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="servico_discriminacao_item"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Discriminação do Item</FormLabel>
                 <FormControl>
                   <Textarea {...field} rows={4} />
                 </FormControl>
+                <FormDescription>
+                  Descrição detalhada do serviço prestado
+                </FormDescription>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="servico_exigibilidade"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Exigibilidade do ISS</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a exigibilidade" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="1">Exigível</SelectItem>
+                    <SelectItem value="2">Não incidência</SelectItem>
+                    <SelectItem value="3">Isenção</SelectItem>
+                    <SelectItem value="4">Exportação</SelectItem>
+                    <SelectItem value="5">Imunidade</SelectItem>
+                    <SelectItem value="6">Suspensa por decisão judicial</SelectItem>
+                    <SelectItem value="7">Suspensa por processo administrativo</SelectItem>
+                  </SelectContent>
+                </Select>
               </FormItem>
             )}
           />

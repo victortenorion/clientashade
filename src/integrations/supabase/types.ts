@@ -822,6 +822,7 @@ export type Database = {
           numero_rps: string
           observacoes: string | null
           opcao_simples: string | null
+          operacao_tributacao: string | null
           optante_mei: boolean | null
           outras_retencoes: number | null
           pdf_url: string | null
@@ -829,6 +830,8 @@ export type Database = {
           percentual_tributos_ibpt: number | null
           prestador_incentivador_cultural: boolean | null
           protocolo_cancelamento: string | null
+          proxy_host: string | null
+          proxy_port: string | null
           razao_social_intermediario: string | null
           razao_social_prestador: string | null
           razao_social_tomador: string | null
@@ -845,10 +848,18 @@ export type Database = {
           rps_tipo: string | null
           serie_rps: string
           service_order_id: string | null
+          servico_codigo_item_lista: string | null
+          servico_codigo_local_prestacao: string | null
+          servico_codigo_municipio: string | null
+          servico_discriminacao_item: string | null
+          servico_exigibilidade: string | null
+          servico_operacao: string | null
+          servico_valor_item: number | null
           situacao_aceite: string | null
           situacao_nota: string | null
           situacao_rps: string | null
           status_processamento: string | null
+          status_rps: string | null
           status_sefaz: string | null
           status_transmissao: string | null
           substituido_rps_numero: string | null
@@ -883,6 +894,8 @@ export type Database = {
           valor_total_recebido: number | null
           valor_tributos_ibpt: number | null
           vendedor_id: string | null
+          wsdl_homologacao: string | null
+          wsdl_producao: string | null
           xml_envio: string | null
           xml_retorno: string | null
         }
@@ -967,6 +980,7 @@ export type Database = {
           numero_rps: string
           observacoes?: string | null
           opcao_simples?: string | null
+          operacao_tributacao?: string | null
           optante_mei?: boolean | null
           outras_retencoes?: number | null
           pdf_url?: string | null
@@ -974,6 +988,8 @@ export type Database = {
           percentual_tributos_ibpt?: number | null
           prestador_incentivador_cultural?: boolean | null
           protocolo_cancelamento?: string | null
+          proxy_host?: string | null
+          proxy_port?: string | null
           razao_social_intermediario?: string | null
           razao_social_prestador?: string | null
           razao_social_tomador?: string | null
@@ -990,10 +1006,18 @@ export type Database = {
           rps_tipo?: string | null
           serie_rps: string
           service_order_id?: string | null
+          servico_codigo_item_lista?: string | null
+          servico_codigo_local_prestacao?: string | null
+          servico_codigo_municipio?: string | null
+          servico_discriminacao_item?: string | null
+          servico_exigibilidade?: string | null
+          servico_operacao?: string | null
+          servico_valor_item?: number | null
           situacao_aceite?: string | null
           situacao_nota?: string | null
           situacao_rps?: string | null
           status_processamento?: string | null
+          status_rps?: string | null
           status_sefaz?: string | null
           status_transmissao?: string | null
           substituido_rps_numero?: string | null
@@ -1028,6 +1052,8 @@ export type Database = {
           valor_total_recebido?: number | null
           valor_tributos_ibpt?: number | null
           vendedor_id?: string | null
+          wsdl_homologacao?: string | null
+          wsdl_producao?: string | null
           xml_envio?: string | null
           xml_retorno?: string | null
         }
@@ -1112,6 +1138,7 @@ export type Database = {
           numero_rps?: string
           observacoes?: string | null
           opcao_simples?: string | null
+          operacao_tributacao?: string | null
           optante_mei?: boolean | null
           outras_retencoes?: number | null
           pdf_url?: string | null
@@ -1119,6 +1146,8 @@ export type Database = {
           percentual_tributos_ibpt?: number | null
           prestador_incentivador_cultural?: boolean | null
           protocolo_cancelamento?: string | null
+          proxy_host?: string | null
+          proxy_port?: string | null
           razao_social_intermediario?: string | null
           razao_social_prestador?: string | null
           razao_social_tomador?: string | null
@@ -1135,10 +1164,18 @@ export type Database = {
           rps_tipo?: string | null
           serie_rps?: string
           service_order_id?: string | null
+          servico_codigo_item_lista?: string | null
+          servico_codigo_local_prestacao?: string | null
+          servico_codigo_municipio?: string | null
+          servico_discriminacao_item?: string | null
+          servico_exigibilidade?: string | null
+          servico_operacao?: string | null
+          servico_valor_item?: number | null
           situacao_aceite?: string | null
           situacao_nota?: string | null
           situacao_rps?: string | null
           status_processamento?: string | null
+          status_rps?: string | null
           status_sefaz?: string | null
           status_transmissao?: string | null
           substituido_rps_numero?: string | null
@@ -1173,6 +1210,8 @@ export type Database = {
           valor_total_recebido?: number | null
           valor_tributos_ibpt?: number | null
           vendedor_id?: string | null
+          wsdl_homologacao?: string | null
+          wsdl_producao?: string | null
           xml_envio?: string | null
           xml_retorno?: string | null
         }
