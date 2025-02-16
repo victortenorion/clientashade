@@ -23,7 +23,7 @@ export interface NFSeConfig {
   incentivo_fiscal: boolean;
   certificado_valido: boolean;
   certificado_validade?: string;
-  numero_inicial_rps: number;
+  numero_inicial_rps: string;
   numero_inicial_nfse?: string;
   aliquota_servico: number;
   versao_schema: string;

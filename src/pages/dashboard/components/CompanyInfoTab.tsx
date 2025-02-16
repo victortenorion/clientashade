@@ -51,7 +51,7 @@ interface CompanyInfo {
 }
 
 interface RPSConfig {
-  numero_inicial_rps: number;
+  numero_inicial_rps: string;
   numero_inicial_nfse: string;
 }
 
@@ -62,7 +62,7 @@ export const CompanyInfoTab = () => {
   const [isCheckingRPS, setIsCheckingRPS] = useState(false);
   const [isCheckingLastNFSe, setIsCheckingLastNFSe] = useState(false);
   const [rpsConfig, setRpsConfig] = useState<RPSConfig>({
-    numero_inicial_rps: 0,
+    numero_inicial_rps: '',
     numero_inicial_nfse: ''
   });
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
@@ -134,11 +134,11 @@ export const CompanyInfoTab = () => {
 
       if (spConfig) {
         setRpsConfig({
-          numero_inicial_rps: spConfig.numero_inicial_rps || 0,
+          numero_inicial_rps: spConfig.numero_inicial_rps?.toString() || '',
           numero_inicial_nfse: spConfig.numero_inicial_nfse?.toString() || ''
         });
 
-        if (lastNFSe?.numero_rps && parseInt(lastNFSe.numero_rps) >= spConfig.numero_inicial_rps) {
+        if (lastNFSe?.numero_rps && parseInt(lastNFSe.numero_rps) >= parseInt(spConfig.numero_inicial_rps)) {
           toast({
             title: "Atenção",
             description: `Já existem NFS-e com número RPS maior que ${spConfig.numero_inicial_rps}. ` +
@@ -292,7 +292,7 @@ export const CompanyInfoTab = () => {
         .limit(1)
         .single();
 
-      if (lastNFSe?.numero_rps && parseInt(lastNFSe.numero_rps) >= rpsConfig.numero_inicial_rps) {
+      if (lastNFSe?.numero_rps && parseInt(lastNFSe.numero_rps) >= parseInt(rpsConfig.numero_inicial_rps)) {
         const confirmContinue = window.confirm(
           `ATENÇÃO: Já existem NFS-e com número RPS maior que ${rpsConfig.numero_inicial_rps}. ` +
           `O próximo número será ${parseInt(lastNFSe.numero_rps) + 1}. ` +
@@ -640,13 +640,11 @@ export const CompanyInfoTab = () => {
               <div className="space-y-2">
                 <Label>Número Inicial do RPS</Label>
                 <Input
-                  type="number"
-                  min="0"
-                  value={rpsConfig.numero_inicial_rps === 0 ? '' : rpsConfig.numero_inicial_rps}
+                  value={rpsConfig.numero_inicial_rps}
                   onChange={(e) =>
                     setRpsConfig({
                       ...rpsConfig,
-                      numero_inicial_rps: e.target.value === '' ? 0 : parseInt(e.target.value)
+                      numero_inicial_rps: e.target.value
                     })
                   }
                   placeholder="Digite o número inicial do RPS"
