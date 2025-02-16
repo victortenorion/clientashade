@@ -1,6 +1,8 @@
+
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NFSeSPSettings } from "./NFSeSPSettings";
+import { CertificadoDigitalSettings } from "./CertificadoDigitalSettings";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface SEFAZTabProps {
@@ -37,47 +39,7 @@ export function SEFAZTab(props: SEFAZTabProps) {
         </TabsContent>
 
         <TabsContent value="certificado">
-          <Card>
-            <CardHeader>
-              <CardTitle>Certificado Digital</CardTitle>
-              <CardDescription>
-                Configure o certificado digital para comunicação com a SEFAZ
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Arquivo do Certificado
-                    </label>
-                    <input
-                      type="file"
-                      className="mt-1 block w-full"
-                      accept=".pfx,.p12"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Senha do Certificado
-                    </label>
-                    <input
-                      type="password"
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Validade
-                  </label>
-                  <p className="mt-1 text-sm text-gray-500">
-                    O certificado é válido até: DD/MM/AAAA
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <CertificadoDigitalSettings />
         </TabsContent>
 
         <TabsContent value="servicos">
