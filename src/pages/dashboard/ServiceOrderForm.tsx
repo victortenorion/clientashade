@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,12 +9,24 @@ import { supabase } from "@/lib/supabase";
 import { ArrowLeft } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Client } from "./types/client.types";
 
 export default function ServiceOrderForm() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loadingCompanyInfo, setLoadingCompanyInfo] = useState(true);
+  
   const [formData, setFormData] = useState({
+    client_id: "",
     description: "",
     equipment: "",
     equipment_serial_number: "",
@@ -34,8 +46,64 @@ export default function ServiceOrderForm() {
     valor_deducoes: 0
   });
 
+  useEffect(() => {
+    loadClients();
+    loadCompanyInfo();
+  }, []);
+
+  const loadClients = async () => {
+    try {
+      const { data: clientsData, error } = await supabase
+        .from('clients')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      setClients(clientsData || []);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar clientes",
+        description: error.message
+      });
+    }
+  };
+
+  const loadCompanyInfo = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('company_info')
+        .select('codigo_servico')
+        .single();
+
+      if (error) throw error;
+
+      if (data?.codigo_servico) {
+        setFormData(prev => ({
+          ...prev,
+          codigo_servico: data.codigo_servico
+        }));
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar informações da empresa",
+        description: error.message
+      });
+    } finally {
+      setLoadingCompanyInfo(false);
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -66,6 +134,10 @@ export default function ServiceOrderForm() {
 
       if (storeError) throw storeError;
       if (!storeData?.store_id) throw new Error("Usuário não está associado a uma loja");
+
+      if (!formData.client_id) {
+        throw new Error("Por favor, selecione um cliente");
+      }
 
       // Criar a ordem com os dados do formulário
       const { data, error } = await supabase
@@ -116,6 +188,26 @@ export default function ServiceOrderForm() {
 
       <form onSubmit={handleSubmit} className="space-y-6 max-w-xl">
         <div className="space-y-4">
+          {/* Seleção de Cliente */}
+          <div className="space-y-2">
+            <Label htmlFor="client_id">Cliente</Label>
+            <Select
+              value={formData.client_id}
+              onValueChange={(value) => handleSelectChange('client_id', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um cliente" />
+              </SelectTrigger>
+              <SelectContent>
+                {clients.map((client) => (
+                  <SelectItem key={client.id} value={client.id}>
+                    {client.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Informações do Equipamento */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Informações do Equipamento</h3>
@@ -168,6 +260,7 @@ export default function ServiceOrderForm() {
                 onChange={handleChange}
                 placeholder="Ex: 14.01"
                 required
+                disabled={loadingCompanyInfo}
               />
             </div>
 
