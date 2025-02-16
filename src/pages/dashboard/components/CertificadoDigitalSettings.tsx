@@ -25,11 +25,25 @@ export function CertificadoDigitalSettings() {
   const [isUploading, setIsUploading] = useState(false);
   const [certificatePassword, setCertificatePassword] = useState("");
   const [certificateInfo, setCertificateInfo] = useState<CertificateInfo | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+    }
+  };
+
+  const handleUpload = async () => {
     try {
-      const file = event.target.files?.[0];
-      if (!file) return;
+      if (!selectedFile) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Por favor, selecione um arquivo de certificado",
+        });
+        return;
+      }
 
       if (!certificatePassword) {
         toast({
@@ -93,9 +107,17 @@ export function CertificadoDigitalSettings() {
           title: "Sucesso",
           description: "Certificado digital validado e salvo com sucesso",
         });
+
+        // Limpar o formulário
+        setSelectedFile(null);
+        setCertificatePassword("");
+        const fileInput = document.getElementById('certificate') as HTMLInputElement;
+        if (fileInput) {
+          fileInput.value = '';
+        }
       };
 
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(selectedFile);
     } catch (error: any) {
       console.error("Erro ao processar certificado:", error);
       toast({
@@ -124,7 +146,7 @@ export function CertificadoDigitalSettings() {
               id="certificate"
               type="file"
               accept=".pfx,.p12"
-              onChange={handleFileUpload}
+              onChange={handleFileSelect}
               disabled={isUploading}
             />
           </div>
@@ -162,7 +184,10 @@ export function CertificadoDigitalSettings() {
           )}
 
           <div className="flex justify-end">
-            <Button disabled={isUploading}>
+            <Button 
+              onClick={handleUpload}
+              disabled={isUploading || !selectedFile || !certificatePassword}
+            >
               {isUploading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
