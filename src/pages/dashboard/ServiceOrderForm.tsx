@@ -38,7 +38,8 @@ export default function ServiceOrderForm() {
           {
             store_id: storeData.store_id,
             status_id: 1, // Assumindo que 1 é o status inicial
-            total_price: 0
+            total_price: 0,
+            description: "Nova ordem de serviço"
           }
         ])
         .select()
