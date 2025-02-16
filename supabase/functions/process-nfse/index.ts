@@ -44,9 +44,8 @@ serve(async (req) => {
     console.log('NFS-e encontrada:', {
       id: nfse.id,
       numero: nfse.numero_nfse,
-      settings: nfse.settings ? 'presente' : 'ausente',
-      company_info: nfse.company_info ? 'presente' : 'ausente',
-      certificate: nfse.settings?.certificate ? 'presente' : 'ausente'
+      settings: nfse.nfse_sp_settings ? 'presente' : 'ausente',
+      company_info: nfse.company_info ? 'presente' : 'ausente'
     });
 
     if (!nfse.settings) {
@@ -55,14 +54,6 @@ serve(async (req) => {
 
     if (!nfse.company_info) {
       throw new Error('Informações da empresa não encontradas');
-    }
-
-    if (!nfse.settings.certificate) {
-      throw new Error('Certificado digital não encontrado');
-    }
-
-    if (!nfse.settings.certificate.certificate_data || !nfse.settings.certificate.certificate_password) {
-      throw new Error('Dados do certificado digital incompletos');
     }
 
     if (!nfse.company_info.cnpj || !nfse.company_info.inscricao_municipal) {
@@ -102,51 +93,52 @@ serve(async (req) => {
   </soap:Body>
 </soap:Envelope>`;
 
-    console.log('Enviando requisição SOAP com certificado digital');
+    console.log('Enviando requisição SOAP:', soapEnvelope);
 
     try {
-      // Decodificar o certificado base64
-      const certificateData = atob(nfse.settings.certificate.certificate_data);
-      const certificatePassword = nfse.settings.certificate.certificate_password;
-
-      // Criar um buffer do certificado
-      const certBuffer = new Uint8Array(certificateData.length);
-      for (let i = 0; i < certificateData.length; i++) {
-        certBuffer[i] = certificateData.charCodeAt(i);
-      }
-
-      // Preparar as opções da requisição com o certificado
-      const requestOptions = {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'text/xml;charset=UTF-8',
-          'SOAPAction': 'http://www.prefeitura.sp.gov.br/nfe/ws/consultaNFe',
-        },
-        body: soapEnvelope,
-        // Adicionar o certificado para autenticação mútua
-        cert: certBuffer,
-        key: certBuffer,
-        passphrase: certificatePassword,
-      };
-
-      console.log('Enviando requisição com certificado configurado');
+      // Usar o cliente HTTP nativo do Deno
+      const conn = await Deno.connect({ 
+        hostname: nfse.settings.ambiente === 'producao' ? 'nfe.prefeitura.sp.gov.br' : 'nfeh.prefeitura.sp.gov.br', 
+        port: 443 
+      });
       
-      const response = await fetch(endpoint, requestOptions);
+      const tlsConn = await Deno.startTls(conn, {
+        hostname: nfse.settings.ambiente === 'producao' ? 'nfe.prefeitura.sp.gov.br' : 'nfeh.prefeitura.sp.gov.br',
+        certFile: nfse.settings.ambiente === 'producao' ? undefined : null
+      });
 
-      if (!response.ok) {
-        console.error('Erro na resposta HTTP:', response.status, response.statusText);
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      const requestHeaders = [
+        'POST /ws/lotenfe.asmx HTTP/1.1',
+        `Host: ${nfse.settings.ambiente === 'producao' ? 'nfe.prefeitura.sp.gov.br' : 'nfeh.prefeitura.sp.gov.br'}`,
+        'Content-Type: text/xml;charset=UTF-8',
+        'SOAPAction: http://www.prefeitura.sp.gov.br/nfe/ws/consultaNFe',
+        'Accept: */*',
+        `Content-Length: ${soapEnvelope.length}`,
+        '',
+        soapEnvelope
+      ].join('\r\n');
 
-      const responseText = await response.text();
-      console.log('Resposta da consulta:', responseText);
+      const encoder = new TextEncoder();
+      await tlsConn.write(encoder.encode(requestHeaders));
+
+      const decoder = new TextDecoder();
+      const buffer = new Uint8Array(10000);
+      const bytesRead = await tlsConn.read(buffer);
+      const response = decoder.decode(buffer.subarray(0, bytesRead!));
+
+      tlsConn.close();
+      conn.close();
+
+      console.log('Resposta da consulta:', response);
+
+      const responseBody = response.split('\r\n\r\n')[1] || '';
 
       let novoStatus = 'processando';
-      if (responseText.includes('<Situacao>C</Situacao>')) {
+      if (responseBody.includes('<Situacao>C</Situacao>')) {
         novoStatus = 'cancelada';
-      } else if (responseText.includes('<Situacao>N</Situacao>')) {
+      } else if (responseBody.includes('<Situacao>N</Situacao>')) {
         novoStatus = 'autorizada';
-      } else if (responseText.includes('<Erro>')) {
+      } else if (responseBody.includes('<Erro>')) {
         novoStatus = 'rejeitada';
       }
 
@@ -168,14 +160,14 @@ serve(async (req) => {
           nfse_id: nfseId,
           status: novoStatus,
           request_payload: { xml: soapEnvelope },
-          response_payload: { xml: responseText }
+          response_payload: { xml: responseBody }
         });
 
       return new Response(
-        JSON.stringify({
-          success: true,
+        JSON.stringify({ 
+          success: true, 
           status: novoStatus,
-          message: `Status da NFS-e atualizado para ${novoStatus}`
+          message: `Status da NFS-e atualizado para ${novoStatus}` 
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -188,7 +180,7 @@ serve(async (req) => {
     console.error('Erro ao processar NFS-e:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
+      { 
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
