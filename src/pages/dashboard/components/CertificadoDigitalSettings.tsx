@@ -92,7 +92,7 @@ export function CertificadoDigitalSettings() {
           valid_from: data.info?.validoDe,
           issuer: JSON.stringify(data.info?.emissor),
           subject: JSON.stringify(data.info?.subject),
-          type: 'a1', // Changed to lowercase to match constraint
+          type: 'A1', // Changed back to uppercase to match the constraint
           is_valid: true
         };
 
