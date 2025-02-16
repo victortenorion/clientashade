@@ -274,24 +274,12 @@ export default function NFSeForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Código do Serviço</FormLabel>
-                <Select 
-                  onValueChange={field.onChange} 
-                  value={field.value}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o código do serviço" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {services?.map((service) => (
-                      <SelectItem key={service.code} value={service.code}>
-                        {service.code} - {service.description}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <FormControl>
+                  <Input {...field} placeholder="Digite o código do serviço" />
+                </FormControl>
+                <FormDescription>
+                  Código do serviço conforme tabela municipal
+                </FormDescription>
               </FormItem>
             )}
           />
