@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NFSeSPSettings } from "./NFSeSPSettings";
 import { CertificadoDigitalSettings } from "./CertificadoDigitalSettings";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ServiceCodesSettings } from "./ServiceCodesSettings";
 
 interface SEFAZTabProps {
   nfceConfig: any;
@@ -43,39 +43,7 @@ export function SEFAZTab(props: SEFAZTabProps) {
         </TabsContent>
 
         <TabsContent value="servicos">
-          <Card>
-            <CardHeader>
-              <CardTitle>Códigos de Serviço</CardTitle>
-              <CardDescription>
-                Configure os códigos de serviço utilizados nas notas fiscais
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Código de Serviço Principal
-                  </label>
-                  <select className="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                    <option>Selecione um código</option>
-                    <option value="1.01">1.01 - Análise e desenvolvimento de sistemas</option>
-                    <option value="1.02">1.02 - Programação</option>
-                    <option value="1.03">1.03 - Processamento de dados</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    CNAE
-                  </label>
-                  <input
-                    type="text"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                    placeholder="Ex: 6201-5/00"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <ServiceCodesSettings />
         </TabsContent>
       </Tabs>
     </div>

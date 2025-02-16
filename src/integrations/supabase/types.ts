@@ -1384,6 +1384,36 @@ export type Database = {
           },
         ]
       }
+      nfse_service_codes: {
+        Row: {
+          active: boolean | null
+          aliquota_iss: number | null
+          code: string
+          created_at: string
+          description: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          aliquota_iss?: number | null
+          code: string
+          created_at?: string
+          description: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          aliquota_iss?: number | null
+          code?: string
+          created_at?: string
+          description?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       nfse_servicos: {
         Row: {
           aliquota_iss: number | null
