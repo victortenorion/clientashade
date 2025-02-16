@@ -10,6 +10,8 @@ import { ServiceCodeForm } from "./service-codes/ServiceCodeForm";
 import { DeleteServiceCodeDialog } from "./service-codes/DeleteServiceCodeDialog";
 import { ImportPreviewDialog } from "./service-codes/ImportPreviewDialog";
 import { ServiceCodesTable } from "./service-codes/ServiceCodesTable";
+import { ServiceCodesFilters } from "./service-codes/ServiceCodesFilters";
+import { FilterState } from "./service-codes/types";
 
 export function ServiceCodesSettings() {
   const { toast } = useToast();
@@ -33,6 +35,14 @@ export function ServiceCodesSettings() {
     page: 1,
     pageSize: 10,
     total: 0,
+  });
+  const [filters, setFilters] = useState<FilterState>({
+    searchTerm: "",
+    status: "all",
+    aliquotaRange: {
+      min: '',
+      max: '',
+    },
   });
 
   useEffect(() => {
@@ -63,13 +73,32 @@ export function ServiceCodesSettings() {
   const loadServiceCodes = async () => {
     try {
       setIsLoading(true);
-      const { data, count, error } = await supabase
+      let query = supabase
         .from("nfse_service_codes")
         .select("*", { count: 'exact' })
         .range(
-          (pagination.page - 1) * pagination.pageSize, 
+          (pagination.page - 1) * pagination.pageSize,
           pagination.page * pagination.pageSize - 1
         );
+
+      // Apply filters
+      if (filters.searchTerm) {
+        query = query.or(`code.ilike.%${filters.searchTerm}%,description.ilike.%${filters.searchTerm}%`);
+      }
+
+      if (filters.status !== 'all') {
+        query = query.eq('active', filters.status === 'active');
+      }
+
+      if (filters.aliquotaRange.min !== '') {
+        query = query.gte('aliquota_iss', filters.aliquotaRange.min);
+      }
+
+      if (filters.aliquotaRange.max !== '') {
+        query = query.lte('aliquota_iss', filters.aliquotaRange.max);
+      }
+
+      const { data, count, error } = await query;
 
       if (error) throw error;
 
@@ -86,6 +115,10 @@ export function ServiceCodesSettings() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadServiceCodes();
+  }, [pagination.page, pagination.pageSize, filters]);
 
   const handlePageChange = (page: number) => {
     setPagination(prev => ({ ...prev, page }));
@@ -373,6 +406,11 @@ export function ServiceCodesSettings() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
+          <ServiceCodesFilters 
+            filters={filters}
+            onFilterChange={setFilters}
+          />
+
           <div className="flex items-center space-x-2">
             <div className="relative flex-1">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
