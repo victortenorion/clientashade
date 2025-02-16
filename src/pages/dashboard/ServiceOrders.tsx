@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { Eye, Edit, Trash, Printer, Download, Plus } from "lucide-react";
+import { Eye, Edit, Trash, Printer, Download, Plus, Receipt, FileSpreadsheet } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -106,7 +106,6 @@ export default function ServiceOrders() {
           title: "Ordem de serviço excluída com sucesso"
         });
 
-        // Atualiza a lista após deletar
         queryClient.invalidateQueries({ queryKey: ['serviceOrders'] });
       } catch (error: any) {
         toast({
@@ -121,7 +120,6 @@ export default function ServiceOrders() {
   const handlePrint = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     try {
-      // Busca os dados da ordem de serviço
       const { data: order, error } = await supabase
         .from('service_orders')
         .select(`
@@ -140,7 +138,6 @@ export default function ServiceOrders() {
 
       if (error) throw error;
 
-      // Abre uma nova janela para impressão
       const printWindow = window.open('', '_blank');
       if (!printWindow) {
         toast({
@@ -151,7 +148,6 @@ export default function ServiceOrders() {
         return;
       }
 
-      // Template HTML para impressão
       printWindow.document.write(`
         <html>
           <head>
@@ -201,6 +197,16 @@ export default function ServiceOrders() {
       title: "Em breve",
       description: "O download da NFS-e estará disponível após a integração com a Prefeitura de SP."
     });
+  };
+
+  const handleGenerateNFSe = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    navigate(`/dashboard/nfse/new?service_order_id=${id}`);
+  };
+
+  const handleGenerateNFCe = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    navigate(`/dashboard/nfce/new?service_order_id=${id}`);
   };
 
   return (
@@ -302,6 +308,22 @@ export default function ServiceOrders() {
                       title="Imprimir OS"
                     >
                       <Printer className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => handleGenerateNFSe(e, order.id)}
+                      title="Gerar NFS-e"
+                    >
+                      <Receipt className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => handleGenerateNFCe(e, order.id)}
+                      title="Gerar NFC-e"
+                    >
+                      <FileSpreadsheet className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"
