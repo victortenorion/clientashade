@@ -6,12 +6,44 @@ import { ClientContact } from "./ClientContact";
 import { ClientAccess } from "./ClientAccess";
 import { ClientStore } from "./ClientStore";
 import MessagesTab from "./MessagesTab";
+import { useState } from "react";
 
 interface ClientTabProps {
   clientId: string;
 }
 
 export default function ClientTab({ clientId }: ClientTabProps) {
+  const [formData, setFormData] = useState({
+    // Adicione aqui os campos necessários para o formulário
+    name: "",
+    document: "",
+    email: "",
+    phone: "",
+    address: "",
+    city: "",
+    state: "",
+    zipCode: "",
+    // ... outros campos necessários
+  });
+
+  const [searchingDocument, setSearchingDocument] = useState(false);
+  const [stores, setStores] = useState([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const handleFormChange = (newData: any) => {
+    setFormData({ ...formData, ...newData });
+  };
+
+  const handleSearchDocument = async () => {
+    setSearchingDocument(true);
+    // Implemente a lógica de busca de documento
+    setSearchingDocument(false);
+  };
+
+  const handleCEPChange = async (cep: string) => {
+    // Implemente a lógica de busca de CEP
+  };
+
   return (
     <Tabs defaultValue="basic" className="w-full">
       <TabsList className="grid w-full grid-cols-6">
@@ -24,23 +56,44 @@ export default function ClientTab({ clientId }: ClientTabProps) {
       </TabsList>
 
       <TabsContent value="basic">
-        <ClientBasicInfo />
+        <ClientBasicInfo 
+          formData={formData}
+          onFormChange={handleFormChange}
+          onSearchDocument={handleSearchDocument}
+          searchingDocument={searchingDocument}
+          editingId={editingId}
+        />
       </TabsContent>
 
       <TabsContent value="address">
-        <ClientAddress />
+        <ClientAddress 
+          formData={formData}
+          onFormChange={handleFormChange}
+          onCEPChange={handleCEPChange}
+        />
       </TabsContent>
 
       <TabsContent value="contact">
-        <ClientContact />
+        <ClientContact 
+          formData={formData}
+          onFormChange={handleFormChange}
+        />
       </TabsContent>
 
       <TabsContent value="access">
-        <ClientAccess />
+        <ClientAccess 
+          formData={formData}
+          onFormChange={handleFormChange}
+          editingId={editingId}
+        />
       </TabsContent>
 
       <TabsContent value="store">
-        <ClientStore />
+        <ClientStore 
+          formData={formData}
+          stores={stores}
+          onFormChange={handleFormChange}
+        />
       </TabsContent>
 
       <TabsContent value="messages">
