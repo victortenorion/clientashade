@@ -1,6 +1,6 @@
+
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
-import { DOMParser } from 'https://deno.land/x/deno_dom@v0.1.38/deno-dom-wasm.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -36,47 +36,25 @@ serve(async (req) => {
   );
 
   try {
-    console.log('Buscando dados da NFS-e:', nfseData.nfseId);
+    console.log('Iniciando processamento da NFS-e:', nfseData.nfseId);
 
-    // Primeiro, buscar as configurações SP
-    const { data: settings, error: settingsError } = await supabaseClient
-      .from('nfse_sp_settings')
-      .select('*')
-      .single();
-
-    if (settingsError) {
-      console.error('Erro ao buscar configurações:', settingsError);
-      throw new Error('Erro ao buscar configurações da NFS-e SP');
-    }
-
-    if (!settings) {
-      console.error('Nenhuma configuração encontrada');
-      throw new Error('Configurações da NFS-e SP não encontradas. Por favor, configure primeiro.');
-    }
-
-    console.log('Configurações encontradas:', settings.id);
-
-    // Agora buscar a NFS-e com as configurações
+    // Buscar a NFS-e e suas configurações em uma única query
     const { data: nfse, error: nfseError } = await supabaseClient
       .from('nfse')
-      .update({ 
-        nfse_sp_settings_id: settings.id,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', nfseData.nfseId)
       .select(`
         *,
-        clients (*),
-        nfse_sp_settings!inner (
+        client:client_id (*),
+        settings:nfse_sp_settings!inner (
           *,
-          certificates:certificates_id (*)
+          certificate:certificates_id (*)
         )
       `)
-      .single();
+      .eq('id', nfseData.nfseId)
+      .maybeSingle();
 
     if (nfseError) {
       console.error('Erro ao buscar NFS-e:', nfseError);
-      throw nfseError;
+      throw new Error(`Erro ao buscar NFS-e: ${nfseError.message}`);
     }
 
     if (!nfse) {
@@ -84,16 +62,35 @@ serve(async (req) => {
       throw new Error('NFS-e não encontrada');
     }
 
-    console.log('NFS-e encontrada:', nfse.id);
+    console.log('NFS-e encontrada:', {
+      id: nfse.id,
+      hasSettings: !!nfse.settings,
+      hasCertificate: !!(nfse.settings?.certificate),
+      status: nfse.status_sefaz
+    });
 
-    if (!nfse.nfse_sp_settings) {
-      console.error('Configurações não vinculadas à NFS-e');
-      throw new Error('Configurações da NFS-e SP não vinculadas corretamente.');
+    if (!nfse.settings) {
+      console.error('Configurações não encontradas');
+      throw new Error('Configurações da NFS-e SP não encontradas. Por favor, configure primeiro.');
     }
 
-    if (!nfse.nfse_sp_settings.certificates) {
+    if (!nfse.settings.certificate) {
       console.error('Certificado não encontrado');
       throw new Error('Certificado digital não configurado. Por favor, configure o certificado primeiro.');
+    }
+
+    // Verificar se todos os campos obrigatórios estão preenchidos
+    const requiredFields = [
+      'usuario_emissor',
+      'senha_emissor',
+      'ambiente',
+      'inscricao_municipal'
+    ];
+
+    const missingFields = requiredFields.filter(field => !nfse.settings[field]);
+    if (missingFields.length > 0) {
+      console.error('Campos obrigatórios faltando:', missingFields);
+      throw new Error(`Campos obrigatórios não configurados: ${missingFields.join(', ')}`);
     }
 
     if (nfse.status_sefaz === 'autorizada') {
@@ -122,22 +119,13 @@ serve(async (req) => {
         nfse_id: nfseData.nfseId,
         status: 'processando',
         message: 'Iniciando transmissão para SEFAZ',
-        request_payload: { nfseId: nfseData.nfseId },
+        request_payload: { 
+          nfseId: nfseData.nfseId,
+          ambiente: nfse.settings.ambiente
+        },
       });
 
-    console.log('Preparando envelope SOAP...');
-
-    // Criar envelope SOAP (mock por enquanto)
-    const soapEnvelope = `<?xml version="1.0" encoding="UTF-8"?>
-      <Envelope xmlns="http://schemas.xmlsoap.org/soap/envelope/">
-        <Body>
-          <EnvioRPSRequest>
-            <!-- Dados do RPS aqui -->
-          </EnvioRPSRequest>
-        </Body>
-      </Envelope>`;
-
-    console.log('Enviando requisição para SEFAZ...');
+    console.log('Preparando dados para transmissão...');
 
     // Mock da resposta por enquanto
     const mockResponse = {
@@ -176,7 +164,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Erro ao transmitir NFS-e:', error);
+    console.error('Erro no processamento da NFS-e:', error);
 
     // Registrar erro
     await supabaseClient
