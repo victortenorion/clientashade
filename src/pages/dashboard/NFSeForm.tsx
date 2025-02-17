@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -95,10 +94,6 @@ export default function NFSeForm() {
             inscricao_municipal,
             regime_tributario,
             regime_especial,
-            iss_retido,
-            inss_retido,
-            ir_retido,
-            pis_cofins_csll_retido,
             codigo_municipio,
             incentivador_cultural
           )
@@ -160,7 +155,7 @@ export default function NFSeForm() {
         ...form.getValues(),
         valor_servicos: serviceOrder.total_price || 0,
         discriminacao_servicos: serviceOrder.discriminacao_servico || '',
-        iss_retido: serviceOrder.client?.iss_retido || false,
+        iss_retido: serviceOrder.iss_retido || false,
         codigo_atividade: serviceOrder.codigo_servico || companyConfig.codigo_servico || '',
         aliquota_servicos: serviceOrder.aliquota_iss || 0,
         valor_deducoes: serviceOrder.valor_deducoes || 0,
