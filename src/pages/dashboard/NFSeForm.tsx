@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -67,7 +67,19 @@ export default function NFSeForm() {
   const queryParams = new URLSearchParams(location.search);
   const serviceOrderId = queryParams.get('service_order_id');
 
-  const { data: serviceOrder } = useQuery({
+  useEffect(() => {
+    if (!serviceOrderId) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Ordem de serviço não encontrada"
+      });
+      navigate('/dashboard/service-orders');
+      return;
+    }
+  }, [serviceOrderId, navigate, toast]);
+
+  const { data: serviceOrder, isError: serviceOrderError } = useQuery({
     queryKey: ['service-order', serviceOrderId],
     queryFn: async () => {
       if (!serviceOrderId) return null;
@@ -100,10 +112,25 @@ export default function NFSeForm() {
         .maybeSingle();
 
       if (error) throw error;
+      if (!data) throw new Error('Ordem de serviço não encontrada');
+      if (!data.client) throw new Error('Cliente não encontrado');
+      
       return data;
     },
     enabled: !!serviceOrderId
   });
+
+  useEffect(() => {
+    if (serviceOrderError || !serviceOrder?.client) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Cliente não encontrado na ordem de serviço"
+      });
+      navigate('/dashboard/service-orders');
+      return;
+    }
+  }, [serviceOrder, serviceOrderError, navigate, toast]);
 
   const { data: companyConfig } = useQuery({
     queryKey: ['company-config'],
