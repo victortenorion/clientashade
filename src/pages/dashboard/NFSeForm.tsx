@@ -236,7 +236,7 @@ export default function NFSeForm() {
           iss_retido: values.iss_retido,
           status_sefaz: 'pendente',
           natureza_operacao: values.natureza_operacao,
-          optante_simples_nacional: values.optante_simples_nacional,
+          opcao_simples: values.optante_simples_nacional ? 'S' : 'N',
           regime_especial_tributacao: values.regime_especial_tributacao,
           item_lista_servico: values.item_lista_servico,
           codigo_tributacao_municipio: values.codigo_tributacao_municipio,
