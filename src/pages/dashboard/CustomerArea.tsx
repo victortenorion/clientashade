@@ -73,6 +73,7 @@ export default function CustomerArea() {
   const { toast } = useToast();
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
     if (clientId) {
@@ -83,6 +84,23 @@ export default function CustomerArea() {
 
   useEffect(() => {
     if (!clientId) return;
+
+    const checkUnreadMessages = async () => {
+      const { data: messages } = await supabase
+        .from('client_messages')
+        .select('*')
+        .eq('client_id', clientId)
+        .eq('is_from_client', false)
+        .eq('read', false)
+        .limit(1);
+
+      if (messages && messages.length > 0) {
+        setHasUnreadMessages(true);
+        setIsAnimating(true);
+      }
+    };
+
+    checkUnreadMessages();
 
     const channel = supabase
       .channel('client-messages')
@@ -98,15 +116,16 @@ export default function CustomerArea() {
           console.log('Nova mensagem recebida:', payload);
           if (!isMessagesOpen) {
             setHasUnreadMessages(true);
+            setIsAnimating(true);
+            setTimeout(() => {
+              setIsAnimating(false);
+            }, 2000);
           }
         }
       )
       .subscribe();
 
-    console.log('Canal de mensagens inscrito para o cliente:', clientId);
-
     return () => {
-      console.log('Removendo canal de mensagens');
       supabase.removeChannel(channel);
     };
   }, [clientId, isMessagesOpen]);
@@ -355,25 +374,32 @@ export default function CustomerArea() {
               setIsMessagesOpen(open);
               if (open) {
                 setHasUnreadMessages(false);
+                setIsAnimating(false);
               }
             }}
           >
             <SheetTrigger asChild>
               <Button 
-                variant="outline"
+                variant={hasUnreadMessages ? "default" : "outline"}
                 className={cn(
                   "relative",
-                  hasUnreadMessages && "animate-pulse bg-primary text-primary-foreground hover:bg-primary/90"
+                  isAnimating && "animate-pulse",
+                  hasUnreadMessages && "bg-primary text-primary-foreground hover:bg-primary/90"
                 )}
               >
                 <BellRing className={cn(
                   "h-4 w-4 mr-2",
-                  hasUnreadMessages && "animate-bounce"
+                  isAnimating && "animate-bounce"
                 )} />
                 {hasUnreadMessages && (
-                  <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-destructive" />
+                  <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-destructive animate-pulse" />
                 )}
                 Mensagens
+                {hasUnreadMessages && (
+                  <span className="ml-2 text-xs bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full">
+                    Nova
+                  </span>
+                )}
               </Button>
             </SheetTrigger>
             <SheetContent>
