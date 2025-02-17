@@ -71,14 +71,15 @@ export default function CustomerArea() {
 
   const handleViewDetails = (orderId: string) => {
     if (orderId) {
-      navigate(`/dashboard/service-orders/${orderId}`);
+      // Navegando para a visualização do cliente, não para o dashboard administrativo
+      navigate(`/customer-area/${clientId}/service-order/${orderId}`);
     }
   };
 
   return (
     <div className="container py-8">
       <div className="mb-4">
-        <Button onClick={() => navigate("/dashboard/clients")}>Voltar para Clientes</Button>
+        <Button onClick={() => navigate("/")}>Voltar para Página Inicial</Button>
       </div>
       <h1 className="text-2xl font-bold mb-4">Área do Cliente</h1>
       <Separator className="mb-4" />
