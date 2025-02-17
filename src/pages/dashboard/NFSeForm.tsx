@@ -238,7 +238,7 @@ export default function NFSeForm() {
           natureza_operacao: values.natureza_operacao,
           opcao_simples: values.optante_simples_nacional ? 'S' : 'N',
           regime_especial_tributacao: values.regime_especial_tributacao,
-          item_lista_servico: values.item_lista_servico,
+          servico_codigo_item_lista: values.item_lista_servico,
           codigo_tributacao_municipio: values.codigo_tributacao_municipio,
           valor_outras_deducoes: values.valor_outras_deducoes,
           valor_desconto_incondicionado: values.valor_desconto_incondicionado,
