@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useNavigate, Outlet } from "react-router-dom";
+import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -22,12 +22,10 @@ interface User {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [username, setUsername] = useState<string>("");
   const [userPermissions, setUserPermissions] = useState<string[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [users, setUsers] = useState<User[]>([]);
 
   const handleLogout = async () => {
     try {
@@ -55,10 +53,6 @@ const Dashboard = () => {
           console.log("Sessão não encontrada, redirecionando para /auth");
           navigate("/auth");
           return;
-        }
-
-        if (session.refresh_token) {
-          localStorage.setItem('sb-refresh-token', session.refresh_token);
         }
 
         const { data: profileData, error: profileError } = await supabase
@@ -115,10 +109,6 @@ const Dashboard = () => {
       if (event === 'SIGNED_OUT') {
         localStorage.removeItem('sb-refresh-token');
         navigate("/auth");
-      } else if (event === 'SIGNED_IN' && session) {
-        if (session.refresh_token) {
-          localStorage.setItem('sb-refresh-token', session.refresh_token);
-        }
       }
     });
 
@@ -126,6 +116,9 @@ const Dashboard = () => {
       subscription.unsubscribe();
     };
   }, [navigate, toast]);
+
+  console.log("Current location:", location.pathname);
+  console.log("User permissions:", userPermissions);
 
   return (
     <SidebarProvider defaultOpen>

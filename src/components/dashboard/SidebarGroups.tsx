@@ -35,12 +35,12 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
   const [notasFiscaisOpen, setNotasFiscaisOpen] = useState(true);
   const [configuracoesOpen, setConfiguracoesOpen] = useState(true);
 
-  const hasPermission = (permission: string) => {
-    return userPermissions.includes('all') || userPermissions.includes(permission);
-  };
+  console.log("SidebarGroups - Current location:", location.pathname);
+  console.log("SidebarGroups - User permissions:", userPermissions);
 
-  const handleNavigation = (path: string) => {
-    navigate(path);
+  const hasPermission = (permission: string) => {
+    if (!userPermissions) return false;
+    return userPermissions.includes('all') || userPermissions.includes(permission);
   };
 
   return (
@@ -49,7 +49,7 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              onClick={() => handleNavigation("/dashboard")}
+              onClick={() => navigate("/dashboard")}
               isActive={location.pathname === "/dashboard"}
             >
               <LayoutDashboard className="h-4 w-4" />
@@ -75,7 +75,7 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
               {hasPermission('clients') && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    onClick={() => handleNavigation("/dashboard/clients")}
+                    onClick={() => navigate("/dashboard/clients")}
                     isActive={location.pathname.includes("/dashboard/clients")}
                   >
                     <Users className="h-4 w-4" />
@@ -86,7 +86,7 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
               {hasPermission('users') && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    onClick={() => handleNavigation("/dashboard/users")}
+                    onClick={() => navigate("/dashboard/users")}
                     isActive={location.pathname.includes("/dashboard/users")}
                   >
                     <UserIcon className="h-4 w-4" />
@@ -97,7 +97,7 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
               {hasPermission('products') && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    onClick={() => handleNavigation("/dashboard/products")}
+                    onClick={() => navigate("/dashboard/products")}
                     isActive={location.pathname.includes("/dashboard/products")}
                   >
                     <Package className="h-4 w-4" />
@@ -108,7 +108,7 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
               {hasPermission('stores') && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    onClick={() => handleNavigation("/dashboard/stores")}
+                    onClick={() => navigate("/dashboard/stores")}
                     isActive={location.pathname.includes("/dashboard/stores")}
                   >
                     <Store className="h-4 w-4" />
@@ -137,7 +137,7 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
               {hasPermission('service_orders') && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    onClick={() => handleNavigation("/dashboard/service-orders")}
+                    onClick={() => navigate("/dashboard/service-orders")}
                     isActive={location.pathname.includes("/dashboard/service-orders") && !location.pathname.includes("settings")}
                   >
                     <ClipboardList className="h-4 w-4" />
@@ -166,7 +166,7 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
               {hasPermission('nfce') && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    onClick={() => handleNavigation("/dashboard/nfce")}
+                    onClick={() => navigate("/dashboard/nfce")}
                     isActive={location.pathname.includes("/dashboard/nfce")}
                   >
                     <Receipt className="h-4 w-4" />
@@ -177,7 +177,7 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
               {hasPermission('nfse') && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    onClick={() => handleNavigation("/dashboard/nfse")}
+                    onClick={() => navigate("/dashboard/nfse")}
                     isActive={location.pathname.includes("/dashboard/nfse")}
                   >
                     <Receipt className="h-4 w-4" />
@@ -206,7 +206,7 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    onClick={() => handleNavigation("/dashboard/service-order-settings")}
+                    onClick={() => navigate("/dashboard/service-order-settings")}
                     isActive={location.pathname === "/dashboard/service-order-settings"}
                   >
                     <Database className="h-4 w-4" />
@@ -215,7 +215,7 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    onClick={() => handleNavigation("/dashboard/service-order-settings/dados-empresa")}
+                    onClick={() => navigate("/dashboard/service-order-settings/dados-empresa")}
                     isActive={location.pathname.includes("/dashboard/service-order-settings/dados-empresa")}
                   >
                     <Building className="h-4 w-4" />
@@ -224,7 +224,7 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    onClick={() => handleNavigation("/dashboard/service-order-settings/sefaz")}
+                    onClick={() => navigate("/dashboard/service-order-settings/sefaz")}
                     isActive={location.pathname.includes("/dashboard/service-order-settings/sefaz")}
                   >
                     <Building className="h-4 w-4" />
@@ -233,7 +233,7 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    onClick={() => handleNavigation("/dashboard/service-order-settings/area-cliente")}
+                    onClick={() => navigate("/dashboard/service-order-settings/area-cliente")}
                     isActive={location.pathname.includes("/dashboard/service-order-settings/area-cliente")}
                   >
                     <Users className="h-4 w-4" />
@@ -242,7 +242,7 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    onClick={() => handleNavigation("/dashboard/service-order-settings/notas-fiscais")}
+                    onClick={() => navigate("/dashboard/service-order-settings/notas-fiscais")}
                     isActive={location.pathname.includes("/dashboard/service-order-settings/notas-fiscais")}
                   >
                     <Receipt className="h-4 w-4" />
