@@ -88,19 +88,20 @@ export default function CustomerArea() {
     try {
       const { data: messages, error } = await supabase
         .from('client_messages')
-        .select('*')
+        .select('count')
         .eq('client_id', clientId)
         .eq('is_from_client', false)
         .eq('read', false)
-        .limit(1);
+        .single();
 
-      if (error) throw error;
-
-      const hasUnread = Boolean(messages && messages.length > 0);
-      if (hasUnread !== hasUnreadMessages) {
-        setHasUnreadMessages(hasUnread);
-        setIsAnimating(hasUnread);
+      if (error && error.code !== 'PGRST116') {
+        console.error('Erro ao verificar mensagens:', error);
+        return;
       }
+
+      const hasUnread = messages?.count > 0;
+      setHasUnreadMessages(hasUnread);
+      setIsAnimating(hasUnread);
     } catch (error) {
       console.error('Erro ao verificar mensagens não lidas:', error);
     }
@@ -141,9 +142,10 @@ export default function CustomerArea() {
           table: 'client_messages',
           filter: `client_id=eq.${clientId} AND is_from_client=eq.false`
         },
-        (payload) => {
-          console.log('Nova mensagem recebida:', payload);
-          checkUnreadMessages();
+        () => {
+          if (!isMessagesOpen) {
+            checkUnreadMessages();
+          }
         }
       )
       .subscribe();
@@ -151,14 +153,24 @@ export default function CustomerArea() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [clientId]);
+  }, [clientId, isMessagesOpen]);
 
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
     if (isMessagesOpen) {
       markMessagesAsRead();
     } else {
-      checkUnreadMessages();
+      timeoutId = setTimeout(() => {
+        checkUnreadMessages();
+      }, 500);
     }
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, [isMessagesOpen]);
 
   const fetchClientInfo = async () => {
@@ -401,25 +413,19 @@ export default function CustomerArea() {
           )}
           <Sheet 
             open={isMessagesOpen}
-            onOpenChange={(open) => {
-              setIsMessagesOpen(open);
-            }}
+            onOpenChange={setIsMessagesOpen}
           >
             <SheetTrigger asChild>
               <Button 
                 variant={hasUnreadMessages ? "default" : "outline"}
                 className={cn(
                   "relative",
-                  isAnimating && "animate-pulse",
                   hasUnreadMessages && "bg-primary text-primary-foreground hover:bg-primary/90"
                 )}
               >
-                <BellRing className={cn(
-                  "h-4 w-4 mr-2",
-                  isAnimating && "animate-bounce"
-                )} />
+                <BellRing className="h-4 w-4 mr-2" />
                 {hasUnreadMessages && (
-                  <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-destructive animate-pulse" />
+                  <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-destructive" />
                 )}
                 Mensagens
                 {hasUnreadMessages && (
