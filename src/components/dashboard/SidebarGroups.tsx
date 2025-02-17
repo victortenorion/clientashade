@@ -243,8 +243,8 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    onClick={() => navigate("/dashboard/service-order-settings/area-restrita-cliente")}
-                    isActive={location.pathname.includes("/dashboard/service-order-settings/area-restrita-cliente")}
+                    onClick={() => navigate("/dashboard/service-order-settings/area-restrita-cliente-painel")}
+                    isActive={location.pathname.includes("/dashboard/service-order-settings/area-restrita-cliente-painel")}
                   >
                     <Lock className="h-4 w-4" />
                     <span>Área Restrita do Cliente</span>
