@@ -32,6 +32,16 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { MessagesSheet } from "./components/MessagesSheet";
 import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Column {
   key: string;
@@ -74,6 +84,7 @@ export default function CustomerArea() {
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [showReadConfirmation, setShowReadConfirmation] = useState(false);
 
   useEffect(() => {
     if (clientId) {
@@ -122,6 +133,7 @@ export default function CustomerArea() {
       
       setHasUnreadMessages(false);
       setIsAnimating(false);
+      setShowReadConfirmation(false);
     } catch (error) {
       console.error('Erro ao marcar mensagens como lidas:', error);
     }
@@ -172,6 +184,12 @@ export default function CustomerArea() {
       }
     };
   }, [isMessagesOpen]);
+
+  useEffect(() => {
+    if (isMessagesOpen && hasUnreadMessages) {
+      setShowReadConfirmation(true);
+    }
+  }, [isMessagesOpen, hasUnreadMessages]);
 
   const fetchClientInfo = async () => {
     try {
@@ -413,7 +431,12 @@ export default function CustomerArea() {
           )}
           <Sheet 
             open={isMessagesOpen}
-            onOpenChange={setIsMessagesOpen}
+            onOpenChange={(open) => {
+              setIsMessagesOpen(open);
+              if (!open) {
+                setShowReadConfirmation(false);
+              }
+            }}
           >
             <SheetTrigger asChild>
               <Button 
@@ -654,6 +677,25 @@ export default function CustomerArea() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={showReadConfirmation} onOpenChange={setShowReadConfirmation}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Marcar mensagens como lidas?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você tem mensagens não lidas. Deseja marcá-las como lidas?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowReadConfirmation(false)}>
+              Não
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={markMessagesAsRead}>
+              Sim, marcar como lidas
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
