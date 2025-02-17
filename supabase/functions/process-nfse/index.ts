@@ -38,17 +38,10 @@ serve(async (req) => {
   try {
     console.log('Iniciando processamento da NFS-e:', nfseData.nfseId);
 
-    // Buscar a NFS-e e suas configurações em uma única query
+    // Primeiro buscar a NFS-e para saber qual configuração usar
     const { data: nfse, error: nfseError } = await supabaseClient
       .from('nfse')
-      .select(`
-        *,
-        client:client_id (*),
-        settings:nfse_sp_settings!inner (
-          *,
-          certificate:certificates_id (*)
-        )
-      `)
+      .select('*, client:client_id (*)')
       .eq('id', nfseData.nfseId)
       .maybeSingle();
 
@@ -62,19 +55,46 @@ serve(async (req) => {
       throw new Error('NFS-e não encontrada');
     }
 
-    console.log('NFS-e encontrada:', {
-      id: nfse.id,
-      hasSettings: !!nfse.settings,
-      hasCertificate: !!(nfse.settings?.certificate),
-      status: nfse.status_sefaz
-    });
+    // Agora buscar as configurações SP mais recentes
+    const { data: settings, error: settingsError } = await supabaseClient
+      .from('nfse_sp_settings')
+      .select('*, certificate:certificates_id (*)')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    if (!nfse.settings) {
+    if (settingsError) {
+      console.error('Erro ao buscar configurações:', settingsError);
+      throw new Error('Erro ao buscar configurações da NFS-e SP');
+    }
+
+    if (!settings) {
       console.error('Configurações não encontradas');
       throw new Error('Configurações da NFS-e SP não encontradas. Por favor, configure primeiro.');
     }
 
-    if (!nfse.settings.certificate) {
+    console.log('Dados encontrados:', {
+      nfseId: nfse.id,
+      settingsId: settings.id,
+      hasCertificate: !!settings.certificate,
+      status: nfse.status_sefaz
+    });
+
+    // Atualizar a NFS-e com o ID das configurações
+    const { error: updateError } = await supabaseClient
+      .from('nfse')
+      .update({ 
+        nfse_sp_settings_id: settings.id,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', nfseData.nfseId);
+
+    if (updateError) {
+      console.error('Erro ao atualizar NFS-e com configurações:', updateError);
+      throw new Error('Erro ao vincular configurações à NFS-e');
+    }
+
+    if (!settings.certificate) {
       console.error('Certificado não encontrado');
       throw new Error('Certificado digital não configurado. Por favor, configure o certificado primeiro.');
     }
@@ -87,7 +107,7 @@ serve(async (req) => {
       'inscricao_municipal'
     ];
 
-    const missingFields = requiredFields.filter(field => !nfse.settings[field]);
+    const missingFields = requiredFields.filter(field => !settings[field]);
     if (missingFields.length > 0) {
       console.error('Campos obrigatórios faltando:', missingFields);
       throw new Error(`Campos obrigatórios não configurados: ${missingFields.join(', ')}`);
@@ -121,7 +141,8 @@ serve(async (req) => {
         message: 'Iniciando transmissão para SEFAZ',
         request_payload: { 
           nfseId: nfseData.nfseId,
-          ambiente: nfse.settings.ambiente
+          ambiente: settings.ambiente,
+          settingsId: settings.id
         },
       });
 
