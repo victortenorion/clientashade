@@ -90,6 +90,7 @@ export default function CustomerArea() {
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
   const [showReadConfirmation, setShowReadConfirmation] = useState(false);
+  const [hasOpenedMessages, setHasOpenedMessages] = useState(false);
 
   useEffect(() => {
     if (clientId) {
@@ -422,6 +423,9 @@ export default function CustomerArea() {
             open={isMessagesOpen}
             onOpenChange={(open) => {
               setIsMessagesOpen(open);
+              if (open) {
+                setHasOpenedMessages(true);
+              }
               if (!open) {
                 setShowReadConfirmation(false);
               }
@@ -438,7 +442,7 @@ export default function CustomerArea() {
                         hasUnreadMessages && "bg-primary text-primary-foreground hover:bg-primary/90"
                       )}
                       onMouseEnter={() => {
-                        if (hasUnreadMessages) {
+                        if (hasUnreadMessages && hasOpenedMessages) {
                           setShowReadConfirmation(true);
                         }
                       }}
