@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -32,7 +33,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { MessageSquare } from "lucide-react";
 import { MessagesSheet } from "./components/MessagesSheet";
-import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface Column {
