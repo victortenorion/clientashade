@@ -1,10 +1,10 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import ClientBasicInfo from "./ClientBasicInfo";
-import ClientAddress from "./ClientAddress";
-import ClientContact from "./ClientContact";
-import ClientAccess from "./ClientAccess";
-import ClientStore from "./ClientStore";
+import { ClientBasicInfo } from "./ClientBasicInfo";
+import { ClientAddress } from "./ClientAddress";
+import { ClientContact } from "./ClientContact";
+import { ClientAccess } from "./ClientAccess";
+import { ClientStore } from "./ClientStore";
 import MessagesTab from "./MessagesTab";
 
 interface ClientTabProps {
