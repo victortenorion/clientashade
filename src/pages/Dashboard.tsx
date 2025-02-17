@@ -196,7 +196,7 @@ const Dashboard = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event, session);
-      if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+      if (event === 'SIGNED_OUT') {
         localStorage.removeItem('sb-refresh-token');
         navigate("/auth");
       } else if (event === 'SIGNED_IN' && session) {
