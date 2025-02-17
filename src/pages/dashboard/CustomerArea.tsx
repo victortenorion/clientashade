@@ -82,23 +82,40 @@ export default function CustomerArea() {
     }
   }, [clientId]);
 
-  useEffect(() => {
+  const checkUnreadMessages = async () => {
+    if (!clientId) return;
+    
+    const { data: messages } = await supabase
+      .from('client_messages')
+      .select('*')
+      .eq('client_id', clientId)
+      .eq('is_from_client', false)
+      .eq('read', false)
+      .limit(1);
+
+    if (messages && messages.length > 0) {
+      setHasUnreadMessages(true);
+      setIsAnimating(true);
+    }
+  };
+
+  const markMessagesAsRead = async () => {
     if (!clientId) return;
 
-    const checkUnreadMessages = async () => {
-      const { data: messages } = await supabase
+    try {
+      await supabase
         .from('client_messages')
-        .select('*')
+        .update({ read: true })
         .eq('client_id', clientId)
         .eq('is_from_client', false)
-        .eq('read', false)
-        .limit(1);
+        .eq('read', false);
+    } catch (error) {
+      console.error('Erro ao marcar mensagens como lidas:', error);
+    }
+  };
 
-      if (messages && messages.length > 0) {
-        setHasUnreadMessages(true);
-        setIsAnimating(true);
-      }
-    };
+  useEffect(() => {
+    if (!clientId) return;
 
     checkUnreadMessages();
 
@@ -141,6 +158,12 @@ export default function CustomerArea() {
       supabase.removeChannel(channel);
     };
   }, [clientId, isMessagesOpen]);
+
+  useEffect(() => {
+    if (isMessagesOpen) {
+      markMessagesAsRead();
+    }
+  }, [isMessagesOpen, clientId]);
 
   const fetchClientInfo = async () => {
     try {
@@ -367,27 +390,6 @@ export default function CustomerArea() {
       });
     }
   };
-
-  const markMessagesAsRead = async () => {
-    if (!clientId) return;
-
-    try {
-      await supabase
-        .from('client_messages')
-        .update({ read: true })
-        .eq('client_id', clientId)
-        .eq('is_from_client', false)
-        .eq('read', false);
-    } catch (error) {
-      console.error('Erro ao marcar mensagens como lidas:', error);
-    }
-  };
-
-  useEffect(() => {
-    if (isMessagesOpen) {
-      markMessagesAsRead();
-    }
-  }, [isMessagesOpen, clientId]);
 
   return (
     <div className="container py-8">
