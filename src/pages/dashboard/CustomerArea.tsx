@@ -407,13 +407,12 @@ export default function CustomerArea() {
   };
 
   const handleSheetOpenChange = (open: boolean) => {
+    setIsMessagesOpen(open);
+    
     if (!open && hasUnreadMessages) {
-      setIsMessagesOpen(false);
       setTimeout(() => {
         setShowReadConfirmation(true);
       }, 100);
-    } else {
-      setIsMessagesOpen(open);
     }
   };
 
