@@ -406,6 +406,15 @@ export default function CustomerArea() {
     }
   };
 
+  const handleSheetOpenChange = (open: boolean) => {
+    setIsMessagesOpen(open);
+    if (!open && hasUnreadMessages) {
+      setTimeout(() => {
+        setShowReadConfirmation(true);
+      }, 100);
+    }
+  };
+
   return (
     <div className="container py-8">
       <div className="mb-4 flex justify-between items-center">
@@ -420,12 +429,7 @@ export default function CustomerArea() {
           )}
           <Sheet 
             open={isMessagesOpen}
-            onOpenChange={(open) => {
-              setIsMessagesOpen(open);
-              if (!open && hasUnreadMessages) {
-                setShowReadConfirmation(true);
-              }
-            }}
+            onOpenChange={handleSheetOpenChange}
           >
             <SheetTrigger asChild>
               <TooltipProvider>
@@ -679,7 +683,15 @@ export default function CustomerArea() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={showReadConfirmation} onOpenChange={setShowReadConfirmation}>
+      <AlertDialog 
+        open={showReadConfirmation} 
+        onOpenChange={(open) => {
+          setShowReadConfirmation(open);
+          if (!open) {
+            setIsMessagesOpen(false);
+          }
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Deseja informar que leu a mensagem?</AlertDialogTitle>
