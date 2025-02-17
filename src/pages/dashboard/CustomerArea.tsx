@@ -29,6 +29,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { MessageSquare } from "lucide-react";
+import { MessagesSheet } from "./components/MessagesSheet";
 
 interface Column {
   key: string;
@@ -314,6 +317,20 @@ export default function CustomerArea() {
               <span className="text-muted-foreground">({clientInfo.document})</span>
             </div>
           )}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Enviar Mensagem
+              </Button>
+            </SheetTrigger>
+            <SheetContent>
+              <SheetHeader>
+                <SheetTitle>Mensagens</SheetTitle>
+              </SheetHeader>
+              <MessagesSheet clientId={clientId || ""} />
+            </SheetContent>
+          </Sheet>
           <Button onClick={() => {
             setEditingOrder(null);
             setFormData({
