@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -15,12 +15,12 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { ServiceOrder } from "./types/service-order-settings.types";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 export default function CustomerArea() {
   const { clientId } = useParams();
@@ -28,6 +28,7 @@ export default function CustomerArea() {
   const [loading, setLoading] = useState(true);
   const [date, setDate] = useState<Date | undefined>(new Date());
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (clientId) {
@@ -56,10 +57,21 @@ export default function CustomerArea() {
       }));
 
       setServiceOrders(formattedOrders);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching service orders:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar ordens de serviço",
+        description: "Não foi possível carregar as ordens de serviço. Tente novamente.",
+      });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleViewDetails = (orderId: string) => {
+    if (orderId) {
+      navigate(`/dashboard/service-orders/${orderId}`);
     }
   };
 
@@ -102,7 +114,11 @@ export default function CustomerArea() {
                   </TableCell>
                   <TableCell>R$ {order.total_price.toFixed(2)}</TableCell>
                   <TableCell>
-                    <Button variant="outline" size="sm" onClick={() => navigate(`/dashboard/service-orders/${order.id}`)}>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => handleViewDetails(order.id)}
+                    >
                       Ver Detalhes
                     </Button>
                   </TableCell>
