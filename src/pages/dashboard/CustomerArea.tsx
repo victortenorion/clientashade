@@ -123,6 +123,18 @@ export default function CustomerArea() {
           }
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'client_messages',
+          filter: `client_id=eq.${clientId}`
+        },
+        () => {
+          checkUnreadMessages();
+        }
+      )
       .subscribe();
 
     return () => {
@@ -356,6 +368,27 @@ export default function CustomerArea() {
     }
   };
 
+  const markMessagesAsRead = async () => {
+    if (!clientId) return;
+
+    try {
+      await supabase
+        .from('client_messages')
+        .update({ read: true })
+        .eq('client_id', clientId)
+        .eq('is_from_client', false)
+        .eq('read', false);
+    } catch (error) {
+      console.error('Erro ao marcar mensagens como lidas:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (isMessagesOpen) {
+      markMessagesAsRead();
+    }
+  }, [isMessagesOpen, clientId]);
+
   return (
     <div className="container py-8">
       <div className="mb-4 flex justify-between items-center">
@@ -375,6 +408,9 @@ export default function CustomerArea() {
               if (open) {
                 setHasUnreadMessages(false);
                 setIsAnimating(false);
+                markMessagesAsRead();
+              } else {
+                checkUnreadMessages();
               }
             }}
           >
