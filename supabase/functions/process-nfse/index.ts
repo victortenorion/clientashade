@@ -17,15 +17,29 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  // Ler o corpo da requisição uma única vez
+  let nfseData: NFSeData;
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    nfseData = await req.json() as NFSeData;
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: 'Erro ao ler dados da requisição' }),
+      { 
+        status: 400,
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        },
+      }
     );
+  }
 
-    // Extrair o ID da NFS-e do corpo da requisição
-    const { nfseId } = await req.json() as NFSeData;
+  const supabaseClient = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
 
+  try {
     // Verificar dados da NFS-e
     const { data: nfse, error: nfseError } = await supabaseClient
       .from('nfse')
@@ -34,11 +48,16 @@ serve(async (req) => {
         clients (*),
         nfse_sp_settings (*)
       `)
-      .eq('id', nfseId)
+      .eq('id', nfseData.nfseId)
       .single();
 
     if (nfseError) throw nfseError;
     if (!nfse) throw new Error('NFS-e não encontrada');
+
+    // Verificar se as configurações existem
+    if (!nfse.nfse_sp_settings) {
+      throw new Error('Configurações da NFS-e SP não encontradas. Por favor, configure primeiro.');
+    }
 
     // Verificar se já está autorizada
     if (nfse.status_sefaz === 'autorizada') {
@@ -50,6 +69,11 @@ serve(async (req) => {
       throw new Error('NFS-e está cancelada');
     }
 
+    // Verificar certificado
+    if (!nfse.nfse_sp_settings.certificates_id) {
+      throw new Error('Certificado digital não configurado. Por favor, configure o certificado primeiro.');
+    }
+
     // Atualizar status para processando
     const { error: updateError } = await supabaseClient
       .from('nfse')
@@ -57,7 +81,7 @@ serve(async (req) => {
         status_sefaz: 'processando',
         updated_at: new Date().toISOString()
       })
-      .eq('id', nfseId);
+      .eq('id', nfseData.nfseId);
 
     if (updateError) throw updateError;
 
@@ -65,10 +89,10 @@ serve(async (req) => {
     await supabaseClient
       .from('nfse_sefaz_logs')
       .insert({
-        nfse_id: nfseId,
+        nfse_id: nfseData.nfseId,
         status: 'processando',
         message: 'Iniciando transmissão para SEFAZ',
-        request_payload: { nfseId },
+        request_payload: { nfseId: nfseData.nfseId },
       });
 
     // TODO: Implementar integração real com a SEFAZ
@@ -82,13 +106,13 @@ serve(async (req) => {
         status_sefaz: 'autorizada',
         updated_at: new Date().toISOString()
       })
-      .eq('id', nfseId);
+      .eq('id', nfseData.nfseId);
 
     // Registrar log de sucesso
     await supabaseClient
       .from('nfse_sefaz_logs')
       .insert({
-        nfse_id: nfseId,
+        nfse_id: nfseData.nfseId,
         status: 'sucesso',
         message: 'NFS-e transmitida com sucesso',
         response_payload: { success: true },
@@ -110,34 +134,24 @@ serve(async (req) => {
   } catch (error) {
     console.error('Erro ao transmitir NFS-e:', error);
 
-    // Se houver um erro, tentar registrar no log
-    try {
-      const supabaseClient = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      );
+    // Registrar log de erro
+    await supabaseClient
+      .from('nfse_sefaz_logs')
+      .insert({
+        nfse_id: nfseData.nfseId,
+        status: 'erro',
+        message: error.message,
+        response_payload: { error: error.message },
+      });
 
-      await supabaseClient
-        .from('nfse_sefaz_logs')
-        .insert({
-          nfse_id: (await req.json() as NFSeData).nfseId,
-          status: 'erro',
-          message: error.message,
-          response_payload: { error: error.message },
-        });
-
-      // Atualizar status da NFS-e para rejeitada em caso de erro
-      await supabaseClient
-        .from('nfse')
-        .update({ 
-          status_sefaz: 'rejeitada',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', (await req.json() as NFSeData).nfseId);
-
-    } catch (logError) {
-      console.error('Erro ao registrar log:', logError);
-    }
+    // Atualizar status da NFS-e para rejeitada em caso de erro
+    await supabaseClient
+      .from('nfse')
+      .update({ 
+        status_sefaz: 'rejeitada',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', nfseData.nfseId);
 
     return new Response(
       JSON.stringify({ 
