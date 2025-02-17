@@ -442,6 +442,7 @@ export default function CustomerArea() {
                           setShowReadConfirmation(true);
                         }
                       }}
+                      onClick={() => setIsMessagesOpen(true)}
                     >
                       <BellRing className="h-4 w-4 mr-2" />
                       {hasUnreadMessages && (
