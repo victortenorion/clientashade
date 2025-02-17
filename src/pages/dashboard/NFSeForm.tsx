@@ -94,8 +94,7 @@ export default function NFSeForm() {
             inscricao_municipal,
             regime_tributario,
             regime_especial,
-            codigo_municipio,
-            incentivador_cultural
+            codigo_municipio
           )
         `)
         .eq('id', serviceOrderId)
