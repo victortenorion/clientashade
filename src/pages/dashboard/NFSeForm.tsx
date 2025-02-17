@@ -215,6 +215,19 @@ export default function NFSeForm() {
 
     setIsLoading(true);
     try {
+      const { data: settings, error: settingsError } = await supabase
+        .from('nfse_sp_settings')
+        .select('*')
+        .maybeSingle();
+
+      if (settingsError) throw settingsError;
+      if (!settings?.id) throw new Error('Configurações da NFS-e SP não encontradas');
+
+      const { data: rpsNumber, error: rpsError } = await supabase
+        .rpc('increment_rps_sp_numero', { p_settings_id: settings.id });
+
+      if (rpsError) throw rpsError;
+
       const { data: nfse, error: nfseError } = await supabase
         .from('nfse')
         .insert({
@@ -246,6 +259,8 @@ export default function NFSeForm() {
           valor_outras_retencoes: values.valor_outras_retencoes,
           observacoes: values.outras_observacoes,
           codigo_servico: values.codigo_atividade,
+          numero_rps: rpsNumber.toString(),
+          serie_rps: settings.rps_serie || '1',
         })
         .select()
         .single();
