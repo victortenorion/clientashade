@@ -223,11 +223,15 @@ export default function NFSeForm() {
       if (settingsError) throw settingsError;
       if (!settings?.id) throw new Error('Configurações da NFS-e SP não encontradas');
 
-      const { data: rpsNumber, error: rpsError } = await supabase
+      const { data: rpsResponse, error: rpsError } = await supabase
         .rpc('increment_rps_sp_numero', { p_settings_id: settings.id });
 
       if (rpsError) throw rpsError;
-      if (!rpsNumber) throw new Error('Erro ao gerar número do RPS');
+      console.log('RPS Response:', rpsResponse);
+
+      if (typeof rpsResponse !== 'number') {
+        throw new Error('Resposta inválida ao gerar número do RPS');
+      }
 
       const { data: nfse, error: nfseError } = await supabase
         .from('nfse')
@@ -260,13 +264,14 @@ export default function NFSeForm() {
           valor_outras_retencoes: values.valor_outras_retencoes,
           observacoes: values.outras_observacoes,
           codigo_servico: values.codigo_atividade,
-          numero_rps: rpsNumber,
+          numero_rps: rpsResponse,
           serie_rps: settings.rps_serie || '1',
         })
-        .select()
-        .single();
+        .select('*')
+        .maybeSingle();
 
       if (nfseError) throw nfseError;
+      if (!nfse) throw new Error('Erro ao criar NFS-e');
 
       const { error: processError } = await supabase.functions.invoke('process-nfse', {
         body: { nfseId: nfse.id }
