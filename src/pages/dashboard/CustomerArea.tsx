@@ -29,6 +29,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import MessagesTab from "./components/MessagesTab";
 
 interface Column {
   key: string;
@@ -332,132 +334,145 @@ export default function CustomerArea() {
       <h1 className="text-2xl font-bold mb-4">Área do Cliente</h1>
       <Separator className="mb-4" />
 
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">Ordens de Serviço</h2>
-          <div className="flex gap-2">
-            <div className="relative w-64">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar ordens..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
-              />
-            </div>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <Filter className="h-4 w-4" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-48">
-                <div className="space-y-2">
-                  <h3 className="font-medium">Colunas visíveis</h3>
-                  {columns.map((column) => (
-                    <div key={column.key} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={column.key}
-                        checked={column.visible}
-                        onCheckedChange={() => handleColumnToggle(column.key)}
-                      />
-                      <label
-                        htmlFor={column.key}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        {column.label}
-                      </label>
-                    </div>
-                  ))}
+      <Tabs defaultValue="orders" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="orders">Ordens de Serviço</TabsTrigger>
+          <TabsTrigger value="messages">Mensagens</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="orders">
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Ordens de Serviço</h2>
+              <div className="flex gap-2">
+                <div className="relative w-64">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar ordens..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8"
+                  />
                 </div>
-              </PopoverContent>
-            </Popover>
-          </div>
-        </div>
-        {loading ? (
-          <p>Carregando ordens de serviço...</p>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {columns.map((column) => (
-                  column.visible && (
-                    <TableHead key={column.key}>{column.label}</TableHead>
-                  )
-                ))}
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredOrders.map((order) => (
-                <TableRow key={order.id}>
-                  {columns.map((column) => {
-                    if (!column.visible) return null;
-                    
-                    switch (column.key) {
-                      case 'order_number':
-                        return <TableCell key={column.key}>{order.order_number}</TableCell>;
-                      case 'description':
-                        return <TableCell key={column.key}>{order.description}</TableCell>;
-                      case 'equipment':
-                        return <TableCell key={column.key}>{order.equipment || '-'}</TableCell>;
-                      case 'equipment_serial_number':
-                        return <TableCell key={column.key}>{order.equipment_serial_number || '-'}</TableCell>;
-                      case 'status':
-                        return (
-                          <TableCell key={column.key}>
-                            <Badge style={{ backgroundColor: order.status.color, color: 'white' }}>
-                              {order.status.name}
-                            </Badge>
-                          </TableCell>
-                        );
-                      case 'created_at':
-                        return (
-                          <TableCell key={column.key}>
-                            {format(new Date(order.created_at), "dd/MM/yyyy", { locale: ptBR })}
-                          </TableCell>
-                        );
-                      case 'total_price':
-                        return <TableCell key={column.key}>R$ {order.total_price?.toFixed(2) || '0.00'}</TableCell>;
-                      default:
-                        return null;
-                    }
-                  })}
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => handleViewDetails(order.id)}
-                      >
-                        Ver Detalhes
-                      </Button>
-                      {order.status.name === "enviando-cliente" && (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditOrder(order)}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <Filter className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-48">
+                    <div className="space-y-2">
+                      <h3 className="font-medium">Colunas visíveis</h3>
+                      {columns.map((column) => (
+                        <div key={column.key} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={column.key}
+                            checked={column.visible}
+                            onCheckedChange={() => handleColumnToggle(column.key)}
+                          />
+                          <label
+                            htmlFor={column.key}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                           >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteOrder(order.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </>
-                      )}
+                            {column.label}
+                          </label>
+                        </div>
+                      ))}
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+            {loading ? (
+              <p>Carregando ordens de serviço...</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {columns.map((column) => (
+                      column.visible && (
+                        <TableHead key={column.key}>{column.label}</TableHead>
+                      )
+                    ))}
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredOrders.map((order) => (
+                    <TableRow key={order.id}>
+                      {columns.map((column) => {
+                        if (!column.visible) return null;
+                        
+                        switch (column.key) {
+                          case 'order_number':
+                            return <TableCell key={column.key}>{order.order_number}</TableCell>;
+                          case 'description':
+                            return <TableCell key={column.key}>{order.description}</TableCell>;
+                          case 'equipment':
+                            return <TableCell key={column.key}>{order.equipment || '-'}</TableCell>;
+                          case 'equipment_serial_number':
+                            return <TableCell key={column.key}>{order.equipment_serial_number || '-'}</TableCell>;
+                          case 'status':
+                            return (
+                              <TableCell key={column.key}>
+                                <Badge style={{ backgroundColor: order.status.color, color: 'white' }}>
+                                  {order.status.name}
+                                </Badge>
+                              </TableCell>
+                            );
+                          case 'created_at':
+                            return (
+                              <TableCell key={column.key}>
+                                {format(new Date(order.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                              </TableCell>
+                            );
+                          case 'total_price':
+                            return <TableCell key={column.key}>R$ {order.total_price?.toFixed(2) || '0.00'}</TableCell>;
+                          default:
+                            return null;
+                        }
+                      })}
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleViewDetails(order.id)}
+                          >
+                            Ver Detalhes
+                          </Button>
+                          {order.status.name === "enviando-cliente" && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditOrder(order)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDeleteOrder(order.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="messages">
+          <MessagesTab />
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>

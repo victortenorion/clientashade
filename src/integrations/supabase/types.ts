@@ -75,6 +75,44 @@ export type Database = {
         }
         Relationships: []
       }
+      client_messages: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          is_from_client: boolean
+          message: string
+          read: boolean
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          is_from_client?: boolean
+          message: string
+          read?: boolean
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          is_from_client?: boolean
+          message?: string
+          read?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_messages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_registration_field_settings: {
         Row: {
           created_at: string
