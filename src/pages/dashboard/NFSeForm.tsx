@@ -67,7 +67,6 @@ export default function NFSeForm() {
   const queryParams = new URLSearchParams(location.search);
   const serviceOrderId = queryParams.get('service_order_id');
 
-  // Buscar dados da ordem de serviço e do cliente
   const { data: serviceOrder } = useQuery({
     queryKey: ['service-order', serviceOrderId],
     queryFn: async () => {
@@ -106,7 +105,6 @@ export default function NFSeForm() {
     enabled: !!serviceOrderId
   });
 
-  // Buscar configurações da empresa
   const { data: companyConfig } = useQuery({
     queryKey: ['company-config'],
     queryFn: async () => {
@@ -147,7 +145,6 @@ export default function NFSeForm() {
     },
   });
 
-  // Atualizar form quando os dados forem carregados
   useEffect(() => {
     if (serviceOrder && companyConfig) {
       form.reset({
@@ -191,7 +188,6 @@ export default function NFSeForm() {
 
     setIsLoading(true);
     try {
-      // Criar a NFS-e no banco
       const { data: nfse, error: nfseError } = await supabase
         .from('nfse')
         .insert({
@@ -214,7 +210,6 @@ export default function NFSeForm() {
           status_sefaz: 'pendente',
           natureza_operacao: values.natureza_operacao,
           optante_simples_nacional: values.optante_simples_nacional,
-          incentivador_cultural: values.incentivador_cultural,
           regime_especial_tributacao: values.regime_especial_tributacao,
           item_lista_servico: values.item_lista_servico,
           codigo_tributacao_municipio: values.codigo_tributacao_municipio,
@@ -229,7 +224,6 @@ export default function NFSeForm() {
 
       if (nfseError) throw nfseError;
 
-      // Chamar a Edge Function para processar a NFS-e
       const { error: processError } = await supabase.functions.invoke('process-nfse', {
         body: { nfseId: nfse.id }
       });
