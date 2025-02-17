@@ -9,6 +9,13 @@ import { supabase } from "@/lib/supabase";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { MessageSquare, Send } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Message {
   id: string;
@@ -21,14 +28,22 @@ interface Message {
   client_id: string;
 }
 
+interface Client {
+  id: string;
+  name: string;
+}
+
 const Home = () => {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchRecentMessages();
+    fetchClients();
 
     // Inscrever para atualizações em tempo real
     const channel = supabase
@@ -50,6 +65,25 @@ const Home = () => {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  const fetchClients = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, name')
+        .order('name');
+
+      if (error) throw error;
+      setClients(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar clientes:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar clientes",
+        description: "Não foi possível carregar a lista de clientes.",
+      });
+    }
+  };
 
   const fetchRecentMessages = async () => {
     try {
@@ -74,8 +108,8 @@ const Home = () => {
     }
   };
 
-  const sendMessage = async (clientId: string) => {
-    if (!newMessage.trim()) return;
+  const sendMessage = async () => {
+    if (!newMessage.trim() || !selectedClientId) return;
     
     setLoading(true);
     try {
@@ -83,7 +117,7 @@ const Home = () => {
         .from('client_messages')
         .insert([
           {
-            client_id: clientId,
+            client_id: selectedClientId,
             message: newMessage.trim(),
             is_from_client: false
           }
@@ -158,24 +192,40 @@ const Home = () => {
             </div>
           </ScrollArea>
           
-          {messages.length > 0 && (
-            <div className="flex gap-2 mt-4">
+          <div className="flex gap-2 mt-4">
+            <div className="flex-1 space-y-4">
+              <Select
+                value={selectedClientId}
+                onValueChange={setSelectedClientId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
               <Textarea
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Digite sua resposta..."
+                placeholder="Digite sua mensagem..."
                 className="min-h-[80px]"
               />
-              <Button
-                onClick={() => sendMessage(messages[0].client_id)}
-                disabled={loading || !newMessage.trim()}
-                className="self-end"
-              >
-                <Send className="h-4 w-4 mr-2" />
-                Enviar
-              </Button>
             </div>
-          )}
+            <Button
+              onClick={sendMessage}
+              disabled={loading || !newMessage.trim() || !selectedClientId}
+              className="self-end"
+            >
+              <Send className="h-4 w-4 mr-2" />
+              Enviar
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
