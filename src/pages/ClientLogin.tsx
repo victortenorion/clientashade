@@ -4,54 +4,19 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/lib/supabase";
 import { ArrowLeft } from "lucide-react";
+import { useClientAuth } from "@/hooks/useClientAuth";
 
 export function ClientLogin() {
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
   const navigate = useNavigate();
+  const { loading, login: handleClientLogin } = useClientAuth();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
-    try {
-      const { data: clientId, error } = await supabase.rpc('check_client_credentials', {
-        p_login: login,
-        p_password: password
-      });
-
-      if (error) throw error;
-
-      if (clientId) {
-        localStorage.setItem('clientId', clientId);
-        toast({
-          title: "Login realizado com sucesso",
-          description: "Bem-vindo à área do cliente.",
-        });
-        // Redirecionar para a área do cliente com o ID específico
-        navigate(`/customer-area/${clientId}`);
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Erro ao fazer login",
-          description: "Login ou senha incorretos.",
-        });
-      }
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao fazer login",
-        description: error.message,
-      });
-    } finally {
-      setLoading(false);
-    }
+    await handleClientLogin(login, password);
   };
 
   const handleBack = () => {
@@ -74,7 +39,7 @@ export function ClientLogin() {
           <CardHeader>
             <h2 className="text-2xl font-bold text-center">Área do Cliente</h2>
           </CardHeader>
-          <form onSubmit={handleLogin}>
+          <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="login">Login</Label>

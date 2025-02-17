@@ -1,29 +1,22 @@
 
 import { ReactNode, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+import { useClientAuth } from "@/hooks/useClientAuth";
 
 interface ClientProtectedRouteProps {
   children: ReactNode;
 }
 
 export const ClientProtectedRoute = ({ children }: ClientProtectedRouteProps) => {
-  const navigate = useNavigate();
   const { clientId } = useParams();
+  const navigate = useNavigate();
+  const { checkAuth } = useClientAuth();
   
   useEffect(() => {
-    const storedClientId = localStorage.getItem('clientId');
-    
-    if (!storedClientId) {
+    if (!checkAuth(clientId)) {
       navigate('/client-login');
-      return;
     }
-
-    // Verificar se o clientId da URL corresponde ao armazenado
-    if (storedClientId !== clientId) {
-      navigate('/client-login');
-      return;
-    }
-  }, [navigate, clientId]);
+  }, [clientId, navigate, checkAuth]);
 
   return <>{children}</>;
 };
