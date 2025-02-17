@@ -9,16 +9,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { CalendarIcon, Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/lib/supabase";
 import { ServiceOrder } from "./types/service-order-settings.types";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -35,7 +32,6 @@ export default function CustomerArea() {
   const { clientId } = useParams();
   const [serviceOrders, setServiceOrders] = useState<ServiceOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  const [date, setDate] = useState<Date | undefined>(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<ServiceOrder | null>(null);
   const [formData, setFormData] = useState({
@@ -313,36 +309,6 @@ export default function CustomerArea() {
             </TableBody>
           </Table>
         )}
-      </div>
-
-      <div>
-        <h2 className="text-xl font-semibold mb-2">Agendamentos</h2>
-        <p>Selecione uma data para ver os agendamentos:</p>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant={"outline"}
-              className={cn(
-                "w-[240px] justify-start text-left font-normal",
-                !date && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {date ? format(date, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione a data</span>}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={setDate}
-              disabled={(date) =>
-                date > new Date()
-              }
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
