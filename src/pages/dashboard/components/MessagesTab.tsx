@@ -79,7 +79,7 @@ export default function MessagesTab() {
           {
             client_id: clientId,
             message: newMessage.trim(),
-            is_from_client: true
+            is_from_client: false
           }
         ]);
 
@@ -110,14 +110,14 @@ export default function MessagesTab() {
             <div
               key={message.id}
               className={`flex ${
-                message.is_from_client ? "justify-end" : "justify-start"
+                message.is_from_client ? "justify-start" : "justify-end"
               }`}
             >
               <div
                 className={`max-w-[80%] rounded-lg p-3 ${
                   message.is_from_client
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
+                    ? "bg-muted"
+                    : "bg-primary text-primary-foreground"
                 }`}
               >
                 <p className="text-sm">{message.message}</p>
