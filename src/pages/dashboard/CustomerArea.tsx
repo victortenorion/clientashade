@@ -83,8 +83,8 @@ export default function CustomerArea() {
   }, [clientId]);
 
   const checkUnreadMessages = async () => {
-    if (!clientId) return;
-    
+    if (!clientId || isMessagesOpen) return;
+
     const { data: messages } = await supabase
       .from('client_messages')
       .select('*')
@@ -152,7 +152,9 @@ export default function CustomerArea() {
           filter: `client_id=eq.${clientId}`
         },
         () => {
-          checkUnreadMessages();
+          if (!isMessagesOpen) {
+            checkUnreadMessages();
+          }
         }
       )
       .subscribe();
@@ -164,6 +166,8 @@ export default function CustomerArea() {
 
   useEffect(() => {
     if (isMessagesOpen) {
+      setHasUnreadMessages(false);
+      setIsAnimating(false);
       markMessagesAsRead();
     }
   }, [isMessagesOpen, clientId]);
@@ -414,8 +418,6 @@ export default function CustomerArea() {
                 setHasUnreadMessages(false);
                 setIsAnimating(false);
                 markMessagesAsRead();
-              } else {
-                checkUnreadMessages();
               }
             }}
           >
