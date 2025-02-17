@@ -23,7 +23,6 @@ import CustomerArea from "@/pages/dashboard/CustomerArea";
 import CustomerServiceOrderView from "@/pages/dashboard/CustomerServiceOrderView";
 import { ClientProtectedRoute } from "@/components/ClientProtectedRoute";
 import ClientLogin from "@/pages/ClientLogin";
-import Messages from "@/pages/dashboard/Messages";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -58,7 +57,6 @@ function App() {
               <Route path="users" element={<Users />} />
               <Route path="clients" element={<Clients />} />
               <Route path="stores" element={<Stores />} />
-              <Route path="messages" element={<Messages />} />
             </Route>
 
             <Route path="/client-login" element={<ClientLogin />} />

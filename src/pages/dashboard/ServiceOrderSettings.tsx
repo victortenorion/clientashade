@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { StatusTab } from "./components/StatusTab";
 import { SEFAZTab } from "./components/SEFAZTab";
-import ClientTab from "./components/ClientTab";
+import { ClientTab } from "./components/ClientTab";
 import { NotasFiscaisTab } from "./components/NotasFiscaisTab";
 import { CompanyInfoTab } from "./components/CompanyInfoTab";
 import { useLocation } from "react-router-dom";
@@ -37,7 +38,7 @@ const ServiceOrderSettings = () => {
     incentivo_fiscal: false,
     certificado_valido: false,
     certificado_validade: undefined,
-    numero_inicial_rps: "1",
+    numero_inicial_rps: "1", // Alterado para string
     aliquota_servico: 0,
     versao_schema: "2.00",
     lote_rps_numero: 1,
@@ -227,7 +228,7 @@ const ServiceOrderSettings = () => {
       );
     }
     if (path.includes("/area-cliente") || path.includes("/campos-visiveis")) {
-      return <ClientTab clientId="default" />;
+      return <ClientTab />;
     }
     return <StatusTab />;
   };
