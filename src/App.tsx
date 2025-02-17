@@ -1,56 +1,23 @@
-
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import { ClientLogin } from "./pages/ClientLogin";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
-import Home from "./pages/dashboard/Home";
-import Clients from "./pages/dashboard/Clients";
-import Users from "./pages/dashboard/Users";
-import Products from "./pages/dashboard/Products";
-import ServiceOrders from "./pages/dashboard/ServiceOrders";
-import ServiceOrderForm from "./pages/dashboard/ServiceOrderForm";
-import ServiceOrderEdit from "./pages/dashboard/ServiceOrderEdit";
-import ServiceOrderSettings from "./pages/dashboard/ServiceOrderSettings";
-import NFCe from "./pages/dashboard/NFCe";
-import NFCeForm from "./pages/dashboard/NFCeForm";
-import NFSe from "./pages/dashboard/NFSe";
-import NFSeForm from "./pages/dashboard/NFSeForm";
-import CustomerArea from "./pages/dashboard/CustomerArea";
-import Stores from "./pages/dashboard/Stores";
-import { ClientProtectedRoute } from "./components/ClientProtectedRoute";
-import { Toaster } from "./components/ui/toaster";
+import NotFound from "./pages/NotFound";
+import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import ClientLogin from "./pages/ClientLogin";
+import CustomerArea from "./pages/dashboard/CustomerArea";
+import CustomerServiceOrderView from "./pages/dashboard/CustomerServiceOrderView";
+import { ClientProtectedRoute } from "./components/ClientProtectedRoute";
+import { Toaster } from "@/components/ui/toaster";
+import { ThemeProvider } from "@/components/theme-provider";
 
 function App() {
   return (
-    <>
-      <Router>
+    <Router>
+      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/client-login" element={<ClientLogin />} />
-          <Route path="/dashboard" element={<Dashboard />}>
-            <Route index element={<Home />} />
-            <Route path="clients" element={<Clients />} />
-            <Route path="users" element={<Users />} />
-            <Route path="products" element={<Products />} />
-            <Route path="stores" element={<Stores />} />
-            <Route path="service-orders" element={<ServiceOrders />} />
-            <Route path="service-orders/new" element={<ServiceOrderForm />} />
-            <Route path="service-orders/:id/edit" element={<ServiceOrderEdit />} />
-            <Route path="service-orders/:id" element={<ServiceOrderEdit />} />
-            <Route path="service-order-settings/*" element={<ServiceOrderSettings />} />
-            <Route path="nfce" element={<NFCe />} />
-            <Route path="nfce/new" element={<NFCeForm />} />
-            <Route path="nfse" element={<NFSe />} />
-            <Route path="nfse/new" element={<NFSeForm />} />
-            <Route path="nfse/:id" element={<NFSeForm />} />
-          </Route>
-          <Route
-            path="/customer-area"
-            element={<Navigate to="/client-login" replace />}
-          />
           <Route
             path="/customer-area/:clientId"
             element={
@@ -59,11 +26,20 @@ function App() {
               </ClientProtectedRoute>
             }
           />
+          <Route
+            path="/customer-area/:clientId/service-order/:orderId"
+            element={
+              <ClientProtectedRoute>
+                <CustomerServiceOrderView />
+              </ClientProtectedRoute>
+            }
+          />
+          <Route path="/dashboard/*" element={<Dashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </Router>
-      <Toaster />
-    </>
+        <Toaster />
+      </ThemeProvider>
+    </Router>
   );
 }
 
