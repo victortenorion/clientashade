@@ -55,10 +55,17 @@ serve(async (req) => {
       throw new Error('NFS-e não encontrada');
     }
 
-    // Agora buscar as configurações SP mais recentes
+    // Buscar configurações SP e configuração inicial de números
     const { data: settings, error: settingsError } = await supabaseClient
       .from('nfse_sp_settings')
       .select('*, certificate:certificates_id (*)')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const { data: spConfig, error: spConfigError } = await supabaseClient
+      .from('nfse_sp_config')
+      .select('*')
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -68,16 +75,32 @@ serve(async (req) => {
       throw new Error('Erro ao buscar configurações da NFS-e SP');
     }
 
+    if (spConfigError) {
+      console.error('Erro ao buscar configuração de números:', spConfigError);
+      throw new Error('Erro ao buscar configuração de números iniciais');
+    }
+
     if (!settings) {
       console.error('Configurações não encontradas');
       throw new Error('Configurações da NFS-e SP não encontradas. Por favor, configure primeiro.');
+    }
+
+    // Verificar se o número RPS é válido
+    if (spConfig && parseInt(nfse.numero_rps) < spConfig.numero_inicial_rps) {
+      console.error('Número RPS inválido:', {
+        numero_rps: nfse.numero_rps,
+        numero_inicial_rps: spConfig.numero_inicial_rps
+      });
+      throw new Error(`O número RPS ${nfse.numero_rps} é menor que o número inicial configurado ${spConfig.numero_inicial_rps}`);
     }
 
     console.log('Dados encontrados:', {
       nfseId: nfse.id,
       settingsId: settings.id,
       hasCertificate: !!settings.certificate,
-      status: nfse.status_sefaz
+      status: nfse.status_sefaz,
+      numero_rps: nfse.numero_rps,
+      numero_inicial_rps: spConfig?.numero_inicial_rps
     });
 
     // Atualizar a NFS-e com o ID das configurações
@@ -142,7 +165,9 @@ serve(async (req) => {
         request_payload: { 
           nfseId: nfseData.nfseId,
           ambiente: settings.ambiente,
-          settingsId: settings.id
+          settingsId: settings.id,
+          numero_rps: nfse.numero_rps,
+          numero_inicial_rps: spConfig?.numero_inicial_rps
         },
       });
 
