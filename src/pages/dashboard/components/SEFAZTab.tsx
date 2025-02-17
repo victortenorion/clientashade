@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -102,7 +101,6 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
         const reader = new FileReader();
         reader.onload = () => {
           if (typeof reader.result === 'string') {
-            // Remove o prefixo "data:application/x-pkcs12;base64," se existir
             const base64Data = reader.result.includes('base64,') 
               ? reader.result.split('base64,')[1]
               : reader.result;
@@ -192,7 +190,6 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
       console.log("Resposta da validação:", data);
 
       if (data.success) {
-        // Primeiro, verificar se já existe um certificado para este tipo
         const { data: existingCert, error: queryError } = await supabase
           .from('certificates')
           .select('id, created_at')
@@ -206,7 +203,6 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
           throw new Error("Erro ao verificar certificado existente");
         }
 
-        // Se existir, atualizar. Se não, inserir.
         const { error: saveError } = await supabase
           .from('certificates')
           .upsert({
@@ -251,7 +247,6 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
     } catch (error: any) {
       console.error('Erro na validação:', error);
       
-      // Atualizar status do certificado no banco como inválido
       try {
         const { data: existingCert } = await supabase
           .from('certificates')
@@ -390,6 +385,39 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                   </div>
 
                   <div className="space-y-2">
+                    <Label htmlFor="usuario_emissor" className="text-red-500 font-medium">Usuário Emissor *</Label>
+                    <Input
+                      id="usuario_emissor"
+                      value={nfseConfig.usuario_emissor}
+                      onChange={(e) =>
+                        setNfseConfig({
+                          ...nfseConfig,
+                          usuario_emissor: e.target.value,
+                        })
+                      }
+                      placeholder="Digite o usuário emissor"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="senha_emissor" className="text-red-500 font-medium">Senha Emissor *</Label>
+                    <Input
+                      id="senha_emissor"
+                      type="password"
+                      value={nfseConfig.senha_emissor}
+                      onChange={(e) =>
+                        setNfseConfig({
+                          ...nfseConfig,
+                          senha_emissor: e.target.value,
+                        })
+                      }
+                      placeholder="Digite a senha do emissor"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
                     <Label>URL do Provedor</Label>
                     <Input
                       value={nfseConfig.url_provedor || ""}
@@ -400,33 +428,6 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
                         })
                       }
                       placeholder="https://nfe.prefeitura.sp.gov.br/ws/lotenfe.asmx"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Usuário Emissor</Label>
-                    <Input
-                      value={nfseConfig.usuario_emissor || ""}
-                      onChange={(e) =>
-                        setNfseConfig({
-                          ...nfseConfig,
-                          usuario_emissor: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Senha Emissor</Label>
-                    <Input
-                      type="password"
-                      value={nfseConfig.senha_emissor || ""}
-                      onChange={(e) =>
-                        setNfseConfig({
-                          ...nfseConfig,
-                          senha_emissor: e.target.value,
-                        })
-                      }
                     />
                   </div>
 
@@ -650,7 +651,10 @@ export const SEFAZTab: React.FC<SEFAZTabProps> = ({
       </Tabs>
 
       <div className="flex justify-end space-x-2">
-        <Button onClick={handleSaveAllConfigs} disabled={isSaving}>
+        <Button 
+          onClick={handleSaveAllConfigs} 
+          disabled={isSaving || !nfseConfig.usuario_emissor || !nfseConfig.senha_emissor}
+        >
           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Salvar Configurações
         </Button>
