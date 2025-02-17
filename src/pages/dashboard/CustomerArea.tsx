@@ -266,7 +266,12 @@ export default function CustomerArea() {
     try {
       const { error } = await supabase
         .from("service_orders")
-        .update(formData)
+        .update({
+          description: formData.description,
+          equipment: formData.equipment,
+          equipment_serial_number: formData.equipment_serial_number,
+          problem: formData.problem
+        })
         .eq("id", editingOrder.id);
 
       if (error) throw error;
