@@ -21,7 +21,7 @@ import Stores from "@/pages/dashboard/Stores";
 import Home from "@/pages/dashboard/Home";
 import CustomerArea from "@/pages/dashboard/CustomerArea";
 import CustomerServiceOrderView from "@/pages/dashboard/CustomerServiceOrderView";
-import ClientProtectedRoute from "@/components/ClientProtectedRoute";
+import { ClientProtectedRoute } from "@/components/ClientProtectedRoute";
 import ClientLogin from "@/pages/ClientLogin";
 
 const queryClient = new QueryClient({
