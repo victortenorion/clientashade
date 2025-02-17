@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 interface NFSe {
   id: string;
@@ -495,10 +496,10 @@ const NFSe = () => {
                           size="sm"
                           asChild
                         >
-                          <a href={`/dashboard/nfse/${nota.id}`}>
+                          <Link to={`/dashboard/nfse/${nota.id}`}>
                             <Pencil className="h-4 w-4 mr-2" />
                             Editar
-                          </a>
+                          </Link>
                         </Button>
                       )}
 

@@ -41,6 +41,7 @@ function App() {
           <Route path="nfce/new" element={<NFCeForm />} />
           <Route path="nfse" element={<NFSe />} />
           <Route path="nfse/new" element={<NFSeForm />} />
+          <Route path="nfse/:id" element={<NFSeForm />} />
           <Route path="users" element={<Users />} />
           <Route path="clients" element={<Clients />} />
           <Route path="stores" element={<Stores />} />
