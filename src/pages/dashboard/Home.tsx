@@ -142,6 +142,12 @@ const Home = () => {
     }
   };
 
+  const handleMessageClick = (message: Message) => {
+    if (message.is_from_client) {
+      setSelectedClientId(message.client_id);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <h2 className="text-xl">Bem-vindo ao Dashboard!</h2>
@@ -167,11 +173,14 @@ const Home = () => {
                   className={`flex ${
                     message.is_from_client ? "justify-start" : "justify-end"
                   }`}
+                  onClick={() => handleMessageClick(message)}
                 >
                   <div
-                    className={`max-w-[80%] rounded-lg p-3 ${
+                    className={`max-w-[80%] rounded-lg p-3 cursor-pointer transition-colors ${
                       message.is_from_client
-                        ? "bg-muted"
+                        ? message.client_id === selectedClientId
+                          ? "bg-purple-100 dark:bg-purple-900"
+                          : "bg-muted hover:bg-purple-50 dark:hover:bg-purple-900/50"
                         : "bg-primary text-primary-foreground"
                     }`}
                   >
