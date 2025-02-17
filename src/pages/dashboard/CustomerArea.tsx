@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Filter } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Separator } from "@/components/ui/separator";
@@ -27,13 +27,30 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+interface Column {
+  key: string;
+  label: string;
+  visible: boolean;
+}
 
 export default function CustomerArea() {
   const { clientId } = useParams();
   const [serviceOrders, setServiceOrders] = useState<ServiceOrder[]>([]);
+  const [filteredOrders, setFilteredOrders] = useState<ServiceOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<ServiceOrder | null>(null);
+  const [columns, setColumns] = useState<Column[]>([
+    { key: "order_number", label: "Número", visible: true },
+    { key: "description", label: "Controle Interno", visible: true },
+    { key: "status", label: "Status", visible: true },
+    { key: "created_at", label: "Data de Criação", visible: true },
+    { key: "total_price", label: "Valor Total", visible: true },
+  ]);
   const [formData, setFormData] = useState({
     description: "",
     equipment: "",
@@ -48,6 +65,25 @@ export default function CustomerArea() {
       fetchServiceOrders();
     }
   }, [clientId]);
+
+  useEffect(() => {
+    filterOrders();
+  }, [searchTerm, serviceOrders]);
+
+  const filterOrders = () => {
+    if (!searchTerm) {
+      setFilteredOrders(serviceOrders);
+      return;
+    }
+
+    const searchTermLower = searchTerm.toLowerCase();
+    const filtered = serviceOrders.filter(order => 
+      order.order_number.toString().includes(searchTermLower) ||
+      order.description.toLowerCase().includes(searchTermLower) ||
+      order.status.name.toLowerCase().includes(searchTermLower)
+    );
+    setFilteredOrders(filtered);
+  };
 
   const fetchServiceOrders = async () => {
     try {
@@ -80,6 +116,14 @@ export default function CustomerArea() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleColumnToggle = (columnKey: string) => {
+    setColumns(prevColumns =>
+      prevColumns.map(col =>
+        col.key === columnKey ? { ...col, visible: !col.visible } : col
+      )
+    );
   };
 
   const handleViewDetails = (orderId: string) => {
@@ -246,35 +290,92 @@ export default function CustomerArea() {
       <Separator className="mb-4" />
 
       <div className="mb-4">
-        <h2 className="text-xl font-semibold mb-2">Ordens de Serviço</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">Ordens de Serviço</h2>
+          <div className="flex gap-2">
+            <div className="relative w-64">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar ordens..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Filter className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48">
+                <div className="space-y-2">
+                  <h3 className="font-medium">Colunas visíveis</h3>
+                  {columns.map((column) => (
+                    <div key={column.key} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={column.key}
+                        checked={column.visible}
+                        onCheckedChange={() => handleColumnToggle(column.key)}
+                      />
+                      <label
+                        htmlFor={column.key}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        {column.label}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
         {loading ? (
           <p>Carregando ordens de serviço...</p>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Número</TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Data de Criação</TableHead>
-                <TableHead>Valor Total</TableHead>
+                {columns.map((column) => (
+                  column.visible && (
+                    <TableHead key={column.key}>{column.label}</TableHead>
+                  )
+                ))}
                 <TableHead>Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {serviceOrders.map((order) => (
+              {filteredOrders.map((order) => (
                 <TableRow key={order.id}>
-                  <TableCell>{order.order_number}</TableCell>
-                  <TableCell>{order.description}</TableCell>
-                  <TableCell>
-                    <Badge style={{ backgroundColor: order.status.color, color: 'white' }}>
-                      {order.status.name}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(order.created_at), "dd/MM/yyyy", { locale: ptBR })}
-                  </TableCell>
-                  <TableCell>R$ {order.total_price.toFixed(2)}</TableCell>
+                  {columns.map((column) => {
+                    if (!column.visible) return null;
+                    
+                    switch (column.key) {
+                      case 'order_number':
+                        return <TableCell key={column.key}>{order.order_number}</TableCell>;
+                      case 'description':
+                        return <TableCell key={column.key}>{order.description}</TableCell>;
+                      case 'status':
+                        return (
+                          <TableCell key={column.key}>
+                            <Badge style={{ backgroundColor: order.status.color, color: 'white' }}>
+                              {order.status.name}
+                            </Badge>
+                          </TableCell>
+                        );
+                      case 'created_at':
+                        return (
+                          <TableCell key={column.key}>
+                            {format(new Date(order.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                          </TableCell>
+                        );
+                      case 'total_price':
+                        return <TableCell key={column.key}>R$ {order.total_price.toFixed(2)}</TableCell>;
+                      default:
+                        return null;
+                    }
+                  })}
                   <TableCell>
                     <div className="flex gap-2">
                       <Button 
@@ -323,12 +424,12 @@ export default function CustomerArea() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="description">Descrição</Label>
+              <Label htmlFor="description">Controle Interno</Label>
               <Input
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Descreva o serviço necessário"
+                placeholder="Digite o controle interno"
               />
             </div>
             <div className="grid gap-2">
