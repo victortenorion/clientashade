@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { ArrowLeft } from "lucide-react";
 
 export function ClientLogin() {
@@ -34,7 +34,8 @@ export function ClientLogin() {
           title: "Login realizado com sucesso",
           description: "Bem-vindo à área do cliente.",
         });
-        navigate("/customer-area");
+        // Redirecionar para a área do cliente com o ID específico
+        navigate(`/customer-area/${clientId}`);
       } else {
         toast({
           variant: "destructive",
