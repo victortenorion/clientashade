@@ -407,11 +407,13 @@ export default function CustomerArea() {
   };
 
   const handleSheetOpenChange = (open: boolean) => {
-    setIsMessagesOpen(open);
     if (!open && hasUnreadMessages) {
+      setIsMessagesOpen(false);
       setTimeout(() => {
         setShowReadConfirmation(true);
       }, 100);
+    } else {
+      setIsMessagesOpen(open);
     }
   };
 
@@ -695,9 +697,7 @@ export default function CustomerArea() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => {
-              setShowReadConfirmation(false);
-            }}>
+            <AlertDialogCancel>
               Não
             </AlertDialogCancel>
             <AlertDialogAction onClick={markMessagesAsRead}>
