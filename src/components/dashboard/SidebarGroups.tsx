@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -13,6 +12,7 @@ import {
   Receipt,
   Database,
   Building,
+  Lock,
 } from "lucide-react";
 import {
   SidebarMenu,
@@ -245,8 +245,8 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
                     onClick={() => navigate("/dashboard/service-order-settings/notas-fiscais")}
                     isActive={location.pathname.includes("/dashboard/service-order-settings/notas-fiscais")}
                   >
-                    <Receipt className="h-4 w-4" />
-                    <span>Notas Fiscais</span>
+                    <Lock className="h-4 w-4" />
+                    <span>Área Restrita do Cliente</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
@@ -257,4 +257,3 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
     </>
   );
 };
-
