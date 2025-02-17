@@ -1,4 +1,3 @@
-
 export interface NFCeConfig {
   certificado_digital: string;
   senha_certificado: string;
@@ -119,4 +118,41 @@ export interface RPSSettings {
   tipo: string;
   numero_inicial: number;
   lote_atual: number;
+}
+
+export interface NFSePaulista {
+  tipo_rnps: string;
+  operacao: string;
+  tributacao_rps: string;
+  status_rps: string;
+  valor_servicos: number;
+  valor_deducoes: number;
+  valor_pis: number;
+  valor_cofins: number;
+  valor_inss: number;
+  valor_ir: number;
+  valor_csll: number;
+  codigo_atividade: string;
+  aliquota_servicos: number;
+  tipo_recolhimento: string;
+  codigo_municipio_prestacao?: string;
+  cidade_prestacao?: string;
+  discriminacao_servicos: string;
+  iss_retido: boolean;
+  responsavel_retencao?: string;
+  item_lista_servico?: string;
+  codigo_tributacao_municipio?: string;
+  discriminacao?: string;
+  cnae_fiscal?: string;
+  descricao_regime_especial?: string;
+  natureza_operacao?: string;
+  optante_simples_nacional?: boolean;
+  incentivador_cultural?: boolean;
+  producao_cultural?: boolean;
+  situacao_tributaria?: string;
+  valor_outras_deducoes?: number;
+  valor_desconto_incondicionado?: number;
+  valor_desconto_condicionado?: number;
+  valor_outras_retencoes?: number;
+  outras_observacoes?: string;
 }
