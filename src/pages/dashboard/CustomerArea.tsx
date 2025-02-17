@@ -32,6 +32,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { MessageSquare } from "lucide-react";
 import { MessagesSheet } from "./components/MessagesSheet";
+import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 
 interface Column {
   key: string;
@@ -71,6 +73,8 @@ export default function CustomerArea() {
   });
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
+  const [isMessagesOpen, setIsMessagesOpen] = useState(false);
 
   useEffect(() => {
     if (clientId) {
@@ -78,6 +82,32 @@ export default function CustomerArea() {
       fetchClientInfo();
     }
   }, [clientId]);
+
+  useEffect(() => {
+    if (!clientId) return;
+
+    const channel = supabase
+      .channel('client-messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'client_messages',
+          filter: `client_id=eq.${clientId} AND is_from_client=eq.false`
+        },
+        () => {
+          if (!isMessagesOpen) {
+            setHasUnreadMessages(true);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [clientId, isMessagesOpen]);
 
   const fetchClientInfo = async () => {
     try {
@@ -317,9 +347,19 @@ export default function CustomerArea() {
               <span className="text-muted-foreground">({clientInfo.document})</span>
             </div>
           )}
-          <Sheet>
+          <Sheet onOpenChange={(open) => {
+            setIsMessagesOpen(open);
+            if (open) {
+              setHasUnreadMessages(false);
+            }
+          }}>
             <SheetTrigger asChild>
-              <Button variant="outline">
+              <Button 
+                variant="outline"
+                className={cn(
+                  hasUnreadMessages && "animate-pulse bg-primary text-primary-foreground hover:bg-primary/90"
+                )}
+              >
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Enviar Mensagem
               </Button>
