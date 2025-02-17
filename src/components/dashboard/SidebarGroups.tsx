@@ -217,7 +217,7 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     onClick={() => navigate("/dashboard/service-order-settings/dados-empresa")}
-                    isActive={location.pathname.includes("/dashboard/service-order-settings/dados-empresa")}
+                    isActive={location.pathname === "/dashboard/service-order-settings/dados-empresa"}
                   >
                     <Building className="h-4 w-4" />
                     <span>Dados da Empresa</span>
@@ -226,7 +226,7 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     onClick={() => navigate("/dashboard/service-order-settings/sefaz")}
-                    isActive={location.pathname.includes("/dashboard/service-order-settings/sefaz")}
+                    isActive={location.pathname === "/dashboard/service-order-settings/sefaz"}
                   >
                     <Building className="h-4 w-4" />
                     <span>SEFAZ</span>
@@ -235,7 +235,7 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     onClick={() => navigate("/dashboard/service-order-settings/area-cliente")}
-                    isActive={location.pathname.includes("/dashboard/service-order-settings/area-cliente")}
+                    isActive={location.pathname === "/dashboard/service-order-settings/area-cliente"}
                   >
                     <Users className="h-4 w-4" />
                     <span>Campos Página do Cliente</span>
@@ -244,7 +244,7 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     onClick={() => navigate("/dashboard/service-order-settings/area-restrita-cliente-painel")}
-                    isActive={location.pathname.includes("/dashboard/service-order-settings/area-restrita-cliente-painel")}
+                    isActive={location.pathname === "/dashboard/service-order-settings/area-restrita-cliente-painel"}
                   >
                     <Lock className="h-4 w-4" />
                     <span>Área Restrita do Cliente</span>
