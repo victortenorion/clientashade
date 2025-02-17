@@ -138,6 +138,7 @@ export default function CustomerArea() {
       
       setHasUnreadMessages(false);
       setShowReadConfirmation(false);
+      setIsMessagesOpen(true);
       toast({
         title: "Mensagens marcadas como lidas",
         description: "Todas as mensagens foram marcadas como lidas.",
