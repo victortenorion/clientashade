@@ -2012,6 +2012,7 @@ export type Database = {
           codigo_servico: string | null
           completion_date: string | null
           created_at: string
+          created_by_client: boolean | null
           created_by_type: string
           data_exclusao: string | null
           description: string
@@ -2069,6 +2070,7 @@ export type Database = {
           codigo_servico?: string | null
           completion_date?: string | null
           created_at?: string
+          created_by_client?: boolean | null
           created_by_type?: string
           data_exclusao?: string | null
           description: string
@@ -2126,6 +2128,7 @@ export type Database = {
           codigo_servico?: string | null
           completion_date?: string | null
           created_at?: string
+          created_by_client?: boolean | null
           created_by_type?: string
           data_exclusao?: string | null
           description?: string
