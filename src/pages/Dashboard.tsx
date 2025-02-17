@@ -13,13 +13,6 @@ import {
 import { SidebarGroups } from "@/components/dashboard/SidebarGroups";
 import { Header } from "@/components/dashboard/Header";
 
-interface User {
-  id: string;
-  username: string;
-  permissions?: string[];
-  store_id?: string | null;
-}
-
 const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -143,4 +136,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
