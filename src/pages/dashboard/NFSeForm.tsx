@@ -227,6 +227,7 @@ export default function NFSeForm() {
         .rpc('increment_rps_sp_numero', { p_settings_id: settings.id });
 
       if (rpsError) throw rpsError;
+      if (!rpsNumber) throw new Error('Erro ao gerar número do RPS');
 
       const { data: nfse, error: nfseError } = await supabase
         .from('nfse')
@@ -259,7 +260,7 @@ export default function NFSeForm() {
           valor_outras_retencoes: values.valor_outras_retencoes,
           observacoes: values.outras_observacoes,
           codigo_servico: values.codigo_atividade,
-          numero_rps: rpsNumber.toString(),
+          numero_rps: rpsNumber,
           serie_rps: settings.rps_serie || '1',
         })
         .select()
