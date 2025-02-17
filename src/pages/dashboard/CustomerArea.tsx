@@ -138,6 +138,7 @@ export default function CustomerArea() {
       
       setHasUnreadMessages(false);
       setShowReadConfirmation(false);
+      setIsMessagesOpen(true);
       toast({
         title: "Mensagens marcadas como lidas",
         description: "Todas as mensagens foram marcadas como lidas.",
@@ -688,7 +689,10 @@ export default function CustomerArea() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowReadConfirmation(false)}>
+            <AlertDialogCancel onClick={() => {
+              setShowReadConfirmation(false);
+              setIsMessagesOpen(true);
+            }}>
               Não
             </AlertDialogCancel>
             <AlertDialogAction onClick={markMessagesAsRead}>
