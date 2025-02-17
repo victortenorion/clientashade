@@ -83,7 +83,6 @@ export default function CustomerArea() {
   const { toast } = useToast();
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
   const [showReadConfirmation, setShowReadConfirmation] = useState(false);
 
   useEffect(() => {
@@ -111,8 +110,8 @@ export default function CustomerArea() {
       }
 
       const hasUnread = messages?.count > 0;
+      console.log("Mensagens não lidas:", hasUnread);
       setHasUnreadMessages(hasUnread);
-      setIsAnimating(hasUnread);
     } catch (error) {
       console.error('Erro ao verificar mensagens não lidas:', error);
     }
@@ -132,10 +131,18 @@ export default function CustomerArea() {
       if (error) throw error;
       
       setHasUnreadMessages(false);
-      setIsAnimating(false);
       setShowReadConfirmation(false);
+      toast({
+        title: "Mensagens marcadas como lidas",
+        description: "Todas as mensagens foram marcadas como lidas.",
+      });
     } catch (error) {
       console.error('Erro ao marcar mensagens como lidas:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível marcar as mensagens como lidas.",
+      });
     }
   };
 
@@ -168,25 +175,8 @@ export default function CustomerArea() {
   }, [clientId, isMessagesOpen]);
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-
-    if (isMessagesOpen) {
-      markMessagesAsRead();
-    } else {
-      timeoutId = setTimeout(() => {
-        checkUnreadMessages();
-      }, 500);
-    }
-
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
-  }, [isMessagesOpen]);
-
-  useEffect(() => {
     if (isMessagesOpen && hasUnreadMessages) {
+      console.log("Abrindo diálogo de confirmação");
       setShowReadConfirmation(true);
     }
   }, [isMessagesOpen, hasUnreadMessages]);
