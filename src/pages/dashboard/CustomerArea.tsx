@@ -444,29 +444,40 @@ export default function CustomerArea() {
                       )}
                       onClick={() => setIsMessagesOpen(true)}
                     >
-                      <BellRing className="h-4 w-4 mr-2" />
+                      {hasUnreadMessages ? (
+                        <BellRing className="h-4 w-4 mr-2 animate-pulse" />
+                      ) : (
+                        <BellRing className="h-4 w-4 mr-2" />
+                      )}
                       {hasUnreadMessages && (
-                        <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-destructive" />
+                        <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-destructive animate-pulse" />
                       )}
                       Mensagens
                       {hasUnreadMessages && (
-                        <span className="ml-2 text-xs bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full">
+                        <span className="ml-2 text-xs bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full animate-pulse">
                           Nova
                         </span>
                       )}
                     </Button>
                   </TooltipTrigger>
-                  {hasUnreadMessages && (
-                    <TooltipContent>
-                      <p>Clique para ver as mensagens não lidas</p>
-                    </TooltipContent>
-                  )}
+                  <TooltipContent>
+                    {hasUnreadMessages ? (
+                      <p>Você tem novas mensagens</p>
+                    ) : (
+                      <p>Clique para ver suas mensagens</p>
+                    )}
+                  </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </SheetTrigger>
             <SheetContent>
               <SheetHeader>
-                <SheetTitle>Mensagens</SheetTitle>
+                <SheetTitle>
+                  <div className="flex items-center gap-2">
+                    <BellRing className="h-4 w-4" />
+                    Mensagens
+                  </div>
+                </SheetTitle>
               </SheetHeader>
               <MessagesSheet clientId={clientId || ""} />
             </SheetContent>
