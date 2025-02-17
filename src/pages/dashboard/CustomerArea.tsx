@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search, Filter, User, MessageSquare } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Filter, User, BellRing } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Separator } from "@/components/ui/separator";
@@ -362,11 +362,18 @@ export default function CustomerArea() {
               <Button 
                 variant="outline"
                 className={cn(
+                  "relative",
                   hasUnreadMessages && "animate-pulse bg-primary text-primary-foreground hover:bg-primary/90"
                 )}
               >
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Enviar Mensagem
+                <BellRing className={cn(
+                  "h-4 w-4 mr-2",
+                  hasUnreadMessages && "animate-bounce"
+                )} />
+                {hasUnreadMessages && (
+                  <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-destructive" />
+                )}
+                Mensagens
               </Button>
             </SheetTrigger>
             <SheetContent>
