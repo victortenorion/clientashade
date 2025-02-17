@@ -20,6 +20,7 @@ import CustomerArea from "./pages/dashboard/CustomerArea";
 import Stores from "./pages/dashboard/Stores";
 import { ClientProtectedRoute } from "./components/ClientProtectedRoute";
 import { Toaster } from "./components/ui/toaster";
+import Auth from "./pages/Auth";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Auth />} />
           <Route path="/client-login" element={<ClientLogin />} />
           <Route path="/dashboard" element={<Dashboard />}>
             <Route index element={<Home />} />
