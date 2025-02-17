@@ -133,6 +133,7 @@ export default function CustomerArea() {
       }));
 
       setServiceOrders(formattedOrders);
+      setFilteredOrders(formattedOrders);
     } catch (error: any) {
       console.error("Error fetching service orders:", error);
       toast({
@@ -276,6 +277,8 @@ export default function CustomerArea() {
 
       if (error) throw error;
 
+      await fetchServiceOrders();
+
       toast({
         title: "Ordem de serviço atualizada",
         description: "Sua ordem de serviço foi atualizada com sucesso.",
@@ -289,7 +292,6 @@ export default function CustomerArea() {
         equipment_serial_number: "",
         problem: ""
       });
-      fetchServiceOrders();
     } catch (error: any) {
       console.error("Error updating service order:", error);
       toast({
