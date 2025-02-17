@@ -42,7 +42,7 @@ export default function CustomerArea() {
         .from("service_orders")
         .select(`
           *,
-          status:service_order_statuses(name, color)
+          status:service_order_statuses!inner(*)
         `)
         .eq("client_id", clientId);
 
@@ -51,8 +51,8 @@ export default function CustomerArea() {
       const formattedOrders: ServiceOrder[] = (data || []).map(order => ({
         ...order,
         status: {
-          name: order.status?.[0]?.name || '',
-          color: order.status?.[0]?.color || ''
+          name: order.status?.name || '',
+          color: order.status?.color || ''
         }
       }));
 
@@ -71,7 +71,6 @@ export default function CustomerArea() {
 
   const handleViewDetails = (orderId: string) => {
     if (orderId) {
-      // Navegando para a visualização do cliente, não para o dashboard administrativo
       navigate(`/customer-area/${clientId}/service-order/${orderId}`);
     }
   };
