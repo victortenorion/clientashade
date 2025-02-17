@@ -245,6 +245,7 @@ export default function NFSeForm() {
           valor_desconto_condicionado: values.valor_desconto_condicionado,
           valor_outras_retencoes: values.valor_outras_retencoes,
           observacoes: values.outras_observacoes,
+          codigo_servico: values.codigo_atividade,
         })
         .select()
         .single();
