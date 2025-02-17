@@ -56,15 +56,17 @@ const Dashboard = () => {
   const hasAllPermissions = userPermissions.includes("all");
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      localStorage.removeItem('sb-refresh-token');
+      navigate("/auth");
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Erro ao sair",
-        description: "Tente novamente em alguns instantes.",
+        description: error.message || "Tente novamente em alguns instantes.",
       });
-    } else {
-      navigate("/");
     }
   };
 
@@ -127,17 +129,31 @@ const Dashboard = () => {
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate("/");
-      } else {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) throw error;
+        
+        if (!session) {
+          console.log("Sessão não encontrada, redirecionando para /auth");
+          navigate("/auth");
+          return;
+        }
+
+        // Armazenar o refresh token
+        if (session.refresh_token) {
+          localStorage.setItem('sb-refresh-token', session.refresh_token);
+        }
+
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("username")
           .eq("id", session.user.id)
           .single();
 
-        if (!profileError && profileData) {
+        if (profileError) throw profileError;
+
+        if (profileData) {
           setUsername(profileData.username);
         }
 
@@ -146,7 +162,9 @@ const Dashboard = () => {
           .select("menu_permission")
           .eq("user_id", session.user.id);
 
-        if (!permissionsError && permissionsData) {
+        if (permissionsError) throw permissionsError;
+
+        if (permissionsData) {
           const permissions = permissionsData.map(p => p.menu_permission);
           console.log("Permissões do usuário:", permissions);
           setUserPermissions(permissions);
@@ -163,21 +181,35 @@ const Dashboard = () => {
         } else if (storeData) {
           console.log("Loja do usuário:", storeData.store_id);
         }
+      } catch (error: any) {
+        console.error("Erro ao verificar sessão:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao verificar sessão",
+          description: error.message,
+        });
+        navigate("/auth");
       }
     };
     
     checkUser();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) {
-        navigate("/");
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, session);
+      if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+        localStorage.removeItem('sb-refresh-token');
+        navigate("/auth");
+      } else if (event === 'SIGNED_IN' && session) {
+        if (session.refresh_token) {
+          localStorage.setItem('sb-refresh-token', session.refresh_token);
+        }
       }
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, toast]);
 
   const hasPermission = (permission: string) => {
     return userPermissions.includes(permission);
