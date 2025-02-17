@@ -47,7 +47,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
+} from "@/components/ui/tooltip";
 
 interface Column {
   key: string;
@@ -697,7 +697,10 @@ export default function CustomerArea() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowReadConfirmation(false)}>
+            <AlertDialogCancel onClick={() => {
+              setShowReadConfirmation(false);
+              setIsMessagesOpen(true);
+            }}>
               Não
             </AlertDialogCancel>
             <AlertDialogAction onClick={markMessagesAsRead}>
