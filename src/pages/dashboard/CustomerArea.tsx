@@ -418,7 +418,7 @@ export default function CustomerArea() {
                           </TableCell>
                         );
                       case 'total_price':
-                        return <TableCell key={column.key}>R$ {order.total_price.toFixed(2)}</TableCell>;
+                        return <TableCell key={column.key}>R$ {order.total_price?.toFixed(2) || '0.00'}</TableCell>;
                       default:
                         return null;
                     }
