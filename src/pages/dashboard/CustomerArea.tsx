@@ -428,60 +428,47 @@ export default function CustomerArea() {
               <span className="text-muted-foreground">({clientInfo.document})</span>
             </div>
           )}
-          <Sheet 
-            open={isMessagesOpen}
-            onOpenChange={handleSheetOpenChange}
-          >
-            <SheetTrigger asChild>
+          <div className="flex items-center gap-2">
+            {hasUnreadMessages && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button 
-                      variant={hasUnreadMessages ? "default" : "outline"}
-                      className={cn(
-                        "relative",
-                        hasUnreadMessages && "bg-primary text-primary-foreground hover:bg-primary/90"
-                      )}
-                      onClick={() => setIsMessagesOpen(true)}
-                    >
-                      {hasUnreadMessages ? (
-                        <BellRing className="h-4 w-4 mr-2 animate-pulse" />
-                      ) : (
-                        <BellRing className="h-4 w-4 mr-2" />
-                      )}
-                      {hasUnreadMessages && (
-                        <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-destructive animate-pulse" />
-                      )}
-                      Mensagens
-                      {hasUnreadMessages && (
-                        <span className="ml-2 text-xs bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full animate-pulse">
-                          Nova
-                        </span>
-                      )}
-                    </Button>
+                    <div className="relative">
+                      <BellRing className="h-5 w-5 text-destructive animate-pulse" />
+                      <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-destructive animate-pulse" />
+                    </div>
                   </TooltipTrigger>
                   <TooltipContent>
-                    {hasUnreadMessages ? (
-                      <p>Você tem novas mensagens</p>
-                    ) : (
-                      <p>Clique para ver suas mensagens</p>
-                    )}
+                    <p>Você tem novas mensagens</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-            </SheetTrigger>
-            <SheetContent>
-              <SheetHeader>
-                <SheetTitle>
-                  <div className="flex items-center gap-2">
-                    <BellRing className="h-4 w-4" />
-                    Mensagens
-                  </div>
-                </SheetTitle>
-              </SheetHeader>
-              <MessagesSheet clientId={clientId || ""} />
-            </SheetContent>
-          </Sheet>
+            )}
+            <Sheet 
+              open={isMessagesOpen}
+              onOpenChange={handleSheetOpenChange}
+            >
+              <SheetTrigger asChild>
+                <Button 
+                  variant="outline"
+                  onClick={() => setIsMessagesOpen(true)}
+                >
+                  Mensagens
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>
+                    <div className="flex items-center gap-2">
+                      <BellRing className="h-4 w-4" />
+                      Mensagens
+                    </div>
+                  </SheetTitle>
+                </SheetHeader>
+                <MessagesSheet clientId={clientId || ""} />
+              </SheetContent>
+            </Sheet>
+          </div>
           <Button onClick={() => {
             setEditingOrder(null);
             setFormData({
