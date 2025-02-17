@@ -10,16 +10,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NFSeFormData } from "../types/nfse.types";
 
 interface NFSeFormProps {
   onSubmit: (data: NFSeFormData) => void;
   onCancel: () => void;
   isLoading: boolean;
+  initialData?: NFSeFormData | null;
 }
 
-export function NFSeForm({ onSubmit, onCancel, isLoading }: NFSeFormProps) {
+export function NFSeForm({ onSubmit, onCancel, isLoading, initialData }: NFSeFormProps) {
   const [formData, setFormData] = useState<NFSeFormData>({
     codigo_servico: "",
     discriminacao_servicos: "",
@@ -27,6 +28,12 @@ export function NFSeForm({ onSubmit, onCancel, isLoading }: NFSeFormProps) {
     tipo_recolhimento: "A",
     numero_rps: "",
   });
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData(initialData);
+    }
+  }, [initialData]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,7 +106,7 @@ export function NFSeForm({ onSubmit, onCancel, isLoading }: NFSeFormProps) {
           Cancelar
         </Button>
         <Button type="submit" disabled={isLoading}>
-          {isLoading ? "Gerando..." : "Gerar NFS-e"}
+          {isLoading ? "Salvando..." : initialData ? "Salvar alterações" : "Gerar NFS-e"}
         </Button>
       </div>
     </form>
