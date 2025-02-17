@@ -83,7 +83,7 @@ export default function CustomerArea() {
   }, [clientId]);
 
   const checkUnreadMessages = async () => {
-    if (!clientId || isMessagesOpen) return;
+    if (!clientId) return;
     
     try {
       const { data: messages, error } = await supabase
@@ -96,12 +96,10 @@ export default function CustomerArea() {
 
       if (error) throw error;
 
-      if (!messages || messages.length === 0) {
-        setHasUnreadMessages(false);
-        setIsAnimating(false);
-      } else {
-        setHasUnreadMessages(true);
-        setIsAnimating(true);
+      const hasUnread = Boolean(messages && messages.length > 0);
+      if (hasUnread !== hasUnreadMessages) {
+        setHasUnreadMessages(hasUnread);
+        setIsAnimating(hasUnread);
       }
     } catch (error) {
       console.error('Erro ao verificar mensagens não lidas:', error);
@@ -145,10 +143,7 @@ export default function CustomerArea() {
         },
         (payload) => {
           console.log('Nova mensagem recebida:', payload);
-          if (!isMessagesOpen) {
-            setHasUnreadMessages(true);
-            setIsAnimating(true);
-          }
+          checkUnreadMessages();
         }
       )
       .subscribe();
@@ -156,11 +151,13 @@ export default function CustomerArea() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [clientId, isMessagesOpen]);
+  }, [clientId]);
 
   useEffect(() => {
     if (isMessagesOpen) {
       markMessagesAsRead();
+    } else {
+      checkUnreadMessages();
     }
   }, [isMessagesOpen]);
 
@@ -406,9 +403,6 @@ export default function CustomerArea() {
             open={isMessagesOpen}
             onOpenChange={(open) => {
               setIsMessagesOpen(open);
-              if (open) {
-                markMessagesAsRead();
-              }
             }}
           >
             <SheetTrigger asChild>
