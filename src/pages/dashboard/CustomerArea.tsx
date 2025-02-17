@@ -191,7 +191,7 @@ export default function CustomerArea() {
 
   const handleViewDetails = (orderId: string) => {
     if (orderId) {
-      navigate(`/customer-area/${clientId}/service-order/${orderId}`);
+      navigate(`/customer-area/${clientId}/service-orders/${orderId}`);
     }
   };
 
