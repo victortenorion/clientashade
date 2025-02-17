@@ -407,13 +407,12 @@ export default function CustomerArea() {
   };
 
   const handleSheetOpenChange = (open: boolean) => {
-    setIsMessagesOpen(open);
-    
-    if (!open && hasUnreadMessages) {
-      setTimeout(() => {
+    if (!open) {
+      if (hasUnreadMessages) {
         setShowReadConfirmation(true);
-      }, 100);
+      }
     }
+    setIsMessagesOpen(open);
   };
 
   return (
@@ -451,7 +450,6 @@ export default function CustomerArea() {
               <SheetTrigger asChild>
                 <Button 
                   variant="outline"
-                  onClick={() => setIsMessagesOpen(true)}
                 >
                   Mensagens
                 </Button>
@@ -685,7 +683,9 @@ export default function CustomerArea() {
       <AlertDialog 
         open={showReadConfirmation} 
         onOpenChange={(open) => {
-          setShowReadConfirmation(open);
+          if (!open) {
+            setShowReadConfirmation(false);
+          }
         }}
       >
         <AlertDialogContent>
