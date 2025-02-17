@@ -90,7 +90,6 @@ export default function CustomerArea() {
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
   const [showReadConfirmation, setShowReadConfirmation] = useState(false);
-  const [hasOpenedMessages, setHasOpenedMessages] = useState(false);
 
   useEffect(() => {
     if (clientId) {
@@ -139,7 +138,6 @@ export default function CustomerArea() {
       
       setHasUnreadMessages(false);
       setShowReadConfirmation(false);
-      setHasOpenedMessages(false);
       toast({
         title: "Mensagens marcadas como lidas",
         description: "Todas as mensagens foram marcadas como lidas.",
@@ -424,11 +422,8 @@ export default function CustomerArea() {
             open={isMessagesOpen}
             onOpenChange={(open) => {
               setIsMessagesOpen(open);
-              if (open) {
-                setHasOpenedMessages(true);
-              }
-              if (!open) {
-                setShowReadConfirmation(false);
+              if (!open && hasUnreadMessages) {
+                setShowReadConfirmation(true);
               }
             }}
           >
@@ -442,11 +437,6 @@ export default function CustomerArea() {
                         "relative",
                         hasUnreadMessages && "bg-primary text-primary-foreground hover:bg-primary/90"
                       )}
-                      onMouseEnter={() => {
-                        if (hasUnreadMessages && hasOpenedMessages) {
-                          setShowReadConfirmation(true);
-                        }
-                      }}
                       onClick={() => setIsMessagesOpen(true)}
                     >
                       <BellRing className="h-4 w-4 mr-2" />
@@ -692,20 +682,17 @@ export default function CustomerArea() {
       <AlertDialog open={showReadConfirmation} onOpenChange={setShowReadConfirmation}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Marcar mensagens como lidas?</AlertDialogTitle>
+            <AlertDialogTitle>Deseja informar que leu a mensagem?</AlertDialogTitle>
             <AlertDialogDescription>
-              Você tem mensagens não lidas. Deseja marcá-las como lidas?
+              Ao confirmar, o alerta de nova mensagem será removido.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => {
-              setShowReadConfirmation(false);
-              setIsMessagesOpen(true);
-            }}>
+            <AlertDialogCancel onClick={() => setShowReadConfirmation(false)}>
               Não
             </AlertDialogCancel>
             <AlertDialogAction onClick={markMessagesAsRead}>
-              Sim, marcar como lidas
+              Sim
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
