@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search, Filter } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Filter, User } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Separator } from "@/components/ui/separator";
@@ -36,17 +36,26 @@ interface Column {
   visible: boolean;
 }
 
+interface Client {
+  id: string;
+  name: string;
+  document: string;
+}
+
 export default function CustomerArea() {
   const { clientId } = useParams();
   const [serviceOrders, setServiceOrders] = useState<ServiceOrder[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<ServiceOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [clientInfo, setClientInfo] = useState<Client | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<ServiceOrder | null>(null);
   const [columns, setColumns] = useState<Column[]>([
     { key: "order_number", label: "Número", visible: true },
     { key: "description", label: "Controle Interno", visible: true },
+    { key: "equipment", label: "Equipamento", visible: true },
+    { key: "equipment_serial_number", label: "Número de Série", visible: true },
     { key: "status", label: "Status", visible: true },
     { key: "created_at", label: "Data de Criação", visible: true },
     { key: "total_price", label: "Valor Total", visible: true },
@@ -63,8 +72,24 @@ export default function CustomerArea() {
   useEffect(() => {
     if (clientId) {
       fetchServiceOrders();
+      fetchClientInfo();
     }
   }, [clientId]);
+
+  const fetchClientInfo = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("clients")
+        .select("id, name, document")
+        .eq("id", clientId)
+        .single();
+
+      if (error) throw error;
+      setClientInfo(data);
+    } catch (error) {
+      console.error("Error fetching client info:", error);
+    }
+  };
 
   useEffect(() => {
     filterOrders();
@@ -80,6 +105,8 @@ export default function CustomerArea() {
     const filtered = serviceOrders.filter(order => 
       order.order_number.toString().includes(searchTermLower) ||
       order.description.toLowerCase().includes(searchTermLower) ||
+      (order.equipment || "").toLowerCase().includes(searchTermLower) ||
+      (order.equipment_serial_number || "").toLowerCase().includes(searchTermLower) ||
       order.status.name.toLowerCase().includes(searchTermLower)
     );
     setFilteredOrders(filtered);
@@ -272,19 +299,28 @@ export default function CustomerArea() {
     <div className="container py-8">
       <div className="mb-4 flex justify-between items-center">
         <Button onClick={() => navigate("/")}>Voltar para Página Inicial</Button>
-        <Button onClick={() => {
-          setEditingOrder(null);
-          setFormData({
-            description: "",
-            equipment: "",
-            equipment_serial_number: "",
-            problem: ""
-          });
-          setIsDialogOpen(true);
-        }}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nova Ordem de Serviço
-        </Button>
+        <div className="flex items-center gap-4">
+          {clientInfo && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <User className="h-4 w-4" />
+              <span>{clientInfo.name}</span>
+              <span className="text-muted-foreground">({clientInfo.document})</span>
+            </div>
+          )}
+          <Button onClick={() => {
+            setEditingOrder(null);
+            setFormData({
+              description: "",
+              equipment: "",
+              equipment_serial_number: "",
+              problem: ""
+            });
+            setIsDialogOpen(true);
+          }}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nova Ordem de Serviço
+          </Button>
+        </div>
       </div>
       <h1 className="text-2xl font-bold mb-4">Área do Cliente</h1>
       <Separator className="mb-4" />
@@ -356,6 +392,10 @@ export default function CustomerArea() {
                         return <TableCell key={column.key}>{order.order_number}</TableCell>;
                       case 'description':
                         return <TableCell key={column.key}>{order.description}</TableCell>;
+                      case 'equipment':
+                        return <TableCell key={column.key}>{order.equipment || '-'}</TableCell>;
+                      case 'equipment_serial_number':
+                        return <TableCell key={column.key}>{order.equipment_serial_number || '-'}</TableCell>;
                       case 'status':
                         return (
                           <TableCell key={column.key}>
