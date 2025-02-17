@@ -38,24 +38,61 @@ serve(async (req) => {
   try {
     console.log('Iniciando processamento da NFS-e:', nfseData.nfseId);
 
-    // Primeiro buscar a NFS-e para saber qual configuração usar
+    // Buscar a NFS-e
     const { data: nfse, error: nfseError } = await supabaseClient
       .from('nfse')
       .select('*, client:client_id (*)')
       .eq('id', nfseData.nfseId)
       .maybeSingle();
 
-    if (nfseError) {
-      console.error('Erro ao buscar NFS-e:', nfseError);
-      throw new Error(`Erro ao buscar NFS-e: ${nfseError.message}`);
+    if (nfseError) throw new Error(`Erro ao buscar NFS-e: ${nfseError.message}`);
+    if (!nfse) throw new Error('NFS-e não encontrada');
+
+    // Buscar configurações SP e número inicial
+    const { data: spConfig, error: spConfigError } = await supabaseClient
+      .from('nfse_sp_config')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (spConfigError) throw new Error('Erro ao buscar configuração de números iniciais');
+    if (!spConfig) throw new Error('Configuração de números iniciais não encontrada');
+
+    console.log('Configurações SP:', {
+      numero_inicial_rps: spConfig.numero_inicial_rps,
+      numero_inicial_nfse: spConfig.numero_inicial_nfse
+    });
+
+    // Validar número RPS
+    if (parseInt(nfse.numero_rps) < spConfig.numero_inicial_rps) {
+      throw new Error(`O número RPS ${nfse.numero_rps} é menor que o número inicial configurado ${spConfig.numero_inicial_rps}`);
     }
 
-    if (!nfse) {
-      console.error('NFS-e não encontrada');
-      throw new Error('NFS-e não encontrada');
+    // Validar número NFSe
+    if (spConfig.numero_inicial_nfse && nfse.numero_nfse < parseInt(spConfig.numero_inicial_nfse)) {
+      console.error('Número NFSe inválido:', {
+        numero_nfse: nfse.numero_nfse,
+        numero_inicial_nfse: spConfig.numero_inicial_nfse
+      });
+
+      // Atualizar o número da NFSe para respeitar o número inicial
+      const { error: updateNFSeError } = await supabaseClient
+        .from('nfse')
+        .update({ 
+          numero_nfse: parseInt(spConfig.numero_inicial_nfse),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', nfseData.nfseId);
+
+      if (updateNFSeError) {
+        throw new Error(`Erro ao atualizar número da NFS-e: ${updateNFSeError.message}`);
+      }
+
+      console.log('Número da NFSe atualizado para respeitar número inicial:', spConfig.numero_inicial_nfse);
     }
 
-    // Buscar o certificado mais recente do tipo 'nfse'
+    // Buscar o certificado
     const { data: certificate, error: certError } = await supabaseClient
       .from('certificates')
       .select('*')
@@ -64,27 +101,11 @@ serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
-    if (certError) {
-      console.error('Erro ao buscar certificado:', certError);
-      throw new Error('Erro ao buscar certificado digital');
-    }
+    if (certError) throw new Error('Erro ao buscar certificado digital');
+    if (!certificate) throw new Error('Certificado digital não encontrado. Por favor, faça o upload do certificado primeiro.');
+    if (!certificate.is_valid) throw new Error('Certificado digital inválido ou expirado. Por favor, verifique a validade do certificado.');
 
-    console.log('Status do certificado:', {
-      encontrado: !!certificate,
-      valido: certificate?.is_valid,
-      tipo: certificate?.type,
-      validade: certificate?.valid_until
-    });
-
-    if (!certificate) {
-      throw new Error('Certificado digital não encontrado. Por favor, faça o upload do certificado primeiro.');
-    }
-
-    if (!certificate.is_valid) {
-      throw new Error('Certificado digital inválido ou expirado. Por favor, verifique a validade do certificado.');
-    }
-
-    // Buscar configurações SP e configuração inicial de números
+    // Buscar configurações SP
     const { data: settings, error: settingsError } = await supabaseClient
       .from('nfse_sp_settings')
       .select('*')
@@ -92,31 +113,11 @@ serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
-    const { data: spConfig, error: spConfigError } = await supabaseClient
-      .from('nfse_sp_config')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (settingsError) {
-      console.error('Erro ao buscar configurações:', settingsError);
-      throw new Error('Erro ao buscar configurações da NFS-e SP');
-    }
-
-    if (spConfigError) {
-      console.error('Erro ao buscar configuração de números:', spConfigError);
-      throw new Error('Erro ao buscar configuração de números iniciais');
-    }
-
-    if (!settings) {
-      console.error('Configurações não encontradas');
-      throw new Error('Configurações da NFS-e SP não encontradas. Por favor, configure primeiro.');
-    }
+    if (settingsError) throw new Error('Erro ao buscar configurações da NFS-e SP');
+    if (!settings) throw new Error('Configurações da NFS-e SP não encontradas. Por favor, configure primeiro.');
 
     // Atualizar o certificates_id nas configurações se necessário
     if (settings.certificates_id !== certificate.id) {
-      console.log('Atualizando vínculo do certificado com as configurações...');
       const { error: updateSettingsError } = await supabaseClient
         .from('nfse_sp_settings')
         .update({ 
@@ -125,67 +126,18 @@ serve(async (req) => {
         })
         .eq('id', settings.id);
 
-      if (updateSettingsError) {
-        console.error('Erro ao atualizar vínculo do certificado:', updateSettingsError);
-        throw new Error('Erro ao vincular certificado às configurações');
-      }
+      if (updateSettingsError) throw new Error('Erro ao vincular certificado às configurações');
     }
 
-    // Verificar se o número RPS é válido
-    if (spConfig && parseInt(nfse.numero_rps) < spConfig.numero_inicial_rps) {
-      console.error('Número RPS inválido:', {
-        numero_rps: nfse.numero_rps,
-        numero_inicial_rps: spConfig.numero_inicial_rps
-      });
-      throw new Error(`O número RPS ${nfse.numero_rps} é menor que o número inicial configurado ${spConfig.numero_inicial_rps}`);
-    }
-
-    console.log('Dados encontrados:', {
-      nfseId: nfse.id,
-      settingsId: settings.id,
-      certificateId: certificate.id,
-      status: nfse.status_sefaz,
-      numero_rps: nfse.numero_rps,
-      numero_inicial_rps: spConfig?.numero_inicial_rps
-    });
-
-    // Atualizar a NFS-e com o ID das configurações
-    const { error: updateError } = await supabaseClient
-      .from('nfse')
-      .update({ 
-        nfse_sp_settings_id: settings.id,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', nfseData.nfseId);
-
-    if (updateError) {
-      console.error('Erro ao atualizar NFS-e com configurações:', updateError);
-      throw new Error('Erro ao vincular configurações à NFS-e');
-    }
-
-    // Verificar se todos os campos obrigatórios estão preenchidos
-    const requiredFields = [
-      'usuario_emissor',
-      'senha_emissor',
-      'ambiente',
-      'inscricao_municipal'
-    ];
-
+    // Verificar campos obrigatórios
+    const requiredFields = ['usuario_emissor', 'senha_emissor', 'ambiente', 'inscricao_municipal'];
     const missingFields = requiredFields.filter(field => !settings[field]);
     if (missingFields.length > 0) {
-      console.error('Campos obrigatórios faltando:', missingFields);
       throw new Error(`Campos obrigatórios não configurados: ${missingFields.join(', ')}`);
     }
 
-    if (nfse.status_sefaz === 'autorizada') {
-      console.error('NFS-e já autorizada');
-      throw new Error('NFS-e já está autorizada');
-    }
-
-    if (nfse.cancelada) {
-      console.error('NFS-e cancelada');
-      throw new Error('NFS-e está cancelada');
-    }
+    if (nfse.status_sefaz === 'autorizada') throw new Error('NFS-e já está autorizada');
+    if (nfse.cancelada) throw new Error('NFS-e está cancelada');
 
     // Atualizar status para processando
     await supabaseClient
@@ -209,11 +161,11 @@ serve(async (req) => {
           settingsId: settings.id,
           certificateId: certificate.id,
           numero_rps: nfse.numero_rps,
-          numero_inicial_rps: spConfig?.numero_inicial_rps
+          numero_nfse: nfse.numero_nfse,
+          numero_inicial_rps: spConfig.numero_inicial_rps,
+          numero_inicial_nfse: spConfig.numero_inicial_nfse
         },
       });
-
-    console.log('Preparando dados para transmissão...');
 
     // Mock da resposta por enquanto
     const mockResponse = {
