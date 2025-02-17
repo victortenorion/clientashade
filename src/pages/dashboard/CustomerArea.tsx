@@ -84,21 +84,27 @@ export default function CustomerArea() {
 
   const checkUnreadMessages = async () => {
     if (!clientId || isMessagesOpen) return;
+    
+    try {
+      const { data: messages, error } = await supabase
+        .from('client_messages')
+        .select('*')
+        .eq('client_id', clientId)
+        .eq('is_from_client', false)
+        .eq('read', false)
+        .limit(1);
 
-    const { data: messages } = await supabase
-      .from('client_messages')
-      .select('*')
-      .eq('client_id', clientId)
-      .eq('is_from_client', false)
-      .eq('read', false)
-      .limit(1);
+      if (error) throw error;
 
-    if (!messages || messages.length === 0) {
-      setHasUnreadMessages(false);
-      setIsAnimating(false);
-    } else {
-      setHasUnreadMessages(true);
-      setIsAnimating(true);
+      if (!messages || messages.length === 0) {
+        setHasUnreadMessages(false);
+        setIsAnimating(false);
+      } else {
+        setHasUnreadMessages(true);
+        setIsAnimating(true);
+      }
+    } catch (error) {
+      console.error('Erro ao verificar mensagens não lidas:', error);
     }
   };
 
@@ -106,12 +112,17 @@ export default function CustomerArea() {
     if (!clientId) return;
 
     try {
-      await supabase
+      const { error } = await supabase
         .from('client_messages')
         .update({ read: true })
         .eq('client_id', clientId)
         .eq('is_from_client', false)
         .eq('read', false);
+
+      if (error) throw error;
+      
+      setHasUnreadMessages(false);
+      setIsAnimating(false);
     } catch (error) {
       console.error('Erro ao marcar mensagens como lidas:', error);
     }
@@ -137,23 +148,6 @@ export default function CustomerArea() {
           if (!isMessagesOpen) {
             setHasUnreadMessages(true);
             setIsAnimating(true);
-            setTimeout(() => {
-              setIsAnimating(false);
-            }, 2000);
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'client_messages',
-          filter: `client_id=eq.${clientId}`
-        },
-        () => {
-          if (!isMessagesOpen) {
-            checkUnreadMessages();
           }
         }
       )
@@ -166,11 +160,9 @@ export default function CustomerArea() {
 
   useEffect(() => {
     if (isMessagesOpen) {
-      setHasUnreadMessages(false);
-      setIsAnimating(false);
       markMessagesAsRead();
     }
-  }, [isMessagesOpen, clientId]);
+  }, [isMessagesOpen]);
 
   const fetchClientInfo = async () => {
     try {
@@ -415,8 +407,6 @@ export default function CustomerArea() {
             onOpenChange={(open) => {
               setIsMessagesOpen(open);
               if (open) {
-                setHasUnreadMessages(false);
-                setIsAnimating(false);
                 markMessagesAsRead();
               }
             }}
