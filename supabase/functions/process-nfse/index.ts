@@ -55,10 +55,39 @@ serve(async (req) => {
       throw new Error('NFS-e não encontrada');
     }
 
+    // Buscar o certificado mais recente do tipo 'nfse'
+    const { data: certificate, error: certError } = await supabaseClient
+      .from('certificates')
+      .select('*')
+      .eq('type', 'nfse')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (certError) {
+      console.error('Erro ao buscar certificado:', certError);
+      throw new Error('Erro ao buscar certificado digital');
+    }
+
+    console.log('Status do certificado:', {
+      encontrado: !!certificate,
+      valido: certificate?.is_valid,
+      tipo: certificate?.type,
+      validade: certificate?.valid_until
+    });
+
+    if (!certificate) {
+      throw new Error('Certificado digital não encontrado. Por favor, faça o upload do certificado primeiro.');
+    }
+
+    if (!certificate.is_valid) {
+      throw new Error('Certificado digital inválido ou expirado. Por favor, verifique a validade do certificado.');
+    }
+
     // Buscar configurações SP e configuração inicial de números
     const { data: settings, error: settingsError } = await supabaseClient
       .from('nfse_sp_settings')
-      .select('*, certificate:certificates_id (*)')
+      .select('*')
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -85,6 +114,23 @@ serve(async (req) => {
       throw new Error('Configurações da NFS-e SP não encontradas. Por favor, configure primeiro.');
     }
 
+    // Atualizar o certificates_id nas configurações se necessário
+    if (settings.certificates_id !== certificate.id) {
+      console.log('Atualizando vínculo do certificado com as configurações...');
+      const { error: updateSettingsError } = await supabaseClient
+        .from('nfse_sp_settings')
+        .update({ 
+          certificates_id: certificate.id,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', settings.id);
+
+      if (updateSettingsError) {
+        console.error('Erro ao atualizar vínculo do certificado:', updateSettingsError);
+        throw new Error('Erro ao vincular certificado às configurações');
+      }
+    }
+
     // Verificar se o número RPS é válido
     if (spConfig && parseInt(nfse.numero_rps) < spConfig.numero_inicial_rps) {
       console.error('Número RPS inválido:', {
@@ -97,7 +143,7 @@ serve(async (req) => {
     console.log('Dados encontrados:', {
       nfseId: nfse.id,
       settingsId: settings.id,
-      hasCertificate: !!settings.certificate,
+      certificateId: certificate.id,
       status: nfse.status_sefaz,
       numero_rps: nfse.numero_rps,
       numero_inicial_rps: spConfig?.numero_inicial_rps
@@ -115,11 +161,6 @@ serve(async (req) => {
     if (updateError) {
       console.error('Erro ao atualizar NFS-e com configurações:', updateError);
       throw new Error('Erro ao vincular configurações à NFS-e');
-    }
-
-    if (!settings.certificate) {
-      console.error('Certificado não encontrado');
-      throw new Error('Certificado digital não configurado. Por favor, configure o certificado primeiro.');
     }
 
     // Verificar se todos os campos obrigatórios estão preenchidos
@@ -166,6 +207,7 @@ serve(async (req) => {
           nfseId: nfseData.nfseId,
           ambiente: settings.ambiente,
           settingsId: settings.id,
+          certificateId: certificate.id,
           numero_rps: nfse.numero_rps,
           numero_inicial_rps: spConfig?.numero_inicial_rps
         },
