@@ -42,6 +42,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface Column {
   key: string;
@@ -173,13 +179,6 @@ export default function CustomerArea() {
       supabase.removeChannel(channel);
     };
   }, [clientId, isMessagesOpen]);
-
-  useEffect(() => {
-    if (isMessagesOpen && hasUnreadMessages) {
-      console.log("Abrindo diálogo de confirmação");
-      setShowReadConfirmation(true);
-    }
-  }, [isMessagesOpen, hasUnreadMessages]);
 
   const fetchClientInfo = async () => {
     try {
@@ -429,24 +428,40 @@ export default function CustomerArea() {
             }}
           >
             <SheetTrigger asChild>
-              <Button 
-                variant={hasUnreadMessages ? "default" : "outline"}
-                className={cn(
-                  "relative",
-                  hasUnreadMessages && "bg-primary text-primary-foreground hover:bg-primary/90"
-                )}
-              >
-                <BellRing className="h-4 w-4 mr-2" />
-                {hasUnreadMessages && (
-                  <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-destructive" />
-                )}
-                Mensagens
-                {hasUnreadMessages && (
-                  <span className="ml-2 text-xs bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full">
-                    Nova
-                  </span>
-                )}
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant={hasUnreadMessages ? "default" : "outline"}
+                      className={cn(
+                        "relative",
+                        hasUnreadMessages && "bg-primary text-primary-foreground hover:bg-primary/90"
+                      )}
+                      onMouseEnter={() => {
+                        if (hasUnreadMessages) {
+                          setShowReadConfirmation(true);
+                        }
+                      }}
+                    >
+                      <BellRing className="h-4 w-4 mr-2" />
+                      {hasUnreadMessages && (
+                        <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-destructive" />
+                      )}
+                      Mensagens
+                      {hasUnreadMessages && (
+                        <span className="ml-2 text-xs bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full">
+                          Nova
+                        </span>
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  {hasUnreadMessages && (
+                    <TooltipContent>
+                      <p>Clique para ver as mensagens não lidas</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
             </SheetTrigger>
             <SheetContent>
               <SheetHeader>
