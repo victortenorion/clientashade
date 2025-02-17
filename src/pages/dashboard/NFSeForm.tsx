@@ -221,7 +221,7 @@ export default function NFSeForm() {
           service_order_id: serviceOrderId,
           client_id: serviceOrder.client_id,
           valor_servicos: values.valor_servicos,
-          valor_deducoes: values.valor_deducoes,
+          valor_deducoes_rps: values.valor_deducoes,
           valor_pis: values.valor_pis,
           valor_cofins: values.valor_cofins,
           valor_inss: values.valor_inss,
