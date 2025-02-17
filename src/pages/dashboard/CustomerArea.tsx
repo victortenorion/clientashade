@@ -93,7 +93,10 @@ export default function CustomerArea() {
       .eq('read', false)
       .limit(1);
 
-    if (messages && messages.length > 0) {
+    if (!messages || messages.length === 0) {
+      setHasUnreadMessages(false);
+      setIsAnimating(false);
+    } else {
       setHasUnreadMessages(true);
       setIsAnimating(true);
     }
