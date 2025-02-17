@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search, Filter, User } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Filter, User, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Separator } from "@/components/ui/separator";
@@ -31,7 +30,6 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { MessageSquare } from "lucide-react";
 import { MessagesSheet } from "./components/MessagesSheet";
 import { cn } from "@/lib/utils";
 
@@ -96,7 +94,8 @@ export default function CustomerArea() {
           table: 'client_messages',
           filter: `client_id=eq.${clientId} AND is_from_client=eq.false`
         },
-        () => {
+        (payload) => {
+          console.log('Nova mensagem recebida:', payload);
           if (!isMessagesOpen) {
             setHasUnreadMessages(true);
           }
@@ -104,7 +103,10 @@ export default function CustomerArea() {
       )
       .subscribe();
 
+    console.log('Canal de mensagens inscrito para o cliente:', clientId);
+
     return () => {
+      console.log('Removendo canal de mensagens');
       supabase.removeChannel(channel);
     };
   }, [clientId, isMessagesOpen]);
@@ -347,12 +349,15 @@ export default function CustomerArea() {
               <span className="text-muted-foreground">({clientInfo.document})</span>
             </div>
           )}
-          <Sheet onOpenChange={(open) => {
-            setIsMessagesOpen(open);
-            if (open) {
-              setHasUnreadMessages(false);
-            }
-          }}>
+          <Sheet 
+            open={isMessagesOpen}
+            onOpenChange={(open) => {
+              setIsMessagesOpen(open);
+              if (open) {
+                setHasUnreadMessages(false);
+              }
+            }}
+          >
             <SheetTrigger asChild>
               <Button 
                 variant="outline"
