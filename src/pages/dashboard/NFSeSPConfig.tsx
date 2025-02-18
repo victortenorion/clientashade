@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 
 interface NFSeSPSettings {
-  id: string;
+  id?: string;
   inscricao_municipal: string;
   codigo_regime_tributario: string;
   tipo_documento: string;
@@ -20,7 +20,15 @@ interface NFSeSPSettings {
 
 const NFSeSPConfig = () => {
   const { toast } = useToast();
-  const [settings, setSettings] = useState<NFSeSPSettings | null>(null);
+  const [settings, setSettings] = useState<NFSeSPSettings>({
+    inscricao_municipal: '',
+    codigo_regime_tributario: '',
+    tipo_documento: '',
+    usuario_emissor: '',
+    senha_emissor: '',
+    ambiente: '',
+    versao_schema: ''
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -29,15 +37,22 @@ const NFSeSPConfig = () => {
 
   const loadSettings = async () => {
     try {
+      console.log("Carregando configurações...");
       const { data, error } = await supabase
         .from('nfse_sp_settings')
         .select('*')
         .limit(1)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao carregar:', error);
+        throw error;
+      }
 
-      setSettings(data);
+      console.log("Dados carregados:", data);
+      if (data) {
+        setSettings(data);
+      }
     } catch (error: any) {
       console.error('Erro ao carregar configurações:', error);
       toast({
@@ -51,19 +66,27 @@ const NFSeSPConfig = () => {
   };
 
   const handleSave = async () => {
-    if (!settings) return;
-
     try {
+      console.log("Salvando configurações:", settings);
       const { error } = await supabase
         .from('nfse_sp_settings')
-        .upsert(settings);
+        .upsert({
+          ...settings,
+          updated_at: new Date().toISOString()
+        });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao salvar:', error);
+        throw error;
+      }
 
       toast({
         title: "Sucesso",
         description: "Configurações salvas com sucesso",
       });
+      
+      // Recarrega os dados após salvar
+      await loadSettings();
     } catch (error: any) {
       console.error('Erro ao salvar configurações:', error);
       toast({
@@ -90,32 +113,32 @@ const NFSeSPConfig = () => {
               <Label htmlFor="inscricao_municipal">Inscrição Municipal</Label>
               <Input
                 id="inscricao_municipal"
-                value={settings?.inscricao_municipal || ''}
-                onChange={(e) => setSettings(prev => prev ? {...prev, inscricao_municipal: e.target.value} : null)}
+                value={settings.inscricao_municipal}
+                onChange={(e) => setSettings(prev => ({...prev, inscricao_municipal: e.target.value}))}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="codigo_regime_tributario">Código Regime Tributário</Label>
               <Input
                 id="codigo_regime_tributario"
-                value={settings?.codigo_regime_tributario || ''}
-                onChange={(e) => setSettings(prev => prev ? {...prev, codigo_regime_tributario: e.target.value} : null)}
+                value={settings.codigo_regime_tributario}
+                onChange={(e) => setSettings(prev => ({...prev, codigo_regime_tributario: e.target.value}))}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="tipo_documento">Tipo Documento</Label>
               <Input
                 id="tipo_documento"
-                value={settings?.tipo_documento || ''}
-                onChange={(e) => setSettings(prev => prev ? {...prev, tipo_documento: e.target.value} : null)}
+                value={settings.tipo_documento}
+                onChange={(e) => setSettings(prev => ({...prev, tipo_documento: e.target.value}))}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="usuario_emissor">Usuário Emissor</Label>
               <Input
                 id="usuario_emissor"
-                value={settings?.usuario_emissor || ''}
-                onChange={(e) => setSettings(prev => prev ? {...prev, usuario_emissor: e.target.value} : null)}
+                value={settings.usuario_emissor}
+                onChange={(e) => setSettings(prev => ({...prev, usuario_emissor: e.target.value}))}
               />
             </div>
             <div className="space-y-2">
@@ -123,24 +146,24 @@ const NFSeSPConfig = () => {
               <Input
                 id="senha_emissor"
                 type="password"
-                value={settings?.senha_emissor || ''}
-                onChange={(e) => setSettings(prev => prev ? {...prev, senha_emissor: e.target.value} : null)}
+                value={settings.senha_emissor}
+                onChange={(e) => setSettings(prev => ({...prev, senha_emissor: e.target.value}))}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="ambiente">Ambiente</Label>
               <Input
                 id="ambiente"
-                value={settings?.ambiente || ''}
-                onChange={(e) => setSettings(prev => prev ? {...prev, ambiente: e.target.value} : null)}
+                value={settings.ambiente}
+                onChange={(e) => setSettings(prev => ({...prev, ambiente: e.target.value}))}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="versao_schema">Versão Schema</Label>
               <Input
                 id="versao_schema"
-                value={settings?.versao_schema || ''}
-                onChange={(e) => setSettings(prev => prev ? {...prev, versao_schema: e.target.value} : null)}
+                value={settings.versao_schema}
+                onChange={(e) => setSettings(prev => ({...prev, versao_schema: e.target.value}))}
               />
             </div>
           </div>
