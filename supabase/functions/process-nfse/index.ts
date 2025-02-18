@@ -35,32 +35,72 @@ serve(async (req) => {
       )
     }
 
-    // Get NFSe data
-    const { data: nfse, error: nfseError } = await supabaseClient
+    // First, get the NFSe basic data to verify it exists
+    const { data: nfseBasic, error: nfseBasicError } = await supabaseClient
       .from('nfse')
-      .select(`
-        *,
-        nfse_sp_settings:nfse_sp_settings_id (
-          usuario_emissor,
-          senha_emissor,
-          ambiente,
-          certificates:certificates_id (
-            certificate_data,
-            certificate_password
-          )
-        ),
-        company_info:company_info_id (
-          cnpj,
-          inscricao_municipal
-        )
-      `)
+      .select('id, numero_nfse')
       .eq('id', nfseId)
       .single()
 
-    if (nfseError || !nfse) {
-      console.error("Error fetching NFSe:", nfseError)
+    if (nfseBasicError || !nfseBasic) {
+      console.error("Error fetching basic NFSe data:", nfseBasicError)
       return new Response(
-        JSON.stringify({ error: "NFS-e não encontrada" }),
+        JSON.stringify({ 
+          error: "NFS-e não encontrada",
+          details: nfseBasicError?.message 
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
+        }
+      )
+    }
+
+    // Get NFSe settings
+    const { data: settings, error: settingsError } = await supabaseClient
+      .from('nfse_sp_settings')
+      .select(`
+        id,
+        usuario_emissor,
+        senha_emissor,
+        ambiente,
+        certificates:certificates_id (
+          certificate_data,
+          certificate_password
+        )
+      `)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (settingsError) {
+      console.error("Error fetching NFSe SP settings:", settingsError)
+      return new Response(
+        JSON.stringify({ 
+          error: "Configurações da NFS-e não encontradas",
+          details: settingsError.message 
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
+        }
+      )
+    }
+
+    // Get company info
+    const { data: companyInfo, error: companyError } = await supabaseClient
+      .from('company_info')
+      .select('cnpj, inscricao_municipal')
+      .limit(1)
+      .single()
+
+    if (companyError) {
+      console.error("Error fetching company info:", companyError)
+      return new Response(
+        JSON.stringify({ 
+          error: "Informações da empresa não encontradas",
+          details: companyError.message 
+        }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 400 
@@ -71,12 +111,12 @@ serve(async (req) => {
     // Validate required settings
     const missingFields = []
     
-    if (!nfse.nfse_sp_settings?.usuario_emissor) missingFields.push('usuario_emissor')
-    if (!nfse.nfse_sp_settings?.senha_emissor) missingFields.push('senha_emissor')
-    if (!nfse.nfse_sp_settings?.certificates?.certificate_data) missingFields.push('certificado_digital')
-    if (!nfse.nfse_sp_settings?.certificates?.certificate_password) missingFields.push('senha_certificado')
-    if (!nfse.company_info?.cnpj) missingFields.push('cnpj')
-    if (!nfse.company_info?.inscricao_municipal) missingFields.push('inscricao_municipal')
+    if (!settings?.usuario_emissor) missingFields.push('usuario_emissor')
+    if (!settings?.senha_emissor) missingFields.push('senha_emissor')
+    if (!settings?.certificates?.certificate_data) missingFields.push('certificado_digital')
+    if (!settings?.certificates?.certificate_password) missingFields.push('senha_certificado')
+    if (!companyInfo?.cnpj) missingFields.push('cnpj')
+    if (!companyInfo?.inscricao_municipal) missingFields.push('inscricao_municipal')
 
     if (missingFields.length > 0) {
       console.error("Missing required fields:", missingFields)
@@ -88,6 +128,28 @@ serve(async (req) => {
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 400 
+        }
+      )
+    }
+
+    // Update NFSe with settings
+    const { error: updateError } = await supabaseClient
+      .from('nfse')
+      .update({
+        nfse_sp_settings_id: settings.id
+      })
+      .eq('id', nfseId)
+
+    if (updateError) {
+      console.error("Error updating NFSe with settings:", updateError)
+      return new Response(
+        JSON.stringify({ 
+          error: "Erro ao atualizar configurações da NFS-e",
+          details: updateError.message 
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500 
         }
       )
     }
@@ -104,7 +166,10 @@ serve(async (req) => {
     if (queueError) {
       console.error("Error adding to transmission queue:", queueError)
       return new Response(
-        JSON.stringify({ error: "Erro ao adicionar à fila de transmissão" }),
+        JSON.stringify({ 
+          error: "Erro ao adicionar à fila de transmissão",
+          details: queueError.message 
+        }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 500 
@@ -113,17 +178,20 @@ serve(async (req) => {
     }
 
     // Update NFSe status
-    const { error: updateError } = await supabaseClient
+    const { error: statusError } = await supabaseClient
       .from('nfse')
       .update({
         status_sefaz: 'processando'
       })
       .eq('id', nfseId)
 
-    if (updateError) {
-      console.error("Error updating NFSe status:", updateError)
+    if (statusError) {
+      console.error("Error updating NFSe status:", statusError)
       return new Response(
-        JSON.stringify({ error: "Erro ao atualizar status da NFS-e" }),
+        JSON.stringify({ 
+          error: "Erro ao atualizar status da NFS-e",
+          details: statusError.message 
+        }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 500 
@@ -147,7 +215,10 @@ serve(async (req) => {
   } catch (error) {
     console.error("Unexpected error:", error)
     return new Response(
-      JSON.stringify({ error: "Erro interno ao processar NFS-e" }),
+      JSON.stringify({ 
+        error: "Erro interno ao processar NFS-e",
+        details: error.message 
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500 
