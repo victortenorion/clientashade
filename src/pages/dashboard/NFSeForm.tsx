@@ -85,6 +85,45 @@ export default function NFSeForm() {
   const handleSubmit = async (data: NFSeFormData) => {
     setIsLoading(true);
     try {
+      // Primeiro, verificar o número inicial configurado
+      const { data: spConfig, error: configError } = await supabase
+        .from('nfse_sp_config')
+        .select('numero_inicial_nfse')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (configError && configError.code !== 'PGRST116') {
+        throw configError;
+      }
+
+      // Verificar se já existem NFSe com número maior
+      const { data: lastNFSe, error: nfseError } = await supabase
+        .from('nfse')
+        .select('numero_nfse')
+        .order('numero_nfse', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (nfseError && nfseError.code !== 'PGRST116') {
+        throw nfseError;
+      }
+
+      const numeroInicial = spConfig?.numero_inicial_nfse ? parseInt(spConfig.numero_inicial_nfse) : 1;
+      const ultimoNumero = lastNFSe?.numero_nfse || 0;
+
+      // Se o último número for menor que o número inicial configurado
+      if (ultimoNumero < numeroInicial) {
+        const confirmStart = window.confirm(
+          `A numeração das NFS-e iniciará em ${numeroInicial} conforme configurado em Dados da Empresa. Deseja continuar?`
+        );
+
+        if (!confirmStart) {
+          setIsLoading(false);
+          return;
+        }
+      }
+
       if (nfseId) {
         // Atualiza NFS-e existente
         const { error: updateError } = await supabase
@@ -106,7 +145,7 @@ export default function NFSeForm() {
           description: "Os dados da NFS-e foram atualizados"
         });
       } else {
-        // Primeiro, busca os dados completos da ordem de serviço
+        // Criar nova NFS-e
         const { data: serviceOrder, error: serviceOrderError } = await supabase
           .from('service_orders')
           .select(`
@@ -137,6 +176,7 @@ export default function NFSeForm() {
             tipo_rps: 'RPS',
             serie_rps: '1',
             numero_rps: data.numero_rps,
+            numero_nfse: numeroInicial > ultimoNumero ? numeroInicial : (ultimoNumero + 1)
           }])
           .select()
           .single();
