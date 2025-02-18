@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { useQuery } from "@tanstack/react-query";
 
 export default function ServiceOrderEdit() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -39,36 +38,41 @@ export default function ServiceOrderEdit() {
   const { data: serviceOrder, isLoading } = useQuery({
     queryKey: ['serviceOrder', id],
     queryFn: async () => {
+      if (!id) throw new Error('ID não fornecido');
+
       const { data, error } = await supabase
         .from('service_orders')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
       // Atualizar o formData aqui ao invés de usar onSuccess
-      setFormData({
-        description: data.description || "",
-        equipment: data.equipment || "",
-        equipment_serial_number: data.equipment_serial_number || "",
-        problem: data.problem || "",
-        priority: data.priority || "normal",
-        codigo_servico: data.codigo_servico || "",
-        discriminacao_servico: data.discriminacao_servico || "",
-        regime_tributario: data.regime_tributario || "1",
-        regime_especial: data.regime_especial || "",
-        iss_retido: data.iss_retido || false,
-        inss_retido: data.inss_retido || false,
-        ir_retido: data.ir_retido || false,
-        pis_cofins_csll_retido: data.pis_cofins_csll_retido || false,
-        aliquota_iss: data.aliquota_iss || 0,
-        base_calculo: data.base_calculo || 0,
-        valor_deducoes: data.valor_deducoes || 0
-      });
+      if (data) {
+        setFormData({
+          description: data.description || "",
+          equipment: data.equipment || "",
+          equipment_serial_number: data.equipment_serial_number || "",
+          problem: data.problem || "",
+          priority: data.priority || "normal",
+          codigo_servico: data.codigo_servico || "",
+          discriminacao_servico: data.discriminacao_servico || "",
+          regime_tributario: data.regime_tributario || "1",
+          regime_especial: data.regime_especial || "",
+          iss_retido: data.iss_retido || false,
+          inss_retido: data.inss_retido || false,
+          ir_retido: data.ir_retido || false,
+          pis_cofins_csll_retido: data.pis_cofins_csll_retido || false,
+          aliquota_iss: data.aliquota_iss || 0,
+          base_calculo: data.base_calculo || 0,
+          valor_deducoes: data.valor_deducoes || 0
+        });
+      }
 
       return data;
-    }
+    },
+    enabled: !!id // Só executa a query se tiver um ID
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
