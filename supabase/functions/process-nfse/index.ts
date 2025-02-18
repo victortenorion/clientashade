@@ -36,18 +36,30 @@ serve(async (req) => {
     }
 
     // First, get the NFSe basic data to verify it exists
-    const { data: nfseBasic, error: nfseBasicError } = await supabaseClient
+    const { data: nfse, error: nfseError } = await supabaseClient
       .from('nfse')
-      .select('id, numero_nfse')
+      .select(`
+        *,
+        nfse_sp_settings:nfse_sp_settings_id (
+          id,
+          usuario_emissor,
+          senha_emissor,
+          ambiente,
+          certificates:certificates_id (
+            certificate_data,
+            certificate_password
+          )
+        )
+      `)
       .eq('id', nfseId)
       .single()
 
-    if (nfseBasicError || !nfseBasic) {
-      console.error("Error fetching basic NFSe data:", nfseBasicError)
+    if (nfseError || !nfse) {
+      console.error("Error fetching basic NFSe data:", nfseError)
       return new Response(
         JSON.stringify({ 
           error: "NFS-e não encontrada",
-          details: nfseBasicError?.message 
+          details: nfseError?.message 
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -56,41 +68,10 @@ serve(async (req) => {
       )
     }
 
-    // Get NFSe settings
-    const { data: settings, error: settingsError } = await supabaseClient
-      .from('nfse_sp_settings')
-      .select(`
-        id,
-        usuario_emissor,
-        senha_emissor,
-        ambiente,
-        certificates:certificates_id (
-          certificate_data,
-          certificate_password
-        )
-      `)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single()
-
-    if (settingsError) {
-      console.error("Error fetching NFSe SP settings:", settingsError)
-      return new Response(
-        JSON.stringify({ 
-          error: "Configurações da NFS-e não encontradas",
-          details: settingsError.message 
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400 
-        }
-      )
-    }
-
-    // Get company info
+    // Get company info (single record table)
     const { data: companyInfo, error: companyError } = await supabaseClient
       .from('company_info')
-      .select('cnpj, inscricao_municipal')
+      .select('*')
       .limit(1)
       .single()
 
@@ -111,10 +92,10 @@ serve(async (req) => {
     // Validate required settings
     const missingFields = []
     
-    if (!settings?.usuario_emissor) missingFields.push('usuario_emissor')
-    if (!settings?.senha_emissor) missingFields.push('senha_emissor')
-    if (!settings?.certificates?.certificate_data) missingFields.push('certificado_digital')
-    if (!settings?.certificates?.certificate_password) missingFields.push('senha_certificado')
+    if (!nfse.nfse_sp_settings?.usuario_emissor) missingFields.push('usuario_emissor')
+    if (!nfse.nfse_sp_settings?.senha_emissor) missingFields.push('senha_emissor')
+    if (!nfse.nfse_sp_settings?.certificates?.certificate_data) missingFields.push('certificado_digital')
+    if (!nfse.nfse_sp_settings?.certificates?.certificate_password) missingFields.push('senha_certificado')
     if (!companyInfo?.cnpj) missingFields.push('cnpj')
     if (!companyInfo?.inscricao_municipal) missingFields.push('inscricao_municipal')
 
@@ -128,28 +109,6 @@ serve(async (req) => {
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 400 
-        }
-      )
-    }
-
-    // Update NFSe with settings
-    const { error: updateError } = await supabaseClient
-      .from('nfse')
-      .update({
-        nfse_sp_settings_id: settings.id
-      })
-      .eq('id', nfseId)
-
-    if (updateError) {
-      console.error("Error updating NFSe with settings:", updateError)
-      return new Response(
-        JSON.stringify({ 
-          error: "Erro ao atualizar configurações da NFS-e",
-          details: updateError.message 
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500 
         }
       )
     }
