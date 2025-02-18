@@ -13,7 +13,6 @@ import NFCe from "@/pages/dashboard/NFCe";
 import NFCeForm from "@/pages/dashboard/NFCeForm";
 import NFSe from "@/pages/dashboard/NFSe";
 import NFSeForm from "@/pages/dashboard/NFSeForm";
-import NFSeSPConfig from "@/pages/dashboard/NFSeSPConfig";
 import Users from "@/pages/dashboard/Users";
 import Clients from "@/pages/dashboard/Clients";
 import Stores from "@/pages/dashboard/Stores";
@@ -43,7 +42,6 @@ function App() {
           <Route path="nfse" element={<NFSe />} />
           <Route path="nfse/new" element={<NFSeForm />} />
           <Route path="nfse/:id" element={<NFSeForm />} />
-          <Route path="nfse-sp-config" element={<NFSeSPConfig />} />
           <Route path="users" element={<Users />} />
           <Route path="clients" element={<Clients />} />
           <Route path="stores" element={<Stores />} />

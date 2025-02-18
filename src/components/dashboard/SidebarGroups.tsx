@@ -14,7 +14,6 @@ import {
   Database,
   Building,
   Lock,
-  Building2,
 } from "lucide-react";
 import {
   SidebarMenu,
@@ -172,7 +171,7 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
                     isActive={location.pathname.includes("/dashboard/nfce")}
                   >
                     <Receipt className="h-4 w-4" />
-                    <span>NFCe</span>
+                    <span>NFC-e</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
@@ -183,7 +182,7 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
                     isActive={location.pathname.includes("/dashboard/nfse")}
                   >
                     <Receipt className="h-4 w-4" />
-                    <span>NFSe</span>
+                    <span>NFS-e</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
@@ -249,15 +248,6 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
                   >
                     <Lock className="h-4 w-4" />
                     <span>Área Restrita do Cliente</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    onClick={() => navigate("/dashboard/nfse-sp-config")}
-                    isActive={location.pathname === "/dashboard/nfse-sp-config"}
-                  >
-                    <Building2 className="h-4 w-4" />
-                    <span>NFSe SP Config</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
