@@ -35,7 +35,58 @@ serve(async (req) => {
       )
     }
 
-    // Get NFSe with related data
+    // First get NFSe SP Settings
+    console.log("Fetching NFSe SP Settings...")
+    const { data: settings, error: settingsError } = await supabaseClient
+      .from('nfse_sp_settings')
+      .select(`
+        *,
+        certificates (
+          certificate_data,
+          certificate_password
+        )
+      `)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (settingsError || !settings) {
+      console.error("Error fetching NFSe SP Settings:", settingsError)
+      return new Response(
+        JSON.stringify({ 
+          error: "Configurações da NFS-e não encontradas. Configure primeiro as credenciais da Prefeitura e o certificado digital.",
+          details: settingsError?.message 
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
+        }
+      )
+    }
+
+    // Update NFSe with settings id if not set
+    console.log("Updating NFSe with settings ID...")
+    const { error: updateError } = await supabaseClient
+      .from('nfse')
+      .update({ nfse_sp_settings_id: settings.id })
+      .eq('id', nfseId)
+
+    if (updateError) {
+      console.error("Error updating NFSe with settings ID:", updateError)
+      return new Response(
+        JSON.stringify({ 
+          error: "Erro ao vincular configurações à NFS-e",
+          details: updateError.message 
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500 
+        }
+      )
+    }
+
+    // Now get NFSe with all related data
+    console.log("Fetching NFSe data...")
     const { data: nfse, error: nfseError } = await supabaseClient
       .from('nfse')
       .select(`
@@ -46,7 +97,7 @@ serve(async (req) => {
           usuario_emissor,
           senha_emissor,
           ambiente,
-          certificates:certificates_id (
+          certificates (
             certificate_data,
             certificate_password
           )
@@ -70,6 +121,7 @@ serve(async (req) => {
     }
 
     // Get company info (prestador)
+    console.log("Fetching company info...")
     const { data: companyInfo, error: companyError } = await supabaseClient
       .from('company_info')
       .select('*')
@@ -90,7 +142,8 @@ serve(async (req) => {
       )
     }
 
-    // Validate required settings
+    // Validate all required settings
+    console.log("Validating required fields...")
     const missingFields = []
     
     // Validate prestador (company_info)
@@ -115,10 +168,10 @@ serve(async (req) => {
     if (!nfse.client?.zip_code) missingFields.push('CEP do tomador')
 
     // Validate NFSe settings
-    if (!nfse.nfse_sp_settings?.usuario_emissor) missingFields.push('usuario_emissor')
-    if (!nfse.nfse_sp_settings?.senha_emissor) missingFields.push('senha_emissor')
-    if (!nfse.nfse_sp_settings?.certificates?.certificate_data) missingFields.push('certificado_digital')
-    if (!nfse.nfse_sp_settings?.certificates?.certificate_password) missingFields.push('senha_certificado')
+    if (!settings.usuario_emissor) missingFields.push('usuario_emissor')
+    if (!settings.senha_emissor) missingFields.push('senha_emissor')
+    if (!settings.certificates?.[0]?.certificate_data) missingFields.push('certificado_digital')
+    if (!settings.certificates?.[0]?.certificate_password) missingFields.push('senha_certificado')
 
     if (missingFields.length > 0) {
       console.error("Missing required fields:", missingFields)
@@ -135,6 +188,13 @@ serve(async (req) => {
     }
 
     // Log data for debugging
+    console.log("All validations passed, logging data...")
+    console.log("Settings:", {
+      usuario_emissor: settings.usuario_emissor,
+      ambiente: settings.ambiente,
+      certificado: settings.certificates?.[0]?.certificate_data ? "Present" : "Missing"
+    })
+
     console.log("Prestador data:", {
       cnpj: companyInfo.cnpj,
       inscricao_municipal: companyInfo.inscricao_municipal,
@@ -163,6 +223,7 @@ serve(async (req) => {
     })
 
     // Add to transmission queue
+    console.log("Adding to transmission queue...")
     const { error: queueError } = await supabaseClient
       .from('sefaz_transmission_queue')
       .insert({
@@ -186,6 +247,7 @@ serve(async (req) => {
     }
 
     // Update NFSe status
+    console.log("Updating NFSe status...")
     const { error: statusError } = await supabaseClient
       .from('nfse')
       .update({
