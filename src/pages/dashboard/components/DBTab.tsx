@@ -2,38 +2,67 @@
 import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useForm } from "react-hook-form";
 
 export function DBTab() {
   const [activeTab, setActiveTab] = useState("nfse");
+  
+  const form = useForm({
+    defaultValues: {
+      id: "",
+      numero_nfse: "",
+      client_id: "",
+      service_order_id: "",
+      data_emissao: "",
+      valor_servicos: "",
+      valor_total: "",
+      base_calculo: "",
+      codigo_servico: "",
+      discriminacao_servicos: "",
+      natureza_operacao: "1",
+      tipo_recolhimento: "A",
+      numero_rps: "",
+      serie_rps: "",
+      tipo_rps: "RPS",
+      status_sefaz: "pendente",
+      ambiente: "1",
+      cancelada: "false",
+      data_cancelamento: "",
+      motivo_cancelamento: "",
+      xml_envio: "",
+      xml_retorno: "",
+      pdf_url: "",
+      codigo_verificacao: "",
+    }
+  });
 
   const nfseFields = [
-    { name: 'id', type: 'uuid', nullable: false, default: 'uuid_generate_v4()', description: 'ID único da NFSe' },
-    { name: 'numero_nfse', type: 'integer', nullable: false, default: 'sequence', description: 'Número sequencial da NFSe' },
-    { name: 'client_id', type: 'uuid', nullable: false, default: 'None', description: 'ID do cliente' },
-    { name: 'service_order_id', type: 'uuid', nullable: true, default: 'None', description: 'ID da ordem de serviço' },
-    { name: 'data_emissao', type: 'timestamp', nullable: false, default: 'now()', description: 'Data de emissão' },
-    { name: 'valor_servicos', type: 'numeric', nullable: false, default: 'None', description: 'Valor total dos serviços' },
-    { name: 'valor_total', type: 'numeric', nullable: true, default: 'None', description: 'Valor total da nota' },
-    { name: 'base_calculo', type: 'numeric', nullable: true, default: 'None', description: 'Base de cálculo' },
-    { name: 'codigo_servico', type: 'text', nullable: false, default: 'None', description: 'Código do serviço' },
-    { name: 'discriminacao_servicos', type: 'text', nullable: false, default: 'None', description: 'Descrição dos serviços' },
-    { name: 'natureza_operacao', type: 'text', nullable: true, default: '1', description: 'Natureza da operação' },
-    { name: 'tipo_recolhimento', type: 'text', nullable: true, default: 'A', description: 'Tipo de recolhimento' },
-    { name: 'numero_rps', type: 'text', nullable: false, default: 'None', description: 'Número do RPS' },
-    { name: 'serie_rps', type: 'text', nullable: false, default: 'None', description: 'Série do RPS' },
-    { name: 'tipo_rps', type: 'text', nullable: false, default: 'RPS', description: 'Tipo do RPS' },
-    { name: 'status_sefaz', type: 'text', nullable: true, default: 'pendente', description: 'Status na SEFAZ' },
-    { name: 'ambiente', type: 'text', nullable: true, default: '1', description: 'Ambiente (homologação/produção)' },
-    { name: 'cancelada', type: 'boolean', nullable: true, default: 'false', description: 'Se a nota foi cancelada' },
-    { name: 'data_cancelamento', type: 'timestamp', nullable: true, default: 'None', description: 'Data do cancelamento' },
-    { name: 'motivo_cancelamento', type: 'text', nullable: true, default: 'None', description: 'Motivo do cancelamento' },
-    { name: 'xml_envio', type: 'text', nullable: true, default: 'None', description: 'XML de envio' },
-    { name: 'xml_retorno', type: 'text', nullable: true, default: 'None', description: 'XML de retorno' },
-    { name: 'pdf_url', type: 'text', nullable: true, default: 'None', description: 'URL do PDF da nota' },
-    { name: 'codigo_verificacao', type: 'text', nullable: true, default: 'None', description: 'Código de verificação' },
-    { name: 'created_at', type: 'timestamp', nullable: true, default: 'now()', description: 'Data de criação' },
-    { name: 'updated_at', type: 'timestamp', nullable: true, default: 'now()', description: 'Data de atualização' }
+    { name: 'id', label: 'ID', type: 'text', description: 'ID único da NFSe' },
+    { name: 'numero_nfse', label: 'Número NFSe', type: 'number', description: 'Número sequencial da NFSe' },
+    { name: 'client_id', label: 'ID do Cliente', type: 'text', description: 'ID do cliente' },
+    { name: 'service_order_id', label: 'ID da OS', type: 'text', description: 'ID da ordem de serviço' },
+    { name: 'data_emissao', label: 'Data de Emissão', type: 'datetime-local', description: 'Data de emissão' },
+    { name: 'valor_servicos', label: 'Valor Serviços', type: 'number', description: 'Valor total dos serviços' },
+    { name: 'valor_total', label: 'Valor Total', type: 'number', description: 'Valor total da nota' },
+    { name: 'base_calculo', label: 'Base de Cálculo', type: 'number', description: 'Base de cálculo' },
+    { name: 'codigo_servico', label: 'Código Serviço', type: 'text', description: 'Código do serviço' },
+    { name: 'discriminacao_servicos', label: 'Discriminação', type: 'text', description: 'Descrição dos serviços' },
+    { name: 'natureza_operacao', label: 'Natureza Operação', type: 'text', description: 'Natureza da operação' },
+    { name: 'tipo_recolhimento', label: 'Tipo Recolhimento', type: 'text', description: 'Tipo de recolhimento' },
+    { name: 'numero_rps', label: 'Número RPS', type: 'text', description: 'Número do RPS' },
+    { name: 'serie_rps', label: 'Série RPS', type: 'text', description: 'Série do RPS' },
+    { name: 'tipo_rps', label: 'Tipo RPS', type: 'text', description: 'Tipo do RPS' },
+    { name: 'status_sefaz', label: 'Status SEFAZ', type: 'text', description: 'Status na SEFAZ' },
+    { name: 'ambiente', label: 'Ambiente', type: 'text', description: 'Ambiente (homologação/produção)' },
+    { name: 'cancelada', label: 'Cancelada', type: 'text', description: 'Se a nota foi cancelada' },
+    { name: 'data_cancelamento', label: 'Data Cancelamento', type: 'datetime-local', description: 'Data do cancelamento' },
+    { name: 'motivo_cancelamento', label: 'Motivo Cancelamento', type: 'text', description: 'Motivo do cancelamento' },
+    { name: 'xml_envio', label: 'XML Envio', type: 'text', description: 'XML de envio' },
+    { name: 'xml_retorno', label: 'XML Retorno', type: 'text', description: 'XML de retorno' },
+    { name: 'pdf_url', label: 'URL do PDF', type: 'text', description: 'URL do PDF da nota' },
+    { name: 'codigo_verificacao', label: 'Código Verificação', type: 'text', description: 'Código de verificação' }
   ];
 
   return (
@@ -44,32 +73,32 @@ export function DBTab() {
         </TabsList>
 
         <TabsContent value="nfse" className="space-y-4">
-          <div className="rounded-md border">
-            <ScrollArea className="h-[600px]">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[200px]">Campo</TableHead>
-                    <TableHead className="w-[150px]">Tipo</TableHead>
-                    <TableHead className="w-[100px]">Obrigatório</TableHead>
-                    <TableHead className="w-[200px]">Valor Padrão</TableHead>
-                    <TableHead>Descrição</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {nfseFields.map((field) => (
-                    <TableRow key={field.name}>
-                      <TableCell className="font-medium">{field.name}</TableCell>
-                      <TableCell>{field.type}</TableCell>
-                      <TableCell>{field.nullable ? "Não" : "Sim"}</TableCell>
-                      <TableCell>{field.default}</TableCell>
-                      <TableCell>{field.description}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </ScrollArea>
-          </div>
+          <ScrollArea className="h-[600px] w-full rounded-md border p-4">
+            <Form {...form}>
+              <form className="space-y-4">
+                {nfseFields.map((field) => (
+                  <FormField
+                    key={field.name}
+                    control={form.control}
+                    name={field.name}
+                    render={({ field: formField }) => (
+                      <FormItem>
+                        <FormLabel>{field.label}</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type={field.type} 
+                            {...formField} 
+                            className="max-w-xl"
+                          />
+                        </FormControl>
+                        <FormDescription>{field.description}</FormDescription>
+                      </FormItem>
+                    )}
+                  />
+                ))}
+              </form>
+            </Form>
+          </ScrollArea>
         </TabsContent>
       </Tabs>
     </div>

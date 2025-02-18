@@ -4,8 +4,13 @@ import { StatusTab } from "./components/StatusTab";
 import { CompanyInfoTab } from "./components/CompanyInfoTab";
 import { DBTab } from "./components/DBTab";
 import { SEFAZTab } from "./components/SEFAZTab";
+import { useState } from "react";
 
 export default function ServiceOrderSettings() {
+  const [nfceConfig, setNfceConfig] = useState(null);
+  const [nfseConfig, setNfseConfig] = useState(null);
+  const [fiscalConfig, setFiscalConfig] = useState(null);
+
   return (
     <div className="space-y-6 p-6">
       <div>
@@ -32,7 +37,14 @@ export default function ServiceOrderSettings() {
         </TabsContent>
         
         <TabsContent value="sefaz">
-          <SEFAZTab />
+          <SEFAZTab 
+            nfceConfig={nfceConfig}
+            nfseConfig={nfseConfig}
+            fiscalConfig={fiscalConfig}
+            setNfceConfig={setNfceConfig}
+            setNfseConfig={setNfseConfig}
+            setFiscalConfig={setFiscalConfig}
+          />
         </TabsContent>
 
         <TabsContent value="db">
