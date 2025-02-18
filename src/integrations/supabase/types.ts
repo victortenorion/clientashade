@@ -551,39 +551,6 @@ export type Database = {
         }
         Relationships: []
       }
-      licenses: {
-        Row: {
-          company_name: string
-          contact_email: string
-          created_at: string | null
-          domain: string
-          expiration_date: string
-          id: string
-          is_active: boolean | null
-          updated_at: string | null
-        }
-        Insert: {
-          company_name: string
-          contact_email: string
-          created_at?: string | null
-          domain: string
-          expiration_date: string
-          id?: string
-          is_active?: boolean | null
-          updated_at?: string | null
-        }
-        Update: {
-          company_name?: string
-          contact_email?: string
-          created_at?: string | null
-          domain?: string
-          expiration_date?: string
-          id?: string
-          is_active?: boolean | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       nfce: {
         Row: {
           ambiente: string | null
