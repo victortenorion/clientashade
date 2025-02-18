@@ -322,7 +322,7 @@ export const CompanyInfoTab = () => {
 
       const configData = {
         numero_inicial_rps: rpsConfig.numero_inicial_rps || '0',
-        numero_inicial_nfse: rpsConfig.numero_inicial_nfse || null
+        numero_inicial_nfse: rpsConfig.numero_inicial_nfse ? parseInt(rpsConfig.numero_inicial_nfse) : null
       };
 
       if (currentConfig) {
