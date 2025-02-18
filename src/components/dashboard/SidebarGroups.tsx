@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -176,26 +177,15 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
                 </SidebarMenuItem>
               )}
               {hasPermission('nfse') && (
-                <>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      onClick={() => navigate("/dashboard/nfse")}
-                      isActive={location.pathname.includes("/dashboard/nfse")}
-                    >
-                      <Receipt className="h-4 w-4" />
-                      <span>NFSe</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      onClick={() => navigate("/dashboard/nfse-sp-config")}
-                      isActive={location.pathname.includes("/dashboard/nfse-sp-config")}
-                    >
-                      <Building2 className="h-4 w-4" />
-                      <span>NFSe SP Config</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => navigate("/dashboard/nfse")}
+                    isActive={location.pathname.includes("/dashboard/nfse")}
+                  >
+                    <Receipt className="h-4 w-4" />
+                    <span>NFSe</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               )}
             </SidebarMenu>
           </SidebarGroupContent>
@@ -261,6 +251,17 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
                     <span>Área Restrita do Cliente</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                {hasPermission('nfse') && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      onClick={() => navigate("/dashboard/nfse-sp-config")}
+                      isActive={location.pathname.includes("/dashboard/nfse-sp-config")}
+                    >
+                      <Building2 className="h-4 w-4" />
+                      <span>NFSe SP Config</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           )}
