@@ -32,7 +32,8 @@ const NFSeSPConfig = () => {
       const { data, error } = await supabase
         .from('nfse_sp_settings')
         .select('*')
-        .single();
+        .limit(1)
+        .maybeSingle();
 
       if (error) throw error;
 
