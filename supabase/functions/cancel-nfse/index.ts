@@ -101,12 +101,12 @@ serve(async (req) => {
       )
     }
 
-    // Add to transmission queue
+    // Add to transmission queue with correct tipo value
     const { error: queueError } = await supabaseClient
       .from('sefaz_transmission_queue')
       .insert({
         documento_id: nfseId,
-        tipo: 'cancelamento',
+        tipo: 'nfse',  // Alterado de 'cancelamento' para 'nfse'
         status: 'pendente'
       })
 
