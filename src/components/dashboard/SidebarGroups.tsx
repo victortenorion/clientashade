@@ -1,7 +1,7 @@
 
 import { Link, useLocation } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Settings, Home, FileText, Users, Store, FileCheck2, Cog } from "lucide-react";
+import { Settings, Home, FileText, Users, Store, FileCheck2, Cog, Building2 } from "lucide-react";
 
 interface SidebarGroupsProps {
   userPermissions: string[];
@@ -53,6 +53,33 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
               >
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Serviços</span>
+              </Link>
+              <Link
+                to="/dashboard/configuracoes/status"
+                className={`flex items-center rounded-lg px-3 py-2 transition-all hover:bg-accent ${
+                  isActive("/configuracoes/status") ? "bg-accent" : ""
+                }`}
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Status</span>
+              </Link>
+              <Link
+                to="/dashboard/configuracoes/area-cliente"
+                className={`flex items-center rounded-lg px-3 py-2 transition-all hover:bg-accent ${
+                  isActive("/configuracoes/area-cliente") ? "bg-accent" : ""
+                }`}
+              >
+                <Users className="mr-2 h-4 w-4" />
+                <span>Área do Cliente</span>
+              </Link>
+              <Link
+                to="/dashboard/configuracoes/dados-empresa"
+                className={`flex items-center rounded-lg px-3 py-2 transition-all hover:bg-accent ${
+                  isActive("/configuracoes/dados-empresa") ? "bg-accent" : ""
+                }`}
+              >
+                <Building2 className="mr-2 h-4 w-4" />
+                <span>Dados da Empresa</span>
               </Link>
               <Link
                 to="/dashboard/configuracoes/notas-fiscais"
