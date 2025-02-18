@@ -5,4 +5,9 @@ export interface NFSeFormData {
   natureza_operacao: string;
   tipo_recolhimento: string;
   numero_rps: string;
+  valor_servicos: number;
+  aliquota_servico: number;
+  iss_retido: boolean;
+  base_calculo: number;
+  valor_iss: number;
 }
