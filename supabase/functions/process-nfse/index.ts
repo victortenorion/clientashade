@@ -35,11 +35,12 @@ serve(async (req) => {
       )
     }
 
-    // First, get the NFSe basic data to verify it exists
+    // Get NFSe with related data
     const { data: nfse, error: nfseError } = await supabaseClient
       .from('nfse')
       .select(`
         *,
+        client:client_id (*),
         nfse_sp_settings:nfse_sp_settings_id (
           id,
           usuario_emissor,
@@ -55,7 +56,7 @@ serve(async (req) => {
       .single()
 
     if (nfseError || !nfse) {
-      console.error("Error fetching basic NFSe data:", nfseError)
+      console.error("Error fetching NFSe data:", nfseError)
       return new Response(
         JSON.stringify({ 
           error: "NFS-e não encontrada",
@@ -68,7 +69,7 @@ serve(async (req) => {
       )
     }
 
-    // Get company info (single record table)
+    // Get company info (prestador)
     const { data: companyInfo, error: companyError } = await supabaseClient
       .from('company_info')
       .select('*')
@@ -92,12 +93,32 @@ serve(async (req) => {
     // Validate required settings
     const missingFields = []
     
+    // Validate prestador (company_info)
+    if (!companyInfo?.cnpj) missingFields.push('cnpj do prestador')
+    if (!companyInfo?.inscricao_municipal) missingFields.push('inscricao_municipal do prestador')
+    if (!companyInfo?.razao_social) missingFields.push('razao_social do prestador')
+    if (!companyInfo?.endereco_logradouro) missingFields.push('endereço do prestador')
+    if (!companyInfo?.endereco_numero) missingFields.push('número do endereço do prestador')
+    if (!companyInfo?.endereco_bairro) missingFields.push('bairro do prestador')
+    if (!companyInfo?.endereco_cidade) missingFields.push('cidade do prestador')
+    if (!companyInfo?.endereco_uf) missingFields.push('UF do prestador')
+    if (!companyInfo?.endereco_cep) missingFields.push('CEP do prestador')
+
+    // Validate tomador (client)
+    if (!nfse.client?.document) missingFields.push('documento do tomador')
+    if (!nfse.client?.name) missingFields.push('nome do tomador')
+    if (!nfse.client?.street) missingFields.push('endereço do tomador')
+    if (!nfse.client?.street_number) missingFields.push('número do endereço do tomador')
+    if (!nfse.client?.neighborhood) missingFields.push('bairro do tomador')
+    if (!nfse.client?.city) missingFields.push('cidade do tomador')
+    if (!nfse.client?.state) missingFields.push('UF do tomador')
+    if (!nfse.client?.zip_code) missingFields.push('CEP do tomador')
+
+    // Validate NFSe settings
     if (!nfse.nfse_sp_settings?.usuario_emissor) missingFields.push('usuario_emissor')
     if (!nfse.nfse_sp_settings?.senha_emissor) missingFields.push('senha_emissor')
     if (!nfse.nfse_sp_settings?.certificates?.certificate_data) missingFields.push('certificado_digital')
     if (!nfse.nfse_sp_settings?.certificates?.certificate_password) missingFields.push('senha_certificado')
-    if (!companyInfo?.cnpj) missingFields.push('cnpj')
-    if (!companyInfo?.inscricao_municipal) missingFields.push('inscricao_municipal')
 
     if (missingFields.length > 0) {
       console.error("Missing required fields:", missingFields)
@@ -112,6 +133,34 @@ serve(async (req) => {
         }
       )
     }
+
+    // Log data for debugging
+    console.log("Prestador data:", {
+      cnpj: companyInfo.cnpj,
+      inscricao_municipal: companyInfo.inscricao_municipal,
+      razao_social: companyInfo.razao_social,
+      endereco: {
+        logradouro: companyInfo.endereco_logradouro,
+        numero: companyInfo.endereco_numero,
+        bairro: companyInfo.endereco_bairro,
+        cidade: companyInfo.endereco_cidade,
+        uf: companyInfo.endereco_uf,
+        cep: companyInfo.endereco_cep
+      }
+    })
+
+    console.log("Tomador data:", {
+      documento: nfse.client.document,
+      nome: nfse.client.name,
+      endereco: {
+        logradouro: nfse.client.street,
+        numero: nfse.client.street_number,
+        bairro: nfse.client.neighborhood,
+        cidade: nfse.client.city,
+        uf: nfse.client.state,
+        cep: nfse.client.zip_code
+      }
+    })
 
     // Add to transmission queue
     const { error: queueError } = await supabaseClient
