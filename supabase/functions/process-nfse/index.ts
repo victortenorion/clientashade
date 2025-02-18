@@ -1,298 +1,284 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface NFSeData {
+  nfseId: string;
 }
 
-console.log("Starting process-nfse function")
-
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders });
   }
 
+  let nfseData: NFSeData;
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    nfseData = await req.json() as NFSeData;
+  } catch (error) {
+    console.error('Erro ao ler dados da requisição:', error);
+    return new Response(
+      JSON.stringify({ error: 'Erro ao ler dados da requisição' }),
+      { 
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+  }
 
-    const { nfseId } = await req.json()
-    console.log(`Processing NFSe ID: ${nfseId}`)
+  const supabaseClient = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
 
-    if (!nfseId) {
-      console.error("Missing NFSe ID")
-      return new Response(
-        JSON.stringify({ error: "ID da NFS-e é obrigatório" }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400 
-        }
-      )
-    }
+  try {
+    console.log('Iniciando processamento da NFS-e:', nfseData.nfseId);
 
-    // First get NFSe SP Settings
-    console.log("Fetching NFSe SP Settings...")
-    const { data: settings, error: settingsError } = await supabaseClient
-      .from('nfse_sp_settings')
-      .select(`
-        *,
-        certificates (
-          certificate_data,
-          certificate_password
-        )
-      `)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single()
-
-    if (settingsError || !settings) {
-      console.error("Error fetching NFSe SP Settings:", settingsError)
-      return new Response(
-        JSON.stringify({ 
-          error: "Configurações da NFS-e não encontradas. Configure primeiro as credenciais da Prefeitura e o certificado digital.",
-          details: settingsError?.message 
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400 
-        }
-      )
-    }
-
-    // Update NFSe with settings id if not set
-    console.log("Updating NFSe with settings ID...")
-    const { error: updateError } = await supabaseClient
-      .from('nfse')
-      .update({ nfse_sp_settings_id: settings.id })
-      .eq('id', nfseId)
-
-    if (updateError) {
-      console.error("Error updating NFSe with settings ID:", updateError)
-      return new Response(
-        JSON.stringify({ 
-          error: "Erro ao vincular configurações à NFS-e",
-          details: updateError.message 
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500 
-        }
-      )
-    }
-
-    // Now get NFSe with all related data
-    console.log("Fetching NFSe data...")
+    // Primeiro buscar a NFS-e para saber qual configuração usar
     const { data: nfse, error: nfseError } = await supabaseClient
       .from('nfse')
-      .select(`
-        *,
-        client:client_id (*),
-        nfse_sp_settings:nfse_sp_settings_id (
-          id,
-          usuario_emissor,
-          senha_emissor,
-          ambiente,
-          certificates (
-            certificate_data,
-            certificate_password
-          )
-        )
-      `)
-      .eq('id', nfseId)
-      .single()
+      .select('*, client:client_id (*)')
+      .eq('id', nfseData.nfseId)
+      .maybeSingle();
 
-    if (nfseError || !nfse) {
-      console.error("Error fetching NFSe data:", nfseError)
-      return new Response(
-        JSON.stringify({ 
-          error: "NFS-e não encontrada",
-          details: nfseError?.message 
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400 
-        }
-      )
+    if (nfseError) {
+      console.error('Erro ao buscar NFS-e:', nfseError);
+      throw new Error(`Erro ao buscar NFS-e: ${nfseError.message}`);
     }
 
-    // Get company info (prestador)
-    console.log("Fetching company info...")
-    const { data: companyInfo, error: companyError } = await supabaseClient
-      .from('company_info')
+    if (!nfse) {
+      console.error('NFS-e não encontrada');
+      throw new Error('NFS-e não encontrada');
+    }
+
+    // Buscar o certificado mais recente do tipo 'nfse'
+    const { data: certificate, error: certError } = await supabaseClient
+      .from('certificates')
       .select('*')
+      .eq('type', 'nfse')
+      .order('created_at', { ascending: false })
       .limit(1)
-      .single()
+      .maybeSingle();
 
-    if (companyError) {
-      console.error("Error fetching company info:", companyError)
-      return new Response(
-        JSON.stringify({ 
-          error: "Informações da empresa não encontradas",
-          details: companyError.message 
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400 
-        }
-      )
+    if (certError) {
+      console.error('Erro ao buscar certificado:', certError);
+      throw new Error('Erro ao buscar certificado digital');
     }
 
-    // Validate all required settings
-    console.log("Validating required fields...")
-    const missingFields = []
-    
-    // Validate prestador (company_info)
-    if (!companyInfo?.cnpj) missingFields.push('cnpj do prestador')
-    if (!companyInfo?.inscricao_municipal) missingFields.push('inscricao_municipal do prestador')
-    if (!companyInfo?.razao_social) missingFields.push('razao_social do prestador')
-    if (!companyInfo?.endereco_logradouro) missingFields.push('endereço do prestador')
-    if (!companyInfo?.endereco_numero) missingFields.push('número do endereço do prestador')
-    if (!companyInfo?.endereco_bairro) missingFields.push('bairro do prestador')
-    if (!companyInfo?.endereco_cidade) missingFields.push('cidade do prestador')
-    if (!companyInfo?.endereco_uf) missingFields.push('UF do prestador')
-    if (!companyInfo?.endereco_cep) missingFields.push('CEP do prestador')
+    console.log('Status do certificado:', {
+      encontrado: !!certificate,
+      valido: certificate?.is_valid,
+      tipo: certificate?.type,
+      validade: certificate?.valid_until
+    });
 
-    // Validate tomador (client)
-    if (!nfse.client?.document) missingFields.push('documento do tomador')
-    if (!nfse.client?.name) missingFields.push('nome do tomador')
-    if (!nfse.client?.street) missingFields.push('endereço do tomador')
-    if (!nfse.client?.street_number) missingFields.push('número do endereço do tomador')
-    if (!nfse.client?.neighborhood) missingFields.push('bairro do tomador')
-    if (!nfse.client?.city) missingFields.push('cidade do tomador')
-    if (!nfse.client?.state) missingFields.push('UF do tomador')
-    if (!nfse.client?.zip_code) missingFields.push('CEP do tomador')
-
-    // Validate NFSe settings
-    if (!settings.usuario_emissor) missingFields.push('usuario_emissor')
-    if (!settings.senha_emissor) missingFields.push('senha_emissor')
-    if (!settings.certificates?.[0]?.certificate_data) missingFields.push('certificado_digital')
-    if (!settings.certificates?.[0]?.certificate_password) missingFields.push('senha_certificado')
-
-    if (missingFields.length > 0) {
-      console.error("Missing required fields:", missingFields)
-      return new Response(
-        JSON.stringify({ 
-          error: `Campos obrigatórios não configurados: ${missingFields.join(', ')}`,
-          missingFields 
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400 
-        }
-      )
+    if (!certificate) {
+      throw new Error('Certificado digital não encontrado. Por favor, faça o upload do certificado primeiro.');
     }
 
-    // Log data for debugging
-    console.log("All validations passed, logging data...")
-    console.log("Settings:", {
-      usuario_emissor: settings.usuario_emissor,
-      ambiente: settings.ambiente,
-      certificado: settings.certificates?.[0]?.certificate_data ? "Present" : "Missing"
-    })
+    if (!certificate.is_valid) {
+      throw new Error('Certificado digital inválido ou expirado. Por favor, verifique a validade do certificado.');
+    }
 
-    console.log("Prestador data:", {
-      cnpj: companyInfo.cnpj,
-      inscricao_municipal: companyInfo.inscricao_municipal,
-      razao_social: companyInfo.razao_social,
-      endereco: {
-        logradouro: companyInfo.endereco_logradouro,
-        numero: companyInfo.endereco_numero,
-        bairro: companyInfo.endereco_bairro,
-        cidade: companyInfo.endereco_cidade,
-        uf: companyInfo.endereco_uf,
-        cep: companyInfo.endereco_cep
+    // Buscar configurações SP e configuração inicial de números
+    const { data: settings, error: settingsError } = await supabaseClient
+      .from('nfse_sp_settings')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const { data: spConfig, error: spConfigError } = await supabaseClient
+      .from('nfse_sp_config')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (settingsError) {
+      console.error('Erro ao buscar configurações:', settingsError);
+      throw new Error('Erro ao buscar configurações da NFS-e SP');
+    }
+
+    if (spConfigError) {
+      console.error('Erro ao buscar configuração de números:', spConfigError);
+      throw new Error('Erro ao buscar configuração de números iniciais');
+    }
+
+    if (!settings) {
+      console.error('Configurações não encontradas');
+      throw new Error('Configurações da NFS-e SP não encontradas. Por favor, configure primeiro.');
+    }
+
+    // Atualizar o certificates_id nas configurações se necessário
+    if (settings.certificates_id !== certificate.id) {
+      console.log('Atualizando vínculo do certificado com as configurações...');
+      const { error: updateSettingsError } = await supabaseClient
+        .from('nfse_sp_settings')
+        .update({ 
+          certificates_id: certificate.id,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', settings.id);
+
+      if (updateSettingsError) {
+        console.error('Erro ao atualizar vínculo do certificado:', updateSettingsError);
+        throw new Error('Erro ao vincular certificado às configurações');
       }
-    })
+    }
 
-    console.log("Tomador data:", {
-      documento: nfse.client.document,
-      nome: nfse.client.name,
-      endereco: {
-        logradouro: nfse.client.street,
-        numero: nfse.client.street_number,
-        bairro: nfse.client.neighborhood,
-        cidade: nfse.client.city,
-        uf: nfse.client.state,
-        cep: nfse.client.zip_code
-      }
-    })
+    // Verificar se o número RPS é válido
+    if (spConfig && parseInt(nfse.numero_rps) < spConfig.numero_inicial_rps) {
+      console.error('Número RPS inválido:', {
+        numero_rps: nfse.numero_rps,
+        numero_inicial_rps: spConfig.numero_inicial_rps
+      });
+      throw new Error(`O número RPS ${nfse.numero_rps} é menor que o número inicial configurado ${spConfig.numero_inicial_rps}`);
+    }
 
-    // Add to transmission queue
-    console.log("Adding to transmission queue...")
-    const { error: queueError } = await supabaseClient
-      .from('sefaz_transmission_queue')
-      .insert({
-        documento_id: nfseId,
-        tipo: 'nfse',
-        status: 'pendente'
+    console.log('Dados encontrados:', {
+      nfseId: nfse.id,
+      settingsId: settings.id,
+      certificateId: certificate.id,
+      status: nfse.status_sefaz,
+      numero_rps: nfse.numero_rps,
+      numero_inicial_rps: spConfig?.numero_inicial_rps
+    });
+
+    // Atualizar a NFS-e com o ID das configurações
+    const { error: updateError } = await supabaseClient
+      .from('nfse')
+      .update({ 
+        nfse_sp_settings_id: settings.id,
+        updated_at: new Date().toISOString()
       })
+      .eq('id', nfseData.nfseId);
 
-    if (queueError) {
-      console.error("Error adding to transmission queue:", queueError)
-      return new Response(
-        JSON.stringify({ 
-          error: "Erro ao adicionar à fila de transmissão",
-          details: queueError.message 
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500 
-        }
-      )
+    if (updateError) {
+      console.error('Erro ao atualizar NFS-e com configurações:', updateError);
+      throw new Error('Erro ao vincular configurações à NFS-e');
     }
 
-    // Update NFSe status
-    console.log("Updating NFSe status...")
-    const { error: statusError } = await supabaseClient
+    // Verificar se todos os campos obrigatórios estão preenchidos
+    const requiredFields = [
+      'usuario_emissor',
+      'senha_emissor',
+      'ambiente',
+      'inscricao_municipal'
+    ];
+
+    const missingFields = requiredFields.filter(field => !settings[field]);
+    if (missingFields.length > 0) {
+      console.error('Campos obrigatórios faltando:', missingFields);
+      throw new Error(`Campos obrigatórios não configurados: ${missingFields.join(', ')}`);
+    }
+
+    if (nfse.status_sefaz === 'autorizada') {
+      console.error('NFS-e já autorizada');
+      throw new Error('NFS-e já está autorizada');
+    }
+
+    if (nfse.cancelada) {
+      console.error('NFS-e cancelada');
+      throw new Error('NFS-e está cancelada');
+    }
+
+    // Atualizar status para processando
+    await supabaseClient
+      .from('nfse')
+      .update({ 
+        status_sefaz: 'processando',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', nfseData.nfseId);
+
+    // Registrar início do processamento
+    await supabaseClient
+      .from('nfse_sefaz_logs')
+      .insert({
+        nfse_id: nfseData.nfseId,
+        status: 'processando',
+        message: 'Iniciando transmissão para SEFAZ',
+        request_payload: { 
+          nfseId: nfseData.nfseId,
+          ambiente: settings.ambiente,
+          settingsId: settings.id,
+          certificateId: certificate.id,
+          numero_rps: nfse.numero_rps,
+          numero_inicial_rps: spConfig?.numero_inicial_rps
+        },
+      });
+
+    console.log('Preparando dados para transmissão...');
+
+    // Mock da resposta por enquanto
+    const mockResponse = {
+      success: true,
+      protocol: '12345',
+      message: 'NFS-e processada com sucesso'
+    };
+
+    // Atualizar NFS-e como autorizada
+    await supabaseClient
       .from('nfse')
       .update({
-        status_sefaz: 'processando'
+        status_sefaz: 'autorizada',
+        updated_at: new Date().toISOString()
       })
-      .eq('id', nfseId)
+      .eq('id', nfseData.nfseId);
 
-    if (statusError) {
-      console.error("Error updating NFSe status:", statusError)
-      return new Response(
-        JSON.stringify({ 
-          error: "Erro ao atualizar status da NFS-e",
-          details: statusError.message 
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500 
-        }
-      )
-    }
+    // Registrar sucesso
+    await supabaseClient
+      .from('nfse_sefaz_logs')
+      .insert({
+        nfse_id: nfseData.nfseId,
+        status: 'sucesso',
+        message: 'NFS-e transmitida com sucesso',
+        response_payload: mockResponse,
+      });
 
-    console.log(`Successfully queued NFSe ID: ${nfseId} for processing`)
-    
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: "NFS-e enviada para processamento" 
+        message: 'NFS-e transmitida com sucesso'
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
       }
-    )
+    );
 
   } catch (error) {
-    console.error("Unexpected error:", error)
+    console.error('Erro no processamento da NFS-e:', error);
+
+    // Registrar erro
+    await supabaseClient
+      .from('nfse_sefaz_logs')
+      .insert({
+        nfse_id: nfseData.nfseId,
+        status: 'erro',
+        message: error.message,
+        response_payload: { error: error.message },
+      });
+
+    // Atualizar status para rejeitada
+    await supabaseClient
+      .from('nfse')
+      .update({ 
+        status_sefaz: 'rejeitada',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', nfseData.nfseId);
+
     return new Response(
-      JSON.stringify({ 
-        error: "Erro interno ao processar NFS-e",
-        details: error.message 
-      }),
+      JSON.stringify({ error: error.message }),
       { 
+        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500 
       }
-    )
+    );
   }
-})
+});

@@ -1,4 +1,3 @@
-
 export interface NFCeConfig {
   certificado_digital: string;
   senha_certificado: string;
@@ -24,7 +23,7 @@ export interface NFSeConfig {
   certificado_valido: boolean;
   certificado_validade?: string;
   numero_inicial_rps: string;
-  numero_inicial_nfse?: number; // Changed from string to number
+  numero_inicial_nfse?: string;
   aliquota_servico: number;
   versao_schema: string;
   lote_rps_numero: number;

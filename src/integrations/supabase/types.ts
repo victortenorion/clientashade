@@ -1630,7 +1630,6 @@ export type Database = {
           intermediario_cnpj: string | null
           intermediario_email: string | null
           intermediario_inscricao_municipal: string | null
-          is_active: boolean | null
           iss_retencao_fonte: boolean | null
           iss_retido_intermediario: boolean | null
           lote_rps_numero: number | null
@@ -1702,7 +1701,6 @@ export type Database = {
           intermediario_cnpj?: string | null
           intermediario_email?: string | null
           intermediario_inscricao_municipal?: string | null
-          is_active?: boolean | null
           iss_retencao_fonte?: boolean | null
           iss_retido_intermediario?: boolean | null
           lote_rps_numero?: number | null
@@ -1774,7 +1772,6 @@ export type Database = {
           intermediario_cnpj?: string | null
           intermediario_email?: string | null
           intermediario_inscricao_municipal?: string | null
-          is_active?: boolean | null
           iss_retencao_fonte?: boolean | null
           iss_retido_intermediario?: boolean | null
           lote_rps_numero?: number | null
@@ -1827,13 +1824,6 @@ export type Database = {
           wsdl_producao_url?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_certificates"
-            columns: ["certificates_id"]
-            isOneToOne: false
-            referencedRelation: "certificates"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "nfse_sp_settings_certificado_id_fkey"
             columns: ["certificado_id"]
