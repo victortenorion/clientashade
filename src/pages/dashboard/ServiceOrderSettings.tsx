@@ -5,6 +5,7 @@ import { SEFAZTab } from "./components/SEFAZTab";
 import { ClientTab } from "./components/ClientTab";
 import { NotasFiscaisTab } from "./components/NotasFiscaisTab";
 import { CompanyInfoTab } from "./components/CompanyInfoTab";
+import { NFSeSPSettingsTab } from "./components/NFSeSPSettingsTab";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
@@ -226,6 +227,9 @@ const ServiceOrderSettings = () => {
           handleSaveAllConfigs={handleSaveAllConfigs}
         />
       );
+    }
+    if (path.includes("/nfse-sp")) {
+      return <NFSeSPSettingsTab />;
     }
     if (path.includes("/area-cliente") || path.includes("/campos-visiveis")) {
       return <ClientTab />;
