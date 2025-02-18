@@ -18,7 +18,7 @@ const Dashboard = () => {
   const location = useLocation();
   const { toast } = useToast();
   const [username, setUsername] = useState<string>("");
-  const [userPermissions, setUserPermissions] = useState<string[]>(["menu_os", "menu_clientes", "menu_lojas"]);
+  const [userPermissions, setUserPermissions] = useState<string[]>([]);
 
   const handleLogout = async () => {
     try {
@@ -60,24 +60,17 @@ const Dashboard = () => {
           setUsername(profileData.username);
         }
 
-        // Buscar permissões do usuário
         const { data: permissionsData, error: permissionsError } = await supabase
           .from("user_permissions")
           .select("menu_permission")
           .eq("user_id", session.user.id);
 
-        if (permissionsError) {
-          console.error("Erro ao buscar permissões:", permissionsError);
-          // Se houver erro, definir permissões padrão
-          setUserPermissions(["menu_os", "menu_clientes", "menu_lojas"]);
-        } else if (permissionsData && permissionsData.length > 0) {
+        if (permissionsError) throw permissionsError;
+
+        if (permissionsData) {
           const permissions = permissionsData.map(p => p.menu_permission);
           console.log("Permissões do usuário:", permissions);
           setUserPermissions(permissions);
-        } else {
-          // Se não houver permissões, definir permissões padrão
-          console.log("Nenhuma permissão encontrada, usando padrão");
-          setUserPermissions(["menu_os", "menu_clientes", "menu_lojas"]);
         }
 
         const { data: storeData, error: storeError } = await supabase
