@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -14,6 +13,7 @@ import {
   Database,
   Building,
   Lock,
+  Building2,
 } from "lucide-react";
 import {
   SidebarMenu,
@@ -171,20 +171,31 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
                     isActive={location.pathname.includes("/dashboard/nfce")}
                   >
                     <Receipt className="h-4 w-4" />
-                    <span>NFC-e</span>
+                    <span>NFCe</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
               {hasPermission('nfse') && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    onClick={() => navigate("/dashboard/nfse")}
-                    isActive={location.pathname.includes("/dashboard/nfse")}
-                  >
-                    <Receipt className="h-4 w-4" />
-                    <span>NFS-e</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      onClick={() => navigate("/dashboard/nfse")}
+                      isActive={location.pathname.includes("/dashboard/nfse")}
+                    >
+                      <Receipt className="h-4 w-4" />
+                      <span>NFSe</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      onClick={() => navigate("/dashboard/nfse-sp-config")}
+                      isActive={location.pathname.includes("/dashboard/nfse-sp-config")}
+                    >
+                      <Building2 className="h-4 w-4" />
+                      <span>NFSe SP Config</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </>
               )}
             </SidebarMenu>
           </SidebarGroupContent>
