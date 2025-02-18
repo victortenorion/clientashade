@@ -1,195 +1,184 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
-import forge from "npm:node-forge";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+}
+
+console.log("Starting cancel-nfse function")
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
+    // Create Supabase client
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    )
 
-    const { nfseId, motivoCancelamento } = await req.json();
+    // Get request data
+    const { nfseId, motivoCancelamento } = await req.json()
+    console.log(`Attempting to cancel NFSe ID: ${nfseId} with reason: ${motivoCancelamento}`)
 
-    // Verificar se a NFS-e existe e pode ser cancelada
+    if (!nfseId || !motivoCancelamento) {
+      console.error("Missing required parameters")
+      return new Response(
+        JSON.stringify({ error: "ID da NFS-e e motivo do cancelamento são obrigatórios" }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
+        }
+      )
+    }
+
+    // First, let's check if the NFSe exists and get its details
     const { data: nfse, error: nfseError } = await supabaseClient
       .from('nfse')
       .select(`
-        *,
-        nfse_sp_settings (
-          *,
-          certificates (
-            certificado,
-            senha
-          )
-        )
+        id,
+        numero_nfse,
+        status_sefaz,
+        cancelada,
+        nfse_sp_settings_id
       `)
       .eq('id', nfseId)
-      .single();
+      .single()
 
-    if (nfseError) throw new Error('NFS-e não encontrada');
-    if (nfse.cancelada) throw new Error('NFS-e já está cancelada');
-    if (nfse.status_sefaz !== 'autorizada') throw new Error('Apenas NFS-e autorizadas podem ser canceladas');
-
-    // Preparar dados para o cancelamento
-    const settings = nfse.nfse_sp_settings;
-    if (!settings) throw new Error('Configurações da NFS-e SP não encontradas');
-
-    const certificado = settings.certificates?.certificado;
-    const senha = settings.certificates?.senha;
-    
-    if (!certificado || !senha) {
-      throw new Error('Certificado digital não encontrado');
-    }
-
-    // Preparar XML de cancelamento
-    const xmlCancelamento = `<?xml version="1.0" encoding="UTF-8"?>
-<PedidoCancelamentoNFe xmlns="http://www.prefeitura.sp.gov.br/nfe">
-  <Cabecalho xmlns="" Versao="1">
-    <CPFCNPJRemetente>
-      <CNPJ>${settings.cnpj.replace(/\D/g, '')}</CNPJ>
-    </CPFCNPJRemetente>
-    <transacao>true</transacao>
-  </Cabecalho>
-  <Detalhe xmlns="">
-    <ChaveNFe>
-      <InscricaoPrestador>${settings.inscricao_municipal}</InscricaoPrestador>
-      <NumeroNFe>${nfse.numero_nfse}</NumeroNFe>
-    </ChaveNFe>
-    <AssinaturaCancelamento>${await gerarAssinaturaCancelamento(
-      settings.inscricao_municipal,
-      nfse.numero_nfse
-    )}</AssinaturaCancelamento>
-  </Detalhe>
-</PedidoCancelamentoNFe>`;
-
-    // Assinar XML com certificado
-    const xmlAssinado = await assinarXML(xmlCancelamento, certificado, senha);
-
-    console.log('Enviando requisição de cancelamento para a Prefeitura...');
-    
-    // Enviar para a API da prefeitura
-    const response = await fetch('https://nfe.prefeitura.sp.gov.br/ws/lotenfe.asmx', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'text/xml;charset=UTF-8',
-        'SOAPAction': 'http://www.prefeitura.sp.gov.br/nfe/ws/cancelamento',
-      },
-      body: `<?xml version="1.0" encoding="UTF-8"?>
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <soap:Body>
-    <CancelarNfseRequest xmlns="http://www.prefeitura.sp.gov.br/nfe">
-      <VersaoSchema>1</VersaoSchema>
-      <MensagemXML>${xmlAssinado}</MensagemXML>
-    </CancelarNfseRequest>
-  </soap:Body>
-</soap:Envelope>`
-    });
-
-    if (!response.ok) {
-      throw new Error(`Erro na chamada à API da Prefeitura: ${response.statusText}`);
-    }
-
-    const responseText = await response.text();
-    console.log('Resposta da Prefeitura:', responseText);
-
-    // Verificar resposta da prefeitura
-    if (responseText.includes('<Sucesso>true</Sucesso>')) {
-      // Atualizar status da NFS-e
-      const { error: updateError } = await supabaseClient
-        .from('nfse')
-        .update({
-          cancelada: true,
-          data_cancelamento: new Date().toISOString(),
-          motivo_cancelamento: motivoCancelamento
-        })
-        .eq('id', nfseId);
-
-      if (updateError) throw updateError;
-
-      // Registrar evento de cancelamento
-      await supabaseClient
-        .from('nfse_eventos')
-        .insert({
-          nfse_id: nfseId,
-          tipo_evento: 'cancelamento',
-          status: 'sucesso',
-          descricao: motivoCancelamento,
-          xml_envio: xmlAssinado,
-          xml_retorno: responseText
-        });
-
+    if (nfseError || !nfse) {
+      console.error("Error fetching NFSe:", nfseError)
       return new Response(
-        JSON.stringify({ success: true, message: 'NFS-e cancelada com sucesso' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    } else {
-      throw new Error('Erro no cancelamento da NFS-e: ' + extrairMensagemErro(responseText));
+        JSON.stringify({ error: "NFS-e não encontrada" }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
+        }
+      )
     }
+
+    if (nfse.cancelada) {
+      console.error("NFSe already cancelled")
+      return new Response(
+        JSON.stringify({ error: "NFS-e já está cancelada" }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
+        }
+      )
+    }
+
+    if (nfse.status_sefaz !== 'autorizada') {
+      console.error("NFSe not in authorized status")
+      return new Response(
+        JSON.stringify({ error: "Apenas NFS-e autorizadas podem ser canceladas" }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
+        }
+      )
+    }
+
+    // Get NFSe SP settings
+    const { data: settings, error: settingsError } = await supabaseClient
+      .from('nfse_sp_settings')
+      .select('*')
+      .eq('id', nfse.nfse_sp_settings_id)
+      .single()
+
+    if (settingsError || !settings) {
+      console.error("Error fetching NFSe SP settings:", settingsError)
+      return new Response(
+        JSON.stringify({ error: "Configurações da NFS-e não encontradas" }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
+        }
+      )
+    }
+
+    // Add to transmission queue
+    const { error: queueError } = await supabaseClient
+      .from('sefaz_transmission_queue')
+      .insert({
+        documento_id: nfseId,
+        tipo: 'cancelamento',
+        status: 'pendente'
+      })
+
+    if (queueError) {
+      console.error("Error adding to transmission queue:", queueError)
+      return new Response(
+        JSON.stringify({ error: "Erro ao adicionar à fila de transmissão" }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500 
+        }
+      )
+    }
+
+    // Update NFSe status
+    const { error: updateError } = await supabaseClient
+      .from('nfse')
+      .update({
+        cancelada: true,
+        data_cancelamento: new Date().toISOString(),
+        motivo_cancelamento: motivoCancelamento,
+        status_sefaz: 'processando'
+      })
+      .eq('id', nfseId)
+
+    if (updateError) {
+      console.error("Error updating NFSe:", updateError)
+      return new Response(
+        JSON.stringify({ error: "Erro ao atualizar status da NFS-e" }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500 
+        }
+      )
+    }
+
+    // Add event log
+    const { error: eventError } = await supabaseClient
+      .from('nfse_eventos')
+      .insert({
+        nfse_id: nfseId,
+        tipo_evento: 'cancelamento',
+        descricao: motivoCancelamento,
+        status: 'processando'
+      })
+
+    if (eventError) {
+      console.error("Error creating event log:", eventError)
+      // Don't return error here as the cancellation was already processed
+    }
+
+    console.log(`Successfully initiated cancellation for NFSe ID: ${nfseId}`)
+    
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        message: "Solicitação de cancelamento enviada com sucesso" 
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200 
+      }
+    )
 
   } catch (error) {
-    console.error('Erro ao cancelar NFS-e:', error);
+    console.error("Unexpected error:", error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Erro interno ao processar cancelamento" }),
       { 
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500 
       }
-    );
+    )
   }
-});
-
-// Funções auxiliares
-async function assinarXML(xml: string, certificadoBase64: string, senha: string): Promise<string> {
-  // Decodificar o certificado
-  const binaryString = atob(certificadoBase64);
-  const der = forge.util.createBuffer(binaryString, 'binary');
-  const asn1 = forge.asn1.fromDer(der);
-  const pkcs12 = forge.pkcs12.pkcs12FromAsn1(asn1, senha);
-
-  // Extrair chave privada e certificado
-  const keyData = pkcs12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag })[forge.pki.oids.pkcs8ShroudedKeyBag]?.[0];
-  const certBag = pkcs12.getBags({ bagType: forge.pki.oids.certBag })[forge.pki.oids.certBag]?.[0];
-
-  if (!keyData || !certBag) {
-    throw new Error('Certificado digital inválido');
-  }
-
-  const privateKey = keyData.key;
-  const cert = certBag.cert;
-
-  // Criar assinatura digital
-  const md = forge.md.sha1.create();
-  md.update(xml, 'utf8');
-  const signature = privateKey.sign(md);
-
-  // Retornar XML assinado (implementação simplificada)
-  return xml.replace('</PedidoCancelamentoNFe>', `<Signature>${forge.util.encode64(signature)}</Signature></PedidoCancelamentoNFe>`);
-}
-
-async function gerarAssinaturaCancelamento(inscricaoMunicipal: string, numeroNFe: number): Promise<string> {
-  const texto = `${inscricaoMunicipal}${numeroNFe}`;
-  const encoder = new TextEncoder();
-  const data = encoder.encode(texto);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-function extrairMensagemErro(xmlResponse: string): string {
-  // Implementar parser de XML para extrair mensagem de erro
-  // Por simplicidade, retornando mensagem genérica
-  return xmlResponse.includes('<Erro>') 
-    ? 'Erro reportado pela Prefeitura'
-    : 'Erro desconhecido no processamento';
-}
+})
