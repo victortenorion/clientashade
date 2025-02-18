@@ -1475,28 +1475,43 @@ export type Database = {
       nfse_sefaz_logs: {
         Row: {
           created_at: string
+          error_details: Json | null
           id: string
           message: string | null
           nfse_id: string
+          processed_at: string | null
+          processing_time_ms: number | null
+          request_headers: Json | null
           request_payload: Json | null
+          response_headers: Json | null
           response_payload: Json | null
           status: string
         }
         Insert: {
           created_at?: string
+          error_details?: Json | null
           id?: string
           message?: string | null
           nfse_id: string
+          processed_at?: string | null
+          processing_time_ms?: number | null
+          request_headers?: Json | null
           request_payload?: Json | null
+          response_headers?: Json | null
           response_payload?: Json | null
           status: string
         }
         Update: {
           created_at?: string
+          error_details?: Json | null
           id?: string
           message?: string | null
           nfse_id?: string
+          processed_at?: string | null
+          processing_time_ms?: number | null
+          request_headers?: Json | null
           request_payload?: Json | null
+          response_headers?: Json | null
           response_payload?: Json | null
           status?: string
         }
