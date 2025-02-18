@@ -251,17 +251,15 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
                     <span>Área Restrita do Cliente</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                {hasPermission('nfse') && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      onClick={() => navigate("/dashboard/nfse-sp-config")}
-                      isActive={location.pathname.includes("/dashboard/nfse-sp-config")}
-                    >
-                      <Building2 className="h-4 w-4" />
-                      <span>NFSe SP Config</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => navigate("/dashboard/nfse-sp-config")}
+                    isActive={location.pathname === "/dashboard/nfse-sp-config"}
+                  >
+                    <Building2 className="h-4 w-4" />
+                    <span>NFSe SP Config</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           )}
