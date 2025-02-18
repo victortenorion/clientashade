@@ -1,3 +1,4 @@
 
 project_id = "eroqgxpjiqmftkgqyunj"
 name = "process-nfse"
+no_public_access = false
