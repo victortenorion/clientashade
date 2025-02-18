@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams, useParams } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { NFSeForm as NFSeFormComponent } from "./components/NFSeForm";
 import { Button } from "@/components/ui/button";
@@ -85,57 +85,58 @@ export default function NFSeForm() {
   const handleSubmit = async (data: NFSeFormData) => {
     setIsLoading(true);
     try {
-      // Primeiro, verificar o número inicial configurado
-      const { data: spConfig, error: configError } = await supabase
-        .from('nfse_sp_config')
-        .select('numero_inicial_nfse')
+      // Obter configurações da NFSe SP
+      const { data: spSettings, error: settingsError } = await supabase
+        .from('nfse_sp_settings')
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
 
-      if (configError && configError.code !== 'PGRST116') {
-        throw configError;
-      }
+      if (settingsError) throw settingsError;
+      if (!spSettings) throw new Error('Configurações da NFSe SP não encontradas');
 
-      // Verificar se já existem NFSe com número maior
-      const { data: lastNFSe, error: nfseError } = await supabase
-        .from('nfse')
-        .select('numero_nfse')
-        .order('numero_nfse', { ascending: false })
-        .limit(1)
+      // Buscar a ordem de serviço
+      const { data: serviceOrder, error: serviceOrderError } = await supabase
+        .from('service_orders')
+        .select(`
+          *,
+          client:client_id (*)
+        `)
+        .eq('id', serviceOrderId)
         .single();
 
-      if (nfseError && nfseError.code !== 'PGRST116') {
-        throw nfseError;
-      }
+      if (serviceOrderError) throw serviceOrderError;
+      if (!serviceOrder) throw new Error('Ordem de serviço não encontrada');
 
-      const numeroInicial = spConfig?.numero_inicial_nfse ? parseInt(spConfig.numero_inicial_nfse) : 1;
-      const ultimoNumero = lastNFSe?.numero_nfse || 0;
-
-      // Se o último número for menor que o número inicial configurado
-      if (ultimoNumero < numeroInicial) {
-        const confirmStart = window.confirm(
-          `A numeração das NFS-e iniciará em ${numeroInicial} conforme configurado em Dados da Empresa. Deseja continuar?`
-        );
-
-        if (!confirmStart) {
-          setIsLoading(false);
-          return;
-        }
-      }
+      const nfseData = {
+        client_id: serviceOrder.client_id,
+        service_order_id: serviceOrderId,
+        valor_servicos: serviceOrder.total_price || 0,
+        valor_total: serviceOrder.total_price || 0,
+        data_competencia: new Date(),
+        codigo_servico: data.codigo_servico,
+        discriminacao_servicos: data.discriminacao_servicos,
+        natureza_operacao: data.natureza_operacao || '1',
+        tipo_recolhimento: data.tipo_recolhimento || 'A',
+        numero_rps: data.numero_rps,
+        serie_rps: '1',
+        tipo_rps: 'RPS',
+        base_calculo: serviceOrder.total_price || 0,
+        status_sefaz: 'pendente',
+        nfse_sp_settings_id: spSettings.id,
+        tipo_documento: spSettings.tipo_documento || 'CNPJ',
+        ambiente: spSettings.ambiente || 'homologacao',
+        servico_discriminacao_item: data.discriminacao_servicos,
+        operacao_tributacao: '1', // Valor padrão para tributação no município
+        servico_exigibilidade: '1', // Valor padrão para exigível
+      };
 
       if (nfseId) {
         // Atualiza NFS-e existente
         const { error: updateError } = await supabase
           .from('nfse')
-          .update({
-            codigo_servico: data.codigo_servico,
-            discriminacao_servicos: data.discriminacao_servicos,
-            natureza_operacao: data.natureza_operacao,
-            tipo_recolhimento: data.tipo_recolhimento,
-            numero_rps: data.numero_rps,
-            updated_at: new Date().toISOString()
-          })
+          .update(nfseData)
           .eq('id', nfseId);
 
         if (updateError) throw updateError;
@@ -146,38 +147,9 @@ export default function NFSeForm() {
         });
       } else {
         // Criar nova NFS-e
-        const { data: serviceOrder, error: serviceOrderError } = await supabase
-          .from('service_orders')
-          .select(`
-            *,
-            client:client_id (*)
-          `)
-          .eq('id', serviceOrderId)
-          .single();
-
-        if (serviceOrderError) throw serviceOrderError;
-        if (!serviceOrder) throw new Error('Ordem de serviço não encontrada');
-
-        // Criar nova NFS-e
         const { data: nfse, error: nfseError } = await supabase
           .from('nfse')
-          .insert([{
-            client_id: serviceOrder.client_id,
-            service_order_id: serviceOrderId,
-            valor_servicos: serviceOrder.total_price,
-            valor_total: serviceOrder.total_price,
-            data_competencia: new Date(),
-            codigo_servico: serviceOrder.codigo_servico || data.codigo_servico,
-            discriminacao_servicos: serviceOrder.discriminacao_servico || data.discriminacao_servicos,
-            iss_retido: serviceOrder.iss_retido || false,
-            natureza_operacao: data.natureza_operacao,
-            tipo_recolhimento: data.tipo_recolhimento,
-            status_sefaz: 'pendente',
-            tipo_rps: 'RPS',
-            serie_rps: '1',
-            numero_rps: data.numero_rps,
-            numero_nfse: numeroInicial > ultimoNumero ? numeroInicial : (ultimoNumero + 1)
-          }])
+          .insert([nfseData])
           .select()
           .single();
 
@@ -185,7 +157,7 @@ export default function NFSeForm() {
 
         toast({
           title: "NFS-e gerada com sucesso",
-          description: `NFS-e número ${nfse.numero_nfse} criada`
+          description: `NFS-e criada com sucesso`
         });
       }
 
