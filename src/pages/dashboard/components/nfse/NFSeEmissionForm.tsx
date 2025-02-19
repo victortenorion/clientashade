@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -36,8 +35,8 @@ export function NFSeEmissionForm() {
     codigo_servico: "",
     discriminacao_servicos: "",
     natureza_operacao: "1",
-    valor_servicos: 0,
-    valor_deducoes: 0,
+    valor_servicos_rps: 0,
+    valor_deducoes_rps: 0,
     aliquota_iss: 0
   });
 
@@ -165,8 +164,8 @@ export function NFSeEmissionForm() {
             nfse_sp_settings_id: settings.id,
             status_sefaz: 'pendente',
             ambiente: settings.ambiente,
-            valor_servicos: formData.valor_servicos,
-            valor_deducoes: formData.valor_deducoes,
+            valor_servicos_rps: formData.valor_servicos_rps,
+            valor_deducoes_rps: formData.valor_deducoes_rps,
             aliquota_iss: formData.aliquota_iss
           }
         ])
@@ -278,27 +277,27 @@ export function NFSeEmissionForm() {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
-              <Label htmlFor="valor_servicos">Valor dos Serviços</Label>
+              <Label htmlFor="valor_servicos_rps">Valor dos Serviços</Label>
               <Input
-                id="valor_servicos"
+                id="valor_servicos_rps"
                 type="number"
                 step="0.01"
                 min="0"
-                value={formData.valor_servicos}
-                onChange={(e) => setFormData({ ...formData, valor_servicos: parseFloat(e.target.value) || 0 })}
+                value={formData.valor_servicos_rps}
+                onChange={(e) => setFormData({ ...formData, valor_servicos_rps: parseFloat(e.target.value) || 0 })}
                 disabled={isLoading}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="valor_deducoes">Valor das Deduções</Label>
+              <Label htmlFor="valor_deducoes_rps">Valor das Deduções</Label>
               <Input
-                id="valor_deducoes"
+                id="valor_deducoes_rps"
                 type="number"
                 step="0.01"
                 min="0"
-                value={formData.valor_deducoes}
-                onChange={(e) => setFormData({ ...formData, valor_deducoes: parseFloat(e.target.value) || 0 })}
+                value={formData.valor_deducoes_rps}
+                onChange={(e) => setFormData({ ...formData, valor_deducoes_rps: parseFloat(e.target.value) || 0 })}
                 disabled={isLoading}
               />
             </div>
