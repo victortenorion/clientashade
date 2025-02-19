@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { StatusTab } from "./components/StatusTab";
 import { SEFAZTab } from "./components/SEFAZTab";
@@ -38,18 +39,19 @@ const ServiceOrderSettings = () => {
     certificado_valido: false,
     certificado_validade: undefined,
     numero_inicial_rps: "1",
+    numero_inicial_nfse: "",
     aliquota_servico: 0,
     serie_rps_padrao: "RPS",
     tipo_rps: "RPS",
     padrao_prefeitura: "PREFEITURA DE SAO PAULO",
-    url_homologacao: "https://nfe.prefeitura.sp.gov.br/ws/lotenfe.asmx",
+    url_homologacao: "https://nfeh.prefeitura.sp.gov.br/ws/lotenfe.asmx",
     url_producao: "https://nfe.prefeitura.sp.gov.br/ws/lotenfe.asmx",
     lote_rps_numero: 1,
     versao_schema: "2.00",
-    operacao_tributacao: "",
-    codigo_regime_tributario: "",
+    operacao_tributacao: "1",
+    codigo_regime_tributario: "1",
     tipo_regime_especial: "",
-    codigo_cidade_prestacao: "",
+    codigo_cidade_prestacao: "3550308", // Código IBGE São Paulo
     usuario_emissor: "",
     senha_emissor: "",
     lote_envio_maximo: 50,
@@ -194,9 +196,9 @@ const ServiceOrderSettings = () => {
           nfceConfig={nfceConfig}
           nfseConfig={nfseConfig}
           fiscalConfig={fiscalConfig}
-          setNfceConfig={(config: NFCeConfig) => setNfceConfig(config)}
-          setNfseConfig={(config: NFSeConfig) => setNfseConfig(config)}
-          setFiscalConfig={(config: FiscalConfig) => setFiscalConfig(config)}
+          setNfceConfig={setNfceConfig}
+          setNfseConfig={setNfseConfig}
+          setFiscalConfig={setFiscalConfig}
           handleSaveAllConfigs={handleSaveAllConfigs}
         />
       );
