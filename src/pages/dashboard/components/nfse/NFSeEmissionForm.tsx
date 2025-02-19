@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -14,16 +13,32 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@/components/ui/alert";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+
+interface Client {
+  id: string;
+  name: string;
+  document: string;
+}
 
 export function NFSeEmissionForm() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [clients, setClients] = useState<Client[]>([]);
   const [certificateStatus, setCertificateStatus] = useState<{
     valid: boolean;
     message: string;
   }>({ valid: false, message: "" });
   const [formData, setFormData] = useState({
+    client_id: "",
     numero_rps: "",
     tipo_recolhimento: "A",
     codigo_servico: "",
@@ -33,7 +48,27 @@ export function NFSeEmissionForm() {
 
   useEffect(() => {
     checkCertificateStatus();
+    loadClients();
   }, []);
+
+  const loadClients = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, name, document')
+        .eq('excluida', false);
+
+      if (error) throw error;
+      setClients(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar clientes:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar clientes",
+        description: "Não foi possível carregar a lista de clientes."
+      });
+    }
+  };
 
   const checkCertificateStatus = async () => {
     try {
@@ -104,7 +139,10 @@ export function NFSeEmissionForm() {
         throw new Error("Certificado digital inválido ou não encontrado");
       }
 
-      // Validações dos campos obrigatórios
+      if (!formData.client_id) {
+        throw new Error("Selecione um cliente");
+      }
+
       if (!formData.codigo_servico || !formData.discriminacao_servicos || !formData.numero_rps) {
         throw new Error("Preencha todos os campos obrigatórios");
       }
@@ -119,11 +157,11 @@ export function NFSeEmissionForm() {
         throw new Error("Configurações da NFS-e não encontradas");
       }
 
-      // Criar nova NFS-e
       const { data: nfse, error: nfseError } = await supabase
         .from('nfse')
         .insert([
           {
+            client_id: formData.client_id,
             numero_rps: formData.numero_rps,
             tipo_recolhimento: formData.tipo_recolhimento,
             codigo_servico: formData.codigo_servico,
@@ -139,7 +177,6 @@ export function NFSeEmissionForm() {
 
       if (nfseError) throw nfseError;
 
-      // Adicionar à fila de transmissão
       await supabase
         .from('sefaz_transmission_queue')
         .insert([
@@ -170,7 +207,6 @@ export function NFSeEmissionForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Alerta de Status do Certificado */}
       <Alert variant={certificateStatus.valid ? "default" : "destructive"}>
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Status do Certificado Digital</AlertTitle>
@@ -178,6 +214,32 @@ export function NFSeEmissionForm() {
           {certificateStatus.message}
         </AlertDescription>
       </Alert>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Seleção do Cliente</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Label htmlFor="client_id">Cliente</Label>
+            <Select
+              value={formData.client_id}
+              onValueChange={(value) => setFormData({ ...formData, client_id: value })}
+            >
+              <SelectTrigger id="client_id">
+                <SelectValue placeholder="Selecione um cliente" />
+              </SelectTrigger>
+              <SelectContent>
+                {clients.map((client) => (
+                  <SelectItem key={client.id} value={client.id}>
+                    {client.name} - {client.document}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
