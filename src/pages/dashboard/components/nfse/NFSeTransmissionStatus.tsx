@@ -16,6 +16,11 @@ interface NFSeEvento {
   created_at: string;
 }
 
+interface NFSeStatus {
+  status_sefaz: string;
+  cancelada: boolean;
+}
+
 export function NFSeTransmissionStatus({ nfseId }: NFSeTransmissionStatusProps) {
   const [status, setStatus] = useState<string>("");
   const [eventos, setEventos] = useState<NFSeEvento[]>([]);
@@ -38,7 +43,8 @@ export function NFSeTransmissionStatus({ nfseId }: NFSeTransmissionStatusProps) 
         ]);
 
         if (nfseResponse.data) {
-          setStatus(nfseResponse.data.cancelada ? 'cancelada' : nfseResponse.data.status_sefaz);
+          const nfseData = nfseResponse.data as NFSeStatus;
+          setStatus(nfseData.cancelada ? 'cancelada' : nfseData.status_sefaz);
         }
 
         if (eventosResponse.data) {
@@ -64,7 +70,8 @@ export function NFSeTransmissionStatus({ nfseId }: NFSeTransmissionStatusProps) 
         },
         (payload) => {
           if (payload.new) {
-            setStatus(payload.new.cancelada ? 'cancelada' : payload.new.status_sefaz);
+            const newData = payload.new as NFSeStatus;
+            setStatus(newData.cancelada ? 'cancelada' : newData.status_sefaz);
           }
         }
       )
@@ -113,19 +120,19 @@ export function NFSeTransmissionStatus({ nfseId }: NFSeTransmissionStatusProps) 
     }
   };
 
-  const getStatusBadgeVariant = (status: string) => {
+  const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
       case 'pendente':
-        return 'warning';
+        return 'secondary';
       case 'processando':
         return 'secondary';
       case 'sucesso':
-        return 'success';
+        return 'default';
       case 'erro':
       case 'cancelada':
         return 'destructive';
       default:
-        return 'default';
+        return 'outline';
     }
   };
 
