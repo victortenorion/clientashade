@@ -6,6 +6,13 @@ import { supabase } from "@/lib/supabase";
 import { NFSeServiceInfo } from "./NFSeServiceInfo";
 import { NFSeHeaderInfo } from "./NFSeHeaderInfo";
 import { NFSeTransmissionStatus } from "./NFSeTransmissionStatus";
+import { Printer, FileText, Send, File, Loader2, Mail, Eye, X } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface CompanyData {
   razao_social: string;
@@ -34,6 +41,8 @@ export function NFSeEmissionForm() {
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
   const [sefazData, setSefazData] = useState<SEFAZData | null>(null);
   const [nfseId, setNfseId] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewData, setPreviewData] = useState<any>(null);
   const [formData, setFormData] = useState({
     numero_rps: "",
     tipo_recolhimento: "A",
@@ -71,6 +80,100 @@ export function NFSeEmissionForm() {
         title: "Erro ao carregar dados",
         description: "Verifique se os dados da empresa e configurações SEFAZ estão cadastrados."
       });
+    }
+  };
+
+  const handlePrint = async () => {
+    try {
+      if (!nfseId) return;
+      
+      setIsLoading(true);
+      const { data, error } = await supabase.functions.invoke('generate-nfse-pdf', {
+        body: { nfseId }
+      });
+
+      if (error) throw error;
+
+      const printFrame = document.createElement('iframe');
+      printFrame.style.display = 'none';
+      document.body.appendChild(printFrame);
+      
+      printFrame.src = data.pdf;
+      
+      printFrame.onload = () => {
+        try {
+          printFrame.contentWindow?.print();
+        } catch (e) {
+          console.error('Erro ao imprimir:', e);
+        }
+        setTimeout(() => {
+          document.body.removeChild(printFrame);
+        }, 1000);
+      };
+
+      toast({
+        title: "Sucesso",
+        description: "Documento enviado para impressão"
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao imprimir",
+        description: error.message
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePreview = async () => {
+    try {
+      if (!nfseId) return;
+      
+      setIsLoading(true);
+      const { data: nfseData, error: nfseError } = await supabase
+        .from('nfse')
+        .select(`
+          *,
+          company_info (
+            razao_social,
+            cnpj,
+            inscricao_municipal,
+            endereco_logradouro,
+            endereco_numero,
+            endereco_complemento,
+            endereco_bairro,
+            endereco_cidade,
+            endereco_uf,
+            endereco_cep
+          ),
+          clients (
+            name,
+            document,
+            street,
+            street_number,
+            complement,
+            neighborhood,
+            city,
+            state,
+            zip_code
+          )
+        `)
+        .eq('id', nfseId)
+        .single();
+
+      if (nfseError) throw nfseError;
+
+      setPreviewData(nfseData);
+      setShowPreview(true);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar preview",
+        description: error.message
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -284,10 +387,41 @@ export function NFSeEmissionForm() {
               <Button
                 type="button"
                 variant="outline"
+                onClick={handlePrint}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Printer className="h-4 w-4 mr-2" />
+                )}
+                Imprimir
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handlePreview}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Eye className="h-4 w-4 mr-2" />
+                )}
+                Visualizar
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
                 onClick={handleGeneratePDF}
                 disabled={isLoading}
               >
-                {isLoading ? "Gerando..." : "Gerar PDF"}
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <File className="h-4 w-4 mr-2" />
+                )}
+                PDF
               </Button>
               <Button
                 type="button"
@@ -295,7 +429,12 @@ export function NFSeEmissionForm() {
                 onClick={handleSendEmail}
                 disabled={isLoading}
               >
-                {isLoading ? "Enviando..." : "Enviar Email"}
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Mail className="h-4 w-4 mr-2" />
+                )}
+                Email
               </Button>
               <Button
                 type="button"
@@ -303,7 +442,12 @@ export function NFSeEmissionForm() {
                 onClick={handleCancel}
                 disabled={isLoading}
               >
-                {isLoading ? "Cancelando..." : "Cancelar NFS-e"}
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <X className="h-4 w-4 mr-2" />
+                )}
+                Cancelar
               </Button>
             </>
           )}
@@ -322,6 +466,91 @@ export function NFSeEmissionForm() {
       {nfseId && (
         <NFSeTransmissionStatus nfseId={nfseId} />
       )}
+
+      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Visualização da NFS-e</DialogTitle>
+          </DialogHeader>
+          {previewData && (
+            <div className="space-y-6">
+              <div className="border-b pb-4">
+                <h3 className="font-semibold mb-2">Prestador</h3>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="font-medium">Razão Social:</span>
+                    <p>{previewData.company_info.razao_social}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium">CNPJ:</span>
+                    <p>{previewData.company_info.cnpj}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium">Endereço:</span>
+                    <p>
+                      {previewData.company_info.endereco_logradouro}, {previewData.company_info.endereco_numero}
+                      {previewData.company_info.endereco_complemento ? ` - ${previewData.company_info.endereco_complemento}` : ''}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-medium">Bairro/Cidade/UF:</span>
+                    <p>
+                      {previewData.company_info.endereco_bairro} - {previewData.company_info.endereco_cidade}/{previewData.company_info.endereco_uf}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-b pb-4">
+                <h3 className="font-semibold mb-2">Tomador</h3>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="font-medium">Nome/Razão Social:</span>
+                    <p>{previewData.clients.name}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium">CPF/CNPJ:</span>
+                    <p>{previewData.clients.document}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium">Endereço:</span>
+                    <p>
+                      {previewData.clients.street}, {previewData.clients.street_number}
+                      {previewData.clients.complement ? ` - ${previewData.clients.complement}` : ''}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-medium">Bairro/Cidade/UF:</span>
+                    <p>
+                      {previewData.clients.neighborhood} - {previewData.clients.city}/{previewData.clients.state}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-2">Serviços</h3>
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <span className="font-medium">Discriminação:</span>
+                    <p className="whitespace-pre-wrap">{previewData.discriminacao_servicos}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <span className="font-medium">Valor do Serviço:</span>
+                      <p>R$ {previewData.valor_servicos?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium">Código do Serviço:</span>
+                      <p>{previewData.codigo_servico}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
