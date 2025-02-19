@@ -1,129 +1,147 @@
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
+import { NFSeSP } from './nfse-sp-client.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+}
 
-interface NFSeData {
+interface NFSeSPTransmissionData {
   nfseId: string;
+  loteId: string;
 }
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
-    const { nfseId } = await req.json() as NFSeData;
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Configurações do Supabase não encontradas')
+    }
 
-    // Buscar dados da NFS-e
-    const { data: nfse, error: nfseError } = await supabaseClient
+    const supabase = createClient(supabaseUrl, supabaseKey)
+    const { nfseId, loteId }: NFSeSPTransmissionData = await req.json()
+
+    console.log('Iniciando transmissão:', { nfseId, loteId })
+
+    // Buscar dados da NFS-e e configurações
+    const { data: nfseData, error: nfseError } = await supabase
       .from('nfse')
       .select(`
         *,
-        clients (
-          *
+        company_info (
+          razao_social,
+          cnpj,
+          inscricao_municipal,
+          endereco_logradouro,
+          endereco_numero,
+          endereco_complemento,
+          endereco_bairro,
+          endereco_cidade,
+          endereco_uf,
+          endereco_cep
         ),
-        nfse_sp_settings (
-          *
+        nfse_sp_settings!inner (
+          usuario_emissor,
+          senha_emissor,
+          ambiente,
+          certificates!inner (
+            certificate_data,
+            certificate_password
+          )
         )
       `)
       .eq('id', nfseId)
-      .single();
+      .single()
 
-    if (nfseError) throw nfseError;
+    if (nfseError) {
+      throw nfseError
+    }
 
-    // Buscar certificado
-    const { data: certificate, error: certError } = await supabaseClient
-      .from('certificates')
-      .select('*')
-      .eq('id', nfse.nfse_sp_settings.certificado_id)
-      .single();
+    // Preparar cliente SOAP
+    const nfseSP = new NFSeSP({
+      ambiente: nfseData.nfse_sp_settings.ambiente,
+      certificadoDigital: nfseData.nfse_sp_settings.certificates.certificate_data,
+      senhaCertificado: nfseData.nfse_sp_settings.certificates.certificate_password,
+      usuarioEmissor: nfseData.nfse_sp_settings.usuario_emissor,
+      senhaEmissor: nfseData.nfse_sp_settings.senha_emissor
+    })
 
-    if (certError) throw certError;
+    // Enviar lote RPS
+    const resultado = await nfseSP.enviarLoteRps({
+      cnpj: nfseData.company_info.cnpj,
+      inscricaoMunicipal: nfseData.company_info.inscricao_municipal,
+      loteRps: [{
+        tipo: nfseData.tipo_rps,
+        serie: nfseData.serie_rps,
+        numero: nfseData.numero_rps,
+        dataEmissao: nfseData.data_emissao,
+        naturezaOperacao: nfseData.natureza_operacao,
+        regimeEspecialTributacao: nfseData.regime_especial_tributacao,
+        optanteSimplesNacional: nfseData.optante_simples === '1',
+        incentivadorCultural: nfseData.incentivador_cultural,
+        status: nfseData.status_rps,
+        valorServicos: nfseData.valor_servicos,
+        valorDeducoes: nfseData.valor_deducoes,
+        valorPis: nfseData.valor_pis,
+        valorCofins: nfseData.valor_cofins,
+        valorInss: nfseData.valor_inss,
+        valorIr: nfseData.valor_ir,
+        valorCsll: nfseData.valor_csll,
+        issRetido: nfseData.iss_retido === 'true',
+        valorIss: nfseData.valor_iss,
+        outrasRetencoes: nfseData.outras_retencoes,
+        baseCalculo: nfseData.base_calculo,
+        aliquota: nfseData.aliquota_servicos,
+        valorLiquidoNfse: nfseData.valor_liquido,
+        codigoServico: nfseData.codigo_servico,
+        discriminacao: nfseData.discriminacao_servicos,
+        codigoMunicipio: nfseData.codigo_municipio_prestacao
+      }]
+    })
 
-    // Atualizar status da NFS-e para processando
-    const { error: updateError } = await supabaseClient
-      .from('nfse')
-      .update({ status_sefaz: 'processando' })
-      .eq('id', nfseId);
-
-    if (updateError) throw updateError;
-
-    // Registrar log de início do processamento
-    await supabaseClient
-      .from('nfse_sefaz_logs')
-      .insert({
-        nfse_id: nfseId,
-        status: 'processando',
-        message: 'Iniciando transmissão para SEFAZ',
-      });
-
-    // TODO: Implementar lógica de envio para SEFAZ SP
-    // 1. Montar XML do RPS
-    // 2. Assinar XML com certificado
-    // 3. Enviar para SEFAZ
-    // 4. Processar retorno
-
-    // Por enquanto, simular processamento bem-sucedido
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    // Atualizar status da NFS-e como autorizada
-    await supabaseClient
+    // Atualizar status da NFS-e
+    const { error: updateError } = await supabase
       .from('nfse')
       .update({
-        status_sefaz: 'autorizada',
-        codigo_verificacao: 'TESTE123', // Será substituído pelo código real
+        status_sefaz: resultado.success ? 'sucesso' : 'erro',
+        protocolo: resultado.protocolo,
+        mensagem_sefaz: resultado.mensagem
       })
-      .eq('id', nfseId);
+      .eq('id', nfseId)
 
-    // Registrar log de sucesso
-    await supabaseClient
-      .from('nfse_sefaz_logs')
-      .insert({
-        nfse_id: nfseId,
-        status: 'sucesso',
-        message: 'NFS-e transmitida com sucesso',
-      });
+    if (updateError) {
+      throw updateError
+    }
 
     return new Response(
-      JSON.stringify({ success: true, message: 'NFS-e transmitida com sucesso' }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      JSON.stringify(resultado),
+      { 
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
       }
-    );
+    )
 
   } catch (error) {
-    console.error('Erro ao transmitir NFS-e:', error);
-
-    // Registrar log de erro
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
-    await supabaseClient
-      .from('nfse_sefaz_logs')
-      .insert({
-        nfse_id: (await req.json() as NFSeData).nfseId,
-        status: 'erro',
-        message: error.message,
-      });
-
+    console.error('Erro na transmissão:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
+      { 
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
       }
-    );
+    )
   }
-});
+})

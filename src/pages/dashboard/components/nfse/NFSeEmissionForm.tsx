@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { NFSeServiceInfo } from "./NFSeServiceInfo";
 import { NFSeHeaderInfo } from "./NFSeHeaderInfo";
+import { NFSeTransmissionStatus } from "./NFSeTransmissionStatus";
 
 interface CompanyData {
   razao_social: string;
