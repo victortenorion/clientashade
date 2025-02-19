@@ -33,6 +33,7 @@ export function NFSeEmissionForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
   const [sefazData, setSefazData] = useState<SEFAZData | null>(null);
+  const [nfseId, setNfseId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     numero_rps: "",
     tipo_recolhimento: "A",
@@ -88,8 +89,7 @@ export function NFSeEmissionForm() {
         throw new Error("Certificado digital inválido ou não configurado");
       }
 
-      // Aqui vamos adicionar a lógica de emissão da NFS-e
-      const { error } = await supabase.functions.invoke('process-nfse', {
+      const { data, error } = await supabase.functions.invoke('process-nfse', {
         body: {
           formData,
           companyData,
@@ -99,6 +99,7 @@ export function NFSeEmissionForm() {
 
       if (error) throw error;
 
+      setNfseId(data.nfse_id);
       toast({
         title: "Sucesso",
         description: "NFS-e enviada para processamento"
@@ -128,70 +129,76 @@ export function NFSeEmissionForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <Card>
-        <CardContent className="pt-6">
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Dados do Emissor</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <span className="font-medium">Razão Social:</span>
-                <p>{companyData.razao_social}</p>
-              </div>
-              <div>
-                <span className="font-medium">CNPJ:</span>
-                <p>{companyData.cnpj}</p>
-              </div>
-              <div>
-                <span className="font-medium">Inscrição Municipal:</span>
-                <p>{companyData.inscricao_municipal}</p>
-              </div>
-              <div>
-                <span className="font-medium">Regime Tributário:</span>
-                <p>{sefazData.regime_tributario}</p>
+    <div className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Dados do Emissor</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="font-medium">Razão Social:</span>
+                  <p>{companyData.razao_social}</p>
+                </div>
+                <div>
+                  <span className="font-medium">CNPJ:</span>
+                  <p>{companyData.cnpj}</p>
+                </div>
+                <div>
+                  <span className="font-medium">Inscrição Municipal:</span>
+                  <p>{companyData.inscricao_municipal}</p>
+                </div>
+                <div>
+                  <span className="font-medium">Regime Tributário:</span>
+                  <p>{sefazData.regime_tributario}</p>
+                </div>
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardContent className="pt-6">
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Dados da NFS-e</h3>
-            
-            <NFSeHeaderInfo
-              numeroRps={formData.numero_rps}
-              tipoRecolhimento={formData.tipo_recolhimento}
-              onNumeroRpsChange={(value) => setFormData({ ...formData, numero_rps: value })}
-              onTipoRecolhimentoChange={(value) => setFormData({ ...formData, tipo_recolhimento: value })}
-              disabled={isLoading}
-            />
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Dados da NFS-e</h3>
+              
+              <NFSeHeaderInfo
+                numeroRps={formData.numero_rps}
+                tipoRecolhimento={formData.tipo_recolhimento}
+                onNumeroRpsChange={(value) => setFormData({ ...formData, numero_rps: value })}
+                onTipoRecolhimentoChange={(value) => setFormData({ ...formData, tipo_recolhimento: value })}
+                disabled={isLoading}
+              />
 
-            <NFSeServiceInfo
-              codigoServico={formData.codigo_servico}
-              discriminacaoServicos={formData.discriminacao_servicos}
-              naturezaOperacao={formData.natureza_operacao}
-              onCodigoServicoChange={(value) => setFormData({ ...formData, codigo_servico: value })}
-              onDiscriminacaoServicosChange={(value) => setFormData({ ...formData, discriminacao_servicos: value })}
-              onNaturezaOperacaoChange={(value) => setFormData({ ...formData, natureza_operacao: value })}
-              disabled={isLoading}
-            />
-          </div>
-        </CardContent>
-      </Card>
+              <NFSeServiceInfo
+                codigoServico={formData.codigo_servico}
+                discriminacaoServicos={formData.discriminacao_servicos}
+                naturezaOperacao={formData.natureza_operacao}
+                onCodigoServicoChange={(value) => setFormData({ ...formData, codigo_servico: value })}
+                onDiscriminacaoServicosChange={(value) => setFormData({ ...formData, discriminacao_servicos: value })}
+                onNaturezaOperacaoChange={(value) => setFormData({ ...formData, natureza_operacao: value })}
+                disabled={isLoading}
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-      <div className="flex justify-end space-x-4">
-        <Button type="submit" disabled={isLoading || !sefazData.certificado_valido}>
-          {isLoading ? "Processando..." : "Emitir NFS-e"}
-        </Button>
-      </div>
+        <div className="flex justify-end space-x-4">
+          <Button type="submit" disabled={isLoading || !sefazData.certificado_valido}>
+            {isLoading ? "Processando..." : "Emitir NFS-e"}
+          </Button>
+        </div>
 
-      {!sefazData.certificado_valido && (
-        <p className="text-sm text-destructive">
-          Certificado digital inválido ou não configurado. Verifique as configurações SEFAZ.
-        </p>
+        {!sefazData.certificado_valido && (
+          <p className="text-sm text-destructive">
+            Certificado digital inválido ou não configurado. Verifique as configurações SEFAZ.
+          </p>
+        )}
+      </form>
+
+      {nfseId && (
+        <NFSeTransmissionStatus nfseId={nfseId} />
       )}
-    </form>
+    </div>
   );
 }
