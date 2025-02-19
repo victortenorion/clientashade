@@ -1,6 +1,6 @@
 
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -8,7 +8,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { NFSeSPTipoRecolhimento } from "../../types/nfse.types";
 
 interface NFSeHeaderInfoProps {
   numeroRps: string;
@@ -26,35 +25,32 @@ export function NFSeHeaderInfo({
   disabled
 }: NFSeHeaderInfoProps) {
   return (
-    <div className="grid grid-cols-2 gap-4">
-      <div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="space-y-2">
         <Label htmlFor="numero_rps">Número do RPS</Label>
         <Input
           id="numero_rps"
           value={numeroRps}
           onChange={(e) => onNumeroRpsChange(e.target.value)}
+          placeholder="Número do RPS"
           disabled={disabled}
-          placeholder="Digite o número do RPS"
+          required
         />
       </div>
 
-      <div>
+      <div className="space-y-2">
         <Label htmlFor="tipo_recolhimento">Tipo de Recolhimento</Label>
         <Select
           value={tipoRecolhimento}
           onValueChange={onTipoRecolhimentoChange}
           disabled={disabled}
         >
-          <SelectTrigger>
+          <SelectTrigger id="tipo_recolhimento">
             <SelectValue placeholder="Selecione o tipo de recolhimento" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={NFSeSPTipoRecolhimento.A_RECOLHER}>
-              A Recolher
-            </SelectItem>
-            <SelectItem value={NFSeSPTipoRecolhimento.RETIDO}>
-              Retido
-            </SelectItem>
+            <SelectItem value="A">A recolher</SelectItem>
+            <SelectItem value="R">Retido na fonte</SelectItem>
           </SelectContent>
         </Select>
       </div>

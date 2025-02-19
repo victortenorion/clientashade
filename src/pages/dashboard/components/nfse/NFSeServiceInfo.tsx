@@ -1,6 +1,6 @@
 
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -9,7 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { NFSeSPNaturezaOperacao } from "../../types/nfse.types";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 interface NFSeServiceInfoProps {
   codigoServico: string;
@@ -30,62 +31,87 @@ export function NFSeServiceInfo({
   onNaturezaOperacaoChange,
   disabled
 }: NFSeServiceInfoProps) {
+  const [serviceCodes, setServiceCodes] = useState<Array<{
+    code: string;
+    description: string;
+  }>>([]);
+
+  useEffect(() => {
+    loadServiceCodes();
+  }, []);
+
+  const loadServiceCodes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('nfse_service_codes')
+        .select('code, description')
+        .eq('active', true);
+
+      if (error) throw error;
+      setServiceCodes(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar códigos de serviço:', error);
+    }
+  };
+
   return (
     <div className="space-y-4">
-      <div>
-        <Label htmlFor="codigo_servico">Código do Serviço</Label>
-        <Input
-          id="codigo_servico"
-          value={codigoServico}
-          onChange={(e) => onCodigoServicoChange(e.target.value)}
-          disabled={disabled}
-          placeholder="Digite o código do serviço"
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="codigo_servico">Código do Serviço</Label>
+          <Select
+            value={codigoServico}
+            onValueChange={onCodigoServicoChange}
+            disabled={disabled}
+          >
+            <SelectTrigger id="codigo_servico">
+              <SelectValue placeholder="Selecione o código do serviço" />
+            </SelectTrigger>
+            <SelectContent>
+              {serviceCodes.map((service) => (
+                <SelectItem key={service.code} value={service.code}>
+                  {service.code} - {service.description}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="natureza_operacao">Natureza da Operação</Label>
+          <Select
+            value={naturezaOperacao}
+            onValueChange={onNaturezaOperacaoChange}
+            disabled={disabled}
+          >
+            <SelectTrigger id="natureza_operacao">
+              <SelectValue placeholder="Selecione a natureza da operação" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">Tributação no município</SelectItem>
+              <SelectItem value="2">Tributação fora do município</SelectItem>
+              <SelectItem value="3">Isenção</SelectItem>
+              <SelectItem value="4">Imune</SelectItem>
+              <SelectItem value="5">Exigibilidade suspensa por decisão judicial</SelectItem>
+              <SelectItem value="6">Exigibilidade suspensa por procedimento administrativo</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      <div>
-        <Label htmlFor="discriminacao">Discriminação dos Serviços</Label>
+      <div className="space-y-2">
+        <Label htmlFor="discriminacao_servicos">
+          Discriminação dos Serviços
+        </Label>
         <Textarea
-          id="discriminacao"
+          id="discriminacao_servicos"
           value={discriminacaoServicos}
           onChange={(e) => onDiscriminacaoServicosChange(e.target.value)}
-          disabled={disabled}
-          placeholder="Descreva os serviços prestados"
+          placeholder="Descreva detalhadamente os serviços prestados"
           className="min-h-[100px]"
-        />
-      </div>
-
-      <div>
-        <Label htmlFor="natureza_operacao">Natureza da Operação</Label>
-        <Select
-          value={naturezaOperacao}
-          onValueChange={onNaturezaOperacaoChange}
           disabled={disabled}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Selecione a natureza da operação" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={NFSeSPNaturezaOperacao.TRIBUTACAO_MUNICIPIO}>
-              Tributação no Município
-            </SelectItem>
-            <SelectItem value={NFSeSPNaturezaOperacao.TRIBUTACAO_FORA_MUNICIPIO}>
-              Tributação fora do Município
-            </SelectItem>
-            <SelectItem value={NFSeSPNaturezaOperacao.ISENCAO}>
-              Isenção
-            </SelectItem>
-            <SelectItem value={NFSeSPNaturezaOperacao.IMUNE}>
-              Imune
-            </SelectItem>
-            <SelectItem value={NFSeSPNaturezaOperacao.EXIGIBILIDADE_SUSPENSA_DECISAO_JUDICIAL}>
-              Exigibilidade Suspensa por Decisão Judicial
-            </SelectItem>
-            <SelectItem value={NFSeSPNaturezaOperacao.EXIGIBILIDADE_SUSPENSA_PROCEDIMENTO_ADMINISTRATIVO}>
-              Exigibilidade Suspensa por Procedimento Administrativo
-            </SelectItem>
-          </SelectContent>
-        </Select>
+          required
+        />
       </div>
     </div>
   );
