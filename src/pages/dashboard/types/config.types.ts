@@ -26,6 +26,8 @@ export interface NFSeConfig {
   numero_inicial_rps: string;
   numero_inicial_nfse?: string;
   aliquota_servico: number;
+  serie_rps_padrao: string;
+  tipo_rps: string;
 }
 
 export interface FiscalConfig {

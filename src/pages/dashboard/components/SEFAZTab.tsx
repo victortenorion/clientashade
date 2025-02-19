@@ -545,12 +545,63 @@ export function SEFAZTab({
                   </div>
                 </div>
 
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="nfse_serie_rps">Série do RPS</Label>
+                    <Input
+                      id="nfse_serie_rps"
+                      value={nfseConfig.serie_rps_padrao}
+                      onChange={(e) => setNfseConfig({ ...nfseConfig, serie_rps_padrao: e.target.value })}
+                      placeholder="Ex: RPS"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="nfse_tipo_rps">Tipo do RPS</Label>
+                    <Select
+                      value={nfseConfig.tipo_rps}
+                      onValueChange={(value) => setNfseConfig({ ...nfseConfig, tipo_rps: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="RPS">RPS</SelectItem>
+                        <SelectItem value="NFSE">NFS-e</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="nfse_numero_inicial_rps">Número Inicial do RPS</Label>
+                    <Input
+                      id="nfse_numero_inicial_rps"
+                      value={nfseConfig.numero_inicial_rps}
+                      onChange={(e) => setNfseConfig({ ...nfseConfig, numero_inicial_rps: e.target.value })}
+                      placeholder="Ex: 1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="nfse_numero_inicial_nfse">Número Inicial da NFS-e</Label>
+                    <Input
+                      id="nfse_numero_inicial_nfse"
+                      value={nfseConfig.numero_inicial_nfse}
+                      onChange={(e) => setNfseConfig({ ...nfseConfig, numero_inicial_nfse: e.target.value })}
+                      placeholder="Ex: 1"
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <Label htmlFor="nfse_numero_inicial_rps">Número Inicial do RPS</Label>
+                  <Label htmlFor="nfse_aliquota">Alíquota de Serviço (%)</Label>
                   <Input
-                    id="nfse_numero_inicial_rps"
-                    value={nfseConfig.numero_inicial_rps}
-                    onChange={(e) => setNfseConfig({ ...nfseConfig, numero_inicial_rps: e.target.value })}
+                    id="nfse_aliquota"
+                    type="number"
+                    step="0.01"
+                    value={nfseConfig.aliquota_servico}
+                    onChange={(e) => setNfseConfig({ ...nfseConfig, aliquota_servico: parseFloat(e.target.value) })}
+                    placeholder="Ex: 5.00"
                   />
                 </div>
 
