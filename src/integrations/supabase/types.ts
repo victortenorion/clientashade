@@ -1642,24 +1642,105 @@ export type Database = {
         }
         Relationships: []
       }
+      nfse_sp_erros_validacao: {
+        Row: {
+          codigo: string
+          correcao: string | null
+          created_at: string | null
+          id: string
+          mensagem: string
+        }
+        Insert: {
+          codigo: string
+          correcao?: string | null
+          created_at?: string | null
+          id?: string
+          mensagem: string
+        }
+        Update: {
+          codigo?: string
+          correcao?: string | null
+          created_at?: string | null
+          id?: string
+          mensagem?: string
+        }
+        Relationships: []
+      }
+      nfse_sp_lotes: {
+        Row: {
+          cnpj: string
+          created_at: string | null
+          id: string
+          inscricao_municipal: string
+          lista_rps: Json
+          numero_lote: number
+          protocolo: string | null
+          quantidade_rps: number
+          status: string | null
+          transacao: boolean | null
+          updated_at: string | null
+          valor_total_deducoes: number | null
+          valor_total_servicos: number | null
+        }
+        Insert: {
+          cnpj: string
+          created_at?: string | null
+          id?: string
+          inscricao_municipal: string
+          lista_rps: Json
+          numero_lote: number
+          protocolo?: string | null
+          quantidade_rps: number
+          status?: string | null
+          transacao?: boolean | null
+          updated_at?: string | null
+          valor_total_deducoes?: number | null
+          valor_total_servicos?: number | null
+        }
+        Update: {
+          cnpj?: string
+          created_at?: string | null
+          id?: string
+          inscricao_municipal?: string
+          lista_rps?: Json
+          numero_lote?: number
+          protocolo?: string | null
+          quantidade_rps?: number
+          status?: string | null
+          transacao?: boolean | null
+          updated_at?: string | null
+          valor_total_deducoes?: number | null
+          valor_total_servicos?: number | null
+        }
+        Relationships: []
+      }
       nfse_sp_settings: {
         Row: {
           aliquota_iss_padrao: number | null
           aliquota_servico: number | null
           ambiente: string | null
+          bairro: string | null
+          cep: string | null
           certificado_id: string | null
           certificates_id: string | null
+          cidade: string | null
           codigo_municipio: string | null
           codigo_regime_tributario: string | null
           codigo_servico_padrao: string | null
           codigo_tributacao_municipio: string | null
+          complemento_endereco: string | null
           config_status: string | null
+          cpf_cnpj_prestador: string | null
           cpf_responsavel: string | null
           created_at: string
+          data_emissao: string | null
           descricao_servico_padrao: string | null
+          email: string | null
+          endereco: string | null
           fonte_tributos: string | null
           id: string
           inscricao_municipal: string | null
+          inscricao_prestador: string | null
           intermediario_cnpj: string | null
           intermediario_email: string | null
           intermediario_inscricao_municipal: string | null
@@ -1671,21 +1752,27 @@ export type Database = {
           mensagem_verificacao: string | null
           modo_contingencia: boolean | null
           natureza_operacao: string | null
+          numero_endereco: string | null
+          numero_rps: number | null
           numero_ultimo_lote: number | null
           numero_ultimo_rps: number | null
           operacao_tributacao: string | null
+          optante_simples: string | null
           optante_simples_nacional: boolean | null
           producao_intermediario: boolean | null
           proxy_host: string | null
           proxy_host_ssl: string | null
           proxy_port: string | null
           proxy_port_ssl: string | null
+          razao_social_prestador: string | null
           regime_tributario: string | null
           rps_serie: string | null
           rps_situacao: string | null
           rps_status: string | null
           rps_tipo: string | null
           senha_emissor: string
+          serie_prestacao: string | null
+          serie_rps: string | null
           serie_rps_padrao: string | null
           servico_aliquota: number | null
           servico_codigo_cnae: string | null
@@ -1702,10 +1789,16 @@ export type Database = {
           servico_valor_base_calculo: number | null
           servico_valor_deducao: number | null
           servico_valor_item: number | null
+          situacao: string | null
+          status: string | null
+          tipo_cpf_cnpj_prestador: string | null
           tipo_documento: string | null
           tipo_documento_prestador: string | null
+          tipo_endereco: string | null
           tipo_regime_especial: string | null
+          tipo_rps: string | null
           tipo_rps_padrao: string | null
+          uf: string | null
           ultima_verificacao: string | null
           updated_at: string
           usuario_emissor: string
@@ -1719,19 +1812,28 @@ export type Database = {
           aliquota_iss_padrao?: number | null
           aliquota_servico?: number | null
           ambiente?: string | null
+          bairro?: string | null
+          cep?: string | null
           certificado_id?: string | null
           certificates_id?: string | null
+          cidade?: string | null
           codigo_municipio?: string | null
           codigo_regime_tributario?: string | null
           codigo_servico_padrao?: string | null
           codigo_tributacao_municipio?: string | null
+          complemento_endereco?: string | null
           config_status?: string | null
+          cpf_cnpj_prestador?: string | null
           cpf_responsavel?: string | null
           created_at?: string
+          data_emissao?: string | null
           descricao_servico_padrao?: string | null
+          email?: string | null
+          endereco?: string | null
           fonte_tributos?: string | null
           id?: string
           inscricao_municipal?: string | null
+          inscricao_prestador?: string | null
           intermediario_cnpj?: string | null
           intermediario_email?: string | null
           intermediario_inscricao_municipal?: string | null
@@ -1743,21 +1845,27 @@ export type Database = {
           mensagem_verificacao?: string | null
           modo_contingencia?: boolean | null
           natureza_operacao?: string | null
+          numero_endereco?: string | null
+          numero_rps?: number | null
           numero_ultimo_lote?: number | null
           numero_ultimo_rps?: number | null
           operacao_tributacao?: string | null
+          optante_simples?: string | null
           optante_simples_nacional?: boolean | null
           producao_intermediario?: boolean | null
           proxy_host?: string | null
           proxy_host_ssl?: string | null
           proxy_port?: string | null
           proxy_port_ssl?: string | null
+          razao_social_prestador?: string | null
           regime_tributario?: string | null
           rps_serie?: string | null
           rps_situacao?: string | null
           rps_status?: string | null
           rps_tipo?: string | null
           senha_emissor: string
+          serie_prestacao?: string | null
+          serie_rps?: string | null
           serie_rps_padrao?: string | null
           servico_aliquota?: number | null
           servico_codigo_cnae?: string | null
@@ -1774,10 +1882,16 @@ export type Database = {
           servico_valor_base_calculo?: number | null
           servico_valor_deducao?: number | null
           servico_valor_item?: number | null
+          situacao?: string | null
+          status?: string | null
+          tipo_cpf_cnpj_prestador?: string | null
           tipo_documento?: string | null
           tipo_documento_prestador?: string | null
+          tipo_endereco?: string | null
           tipo_regime_especial?: string | null
+          tipo_rps?: string | null
           tipo_rps_padrao?: string | null
+          uf?: string | null
           ultima_verificacao?: string | null
           updated_at?: string
           usuario_emissor: string
@@ -1791,19 +1905,28 @@ export type Database = {
           aliquota_iss_padrao?: number | null
           aliquota_servico?: number | null
           ambiente?: string | null
+          bairro?: string | null
+          cep?: string | null
           certificado_id?: string | null
           certificates_id?: string | null
+          cidade?: string | null
           codigo_municipio?: string | null
           codigo_regime_tributario?: string | null
           codigo_servico_padrao?: string | null
           codigo_tributacao_municipio?: string | null
+          complemento_endereco?: string | null
           config_status?: string | null
+          cpf_cnpj_prestador?: string | null
           cpf_responsavel?: string | null
           created_at?: string
+          data_emissao?: string | null
           descricao_servico_padrao?: string | null
+          email?: string | null
+          endereco?: string | null
           fonte_tributos?: string | null
           id?: string
           inscricao_municipal?: string | null
+          inscricao_prestador?: string | null
           intermediario_cnpj?: string | null
           intermediario_email?: string | null
           intermediario_inscricao_municipal?: string | null
@@ -1815,21 +1938,27 @@ export type Database = {
           mensagem_verificacao?: string | null
           modo_contingencia?: boolean | null
           natureza_operacao?: string | null
+          numero_endereco?: string | null
+          numero_rps?: number | null
           numero_ultimo_lote?: number | null
           numero_ultimo_rps?: number | null
           operacao_tributacao?: string | null
+          optante_simples?: string | null
           optante_simples_nacional?: boolean | null
           producao_intermediario?: boolean | null
           proxy_host?: string | null
           proxy_host_ssl?: string | null
           proxy_port?: string | null
           proxy_port_ssl?: string | null
+          razao_social_prestador?: string | null
           regime_tributario?: string | null
           rps_serie?: string | null
           rps_situacao?: string | null
           rps_status?: string | null
           rps_tipo?: string | null
           senha_emissor?: string
+          serie_prestacao?: string | null
+          serie_rps?: string | null
           serie_rps_padrao?: string | null
           servico_aliquota?: number | null
           servico_codigo_cnae?: string | null
@@ -1846,10 +1975,16 @@ export type Database = {
           servico_valor_base_calculo?: number | null
           servico_valor_deducao?: number | null
           servico_valor_item?: number | null
+          situacao?: string | null
+          status?: string | null
+          tipo_cpf_cnpj_prestador?: string | null
           tipo_documento?: string | null
           tipo_documento_prestador?: string | null
+          tipo_endereco?: string | null
           tipo_regime_especial?: string | null
+          tipo_rps?: string | null
           tipo_rps_padrao?: string | null
+          uf?: string | null
           ultima_verificacao?: string | null
           updated_at?: string
           usuario_emissor?: string
@@ -2454,6 +2589,10 @@ export type Database = {
           p_nfse_id: string
         }
         Returns: Json
+      }
+      increment_lote_numero: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       increment_rps_numero:
         | {
