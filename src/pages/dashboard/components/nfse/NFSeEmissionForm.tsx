@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -43,7 +44,10 @@ export function NFSeEmissionForm() {
     tipo_recolhimento: "A",
     codigo_servico: "",
     discriminacao_servicos: "",
-    natureza_operacao: "1"
+    natureza_operacao: "1",
+    valor_servicos: 0,
+    valor_deducoes: 0,
+    aliquota_iss: 0
   });
 
   useEffect(() => {
@@ -169,7 +173,10 @@ export function NFSeEmissionForm() {
             natureza_operacao: formData.natureza_operacao,
             nfse_sp_settings_id: settings.id,
             status_sefaz: 'pendente',
-            ambiente: settings.ambiente
+            ambiente: settings.ambiente,
+            valor_servicos: formData.valor_servicos,
+            valor_deducoes: formData.valor_deducoes,
+            aliquota_iss: formData.aliquota_iss
           }
         ])
         .select()
