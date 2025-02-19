@@ -28,6 +28,19 @@ export interface NFSeConfig {
   aliquota_servico: number;
   serie_rps_padrao: string;
   tipo_rps: string;
+  padrao_prefeitura: string;
+  url_homologacao: string;
+  url_producao: string;
+  lote_rps_numero: number;
+  versao_schema: string;
+  operacao_tributacao: string;
+  codigo_regime_tributario: string;
+  tipo_regime_especial: string;
+  codigo_cidade_prestacao: string;
+  usuario_emissor: string;
+  senha_emissor: string;
+  lote_envio_maximo: number;
+  url_provedor: string;
 }
 
 export interface FiscalConfig {

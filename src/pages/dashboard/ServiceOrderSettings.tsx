@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { StatusTab } from "./components/StatusTab";
 import { SEFAZTab } from "./components/SEFAZTab";
@@ -38,10 +37,15 @@ const ServiceOrderSettings = () => {
     incentivo_fiscal: false,
     certificado_valido: false,
     certificado_validade: undefined,
-    numero_inicial_rps: "1", // Alterado para string
+    numero_inicial_rps: "1",
     aliquota_servico: 0,
-    versao_schema: "2.00",
+    serie_rps_padrao: "RPS",
+    tipo_rps: "RPS",
+    padrao_prefeitura: "PREFEITURA DE SAO PAULO",
+    url_homologacao: "https://nfe.prefeitura.sp.gov.br/ws/lotenfe.asmx",
+    url_producao: "https://nfe.prefeitura.sp.gov.br/ws/lotenfe.asmx",
     lote_rps_numero: 1,
+    versao_schema: "2.00",
     operacao_tributacao: "",
     codigo_regime_tributario: "",
     tipo_regime_especial: "",
@@ -49,36 +53,7 @@ const ServiceOrderSettings = () => {
     usuario_emissor: "",
     senha_emissor: "",
     lote_envio_maximo: 50,
-    url_provedor: "https://nfe.prefeitura.sp.gov.br/ws/lotenfe.asmx",
-    proxy_host: "",
-    proxy_porta: "",
-    proxy_usuario: "",
-    proxy_senha: "",
-    numero_lote: 1,
-    usar_certificado_gov: false,
-    caminho_certificado_gov: "",
-    senha_certificado_gov: "",
-    rps_tipo: "RPS",
-    rps_serie: "1",
-    tipo_contribuinte: "1",
-    gerar_prazos_aceite: false,
-    prazo_aceite_dias: 0,
-    tipo_documento_prestador: "CNPJ",
-    enviar_email_tomador: true,
-    alerta_envio_email: true,
-    substituir_nfse: false,
-    substituida_numero: "",
-    substituida_serie: "",
-    usar_tributacao_aproximada: false,
-    percentual_tributos_aproximado: 0,
-    local_servico: "prestador",
-    tipo_documento_tomador: "CNPJ",
-    padrao_prefeitura: "PREFEITURA DE SAO PAULO",
-    gerar_guia_pagamento: false,
-    codigo_servico_municipio: "",
-    fonte_tributos: "I",
-    natureza_operacao: "1",
-    descricao_servico_padrao: ""
+    url_provedor: "https://nfe.prefeitura.sp.gov.br/ws/lotenfe.asmx"
   });
 
   const [fiscalConfig, setFiscalConfig] = useState<FiscalConfig>({
@@ -207,7 +182,6 @@ const ServiceOrderSettings = () => {
   const renderContent = () => {
     const path = location.pathname;
 
-    // Verificar qual conteúdo mostrar baseado no path
     if (path.includes("/notas-fiscais")) {
       return <NotasFiscaisTab />;
     }
