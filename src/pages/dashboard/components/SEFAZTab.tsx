@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,10 +6,10 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { NFCeConfig, NFSeConfig, FiscalConfig } from "../../types/config.types";
+import { NFCeConfig, NFSeConfig, FiscalConfig } from "../types/config.types";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/lib/supabase";
-import { ArrowDownToLine, Filter, FileText, ArrowUpToLine } from "lucide-react";
+import { ArrowDownToLine, Filter, FileText, ArrowUpToLine, Loader2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -18,6 +17,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 interface SEFAZTabProps {
   nfceConfig: NFCeConfig;
@@ -35,6 +46,13 @@ interface TransmissionStats {
   erro: number;
   pendentes: number;
   ultimo_envio?: string;
+}
+
+interface ChartData {
+  name: string;
+  sucesso: number;
+  erro: number;
+  pendente: number;
 }
 
 export function SEFAZTab({
@@ -55,16 +73,114 @@ export function SEFAZTab({
     pendentes: 0
   });
   const [selectedPeriod, setSelectedPeriod] = useState("today");
+  const [dateRange, setDateRange] = useState({ start: "", end: "" });
+  const [chartData, setChartData] = useState<ChartData[]>([]);
+  const [documentType, setDocumentType] = useState<"all" | "nfse" | "nfce">("all");
 
   useEffect(() => {
     loadTransmissionStats();
-  }, [selectedPeriod]);
+    loadChartData();
+  }, [selectedPeriod, documentType]);
+
+  const loadChartData = async () => {
+    try {
+      setIsLoading(true);
+      
+      const now = new Date();
+      let startDate = new Date();
+      const labels: string[] = [];
+      
+      switch (selectedPeriod) {
+        case "today":
+          startDate.setHours(0, 0, 0, 0);
+          for (let i = 0; i < 24; i++) {
+            labels.push(`${i}h`);
+          }
+          break;
+        case "week":
+          startDate.setDate(now.getDate() - 7);
+          for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            labels.push(date.toLocaleDateString('pt-BR', { weekday: 'short' }));
+          }
+          break;
+        case "month":
+          startDate.setMonth(now.getMonth() - 1);
+          for (let i = 30; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            labels.push(date.toLocaleDateString('pt-BR', { day: '2-digit' }));
+          }
+          break;
+        case "year":
+          startDate.setFullYear(now.getFullYear() - 1);
+          for (let i = 11; i >= 0; i--) {
+            const date = new Date();
+            date.setMonth(date.getMonth() - i);
+            labels.push(date.toLocaleDateString('pt-BR', { month: 'short' }));
+          }
+          break;
+      }
+
+      let query = supabase
+        .from('sefaz_transmission_queue')
+        .select('*')
+        .gte('created_at', startDate.toISOString());
+
+      if (documentType !== 'all') {
+        query = query.eq('tipo', documentType);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      if (data) {
+        const chartData: ChartData[] = labels.map(label => ({
+          name: label,
+          sucesso: 0,
+          erro: 0,
+          pendente: 0
+        }));
+
+        data.forEach(item => {
+          const date = new Date(item.created_at);
+          let index = 0;
+
+          switch (selectedPeriod) {
+            case "today":
+              index = date.getHours();
+              break;
+            case "week":
+              index = 6 - Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+              break;
+            case "month":
+              index = 30 - Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+              break;
+            case "year":
+              index = 11 - (now.getMonth() - date.getMonth() + (12 * (now.getFullYear() - date.getFullYear())));
+              break;
+          }
+
+          if (index >= 0 && index < chartData.length) {
+            chartData[index][item.status as keyof Omit<ChartData, 'name'>]++;
+          }
+        });
+
+        setChartData(chartData);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados do gráfico:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const loadTransmissionStats = async () => {
     try {
       setIsLoading(true);
       
-      // Definir período de consulta
       const now = new Date();
       let startDate = new Date();
       
@@ -83,7 +199,6 @@ export function SEFAZTab({
           break;
       }
 
-      // Buscar estatísticas de transmissão
       const { data, error } = await supabase
         .from('sefaz_transmission_queue')
         .select('*')
@@ -171,6 +286,16 @@ export function SEFAZTab({
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Configurações SEFAZ</h2>
         <div className="flex items-center gap-4">
+          <Select value={documentType} onValueChange={(value: "all" | "nfse" | "nfce") => setDocumentType(value)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Tipo de documento" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="nfse">NFS-e</SelectItem>
+              <SelectItem value="nfce">NFC-e</SelectItem>
+            </SelectContent>
+          </Select>
           <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Selecione o período" />
@@ -259,6 +384,71 @@ export function SEFAZTab({
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Histórico de Transmissões</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[400px] mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Area
+                  type="monotone"
+                  dataKey="sucesso"
+                  stackId="1"
+                  stroke="#10b981"
+                  fill="#10b981"
+                  name="Sucesso"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="erro"
+                  stackId="1"
+                  stroke="#ef4444"
+                  fill="#ef4444"
+                  name="Erro"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="pendente"
+                  stackId="1"
+                  stroke="#f59e0b"
+                  fill="#f59e0b"
+                  name="Pendente"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Distribuição por Status</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[400px] mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="sucesso" fill="#10b981" name="Sucesso" />
+                <Bar dataKey="erro" fill="#ef4444" name="Erro" />
+                <Bar dataKey="pendente" fill="#f59e0b" name="Pendente" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
 
       <Tabs defaultValue="nfse" className="space-y-4">
         <TabsList>
