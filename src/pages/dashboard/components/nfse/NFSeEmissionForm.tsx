@@ -31,44 +31,61 @@ export function NFSeEmissionForm() {
     natureza_operacao: "1"
   });
 
-  // Verificar status do certificado ao carregar o componente
   useEffect(() => {
     checkCertificateStatus();
   }, []);
 
   const checkCertificateStatus = async () => {
     try {
-      const { data, error } = await supabase
+      console.log("Verificando status do certificado...");
+      
+      const { data: settingsData, error: settingsError } = await supabase
         .from('nfse_sp_settings')
-        .select(`
-          *,
-          certificates (
-            is_valid,
-            valid_until
-          )
-        `)
+        .select('certificates_id, is_active')
         .eq('is_active', true)
         .single();
 
-      if (error) throw error;
+      if (settingsError) {
+        console.error('Erro ao buscar configurações:', settingsError);
+        throw settingsError;
+      }
 
-      if (!data || !data.certificates) {
+      if (!settingsData || !settingsData.certificates_id) {
         setCertificateStatus({
           valid: false,
-          message: "Certificado digital não encontrado"
+          message: "Nenhum certificado configurado nas configurações ativas"
         });
         return;
       }
 
-      const cert = data.certificates;
-      const isValid = cert.is_valid && new Date(cert.valid_until) > new Date();
+      const { data: certData, error: certError } = await supabase
+        .from('certificates')
+        .select('is_valid, valid_until')
+        .eq('id', settingsData.certificates_id)
+        .single();
+
+      if (certError) {
+        console.error('Erro ao buscar certificado:', certError);
+        throw certError;
+      }
+
+      if (!certData) {
+        setCertificateStatus({
+          valid: false,
+          message: "Certificado não encontrado"
+        });
+        return;
+      }
+
+      const isValid = certData.is_valid && new Date(certData.valid_until) > new Date();
 
       setCertificateStatus({
         valid: isValid,
         message: isValid 
-          ? "Certificado válido até " + new Date(cert.valid_until).toLocaleDateString()
+          ? `Certificado válido até ${new Date(certData.valid_until).toLocaleDateString()}`
           : "Certificado inválido ou expirado"
       });
+
     } catch (error) {
       console.error('Erro ao verificar certificado:', error);
       setCertificateStatus({
