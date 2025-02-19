@@ -1721,7 +1721,6 @@ export type Database = {
           ambiente: string | null
           bairro: string | null
           cep: string | null
-          certificado_id: string | null
           certificates_id: string | null
           cidade: string | null
           codigo_municipio: string | null
@@ -1814,7 +1813,6 @@ export type Database = {
           ambiente?: string | null
           bairro?: string | null
           cep?: string | null
-          certificado_id?: string | null
           certificates_id?: string | null
           cidade?: string | null
           codigo_municipio?: string | null
@@ -1907,7 +1905,6 @@ export type Database = {
           ambiente?: string | null
           bairro?: string | null
           cep?: string | null
-          certificado_id?: string | null
           certificates_id?: string | null
           cidade?: string | null
           codigo_municipio?: string | null
@@ -1995,20 +1992,6 @@ export type Database = {
           wsdl_producao_url?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_certificates"
-            columns: ["certificates_id"]
-            isOneToOne: false
-            referencedRelation: "certificates"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nfse_sp_settings_certificado_id_fkey"
-            columns: ["certificado_id"]
-            isOneToOne: false
-            referencedRelation: "certificates"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "nfse_sp_settings_certificates_id_fkey"
             columns: ["certificates_id"]
