@@ -528,7 +528,7 @@ export function SEFAZTab({
                         className="flex-1"
                       />
                       {nfseConfig.certificado_valido && (
-                        <Badge variant="success" className="whitespace-nowrap">
+                        <Badge variant="default" className="whitespace-nowrap bg-green-500">
                           Válido até {new Date(nfseConfig.certificado_validade || '').toLocaleDateString()}
                         </Badge>
                       )}
@@ -543,6 +543,15 @@ export function SEFAZTab({
                       onChange={(e) => setNfseConfig({ ...nfseConfig, senha_certificado: e.target.value })}
                     />
                   </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="nfse_numero_inicial_rps">Número Inicial do RPS</Label>
+                  <Input
+                    id="nfse_numero_inicial_rps"
+                    value={nfseConfig.numero_inicial_rps}
+                    onChange={(e) => setNfseConfig({ ...nfseConfig, numero_inicial_rps: e.target.value })}
+                  />
                 </div>
 
                 <div>
@@ -619,7 +628,7 @@ export function SEFAZTab({
                         className="flex-1"
                       />
                       {nfceConfig.certificado_valido && (
-                        <Badge variant="success" className="whitespace-nowrap">
+                        <Badge variant="default" className="whitespace-nowrap bg-green-500">
                           Válido até {new Date(nfceConfig.certificado_validade || '').toLocaleDateString()}
                         </Badge>
                       )}

@@ -25,6 +25,7 @@ export interface NFSeConfig {
   certificado_validade?: string;
   numero_inicial_rps: string;
   numero_inicial_nfse?: string;
+  aliquota_servico: number;
 }
 
 export interface FiscalConfig {
