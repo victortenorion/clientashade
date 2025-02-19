@@ -77,6 +77,58 @@ export function SEFAZTab({
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [documentType, setDocumentType] = useState<"all" | "nfse" | "nfce">("all");
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, configType: 'nfse' | 'nfce') => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsLoading(true);
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', configType);
+
+      const { data: uploadedFile, error: uploadError } = await supabase.storage
+        .from('certificates')
+        .upload(`${configType}/${file.name}`, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrl } = supabase.storage
+        .from('certificates')
+        .getPublicUrl(`${configType}/${file.name}`);
+
+      if (configType === 'nfse') {
+        setNfseConfig({
+          ...nfseConfig,
+          certificado_digital: publicUrl.publicUrl,
+          certificado_valido: true,
+          certificado_validade: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+        });
+      } else {
+        setNfceConfig({
+          ...nfceConfig,
+          certificado_digital: publicUrl.publicUrl,
+          certificado_valido: true,
+          certificado_validade: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+        });
+      }
+
+      toast({
+        title: "Sucesso",
+        description: "Certificado digital enviado com sucesso"
+      });
+    } catch (error) {
+      console.error('Erro ao enviar certificado:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao enviar certificado digital"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadTransmissionStats();
     loadChartData();
@@ -459,41 +511,71 @@ export function SEFAZTab({
 
         <TabsContent value="nfse" className="space-y-4">
           <Card>
+            <CardHeader>
+              <CardTitle>Certificado Digital A1</CardTitle>
+            </CardHeader>
             <CardContent className="pt-6">
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="nfse_ambiente">Ambiente</Label>
-                    <Select
-                      value={nfseConfig.ambiente}
-                      onValueChange={(value) => setNfseConfig({ ...nfseConfig, ambiente: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o ambiente" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="homologacao">Homologação</SelectItem>
-                        <SelectItem value="producao">Produção</SelectItem>
-                      </SelectContent>
-                    </Select>
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="nfse_certificado">Certificado Digital (A1)</Label>
+                    <div className="flex items-center gap-4">
+                      <Input
+                        id="nfse_certificado"
+                        type="file"
+                        accept=".pfx"
+                        onChange={(e) => handleFileUpload(e, 'nfse')}
+                        className="flex-1"
+                      />
+                      {nfseConfig.certificado_valido && (
+                        <Badge variant="success" className="whitespace-nowrap">
+                          Válido até {new Date(nfseConfig.certificado_validade || '').toLocaleDateString()}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
+                  <div>
+                    <Label htmlFor="nfse_senha_certificado">Senha do Certificado</Label>
+                    <Input
+                      id="nfse_senha_certificado"
+                      type="password"
+                      value={nfseConfig.senha_certificado}
+                      onChange={(e) => setNfseConfig({ ...nfseConfig, senha_certificado: e.target.value })}
+                    />
+                  </div>
+                </div>
 
-                  <div>
-                    <Label htmlFor="nfse_regime_tributario">Regime Tributário</Label>
-                    <Select
-                      value={nfseConfig.regime_tributario}
-                      onValueChange={(value) => setNfseConfig({ ...nfseConfig, regime_tributario: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o regime tributário" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">Simples Nacional</SelectItem>
-                        <SelectItem value="2">Lucro Presumido</SelectItem>
-                        <SelectItem value="3">Lucro Real</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div>
+                  <Label htmlFor="nfse_ambiente">Ambiente</Label>
+                  <Select
+                    value={nfseConfig.ambiente}
+                    onValueChange={(value) => setNfseConfig({ ...nfseConfig, ambiente: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o ambiente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="homologacao">Homologação</SelectItem>
+                      <SelectItem value="producao">Produção</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="nfse_regime_tributario">Regime Tributário</Label>
+                  <Select
+                    value={nfseConfig.regime_tributario}
+                    onValueChange={(value) => setNfseConfig({ ...nfseConfig, regime_tributario: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o regime tributário" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Simples Nacional</SelectItem>
+                      <SelectItem value="2">Lucro Presumido</SelectItem>
+                      <SelectItem value="3">Lucro Real</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
@@ -520,41 +602,71 @@ export function SEFAZTab({
 
         <TabsContent value="nfce" className="space-y-4">
           <Card>
+            <CardHeader>
+              <CardTitle>Certificado Digital A1</CardTitle>
+            </CardHeader>
             <CardContent className="pt-6">
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="nfce_ambiente">Ambiente</Label>
-                    <Select
-                      value={nfceConfig.ambiente}
-                      onValueChange={(value) => setNfceConfig({ ...nfceConfig, ambiente: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o ambiente" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="homologacao">Homologação</SelectItem>
-                        <SelectItem value="producao">Produção</SelectItem>
-                      </SelectContent>
-                    </Select>
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="nfce_certificado">Certificado Digital (A1)</Label>
+                    <div className="flex items-center gap-4">
+                      <Input
+                        id="nfce_certificado"
+                        type="file"
+                        accept=".pfx"
+                        onChange={(e) => handleFileUpload(e, 'nfce')}
+                        className="flex-1"
+                      />
+                      {nfceConfig.certificado_valido && (
+                        <Badge variant="success" className="whitespace-nowrap">
+                          Válido até {new Date(nfceConfig.certificado_validade || '').toLocaleDateString()}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
+                  <div>
+                    <Label htmlFor="nfce_senha_certificado">Senha do Certificado</Label>
+                    <Input
+                      id="nfce_senha_certificado"
+                      type="password"
+                      value={nfceConfig.senha_certificado}
+                      onChange={(e) => setNfceConfig({ ...nfceConfig, senha_certificado: e.target.value })}
+                    />
+                  </div>
+                </div>
 
-                  <div>
-                    <Label htmlFor="nfce_regime_tributario">Regime Tributário</Label>
-                    <Select
-                      value={nfceConfig.regime_tributario}
-                      onValueChange={(value) => setNfceConfig({ ...nfceConfig, regime_tributario: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o regime tributário" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">Simples Nacional</SelectItem>
-                        <SelectItem value="2">Lucro Presumido</SelectItem>
-                        <SelectItem value="3">Lucro Real</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div>
+                  <Label htmlFor="nfce_ambiente">Ambiente</Label>
+                  <Select
+                    value={nfceConfig.ambiente}
+                    onValueChange={(value) => setNfceConfig({ ...nfceConfig, ambiente: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o ambiente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="homologacao">Homologação</SelectItem>
+                      <SelectItem value="producao">Produção</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="nfce_regime_tributario">Regime Tributário</Label>
+                  <Select
+                    value={nfceConfig.regime_tributario}
+                    onValueChange={(value) => setNfceConfig({ ...nfceConfig, regime_tributario: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o regime tributário" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Simples Nacional</SelectItem>
+                      <SelectItem value="2">Lucro Presumido</SelectItem>
+                      <SelectItem value="3">Lucro Real</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
