@@ -48,7 +48,6 @@ export function NFSeEmissionForm() {
 
   const loadCompanyAndSefazData = async () => {
     try {
-      // Carregar dados da empresa
       const { data: companyInfo, error: companyError } = await supabase
         .from('company_info')
         .select('*')
@@ -57,7 +56,6 @@ export function NFSeEmissionForm() {
       if (companyError) throw companyError;
       setCompanyData(companyInfo);
 
-      // Carregar configurações SEFAZ
       const { data: sefazConfig, error: sefazError } = await supabase
         .from('nfse_sp_settings')
         .select('*')
@@ -109,6 +107,63 @@ export function NFSeEmissionForm() {
       toast({
         variant: "destructive",
         title: "Erro ao emitir NFS-e",
+        description: error.message
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGeneratePDF = async () => {
+    try {
+      if (!nfseId) return;
+      
+      setIsLoading(true);
+      const { data, error } = await supabase.functions.invoke('generate-nfse-pdf', {
+        body: { nfseId }
+      });
+
+      if (error) throw error;
+
+      const link = document.createElement('a');
+      link.href = data.pdf;
+      link.download = `nfse_${nfseId}.pdf`;
+      link.click();
+
+      toast({
+        title: "Sucesso",
+        description: "PDF gerado com sucesso"
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao gerar PDF",
+        description: error.message
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSendEmail = async () => {
+    try {
+      if (!nfseId) return;
+      
+      setIsLoading(true);
+      const { error } = await supabase.functions.invoke('send-nfse-email', {
+        body: { nfseId }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Email enviado com sucesso"
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao enviar email",
         description: error.message
       });
     } finally {
@@ -184,6 +239,26 @@ export function NFSeEmissionForm() {
         </Card>
 
         <div className="flex justify-end space-x-4">
+          {nfseId && (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleGeneratePDF}
+                disabled={isLoading}
+              >
+                {isLoading ? "Gerando..." : "Gerar PDF"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleSendEmail}
+                disabled={isLoading}
+              >
+                {isLoading ? "Enviando..." : "Enviar Email"}
+              </Button>
+            </>
+          )}
           <Button type="submit" disabled={isLoading || !sefazData.certificado_valido}>
             {isLoading ? "Processando..." : "Emitir NFS-e"}
           </Button>
