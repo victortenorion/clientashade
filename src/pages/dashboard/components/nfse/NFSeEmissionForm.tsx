@@ -9,19 +9,10 @@ import { NFSeServiceInfo } from "./NFSeServiceInfo";
 import { NFSeHeaderInfo } from "./NFSeHeaderInfo";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, AlertCircle } from "lucide-react";
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@/components/ui/alert";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 interface Client {
   id: string;
@@ -277,6 +268,55 @@ export function NFSeEmissionForm() {
             onNaturezaOperacaoChange={(value) => setFormData({ ...formData, natureza_operacao: value })}
             disabled={isLoading}
           />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Valores</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor="valor_servicos">Valor dos Serviços</Label>
+              <Input
+                id="valor_servicos"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.valor_servicos}
+                onChange={(e) => setFormData({ ...formData, valor_servicos: parseFloat(e.target.value) || 0 })}
+                disabled={isLoading}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="valor_deducoes">Valor das Deduções</Label>
+              <Input
+                id="valor_deducoes"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.valor_deducoes}
+                onChange={(e) => setFormData({ ...formData, valor_deducoes: parseFloat(e.target.value) || 0 })}
+                disabled={isLoading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="aliquota_iss">Alíquota ISS (%)</Label>
+              <Input
+                id="aliquota_iss"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                value={formData.aliquota_iss}
+                onChange={(e) => setFormData({ ...formData, aliquota_iss: parseFloat(e.target.value) || 0 })}
+                disabled={isLoading}
+                required
+              />
+            </div>
+          </div>
         </CardContent>
       </Card>
 
