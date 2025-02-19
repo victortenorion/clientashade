@@ -171,6 +171,46 @@ export function NFSeEmissionForm() {
     }
   };
 
+  const handleCancel = async () => {
+    try {
+      if (!nfseId) return;
+      
+      setIsLoading(true);
+      const motivo = window.prompt("Por favor, informe o motivo do cancelamento:");
+      
+      if (!motivo) {
+        toast({
+          variant: "destructive",
+          title: "Erro ao cancelar",
+          description: "O motivo do cancelamento é obrigatório"
+        });
+        return;
+      }
+
+      const { error } = await supabase.functions.invoke('cancel-nfse', {
+        body: { 
+          nfseId,
+          motivoCancelamento: motivo
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "NFS-e cancelada com sucesso"
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao cancelar NFS-e",
+        description: error.message
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (!companyData || !sefazData) {
     return (
       <Card>
@@ -256,6 +296,14 @@ export function NFSeEmissionForm() {
                 disabled={isLoading}
               >
                 {isLoading ? "Enviando..." : "Enviar Email"}
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleCancel}
+                disabled={isLoading}
+              >
+                {isLoading ? "Cancelando..." : "Cancelar NFS-e"}
               </Button>
             </>
           )}
