@@ -1,118 +1,185 @@
+// supabase/functions/process-nfse/index.ts
+import { serve } from "https://deno.land/std@0.131.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+import { XMLBuilder, XMLParser } from "https://deno.land/x/fast_xml_parser@4.4.1";
+import { SOAPClient } from "https://deno.land/x/deno_soap@0.1.0/mod.ts"; // Dependência SOAP
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
+const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+const SEFAZ_ENDPOINT = "https://nfe.prefeitura.sp.gov.br/ws/lotenfse.asmx";
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
-  }
-
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const { nfseId } = await req.json();
 
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Configurações do Supabase não encontradas')
+    // Buscar dados da NFS-e e configurações
+    const { data: nfse, error: fetchError } = await supabase
+      .from("nfse")
+      .select(`
+        *,
+        clients (
+          name,
+          email,
+          cpf_cnpj
+        ),
+        nfse_sp_settings (
+          cnpj,
+          inscricao_municipal,
+          usuario,
+          senha
+        )
+      `)
+      .eq("id", nfseId)
+      .single();
+
+    if (fetchError || !nfse) throw new Error("NFS-e não encontrada");
+    if (!nfse.nfse_sp_settings) {
+      await supabase
+        .from("nfse")
+        .update({ status_sefaz: "rejeitada", updated_at: new Date().toISOString() })
+        .eq("id", nfseId);
+      throw new Error("Configurações da NFS-e SP não encontradas");
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey)
-    const { formData, companyData, sefazData } = await req.json()
+    // Gerar XML para o lote RPS
+    const xmlData = {
+      "?xml": { "@@version": "1.0", "@@encoding": "UTF-8" },
+      "soap:Envelope": {
+        "@@xmlns:soap": "http://schemas.xmlsoap.org/soap/envelope/",
+        "@@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+        "@@xmlns:xsd": "http://www.w3.org/2001/XMLSchema",
+        "soap:Body": {
+          EnviarLoteRpsRequest: {
+            "@@xmlns": "http://nfe.prefeitura.sp.gov.br",
+            LoteRps: {
+              "@@Id": `LOTE${nfseId}`,
+              Cnpj: nfse.nfse_sp_settings.cnpj,
+              InscricaoMunicipal: nfse.nfse_sp_settings.inscricao_municipal,
+              QuantidadeRps: "1",
+              ListaRps: {
+                Rps: {
+                  "@@Id": `RPS${nfse.numero_nfse || Date.now()}`,
+                  IdentificacaoRps: {
+                    Numero: nfse.numero_nfse || Date.now().toString(),
+                    Serie: "RPS",
+                    Tipo: "1",
+                  },
+                  DataEmissao: nfse.data_emissao || new Date().toISOString().split("T")[0],
+                  NaturezaOperacao: "1",
+                  RegimeEspecialTributacao: "0",
+                  OptanteSimplesNacional: "2",
+                  IncentivadorCultural: "2",
+                  Status: "1",
+                  Servico: {
+                    Valores: {
+                      ValorServicos: nfse.valor_servicos,
+                      ValorDeducoes: "0.00",
+                      ValorPis: "0.00",
+                      ValorCofins: "0.00",
+                      ValorInss: "0.00",
+                      ValorIr: "0.00",
+                      ValorCsll: "0.00",
+                      IssRetido: "2",
+                      ValorIss: "0.00",
+                      Aliquota: "0.00",
+                    },
+                    ItemListaServico: "0107", // Ajustar conforme serviço real
+                    CodigoTributacaoMunicipio: "12345", // Consultar manual
+                    Discriminacao: nfse.discriminacao_servicos,
+                    CodigoMunicipio: "3550308", // São Paulo
+                  },
+                  Prestador: {
+                    Cnpj: nfse.nfse_sp_settings.cnpj,
+                    InscricaoMunicipal: nfse.nfse_sp_settings.inscricao_municipal,
+                  },
+                  Tomador: {
+                    IdentificacaoTomador: {
+                      CpfCnpj: {
+                        Cnpj: nfse.clients.cpf_cnpj.length > 11 ? nfse.clients.cpf_cnpj : undefined,
+                        Cpf: nfse.clients.cpf_cnpj.length <= 11 ? nfse.clients.cpf_cnpj : undefined,
+                      },
+                    },
+                    RazaoSocial: nfse.clients.name,
+                    Endereco: {
+                      Endereco: "Rua Exemplo", // Substituir por dados reais
+                      Numero: "123",
+                      Bairro: "Centro",
+                      CodigoMunicipio: "3550308",
+                      Uf: "SP",
+                      Cep: "01000000",
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
 
-    console.log('Dados recebidos:', { formData, companyData, sefazData })
+    const builder = new XMLBuilder({ ignoreAttributes: false, format: true });
+    const xml = builder.build(xmlData);
 
-    // Validar dados obrigatórios
-    if (!formData.codigo_servico) {
-      throw new Error('Código do serviço é obrigatório')
+    // Enviar para SEFAZ via SOAP
+    const soapClient = new SOAPClient(SEFAZ_ENDPOINT);
+    const response = await soapClient.call("EnviarLoteRps", xml, {
+      headers: {
+        "Content-Type": "text/xml; charset=utf-8",
+        "SOAPAction": "http://nfe.prefeitura.sp.gov.br/EnviarLoteRps",
+      },
+      auth: {
+        username: nfse.nfse_sp_settings.usuario,
+        password: nfse.nfse_sp_settings.senha,
+      },
+    });
+
+    const parser = new XMLParser();
+    const parsedResponse = parser.parse(response.body);
+    const success = !parsedResponse["soap:Envelope"]["soap:Body"]["soap:Fault"];
+    const xmlRetorno = response.body;
+
+    // Atualizar status no Supabase
+    const updateData = {
+      status_sefaz: success ? "autorizada" : "rejeitada",
+      xml_envio: xml,
+      xml_retorno: xmlRetorno,
+      updated_at: new Date().toISOString(),
+    };
+    if (success) {
+      updateData.numero_nfse = parsedResponse["soap:Envelope"]["soap:Body"]["EnviarLoteRpsResponse"]["NumeroLote"];
     }
 
-    if (!formData.discriminacao_servicos) {
-      throw new Error('Discriminação dos serviços é obrigatória')
-    }
+    await supabase
+      .from("nfse")
+      .update(updateData)
+      .eq("id", nfseId);
 
-    // Criar o lote de RPS
-    const { data: lote, error: loteError } = await supabase
-      .from('nfse_sp_lotes')
+    // Log da operação
+    await supabase
+      .from("nfse_sefaz_logs")
       .insert({
-        cnpj: companyData.cnpj,
-        inscricao_municipal: companyData.inscricao_municipal,
-        quantidade_rps: 1,
-        lista_rps: [{
-          tipo: 'RPS',
-          serie: '1',
-          numero: formData.numero_rps,
-          data_emissao: new Date().toISOString(),
-          situacao: 'N'
-        }],
-        transacao: true,
-        valor_total_servicos: 0, // Será atualizado posteriormente
-        status: 'pendente'
+        nfse_id: nfseId,
+        status: success ? "autorizada" : "rejeitada",
+        message: success ? "NFS-e autorizada" : "Falha na autorização",
+        request_payload: xml,
+        response_payload: xmlRetorno,
+      });
+
+    return new Response(JSON.stringify({ success: true }), {
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error: any) {
+    console.error("Erro ao processar NFS-e:", error);
+    await supabase
+      .from("nfse")
+      .update({
+        status_sefaz: "rejeitada",
+        xml_retorno: error.message,
+        updated_at: new Date().toISOString(),
       })
-      .select()
-      .single()
-
-    if (loteError) {
-      throw loteError
-    }
-
-    // Criar a NFS-e
-    const { data: nfse, error: nfseError } = await supabase
-      .from('nfse')
-      .insert({
-        codigo_servico: formData.codigo_servico,
-        discriminacao_servicos: formData.discriminacao_servicos,
-        natureza_operacao: formData.natureza_operacao,
-        tipo_recolhimento: formData.tipo_recolhimento,
-        numero_rps: formData.numero_rps,
-        serie_rps: '1',
-        tipo_rps: 'RPS',
-        status_sefaz: 'pendente',
-        ambiente: sefazData.ambiente
-      })
-      .select()
-      .single()
-
-    if (nfseError) {
-      throw nfseError
-    }
-
-    // Adicionar à fila de transmissão
-    const { error: queueError } = await supabase
-      .from('sefaz_transmission_queue')
-      .insert({
-        tipo: 'nfse',
-        documento_id: nfse.id,
-        status: 'pendente'
-      })
-
-    if (queueError) {
-      throw queueError
-    }
-
-    return new Response(
-      JSON.stringify({ success: true, lote_id: lote.id, nfse_id: nfse.id }),
-      { 
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
-
-  } catch (error) {
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
-        status: 400,
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
+      .eq("id", nfseId);
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
-})
+});
