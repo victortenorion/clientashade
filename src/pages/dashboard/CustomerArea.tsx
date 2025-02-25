@@ -33,19 +33,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { MessagesSheet } from "./components/MessagesSheet";
 import { cn } from "@/lib/utils";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
+  TooltipProvider,
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
@@ -407,11 +397,6 @@ export default function CustomerArea() {
   };
 
   const handleSheetOpenChange = (open: boolean) => {
-    if (!open) {
-      if (hasUnreadMessages) {
-        setShowReadConfirmation(true);
-      }
-    }
     setIsMessagesOpen(open);
   };
 
