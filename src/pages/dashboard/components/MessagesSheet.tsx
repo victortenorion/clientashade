@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Send } from "lucide-react";
+import { Send, MessageCircleReply, Eye } from "lucide-react";
 
 interface MessagesSheetProps {
   clientId: string;
@@ -18,12 +18,14 @@ interface Message {
   message: string;
   created_at: string;
   is_from_client: boolean;
+  read: boolean;
 }
 
 export function MessagesSheet({ clientId }: MessagesSheetProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -83,13 +85,14 @@ export function MessagesSheet({ clientId }: MessagesSheetProps) {
           {
             client_id: clientId,
             message: newMessage.trim(),
-            is_from_client: true
+            is_from_client: false
           }
         ]);
 
       if (error) throw error;
 
       setNewMessage("");
+      setReplyingTo(null);
       toast({
         title: "Mensagem enviada",
         description: "Sua mensagem foi enviada com sucesso.",
@@ -103,6 +106,40 @@ export function MessagesSheet({ clientId }: MessagesSheetProps) {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const markAsRead = async (messageId: string) => {
+    try {
+      const { error } = await supabase
+        .from('client_messages')
+        .update({ read: true })
+        .eq('id', messageId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Mensagem marcada como lida",
+        description: "A mensagem foi marcada como lida com sucesso.",
+      });
+
+      fetchMessages();
+    } catch (error) {
+      console.error('Erro ao marcar mensagem como lida:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao marcar como lida",
+        description: "Não foi possível marcar a mensagem como lida.",
+      });
+    }
+  };
+
+  const handleReply = (messageId: string) => {
+    setReplyingTo(messageId);
+    // Encontrar a mensagem e focar no textarea
+    const message = messages.find(m => m.id === messageId);
+    if (message) {
+      setNewMessage(`Em resposta à mensagem: "${message.message}"\n\n`);
     }
   };
 
@@ -124,12 +161,38 @@ export function MessagesSheet({ clientId }: MessagesSheetProps) {
                     : "bg-muted"
                 }`}
               >
-                <p className="text-sm">{message.message}</p>
-                <p className="mt-1 text-xs opacity-70">
-                  {format(new Date(message.created_at), "dd/MM/yyyy HH:mm", {
-                    locale: ptBR,
-                  })}
-                </p>
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm">{message.message}</p>
+                  <div className="flex items-center justify-between gap-2 mt-1">
+                    <p className="text-xs opacity-70">
+                      {format(new Date(message.created_at), "dd/MM/yyyy HH:mm", {
+                        locale: ptBR,
+                      })}
+                    </p>
+                    {message.is_from_client && (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleReply(message.id)}
+                          className="h-6 px-2"
+                        >
+                          <MessageCircleReply className="h-4 w-4" />
+                        </Button>
+                        {!message.read && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => markAsRead(message.id)}
+                            className="h-6 px-2"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           ))}
@@ -140,7 +203,11 @@ export function MessagesSheet({ clientId }: MessagesSheetProps) {
         <Textarea
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Digite sua mensagem..."
+          placeholder={
+            replyingTo
+              ? "Digite sua resposta..."
+              : "Digite sua mensagem..."
+          }
           className="min-h-[80px]"
         />
         <Button
