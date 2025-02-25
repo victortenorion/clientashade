@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Send, MessageCircleReply, Eye } from "lucide-react";
+import { Send, MessageCircleReply, Eye, Trash2 } from "lucide-react";
 
 interface MessagesSheetProps {
   clientId: string;
@@ -109,6 +109,31 @@ export function MessagesSheet({ clientId }: MessagesSheetProps) {
     }
   };
 
+  const deleteMessage = async (messageId: string) => {
+    try {
+      const { error } = await supabase
+        .from('client_messages')
+        .delete()
+        .eq('id', messageId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Mensagem excluída",
+        description: "A mensagem foi excluída com sucesso.",
+      });
+
+      fetchMessages();
+    } catch (error) {
+      console.error('Erro ao excluir mensagem:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao excluir mensagem",
+        description: "Não foi possível excluir a mensagem.",
+      });
+    }
+  };
+
   const markAsRead = async (messageId: string) => {
     try {
       const { error } = await supabase
@@ -169,28 +194,38 @@ export function MessagesSheet({ clientId }: MessagesSheetProps) {
                         locale: ptBR,
                       })}
                     </p>
-                    {message.is_from_client && (
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleReply(message.id)}
-                          className="h-6 px-2"
-                        >
-                          <MessageCircleReply className="h-4 w-4" />
-                        </Button>
-                        {!message.read && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteMessage(message.id)}
+                        className="h-6 w-6 hover:bg-destructive hover:text-destructive-foreground"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                      {message.is_from_client && (
+                        <>
                           <Button
                             variant="ghost"
-                            size="sm"
-                            onClick={() => markAsRead(message.id)}
-                            className="h-6 px-2"
+                            size="icon"
+                            onClick={() => handleReply(message.id)}
+                            className="h-6 w-6"
                           >
-                            <Eye className="h-4 w-4" />
+                            <MessageCircleReply className="h-4 w-4" />
                           </Button>
-                        )}
-                      </div>
-                    )}
+                          {!message.read && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => markAsRead(message.id)}
+                              className="h-6 w-6"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
