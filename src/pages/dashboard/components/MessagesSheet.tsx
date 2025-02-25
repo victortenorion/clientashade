@@ -31,7 +31,6 @@ export function MessagesSheet({ clientId }: MessagesSheetProps) {
   useEffect(() => {
     fetchMessages();
 
-    // Inscrever para atualizações em tempo real
     const channel = supabase
       .channel('client-messages')
       .on(
@@ -85,7 +84,8 @@ export function MessagesSheet({ clientId }: MessagesSheetProps) {
           {
             client_id: clientId,
             message: newMessage.trim(),
-            is_from_client: false
+            is_from_client: false,
+            read: true
           }
         ]);
 
@@ -123,7 +123,8 @@ export function MessagesSheet({ clientId }: MessagesSheetProps) {
         description: "A mensagem foi excluída com sucesso.",
       });
 
-      fetchMessages();
+      // Atualiza o estado local após excluir
+      setMessages(messages.filter(msg => msg.id !== messageId));
     } catch (error) {
       console.error('Erro ao excluir mensagem:', error);
       toast({
@@ -148,7 +149,10 @@ export function MessagesSheet({ clientId }: MessagesSheetProps) {
         description: "A mensagem foi marcada como lida com sucesso.",
       });
 
-      fetchMessages();
+      // Atualiza o estado local da mensagem
+      setMessages(messages.map(msg => 
+        msg.id === messageId ? { ...msg, read: true } : msg
+      ));
     } catch (error) {
       console.error('Erro ao marcar mensagem como lida:', error);
       toast({
@@ -198,7 +202,10 @@ export function MessagesSheet({ clientId }: MessagesSheetProps) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => deleteMessage(message.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteMessage(message.id);
+                        }}
                         className="h-6 w-6 hover:bg-destructive hover:text-destructive-foreground"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -208,7 +215,10 @@ export function MessagesSheet({ clientId }: MessagesSheetProps) {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleReply(message.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleReply(message.id);
+                            }}
                             className="h-6 w-6"
                           >
                             <MessageCircleReply className="h-4 w-4" />
@@ -217,7 +227,10 @@ export function MessagesSheet({ clientId }: MessagesSheetProps) {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => markAsRead(message.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                markAsRead(message.id);
+                              }}
                               className="h-6 w-6"
                             >
                               <Eye className="h-4 w-4" />
@@ -257,3 +270,4 @@ export function MessagesSheet({ clientId }: MessagesSheetProps) {
     </div>
   );
 }
+
