@@ -120,7 +120,8 @@ const Home = () => {
           {
             client_id: selectedClientId,
             message: newMessage.trim(),
-            is_from_client: false
+            is_from_client: false,
+            read: true
           }
         ]);
 
@@ -158,7 +159,8 @@ const Home = () => {
         description: "A mensagem foi excluída com sucesso.",
       });
 
-      fetchRecentMessages();
+      // Atualiza a lista de mensagens após excluir
+      setMessages(messages.filter(msg => msg.id !== messageId));
     } catch (error) {
       console.error('Erro ao excluir mensagem:', error);
       toast({
@@ -183,7 +185,10 @@ const Home = () => {
         description: "A mensagem foi marcada como lida com sucesso.",
       });
 
-      fetchRecentMessages();
+      // Atualiza o estado local da mensagem
+      setMessages(messages.map(msg => 
+        msg.id === messageId ? { ...msg, read: true } : msg
+      ));
     } catch (error) {
       console.error('Erro ao marcar mensagem como lida:', error);
       toast({
@@ -349,3 +354,4 @@ const Home = () => {
 };
 
 export default Home;
+
