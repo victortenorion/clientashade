@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { MessageSquare, Send } from "lucide-react";
+import { MessageSquare, Send, MessageCircleReply, Eye, Trash2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -22,6 +22,7 @@ interface Message {
   message: string;
   created_at: string;
   is_from_client: boolean;
+  read: boolean;
   client: {
     name: string;
   }
@@ -39,13 +40,13 @@ const Home = () => {
   const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchRecentMessages();
     fetchClients();
 
-    // Inscrever para atualizações em tempo real
     const channel = supabase
       .channel('schema-db-changes')
       .on(
@@ -126,6 +127,7 @@ const Home = () => {
       if (error) throw error;
 
       setNewMessage("");
+      setReplyingTo(null);
       toast({
         title: "Mensagem enviada",
         description: "Sua mensagem foi enviada com sucesso.",
@@ -140,6 +142,62 @@ const Home = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const deleteMessage = async (messageId: string) => {
+    try {
+      const { error } = await supabase
+        .from('client_messages')
+        .delete()
+        .eq('id', messageId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Mensagem excluída",
+        description: "A mensagem foi excluída com sucesso.",
+      });
+
+      fetchRecentMessages();
+    } catch (error) {
+      console.error('Erro ao excluir mensagem:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao excluir mensagem",
+        description: "Não foi possível excluir a mensagem.",
+      });
+    }
+  };
+
+  const markAsRead = async (messageId: string) => {
+    try {
+      const { error } = await supabase
+        .from('client_messages')
+        .update({ read: true })
+        .eq('id', messageId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Mensagem marcada como lida",
+        description: "A mensagem foi marcada como lida com sucesso.",
+      });
+
+      fetchRecentMessages();
+    } catch (error) {
+      console.error('Erro ao marcar mensagem como lida:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao marcar como lida",
+        description: "Não foi possível marcar a mensagem como lida.",
+      });
+    }
+  };
+
+  const handleReply = (message: Message) => {
+    setSelectedClientId(message.client_id);
+    setReplyingTo(message.id);
+    setNewMessage(`Em resposta à mensagem: "${message.message}"\n\n`);
   };
 
   const handleMessageClick = (message: Message) => {
@@ -184,17 +242,62 @@ const Home = () => {
                         : "bg-primary text-primary-foreground"
                     }`}
                   >
-                    {message.is_from_client && (
-                      <p className="text-xs font-medium mb-1">
-                        {message.client.name}
-                      </p>
-                    )}
-                    <p className="text-sm">{message.message}</p>
-                    <p className="mt-1 text-xs opacity-70">
-                      {format(new Date(message.created_at), "dd/MM/yyyy HH:mm", {
-                        locale: ptBR,
-                      })}
-                    </p>
+                    <div className="flex flex-col gap-2">
+                      {message.is_from_client && (
+                        <p className="text-xs font-medium">
+                          {message.client.name}
+                        </p>
+                      )}
+                      <p className="text-sm">{message.message}</p>
+                      <div className="flex items-center justify-between gap-2 mt-1">
+                        <p className="text-xs opacity-70">
+                          {format(new Date(message.created_at), "dd/MM/yyyy HH:mm", {
+                            locale: ptBR,
+                          })}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteMessage(message.id);
+                            }}
+                            className="h-6 w-6 hover:bg-destructive hover:text-destructive-foreground"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                          {message.is_from_client && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleReply(message);
+                                }}
+                                className="h-6 w-6"
+                              >
+                                <MessageCircleReply className="h-4 w-4" />
+                              </Button>
+                              {!message.read && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    markAsRead(message.id);
+                                  }}
+                                  className="h-6 w-6"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -222,7 +325,11 @@ const Home = () => {
               <Textarea
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Digite sua mensagem..."
+                placeholder={
+                  replyingTo
+                    ? "Digite sua resposta..."
+                    : "Digite sua mensagem..."
+                }
                 className="min-h-[80px]"
               />
             </div>
