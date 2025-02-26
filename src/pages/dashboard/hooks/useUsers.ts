@@ -21,13 +21,6 @@ export function useUsers() {
   } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      const { data: { users: authUsers }, error: authError } = await supabaseAdmin.auth.admin.listUsers();
-      
-      if (authError) {
-        console.error('Erro ao buscar usuários:', authError);
-        throw authError;
-      }
-
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
@@ -36,6 +29,14 @@ export function useUsers() {
       if (profilesError) {
         console.error('Erro ao buscar perfis:', profilesError);
         throw profilesError;
+      }
+
+      // Usar o cliente admin para buscar usuários
+      const { data: { users: authUsers }, error: authError } = await supabaseAdmin.auth.admin.listUsers();
+      
+      if (authError) {
+        console.error('Erro ao buscar usuários:', authError);
+        throw authError;
       }
 
       const mergedUsers = authUsers.map(user => {
