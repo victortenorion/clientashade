@@ -23,7 +23,7 @@ interface UserStore {
   store_id: string;
   stores: {
     name: string;
-  };
+  }[];
 }
 
 export default function Users() {
@@ -62,10 +62,10 @@ export default function Users() {
       // Convert to a map for easier lookup
       const storeMap: { [key: string]: { id: string, name: string } } = {};
       data.forEach((item: UserStore) => {
-        if (item.stores) {
+        if (item.stores && item.stores.length > 0) {
           storeMap[item.user_id] = {
             id: item.store_id,
-            name: item.stores.name,
+            name: item.stores[0].name,
           };
         }
       });
