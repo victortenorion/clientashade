@@ -49,6 +49,12 @@ import {
 import { Json } from "@/integrations/supabase/types";
 import { ColumnSelect } from "@/components/ui/column-select";
 
+interface VisibleFieldSetting {
+  id: string;
+  field_name: string;
+  visible: boolean;
+}
+
 const CLIENT_COLUMNS = [
   { name: "name", label: "Nome" },
   { name: "document", label: "Documento" },
@@ -68,7 +74,7 @@ export const Clients = () => {
   const [formData, setFormData] = useState<ClientFormData>(defaultFormData);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchingDocument, setSearchingDocument] = useState(false);
-  const [visibleFields, setVisibleFields] = useState<VisibleField[]>([]);
+  const [visibleFields, setVisibleFields] = useState<VisibleFieldSetting[]>([]);
   const [fields, setFields] = useState<{ field_name: string, visible: boolean }[]>([]);
   const [visibleColumns, setVisibleColumns] = useState<string[]>([
     "name",
