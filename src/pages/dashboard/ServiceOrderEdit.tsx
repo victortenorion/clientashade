@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Upload } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useQuery } from "@tanstack/react-query";
@@ -16,6 +16,8 @@ export default function ServiceOrderEdit() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [attachments, setAttachments] = useState<{ id: string, file_name: string }[]>([]);
   const [formData, setFormData] = useState({
     description: "",
     equipment: "",
@@ -39,35 +41,45 @@ export default function ServiceOrderEdit() {
   const { data: serviceOrder, isLoading } = useQuery({
     queryKey: ['serviceOrder', id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: orderData, error: orderError } = await supabase
         .from('service_orders')
         .select('*')
         .eq('id', id)
         .single();
 
-      if (error) throw error;
+      if (orderError) throw orderError;
 
-      // Atualizar o formData aqui ao invés de usar onSuccess
+      // Buscar anexos
+      const { data: attachmentsData, error: attachmentsError } = await supabase
+        .from('service_order_attachments')
+        .select('*')
+        .eq('service_order_id', id);
+
+      if (attachmentsError) throw attachmentsError;
+
+      setAttachments(attachmentsData || []);
+
+      // Atualizar o formData com os dados da ordem
       setFormData({
-        description: data.description || "",
-        equipment: data.equipment || "",
-        equipment_serial_number: data.equipment_serial_number || "",
-        problem: data.problem || "",
-        priority: data.priority || "normal",
-        codigo_servico: data.codigo_servico || "",
-        discriminacao_servico: data.discriminacao_servico || "",
-        regime_tributario: data.regime_tributario || "1",
-        regime_especial: data.regime_especial || "",
-        iss_retido: data.iss_retido || false,
-        inss_retido: data.inss_retido || false,
-        ir_retido: data.ir_retido || false,
-        pis_cofins_csll_retido: data.pis_cofins_csll_retido || false,
-        aliquota_iss: data.aliquota_iss || 0,
-        base_calculo: data.base_calculo || 0,
-        valor_deducoes: data.valor_deducoes || 0
+        description: orderData.description || "",
+        equipment: orderData.equipment || "",
+        equipment_serial_number: orderData.equipment_serial_number || "",
+        problem: orderData.problem || "",
+        priority: orderData.priority || "normal",
+        codigo_servico: orderData.codigo_servico || "",
+        discriminacao_servico: orderData.discriminacao_servico || "",
+        regime_tributario: orderData.regime_tributario || "1",
+        regime_especial: orderData.regime_especial || "",
+        iss_retido: orderData.iss_retido || false,
+        inss_retido: orderData.inss_retido || false,
+        ir_retido: orderData.ir_retido || false,
+        pis_cofins_csll_retido: orderData.pis_cofins_csll_retido || false,
+        aliquota_iss: orderData.aliquota_iss || 0,
+        base_calculo: orderData.base_calculo || 0,
+        valor_deducoes: orderData.valor_deducoes || 0
       });
 
-      return data;
+      return orderData;
     }
   });
 
@@ -84,6 +96,57 @@ export default function ServiceOrderEdit() {
       ...prev,
       [name]: !prev[name as keyof typeof prev]
     }));
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0]) return;
+    
+    const file = e.target.files[0];
+    setUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('serviceOrderId', id || '');
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-attachment`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const result = await response.json();
+
+      // Atualizar a lista de anexos
+      const { data: newAttachment, error: attachmentError } = await supabase
+        .from('service_order_attachments')
+        .select('*')
+        .eq('id', result.id)
+        .single();
+
+      if (attachmentError) throw attachmentError;
+
+      setAttachments(prev => [...prev, newAttachment]);
+
+      toast({
+        title: "Arquivo enviado com sucesso",
+        description: "O arquivo foi anexado à ordem de serviço."
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao enviar arquivo",
+        description: error.message
+      });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -170,6 +233,37 @@ export default function ServiceOrderEdit() {
                 placeholder="Descreva o problema relatado pelo cliente"
                 rows={3}
               />
+            </div>
+          </div>
+
+          {/* Área de Upload */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Anexos</h3>
+            
+            <div className="space-y-2">
+              <Label htmlFor="file">Adicionar Anexo</Label>
+              <div className="flex items-center gap-4">
+                <Input
+                  id="file"
+                  type="file"
+                  onChange={handleFileUpload}
+                  disabled={uploading}
+                />
+                {uploading && <div>Enviando...</div>}
+              </div>
+              
+              {attachments.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium mb-2">Arquivos anexados:</h4>
+                  <ul className="space-y-2">
+                    {attachments.map((attachment) => (
+                      <li key={attachment.id} className="text-sm">
+                        {attachment.file_name}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
 
@@ -275,3 +369,4 @@ export default function ServiceOrderEdit() {
     </div>
   );
 }
+
