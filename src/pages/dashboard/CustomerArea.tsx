@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search, Filter, User, BellRing } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Filter, User, BellRing, Upload } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Separator } from "@/components/ui/separator";
@@ -61,6 +61,11 @@ interface Client {
   document: string;
 }
 
+interface FileAttachment {
+  file: File;
+  preview: string;
+}
+
 export default function CustomerArea() {
   const { clientId } = useParams();
   const [serviceOrders, setServiceOrders] = useState<ServiceOrder[]>([]);
@@ -90,6 +95,8 @@ export default function CustomerArea() {
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
   const [showReadConfirmation, setShowReadConfirmation] = useState(false);
+  const [attachments, setAttachments] = useState<FileAttachment[]>([]);
+  const [uploadingFiles, setUploadingFiles] = useState(false);
 
   useEffect(() => {
     if (clientId) {
@@ -264,6 +271,17 @@ export default function CustomerArea() {
     }
   };
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length) return;
+    
+    const newFiles = Array.from(e.target.files).map(file => ({
+      file,
+      preview: URL.createObjectURL(file)
+    }));
+    
+    setAttachments(prev => [...prev, ...newFiles]);
+  };
+
   const handleCreateOrder = async () => {
     try {
       const { data: statusData, error: statusError } = await supabase
@@ -288,6 +306,29 @@ export default function CustomerArea() {
 
       if (error) throw error;
 
+      if (data?.[0] && attachments.length > 0) {
+        setUploadingFiles(true);
+        for (const attachment of attachments) {
+          const formData = new FormData();
+          formData.append('file', attachment.file);
+          formData.append('serviceOrderId', data[0].id);
+
+          const { error: uploadError } = await supabase.functions.invoke('upload-attachment', {
+            body: formData
+          });
+
+          if (uploadError) {
+            console.error('Error uploading file:', uploadError);
+            toast({
+              variant: "destructive",
+              title: "Erro ao enviar arquivo",
+              description: uploadError.message
+            });
+          }
+        }
+        setUploadingFiles(false);
+      }
+
       toast({
         title: "Ordem de serviço criada",
         description: "Sua ordem de serviço foi criada com sucesso.",
@@ -300,6 +341,7 @@ export default function CustomerArea() {
         equipment_serial_number: "",
         problem: ""
       });
+      setAttachments([]);
       fetchServiceOrders();
     } catch (error: any) {
       console.error("Error creating service order:", error);
@@ -308,6 +350,8 @@ export default function CustomerArea() {
         title: "Erro ao criar ordem de serviço",
         description: "Não foi possível criar a ordem de serviço. Tente novamente.",
       });
+    } finally {
+      setUploadingFiles(false);
     }
   };
 
@@ -654,6 +698,59 @@ export default function CustomerArea() {
                 placeholder="Descreva o problema do equipamento"
               />
             </div>
+
+            <div className="space-y-4">
+              <Label>Anexos</Label>
+              <div className="grid grid-cols-2 gap-4">
+                {attachments.map((attachment, index) => (
+                  <div key={index} className="relative group">
+                    {attachment.file.type.startsWith('image/') ? (
+                      <img
+                        src={attachment.preview}
+                        alt={`Anexo ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-md"
+                      />
+                    ) : (
+                      <div className="w-full h-32 bg-muted rounded-md flex items-center justify-center">
+                        <span className="text-sm text-muted-foreground">
+                          {attachment.file.name}
+                        </span>
+                      </div>
+                    )}
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => {
+                        URL.revokeObjectURL(attachment.preview);
+                        setAttachments(prev => prev.filter((_, i) => i !== index));
+                      }}
+                    >
+                      Remover
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <Input
+                  type="file"
+                  onChange={handleFileChange}
+                  accept="image/*,video/*"
+                  multiple
+                  className="hidden"
+                  id="file-upload"
+                />
+                <Label
+                  htmlFor="file-upload"
+                  className="cursor-pointer flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Upload className="h-4 w-4" />
+                  Adicionar arquivos
+                </Label>
+              </div>
+            </div>
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => {
@@ -665,11 +762,15 @@ export default function CustomerArea() {
                 equipment_serial_number: "",
                 problem: ""
               });
+              setAttachments([]);
             }}>
               Cancelar
             </Button>
-            <Button onClick={editingOrder ? handleUpdateOrder : handleCreateOrder}>
-              {editingOrder ? "Salvar" : "Criar"}
+            <Button 
+              onClick={editingOrder ? handleUpdateOrder : handleCreateOrder}
+              disabled={uploadingFiles}
+            >
+              {editingOrder ? "Salvar" : uploadingFiles ? "Enviando..." : "Criar"}
             </Button>
           </div>
         </DialogContent>
