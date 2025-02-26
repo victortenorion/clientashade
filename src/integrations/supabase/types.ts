@@ -2192,6 +2192,30 @@ export type Database = {
           },
         ]
       }
+      service_order_field_settings: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          visible_columns: string[]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          visible_columns?: string[]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          visible_columns?: string[]
+        }
+        Relationships: []
+      }
       service_order_items: {
         Row: {
           created_at: string
