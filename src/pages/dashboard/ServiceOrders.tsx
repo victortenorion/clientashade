@@ -74,22 +74,26 @@ export default function ServiceOrders() {
   // Carregar preferências do usuário ao montar o componente
   useEffect(() => {
     const loadUserPreferences = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) return;
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return;
 
-      const { data, error } = await supabase
-        .from('service_order_field_settings')
-        .select('visible_columns')
-        .eq('user_id', session.user.id)
-        .single();
+        const { data, error } = await supabase
+          .from('service_order_field_settings')
+          .select('visible_columns')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
 
-      if (error) {
+        if (error) {
+          console.error('Erro ao carregar preferências:', error);
+          return;
+        }
+
+        if (data?.visible_columns) {
+          setVisibleColumns(data.visible_columns);
+        }
+      } catch (error) {
         console.error('Erro ao carregar preferências:', error);
-        return;
-      }
-
-      if (data?.visible_columns) {
-        setVisibleColumns(data.visible_columns);
       }
     };
 
@@ -98,19 +102,30 @@ export default function ServiceOrders() {
 
   // Salvar preferências quando as colunas visíveis mudarem
   const handleColumnsChange = async (columns: string[]) => {
-    setVisibleColumns(columns);
+    try {
+      setVisibleColumns(columns);
 
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
 
-    const { error } = await supabase
-      .from('service_order_field_settings')
-      .upsert({
-        user_id: session.user.id,
-        visible_columns: columns,
-      });
+      const { error } = await supabase
+        .from('service_order_field_settings')
+        .upsert({
+          user_id: session.user.id,
+          visible_columns: columns,
+        }, {
+          onConflict: 'user_id'
+        });
 
-    if (error) {
+      if (error) {
+        console.error('Erro ao salvar preferências:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao salvar preferências",
+          description: "Suas preferências não puderam ser salvas. Tente novamente."
+        });
+      }
+    } catch (error) {
       console.error('Erro ao salvar preferências:', error);
       toast({
         variant: "destructive",
@@ -353,120 +368,117 @@ export default function ServiceOrders() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {serviceOrders?.map((order) => {
-              console.log('Order being rendered:', order);
-              return (
-                <TableRow
-                  key={order.id}
-                  className="hover:bg-muted/50 cursor-pointer"
-                  onClick={() => handleViewDetails(order.id)}
-                >
-                  {visibleColumns.map((columnName) => (
-                    <TableCell key={columnName}>
-                      {columnName === "created_at" ? (
-                        format(new Date(order.created_at), 'dd/MM/yyyy HH:mm')
-                      ) : columnName === "client" ? (
-                        order.client?.name || 'N/A'
-                      ) : columnName === "equipment" ? (
-                        order.equipment || 'N/A'
-                      ) : columnName === "equipment_serial_number" ? (
-                        order.equipment_serial_number || 'N/A'
-                      ) : columnName === "problem" ? (
-                        order.problem || 'N/A'
-                      ) : columnName === "iss_retido" ? (
-                        <span className={order.iss_retido ? "text-yellow-600" : "text-green-600"}>
-                          {order.iss_retido ? 'Retido' : 'Normal'}
+            {serviceOrders?.map((order) => (
+              <TableRow
+                key={order.id}
+                className="hover:bg-muted/50 cursor-pointer"
+                onClick={() => handleViewDetails(order.id)}
+              >
+                {visibleColumns.map((columnName) => (
+                  <TableCell key={columnName}>
+                    {columnName === "created_at" ? (
+                      format(new Date(order.created_at), 'dd/MM/yyyy HH:mm')
+                    ) : columnName === "client" ? (
+                      order.client?.name || 'N/A'
+                    ) : columnName === "equipment" ? (
+                      order.equipment || 'N/A'
+                    ) : columnName === "equipment_serial_number" ? (
+                      order.equipment_serial_number || 'N/A'
+                    ) : columnName === "problem" ? (
+                      order.problem || 'N/A'
+                    ) : columnName === "iss_retido" ? (
+                      <span className={order.iss_retido ? "text-yellow-600" : "text-green-600"}>
+                        {order.iss_retido ? 'Retido' : 'Normal'}
+                      </span>
+                    ) : columnName === "status" ? (
+                      order.status ? (
+                        <span
+                          className="px-2 py-1 rounded-full text-xs"
+                          style={{
+                            backgroundColor: order.status.color + '20',
+                            color: order.status.color
+                          }}
+                        >
+                          {order.status.name}
                         </span>
-                      ) : columnName === "status" ? (
-                        order.status ? (
-                          <span
-                            className="px-2 py-1 rounded-full text-xs"
-                            style={{
-                              backgroundColor: order.status.color + '20',
-                              color: order.status.color
-                            }}
-                          >
-                            {order.status.name}
-                          </span>
-                        ) : (
-                          'Sem Status'
-                        )
-                      ) : columnName === "base_calculo" || columnName === "total_price" ? (
-                        new Intl.NumberFormat('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL'
-                        }).format(order[columnName] || 0)
                       ) : (
-                        order[columnName as keyof ServiceOrder] as React.ReactNode
-                      )}
-                    </TableCell>
-                  ))}
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleViewDetails(order.id);
-                        }}
-                        title="Visualizar"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => handleEdit(e, order.id)}
-                        title="Editar"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => handlePrint(e, order.id)}
-                        title="Imprimir OS"
-                      >
-                        <Printer className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => handleGenerateNFSe(e, order.id)}
-                        title="Gerar NFS-e"
-                      >
-                        <Receipt className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => handleGenerateNFCe(e, order.id)}
-                        title="Gerar NFC-e"
-                      >
-                        <FileSpreadsheet className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => handleDownloadNFSe(e, order.id)}
-                        title="Download NFS-e"
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => handleDelete(e, order.id)}
-                        title="Excluir"
-                      >
-                        <Trash className="h-4 w-4" />
-                      </Button>
-                    </div>
+                        'Sem Status'
+                      )
+                    ) : columnName === "base_calculo" || columnName === "total_price" ? (
+                      new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL'
+                      }).format(order[columnName] || 0)
+                    ) : (
+                      order[columnName as keyof ServiceOrder] as React.ReactNode
+                    )}
                   </TableCell>
-                </TableRow>
-              );
-            })}
+                ))}
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleViewDetails(order.id);
+                      }}
+                      title="Visualizar"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => handleEdit(e, order.id)}
+                      title="Editar"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => handlePrint(e, order.id)}
+                      title="Imprimir OS"
+                    >
+                      <Printer className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => handleGenerateNFSe(e, order.id)}
+                      title="Gerar NFS-e"
+                    >
+                      <Receipt className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => handleGenerateNFCe(e, order.id)}
+                      title="Gerar NFC-e"
+                    >
+                      <FileSpreadsheet className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => handleDownloadNFSe(e, order.id)}
+                      title="Download NFS-e"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => handleDelete(e, order.id)}
+                      title="Excluir"
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
       )}
