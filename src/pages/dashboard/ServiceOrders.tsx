@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
@@ -69,6 +70,55 @@ export default function ServiceOrders() {
     "base_calculo",
     "total_price",
   ]);
+
+  // Carregar preferências do usuário ao montar o componente
+  useEffect(() => {
+    const loadUserPreferences = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      const { data, error } = await supabase
+        .from('service_order_field_settings')
+        .select('visible_columns')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (error) {
+        console.error('Erro ao carregar preferências:', error);
+        return;
+      }
+
+      if (data?.visible_columns) {
+        setVisibleColumns(data.visible_columns);
+      }
+    };
+
+    loadUserPreferences();
+  }, []);
+
+  // Salvar preferências quando as colunas visíveis mudarem
+  const handleColumnsChange = async (columns: string[]) => {
+    setVisibleColumns(columns);
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+
+    const { error } = await supabase
+      .from('service_order_field_settings')
+      .upsert({
+        user_id: session.user.id,
+        visible_columns: columns,
+      });
+
+    if (error) {
+      console.error('Erro ao salvar preferências:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar preferências",
+        description: "Suas preferências não puderam ser salvas. Tente novamente."
+      });
+    }
+  };
 
   const { data: serviceOrders, isLoading } = useQuery({
     queryKey: ['serviceOrders'],
@@ -276,7 +326,7 @@ export default function ServiceOrders() {
           <ColumnSelect
             columns={SERVICE_ORDER_COLUMNS}
             selectedColumns={visibleColumns}
-            onChange={setVisibleColumns}
+            onChange={handleColumnsChange}
           />
           <Button onClick={handleCreateNew}>
             <Plus className="h-4 w-4 mr-2" />
@@ -347,7 +397,7 @@ export default function ServiceOrders() {
                           currency: 'BRL'
                         }).format(order[columnName] || 0)
                       ) : (
-                        order[columnName as keyof ServiceOrder]
+                        order[columnName as keyof ServiceOrder] as React.ReactNode
                       )}
                     </TableCell>
                   ))}
