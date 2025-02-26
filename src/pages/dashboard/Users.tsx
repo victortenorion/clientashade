@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { ColumnSelect } from "@/components/ui/column-select";
 import { format } from "date-fns";
+import { useToast } from "@/components/ui/use-toast";
 
 const USER_COLUMNS = [
   { name: "username", label: "Nome" },
@@ -22,6 +23,69 @@ export default function Users() {
     "created_at",
     "last_sign_in",
   ]);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const loadUserPreferences = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return;
+
+        const { data, error } = await supabase
+          .from('user_field_settings')
+          .select('visible_columns')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Erro ao carregar preferências:', error);
+          return;
+        }
+
+        if (data?.visible_columns) {
+          setVisibleColumns(data.visible_columns);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar preferências:', error);
+      }
+    };
+
+    loadUserPreferences();
+  }, []);
+
+  const handleColumnsChange = async (columns: string[]) => {
+    try {
+      setVisibleColumns(columns);
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      const { error } = await supabase
+        .from('user_field_settings')
+        .upsert({
+          user_id: session.user.id,
+          visible_columns: columns,
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (error) {
+        console.error('Erro ao salvar preferências:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao salvar preferências",
+          description: "Suas preferências não puderam ser salvas. Tente novamente."
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao salvar preferências:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar preferências",
+        description: "Suas preferências não puderam ser salvas. Tente novamente."
+      });
+    }
+  };
 
   const { data: users, isLoading } = useQuery({
     queryKey: ['users'],
@@ -59,7 +123,7 @@ export default function Users() {
           <ColumnSelect
             columns={USER_COLUMNS}
             selectedColumns={visibleColumns}
-            onChange={setVisibleColumns}
+            onChange={handleColumnsChange}
           />
           <Button>
             <Plus className="h-4 w-4 mr-2" />
@@ -116,3 +180,4 @@ export default function Users() {
     </div>
   );
 }
+
