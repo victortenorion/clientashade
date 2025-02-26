@@ -1,8 +1,7 @@
-// supabase/functions/process-nfse/index.ts
-import { serve } from "https://deno.land/std@0.131.0/http/server.ts";
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
-import { XMLBuilder, XMLParser } from "https://deno.land/x/fast_xml_parser@4.4.1";
-import { SOAPClient } from "https://deno.land/x/deno_soap@0.1.0/mod.ts"; // Dependência SOAP
+import { SOAPClient } from "https://deno.land/x/deno_soap@0.1.0/mod.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -10,7 +9,17 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 const SEFAZ_ENDPOINT = "https://nfe.prefeitura.sp.gov.br/ws/lotenfse.asmx";
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
 serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
   try {
     const { nfseId } = await req.json();
 
@@ -43,24 +52,23 @@ serve(async (req) => {
       throw new Error("Configurações da NFS-e SP não encontradas");
     }
 
-    // Gerar XML para o lote RPS
+    // Construct XML data
     const xmlData = {
-      "?xml": { "@@version": "1.0", "@@encoding": "UTF-8" },
-      "soap:Envelope": {
-        "@@xmlns:soap": "http://schemas.xmlsoap.org/soap/envelope/",
-        "@@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
-        "@@xmlns:xsd": "http://www.w3.org/2001/XMLSchema",
-        "soap:Body": {
+      Envelope: {
+        "@_xmlns:soap": "http://schemas.xmlsoap.org/soap/envelope/",
+        "@_xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+        "@_xmlns:xsd": "http://www.w3.org/2001/XMLSchema",
+        Body: {
           EnviarLoteRpsRequest: {
-            "@@xmlns": "http://nfe.prefeitura.sp.gov.br",
+            "@_xmlns": "http://nfe.prefeitura.sp.gov.br",
             LoteRps: {
-              "@@Id": `LOTE${nfseId}`,
+              "@_Id": `LOTE${nfseId}`,
               Cnpj: nfse.nfse_sp_settings.cnpj,
               InscricaoMunicipal: nfse.nfse_sp_settings.inscricao_municipal,
               QuantidadeRps: "1",
               ListaRps: {
                 Rps: {
-                  "@@Id": `RPS${nfse.numero_nfse || Date.now()}`,
+                  "@_Id": `RPS${nfse.numero_nfse || Date.now()}`,
                   IdentificacaoRps: {
                     Numero: nfse.numero_nfse || Date.now().toString(),
                     Serie: "RPS",
@@ -85,10 +93,10 @@ serve(async (req) => {
                       ValorIss: "0.00",
                       Aliquota: "0.00",
                     },
-                    ItemListaServico: "0107", // Ajustar conforme serviço real
-                    CodigoTributacaoMunicipio: "12345", // Consultar manual
+                    ItemListaServico: "0107",
+                    CodigoTributacaoMunicipio: "12345",
                     Discriminacao: nfse.discriminacao_servicos,
-                    CodigoMunicipio: "3550308", // São Paulo
+                    CodigoMunicipio: "3550308",
                   },
                   Prestador: {
                     Cnpj: nfse.nfse_sp_settings.cnpj,
@@ -103,7 +111,7 @@ serve(async (req) => {
                     },
                     RazaoSocial: nfse.clients.name,
                     Endereco: {
-                      Endereco: "Rua Exemplo", // Substituir por dados reais
+                      Endereco: "Rua Exemplo",
                       Numero: "123",
                       Bairro: "Centro",
                       CodigoMunicipio: "3550308",
@@ -119,10 +127,28 @@ serve(async (req) => {
       },
     };
 
-    const builder = new XMLBuilder({ ignoreAttributes: false, format: true });
-    const xml = builder.build(xmlData);
+    // Convert to XML string
+    const buildXMLString = (obj: any): string => {
+      const entries = Object.entries(obj);
+      return entries.map(([key, value]) => {
+        if (key.startsWith('@_')) {
+          return '';
+        }
+        if (typeof value === 'object') {
+          const attrs = Object.entries(value)
+            .filter(([k]) => k.startsWith('@_'))
+            .map(([k, v]) => `${k.slice(2)}="${v}"`)
+            .join(' ');
+          const content = buildXMLString(value);
+          return `<${key}${attrs ? ' ' + attrs : ''}>${content}</${key}>`;
+        }
+        return `<${key}>${value}</${key}>`;
+      }).join('');
+    };
 
-    // Enviar para SEFAZ via SOAP
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>${buildXMLString(xmlData)}`;
+
+    // Send to SEFAZ via SOAP
     const soapClient = new SOAPClient(SEFAZ_ENDPOINT);
     const response = await soapClient.call("EnviarLoteRps", xml, {
       headers: {
@@ -135,28 +161,23 @@ serve(async (req) => {
       },
     });
 
-    const parser = new XMLParser();
-    const parsedResponse = parser.parse(response.body);
-    const success = !parsedResponse["soap:Envelope"]["soap:Body"]["soap:Fault"];
+    const success = !response.body.includes("soap:Fault");
     const xmlRetorno = response.body;
 
-    // Atualizar status no Supabase
+    // Update status in Supabase
     const updateData = {
       status_sefaz: success ? "autorizada" : "rejeitada",
       xml_envio: xml,
       xml_retorno: xmlRetorno,
       updated_at: new Date().toISOString(),
     };
-    if (success) {
-      updateData.numero_nfse = parsedResponse["soap:Envelope"]["soap:Body"]["EnviarLoteRpsResponse"]["NumeroLote"];
-    }
 
     await supabase
       .from("nfse")
       .update(updateData)
       .eq("id", nfseId);
 
-    // Log da operação
+    // Log operation
     await supabase
       .from("nfse_sefaz_logs")
       .insert({
@@ -167,19 +188,21 @@ serve(async (req) => {
         response_payload: xmlRetorno,
       });
 
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (error: any) {
-    console.error("Erro ao processar NFS-e:", error);
-    await supabase
-      .from("nfse")
-      .update({
-        status_sefaz: "rejeitada",
-        xml_retorno: error.message,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", nfseId);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    return new Response(
+      JSON.stringify({ success: true }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      }
+    );
+  } catch (error) {
+    console.error("Error in process-nfse function:", error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      }
+    );
   }
 });
