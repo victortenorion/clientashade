@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,11 @@ import {
 } from "@/components/ui/select";
 import { Client } from "./types/client.types";
 import { Upload } from "lucide-react";
+
+interface FileAttachment {
+  file: File;
+  preview: string;
+}
 
 export default function ServiceOrderForm() {
   const navigate = useNavigate();
