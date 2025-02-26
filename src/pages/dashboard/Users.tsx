@@ -125,8 +125,6 @@ export default function Users() {
           last_sign_in_at
         `);
 
-      console.log('Dados dos usuários:', data);
-
       if (error) {
         console.error('Erro ao buscar usuários:', error);
         throw error;
@@ -246,7 +244,6 @@ export default function Users() {
                       variant="ghost" 
                       size="sm"
                       onClick={() => {
-                        // TODO: Implementar edição
                         toast({
                           title: "Em desenvolvimento",
                           description: "A edição de usuários será implementada em breve.",

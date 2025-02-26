@@ -2704,6 +2704,12 @@ export type Database = {
         }
         Returns: string
       }
+      delete_user: {
+        Args: {
+          user_id: string
+        }
+        Returns: undefined
+      }
       get_nfse_with_latest_certificate: {
         Args: {
           p_nfse_id: string
