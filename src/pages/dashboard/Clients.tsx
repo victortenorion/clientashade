@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,7 +51,7 @@ import { Json } from "@/integrations/supabase/types";
 import { ColumnSelect } from "@/components/ui/column-select";
 
 interface VisibleFieldSetting {
-  id: string;
+  id?: string;  // Made optional since it's not always present
   field_name: string;
   visible: boolean;
 }
@@ -113,14 +114,20 @@ export const Clients = () => {
 
   const fetchVisibleFields = async () => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       const { data, error } = await supabase
         .from("client_field_settings")
-        .select("field_name, visible");
+        .select("id, field_name, visible");
 
       if (error) throw error;
 
       if (data) {
-        setVisibleFields(data);
+        const typedData: VisibleFieldSetting[] = data.map(field => ({
+          id: field.id || session?.user?.id || undefined,
+          field_name: field.field_name,
+          visible: field.visible
+        }));
+        setVisibleFields(typedData);
       }
     } catch (error: any) {
       console.error("Erro ao carregar configurações dos campos:", error);
