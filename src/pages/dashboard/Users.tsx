@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -80,9 +81,9 @@ export default function Users() {
                 {visibleColumns.map((columnName) => (
                   <TableCell key={columnName}>
                     {columnName === "email" 
-                      ? user.auth_user?.email
+                      ? user.auth_user[0]?.email
                       : columnName === "last_sign_in"
-                      ? user.auth_user?.last_sign_in_at
+                      ? user.auth_user[0]?.last_sign_in_at
                       : user[columnName]}
                   </TableCell>
                 ))}
