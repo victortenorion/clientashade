@@ -90,7 +90,7 @@ export default function ServiceOrders() {
 
   const handleEdit = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    navigate(`/dashboard/service-orders/${id}/edit`);
+    navigate(`/dashboard/service-orders/edit/${id}`);
   };
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
