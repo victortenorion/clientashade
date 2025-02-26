@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
+import { supabase, supabaseAdmin } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
 
 export interface UserFormData {
@@ -21,7 +21,7 @@ export function useUsers() {
   } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      const { data: { users: authUsers }, error: authError } = await supabase.auth.admin.listUsers();
+      const { data: { users: authUsers }, error: authError } = await supabaseAdmin.auth.admin.listUsers();
       
       if (authError) {
         console.error('Erro ao buscar usuários:', authError);
@@ -30,7 +30,8 @@ export function useUsers() {
 
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('*');
+        .select('*')
+        .order('username');
 
       if (profilesError) {
         console.error('Erro ao buscar perfis:', profilesError);
@@ -54,7 +55,7 @@ export function useUsers() {
 
   const createUser = async (userData: UserFormData) => {
     try {
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email: userData.email,
         password: userData.password,
         email_confirm: true,
@@ -96,7 +97,7 @@ export function useUsers() {
         if (userData.email) updates.email = userData.email;
         if (userData.password) updates.password = userData.password;
 
-        const { error: authError } = await supabase.auth.admin.updateUserById(
+        const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
           userId,
           updates
         );
