@@ -46,11 +46,10 @@ serve(async (req) => {
     const mergedUsers = users.map(user => {
       const profile = profiles?.find(p => p.id === user.id)
       return {
-        id: user.id,
-        email: user.email,
-        username: profile?.username || user.email?.split('@')[0],
-        updated_at: profile?.updated_at || user.updated_at,
-        last_sign_in_at: user.last_sign_in_at,
+        ...user,
+        username: profile?.username || user.email?.split('@')[0] || 'N/A',
+        last_sign_in_at: user.last_sign_in_at || null,
+        updated_at: profile?.updated_at || user.updated_at || null,
       }
     })
 
@@ -80,4 +79,3 @@ serve(async (req) => {
     )
   }
 })
-
