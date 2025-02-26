@@ -29,6 +29,11 @@ export function useUsers() {
 
       if (error) {
         console.error('Erro ao buscar usuários:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar usuários",
+          description: error.message
+        });
         throw error;
       }
 
@@ -58,17 +63,15 @@ export function useUsers() {
         body: userData
       });
 
-      if (error) throw error;
-
-      // Create user role entry
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: data.id,
-          is_admin: userData.is_admin || false
+      if (error) {
+        console.error('Erro ao criar usuário:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao criar usuário",
+          description: error.message || "Ocorreu um erro ao criar o usuário."
         });
-
-      if (roleError) throw roleError;
+        return false;
+      }
 
       // Create store assignment if store_ids is provided
       if (userData.store_ids && userData.store_ids.length > 0) {
@@ -79,12 +82,16 @@ export function useUsers() {
             store_id: userData.store_ids[0]
           });
 
-        if (storeError) throw storeError;
+        if (storeError) {
+          console.error('Erro ao associar loja:', storeError);
+          toast({
+            variant: "destructive",
+            title: "Erro ao associar loja",
+            description: storeError.message
+          });
+          return false;
+        }
       }
-
-      toast({
-        title: "Usuário criado com sucesso!",
-      });
 
       queryClient.invalidateQueries({ queryKey: ['users'] });
       queryClient.invalidateQueries({ queryKey: ['user-stores'] });
@@ -94,7 +101,7 @@ export function useUsers() {
       toast({
         variant: "destructive",
         title: "Erro ao criar usuário",
-        description: error.message || "Ocorreu um erro ao criar o usuário.",
+        description: error.message || "Ocorreu um erro ao criar o usuário."
       });
       return false;
     }
@@ -102,21 +109,18 @@ export function useUsers() {
 
   const updateUser = async (userId: string, userData: Partial<UserFormData>) => {
     try {
-      const { data, error } = await supabase.functions.invoke('update-user', {
+      const { error } = await supabase.functions.invoke('update-user', {
         body: { userId, ...userData }
       });
 
-      if (error) throw error;
-
-      if (typeof userData.is_admin !== 'undefined') {
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .upsert({
-            user_id: userId,
-            is_admin: userData.is_admin
-          });
-
-        if (roleError) throw roleError;
+      if (error) {
+        console.error('Erro ao atualizar usuário:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao atualizar usuário",
+          description: error.message
+        });
+        return false;
       }
 
       // Update store assignment if store_ids is provided
@@ -136,13 +140,17 @@ export function useUsers() {
               store_id: userData.store_ids[0]
             });
 
-          if (storeError) throw storeError;
+          if (storeError) {
+            console.error('Erro ao atualizar loja:', storeError);
+            toast({
+              variant: "destructive",
+              title: "Erro ao atualizar loja",
+              description: storeError.message
+            });
+            return false;
+          }
         }
       }
-
-      toast({
-        title: "Usuário atualizado com sucesso!",
-      });
 
       queryClient.invalidateQueries({ queryKey: ['users'] });
       queryClient.invalidateQueries({ queryKey: ['user-stores'] });
@@ -152,7 +160,7 @@ export function useUsers() {
       toast({
         variant: "destructive",
         title: "Erro ao atualizar usuário",
-        description: error.message || "Ocorreu um erro ao atualizar o usuário.",
+        description: error.message || "Ocorreu um erro ao atualizar o usuário."
       });
       return false;
     }
@@ -160,15 +168,19 @@ export function useUsers() {
 
   const deleteUser = async (userId: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke('delete-user', {
+      const { error } = await supabase.functions.invoke('delete-user', {
         body: { userId }
       });
 
-      if (error) throw error;
-
-      toast({
-        title: "Usuário excluído com sucesso!",
-      });
+      if (error) {
+        console.error('Erro ao excluir usuário:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao excluir usuário",
+          description: error.message || "Ocorreu um erro ao excluir o usuário."
+        });
+        return false;
+      }
 
       queryClient.invalidateQueries({ queryKey: ['users'] });
       queryClient.invalidateQueries({ queryKey: ['user-stores'] });
@@ -178,7 +190,7 @@ export function useUsers() {
       toast({
         variant: "destructive",
         title: "Erro ao excluir usuário",
-        description: error.message || "Ocorreu um erro ao excluir o usuário.",
+        description: error.message || "Ocorreu um erro ao excluir o usuário."
       });
       return false;
     }

@@ -9,6 +9,7 @@ import { DeleteUserDialog } from "./components/users/DeleteUserDialog";
 import { useUsers, UserFormData } from "./hooks/useUsers";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { useToast } from "@/components/ui/use-toast";
 
 const USER_COLUMNS = [
   { name: "username", label: "Nome" },
@@ -27,6 +28,7 @@ interface UserStore {
 }
 
 export default function Users() {
+  const { toast } = useToast();
   const [visibleColumns, setVisibleColumns] = useState<string[]>([
     "username",
     "email",
@@ -57,7 +59,14 @@ export default function Users() {
         .select('user_id, store_id, stores(name)')
         .order('created_at');
 
-      if (error) throw error;
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar lojas dos usuários",
+          description: error.message
+        });
+        throw error;
+      }
 
       // Convert to a map for easier lookup
       const storeMap: { [key: string]: { id: string, name: string } } = {};
@@ -82,6 +91,9 @@ export default function Users() {
     const success = await createUser(userData);
     if (success) {
       setIsCreateDialogOpen(false);
+      toast({
+        title: "Usuário criado com sucesso!"
+      });
     }
   };
 
@@ -92,6 +104,9 @@ export default function Users() {
       setIsEditDialogOpen(false);
       setSelectedUserId(null);
       setSelectedUser(null);
+      toast({
+        title: "Usuário atualizado com sucesso!"
+      });
     }
   };
 
@@ -101,6 +116,9 @@ export default function Users() {
     if (success) {
       setIsDeleteDialogOpen(false);
       setSelectedUserId(null);
+      toast({
+        title: "Usuário excluído com sucesso!"
+      });
     }
   };
 
@@ -173,7 +191,7 @@ export default function Users() {
         onSubmit={handleUpdateUser}
         title="Editar Usuário"
         submitLabel="Salvar Alterações"
-        initialData={selectedUser || undefined}
+        initialData={selectedUser}
         showPassword={true}
       />
 
