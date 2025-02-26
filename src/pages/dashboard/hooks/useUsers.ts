@@ -8,6 +8,7 @@ export interface UserFormData {
   email: string;
   password: string;
   username: string;
+  is_admin?: boolean;
 }
 
 export function useUsers() {
@@ -30,7 +31,23 @@ export function useUsers() {
         throw error;
       }
 
-      return data;
+      // Fetch admin status for each user
+      const usersWithRoles = await Promise.all(
+        data.map(async (user: any) => {
+          const { data: roleData } = await supabase
+            .from('user_roles')
+            .select('is_admin')
+            .eq('user_id', user.id)
+            .single();
+            
+          return {
+            ...user,
+            is_admin: roleData?.is_admin || false
+          };
+        })
+      );
+
+      return usersWithRoles;
     },
   });
 
@@ -41,6 +58,16 @@ export function useUsers() {
       });
 
       if (error) throw error;
+
+      // Create user role entry
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: data.id,
+          is_admin: userData.is_admin || false
+        });
+
+      if (roleError) throw roleError;
 
       toast({
         title: "Usuário criado com sucesso!",
@@ -66,6 +93,17 @@ export function useUsers() {
       });
 
       if (error) throw error;
+
+      if (typeof userData.is_admin !== 'undefined') {
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .upsert({
+            user_id: userId,
+            is_admin: userData.is_admin
+          });
+
+        if (roleError) throw roleError;
+      }
 
       toast({
         title: "Usuário atualizado com sucesso!",

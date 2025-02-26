@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,11 +10,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 
 export interface UserFormData {
   email: string;
   password: string;
   username: string;
+  is_admin?: boolean;
 }
 
 interface UserFormDialogProps {
@@ -39,6 +42,7 @@ export function UserFormDialog({
     email: initialData?.email || "",
     password: "",
     username: initialData?.username || "",
+    is_admin: initialData?.is_admin || false,
   });
 
   const handleSubmit = () => {
@@ -77,10 +81,17 @@ export function UserFormDialog({
                 type="password"
                 value={formData.password}
                 onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                placeholder={!showPassword ? "Deixe em branco para manter a senha atual" : undefined}
+                placeholder={initialData ? "Deixe em branco para manter a senha atual" : undefined}
               />
             </div>
           )}
+          <div className="flex items-center space-x-2">
+            <Switch
+              checked={formData.is_admin}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_admin: checked }))}
+            />
+            <Label>Administrador</Label>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>

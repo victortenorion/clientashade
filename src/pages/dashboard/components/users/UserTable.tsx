@@ -2,6 +2,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
 
 interface User {
   id: string;
@@ -9,6 +10,7 @@ interface User {
   username: string;
   updated_at: string;
   last_sign_in_at: string;
+  is_admin: boolean;
   [key: string]: any;
 }
 
@@ -41,6 +43,7 @@ export function UserTable({ users, visibleColumns, onEdit, onDelete, isLoading }
           {visibleColumns.map((column) => (
             <TableHead key={column}>{column}</TableHead>
           ))}
+          <TableHead>Tipo</TableHead>
           <TableHead className="text-right">Ações</TableHead>
         </TableRow>
       </TableHeader>
@@ -54,6 +57,13 @@ export function UserTable({ users, visibleColumns, onEdit, onDelete, isLoading }
                   : user[columnName] ?? "Não disponível"}
               </TableCell>
             ))}
+            <TableCell>
+              {user.is_admin ? (
+                <Badge variant="default">Admin</Badge>
+              ) : (
+                <Badge variant="secondary">Usuário</Badge>
+              )}
+            </TableCell>
             <TableCell className="text-right">
               <div className="flex justify-end gap-2">
                 <Button 
