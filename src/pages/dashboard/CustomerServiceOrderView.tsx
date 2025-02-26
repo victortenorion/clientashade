@@ -12,15 +12,24 @@ import { ServiceOrder } from "./types/service-order-settings.types";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 
+interface Attachment {
+  id: string;
+  filename: string;
+  file_path: string;
+  content_type: string;
+}
+
 export default function CustomerServiceOrderView() {
   const { orderId, clientId } = useParams();
   const navigate = useNavigate();
   const [serviceOrder, setServiceOrder] = useState<ServiceOrder | null>(null);
   const [loading, setLoading] = useState(true);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchServiceOrder();
+    fetchAttachments();
   }, [orderId]);
 
   const fetchServiceOrder = async () => {
@@ -55,6 +64,41 @@ export default function CustomerServiceOrderView() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAttachments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('service_order_attachments')
+        .select('*')
+        .eq('service_order_id', orderId);
+
+      if (error) throw error;
+
+      if (data) {
+        setAttachments(data);
+      }
+    } catch (error) {
+      console.error('Error fetching attachments:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar anexos",
+        description: "Não foi possível carregar os anexos da ordem de serviço.",
+      });
+    }
+  };
+
+  const getFileUrl = async (filePath: string) => {
+    try {
+      const { data } = await supabase.storage
+        .from('service-order-attachments')
+        .getPublicUrl(filePath);
+      
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Error getting file URL:', error);
+      return '';
     }
   };
 
@@ -172,6 +216,33 @@ export default function CustomerServiceOrderView() {
             </CardHeader>
             <CardContent>
               <p>{serviceOrder.reception_notes}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {attachments.length > 0 && (
+          <Card>
+            <CardHeader>
+              <h2 className="text-xl font-semibold">Anexos</h2>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {attachments.map((attachment) => (
+                  <div key={attachment.id} className="relative">
+                    {attachment.content_type.startsWith('image/') ? (
+                      <img
+                        src={getFileUrl(attachment.file_path)}
+                        alt={attachment.filename}
+                        className="w-full h-40 object-cover rounded-lg"
+                      />
+                    ) : (
+                      <div className="w-full h-40 flex items-center justify-center bg-gray-100 rounded-lg">
+                        <span className="text-sm text-gray-500">{attachment.filename}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         )}
