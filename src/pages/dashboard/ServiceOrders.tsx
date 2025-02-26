@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,25 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { format } from "date-fns";
 import { ColumnSelect } from "@/components/ui/column-select";
+
+interface ServiceOrder {
+  id: string;
+  order_number: number;
+  created_at: string;
+  client: {
+    name: string;
+  };
+  total_price: number;
+  description: string;
+  status: {
+    name: string;
+    color: string;
+  };
+  codigo_servico: string;
+  iss_retido: boolean;
+  base_calculo: number;
+  aliquota_iss: number;
+}
 
 const SERVICE_ORDER_COLUMNS = [
   { name: "order_number", label: "Número" },

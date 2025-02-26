@@ -48,11 +48,22 @@ import {
   getLastFourDigits
 } from "./utils/client.utils";
 import { Json } from "@/integrations/supabase/types";
+import { ColumnSelect } from "@/components/ui/column-select";
 
 interface VisibleField {
   field_name: string;
   visible: boolean;
 }
+
+const CLIENT_COLUMNS = [
+  { name: "name", label: "Nome" },
+  { name: "document", label: "Documento" },
+  { name: "email", label: "E-mail" },
+  { name: "phone", label: "Telefone" },
+  { name: "city", label: "Cidade" },
+  { name: "state", label: "Estado" },
+  { name: "pessoa_tipo", label: "Tipo" },
+];
 
 export const Clients = () => {
   const [loading, setLoading] = useState(true);
@@ -65,6 +76,15 @@ export const Clients = () => {
   const [searchingDocument, setSearchingDocument] = useState(false);
   const [visibleFields, setVisibleFields] = useState<VisibleField[]>([]);
   const [fields, setFields] = useState<{ field_name: string, visible: boolean }[]>([]);
+  const [visibleColumns, setVisibleColumns] = useState<string[]>([
+    "name",
+    "document",
+    "email",
+    "phone",
+    "city",
+    "state",
+    "pessoa_tipo",
+  ]);
   const { toast } = useToast();
   const [deleteDialog, setDeleteDialog] = useState<DeleteDialogState>({
     isOpen: false,
@@ -475,26 +495,31 @@ export const Clients = () => {
             onChange={handleSearch}
           />
         </div>
-        <Button onClick={() => {
-          setFormData(defaultFormData);
-          setEditingId(null);
-          setDialogOpen(true);
-        }}>
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Cliente
-        </Button>
+        <div className="flex items-center gap-2">
+          <ColumnSelect
+            columns={CLIENT_COLUMNS}
+            selectedColumns={visibleColumns}
+            onChange={setVisibleColumns}
+          />
+          <Button onClick={() => {
+            setFormData(defaultFormData);
+            setEditingId(null);
+            setDialogOpen(true);
+          }}>
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Cliente
+          </Button>
+        </div>
       </div>
 
       <div className="border rounded-lg">
         <Table>
           <TableHeader>
             <TableRow>
-              {visibleFields
-                .filter(field => field.visible)
-                .map(field => (
-                  <TableHead key={field.field_name}>
-                    {getFieldLabel(field.field_name)}
-                  </TableHead>
+              {CLIENT_COLUMNS
+                .filter(col => visibleColumns.includes(col.name))
+                .map(column => (
+                  <TableHead key={column.name}>{column.label}</TableHead>
                 ))}
               <TableHead>Ações</TableHead>
             </TableRow>
@@ -502,26 +527,26 @@ export const Clients = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={visibleFields.filter(f => f.visible).length + 1} className="text-center">
+                <TableCell colSpan={CLIENT_COLUMNS.length + 1} className="text-center">
                   Carregando...
                 </TableCell>
               </TableRow>
             ) : clients.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={visibleFields.filter(f => f.visible).length + 1} className="text-center">
+                <TableCell colSpan={CLIENT_COLUMNS.length + 1} className="text-center">
                   Nenhum cliente encontrado
                 </TableCell>
               </TableRow>
             ) : (
               clients.map((client) => (
                 <TableRow key={client.id}>
-                  {visibleFields
-                    .filter(field => field.visible)
-                    .map(field => (
-                      <TableCell key={field.field_name}>
-                        {field.field_name === 'contact_persons' 
-                          ? (client[field.field_name] as ContactPerson[])?.map(p => p.name).join(', ') || ''
-                          : String(client[field.field_name as keyof Client] || '')}
+                  {CLIENT_COLUMNS
+                    .filter(col => visibleColumns.includes(col.name))
+                    .map(column => (
+                      <TableCell key={column.name}>
+                        {column.name === 'contact_persons' 
+                          ? (client[column.name] as ContactPerson[])?.map(p => p.name).join(', ') || ''
+                          : String(client[column.name as keyof Client] || '')}
                       </TableCell>
                     ))}
                   <TableCell>
