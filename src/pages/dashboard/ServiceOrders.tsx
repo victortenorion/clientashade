@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -74,7 +73,7 @@ export default function ServiceOrders() {
   const { data: serviceOrders, isLoading } = useQuery({
     queryKey: ['serviceOrders'],
     queryFn: async () => {
-      console.log('Fetching service orders...'); // Debug log
+      console.log('Fetching service orders...');
       const { data, error } = await supabase
         .from('service_orders')
         .select(`
@@ -111,7 +110,7 @@ export default function ServiceOrders() {
         throw error;
       }
 
-      console.log('Service orders data:', data); // Debug log
+      console.log('Service orders data:', data);
       return data || [];
     }
   });
@@ -305,7 +304,7 @@ export default function ServiceOrders() {
           </TableHeader>
           <TableBody>
             {serviceOrders?.map((order) => {
-              console.log('Order being rendered:', order); // Debug log per order
+              console.log('Order being rendered:', order);
               return (
                 <TableRow
                   key={order.id}
@@ -342,16 +341,11 @@ export default function ServiceOrders() {
                         ) : (
                           'Sem Status'
                         )
-                      ) : columnName === "base_calculo" ? (
+                      ) : columnName === "base_calculo" || columnName === "total_price" ? (
                         new Intl.NumberFormat('pt-BR', {
                           style: 'currency',
                           currency: 'BRL'
-                        }).format(order.base_calculo || 0)
-                      ) : columnName === "total_price" ? (
-                        new Intl.NumberFormat('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL'
-                        }).format(order.total_price)
+                        }).format(order[columnName] || 0)
                       ) : (
                         order[columnName as keyof ServiceOrder]
                       )}
@@ -429,4 +423,3 @@ export default function ServiceOrders() {
     </div>
   );
 }
-
