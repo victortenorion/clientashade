@@ -118,7 +118,8 @@ export default function Users() {
     queryFn: async () => {
       const { data: profiles, error } = await supabase
         .from('profiles')
-        .select('*');
+        .select('*')
+        .order('username');
 
       if (error) {
         console.error('Erro ao buscar usuários:', error);
