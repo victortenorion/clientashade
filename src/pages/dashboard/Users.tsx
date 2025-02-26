@@ -129,7 +129,7 @@ export default function Users() {
         title="Editar Usuário"
         submitLabel="Salvar Alterações"
         initialData={selectedUser || undefined}
-        showPassword={false}
+        showPassword={true}
       />
 
       <DeleteUserDialog
