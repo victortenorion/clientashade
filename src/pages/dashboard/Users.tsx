@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { ColumnSelect } from "@/components/ui/column-select";
+import { format } from "date-fns";
 
 const USER_COLUMNS = [
   { name: "username", label: "Nome" },
@@ -41,6 +42,11 @@ export default function Users() {
       return data;
     },
   });
+
+  const formatDate = (date: string | null) => {
+    if (!date) return "Não disponível";
+    return format(new Date(date), "dd/MM/yyyy HH:mm");
+  };
 
   return (
     <div className="space-y-6">
@@ -81,10 +87,12 @@ export default function Users() {
                 {visibleColumns.map((columnName) => (
                   <TableCell key={columnName}>
                     {columnName === "email" 
-                      ? user.auth_user[0]?.email
+                      ? user.auth_user?.[0]?.email ?? "Não disponível"
                       : columnName === "last_sign_in"
-                      ? user.auth_user[0]?.last_sign_in_at
-                      : user[columnName]}
+                      ? formatDate(user.auth_user?.[0]?.last_sign_in_at)
+                      : columnName === "created_at"
+                      ? formatDate(user[columnName])
+                      : user[columnName] ?? "Não disponível"}
                   </TableCell>
                 ))}
                 <TableCell className="text-right">
