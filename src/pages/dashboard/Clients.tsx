@@ -43,17 +43,11 @@ import {
 } from "./types/client.types";
 import {
   defaultFormData,
-  getFieldLabel,
   formatDocument,
   getLastFourDigits
 } from "./utils/client.utils";
 import { Json } from "@/integrations/supabase/types";
 import { ColumnSelect } from "@/components/ui/column-select";
-
-interface VisibleField {
-  field_name: string;
-  visible: boolean;
-}
 
 const CLIENT_COLUMNS = [
   { name: "name", label: "Nome" },
@@ -479,39 +473,35 @@ export const Clients = () => {
     }
   };
 
-  const handleColumnsChange = async (columns: string[]) => {
+  const handleColumnsChange = async (selectedColumns: string[]) => {
     try {
-      setVisibleColumns(columns);
+      setVisibleColumns(selectedColumns);
 
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return;
 
-      const { error: updateError } = await supabase
+      await supabase
         .from('client_field_settings')
-        .update({ 
-          field_name: 'visible_columns',
-          visible: true,
-          updated_at: new Date().toISOString()
-        })
+        .delete()
         .eq('id', session.user.id);
 
-      if (updateError) {
-        const { error: insertError } = await supabase
-          .from('client_field_settings')
-          .insert([{ 
-            field_name: 'visible_columns',
-            visible: true,
-            id: session.user.id
-          }]);
+      const { error: insertError } = await supabase
+        .from('client_field_settings')
+        .insert(
+          selectedColumns.map(columnName => ({
+            id: session.user.id,
+            field_name: columnName,
+            visible: true
+          }))
+        );
 
-        if (insertError) {
-          console.error('Erro ao salvar preferências:', insertError);
-          toast({
-            variant: "destructive",
-            title: "Erro ao salvar preferências",
-            description: "Suas preferências não puderam ser salvas. Tente novamente."
-          });
-        }
+      if (insertError) {
+        console.error('Erro ao salvar preferências:', insertError);
+        toast({
+          variant: "destructive",
+          title: "Erro ao salvar preferências",
+          description: "Suas preferências não puderam ser salvas. Tente novamente."
+        });
       }
     } catch (error) {
       console.error('Erro ao salvar preferências:', error);
@@ -537,17 +527,20 @@ export const Clients = () => {
 
         const { data, error } = await supabase
           .from('client_field_settings')
-          .select('field_name,visible')
+          .select('field_name')
           .eq('id', session.user.id)
-          .maybeSingle();
+          .eq('visible', true);
 
         if (error) {
           console.error('Erro ao carregar preferências:', error);
           return;
         }
 
-        if (data) {
-          setVisibleColumns(data.visible ? ['name', 'document', 'email', 'phone', 'city', 'state'] : []);
+        if (data && data.length > 0) {
+          const visibleCols = data.map(row => row.field_name);
+          setVisibleColumns(visibleCols);
+        } else {
+          setVisibleColumns(CLIENT_COLUMNS.map(col => col.name));
         }
       } catch (error) {
         console.error('Erro ao carregar preferências:', error);
