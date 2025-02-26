@@ -31,11 +31,9 @@ export default function Users() {
         .select(`
           id,
           username,
+          email,
           created_at,
-          users:users (
-            email,
-            last_sign_in_at
-          )
+          last_sign_in_at
         `);
 
       console.log('Dados dos usuários:', data); // Para debug
@@ -92,9 +90,9 @@ export default function Users() {
                 {visibleColumns.map((columnName) => (
                   <TableCell key={columnName}>
                     {columnName === "email" 
-                      ? user.users?.[0]?.email ?? "Não disponível"
+                      ? user.email ?? "Não disponível"
                       : columnName === "last_sign_in"
-                      ? formatDate(user.users?.[0]?.last_sign_in_at)
+                      ? formatDate(user.last_sign_in_at)
                       : columnName === "created_at"
                       ? formatDate(user[columnName])
                       : user[columnName] ?? "Não disponível"}
