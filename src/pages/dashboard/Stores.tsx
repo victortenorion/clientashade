@@ -1,11 +1,12 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { ColumnSelect } from "@/components/ui/column-select";
+import { useToast } from "@/components/ui/use-toast";
 
 const STORE_COLUMNS = [
   { name: "name", label: "Nome" },
@@ -17,6 +18,7 @@ const STORE_COLUMNS = [
 ];
 
 export default function Stores() {
+  const { toast } = useToast();
   const [visibleColumns, setVisibleColumns] = useState<string[]>([
     "name",
     "documento",
@@ -25,6 +27,70 @@ export default function Stores() {
     "regime_tributario",
     "aliquota_iss",
   ]);
+
+  // Carregar preferências do usuário ao montar o componente
+  useEffect(() => {
+    const loadUserPreferences = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return;
+
+        const { data, error } = await supabase
+          .from('store_field_settings')
+          .select('visible_columns')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Erro ao carregar preferências:', error);
+          return;
+        }
+
+        if (data?.visible_columns) {
+          setVisibleColumns(data.visible_columns);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar preferências:', error);
+      }
+    };
+
+    loadUserPreferences();
+  }, []);
+
+  // Salvar preferências quando as colunas visíveis mudarem
+  const handleColumnsChange = async (columns: string[]) => {
+    try {
+      setVisibleColumns(columns);
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      const { error } = await supabase
+        .from('store_field_settings')
+        .upsert({
+          user_id: session.user.id,
+          visible_columns: columns,
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (error) {
+        console.error('Erro ao salvar preferências:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao salvar preferências",
+          description: "Suas preferências não puderam ser salvas. Tente novamente."
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao salvar preferências:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar preferências",
+        description: "Suas preferências não puderam ser salvas. Tente novamente."
+      });
+    }
+  };
 
   const { data: stores, isLoading } = useQuery({
     queryKey: ['stores'],
@@ -46,7 +112,7 @@ export default function Stores() {
           <ColumnSelect
             columns={STORE_COLUMNS}
             selectedColumns={visibleColumns}
-            onChange={setVisibleColumns}
+            onChange={handleColumnsChange}
           />
           <Button>
             <Plus className="h-4 w-4 mr-2" />

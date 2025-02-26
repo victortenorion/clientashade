@@ -2516,6 +2516,30 @@ export type Database = {
         }
         Relationships: []
       }
+      store_field_settings: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string | null
+          visible_columns: string[] | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string | null
+          visible_columns?: string[] | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string | null
+          visible_columns?: string[] | null
+        }
+        Relationships: []
+      }
       stores: {
         Row: {
           aliquota_iss: number | null
