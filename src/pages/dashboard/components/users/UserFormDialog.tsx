@@ -11,12 +11,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 
 export interface UserFormData {
   email: string;
   password: string;
   username: string;
   is_admin?: boolean;
+  store_ids?: string[];
 }
 
 interface UserFormDialogProps {
@@ -43,6 +47,20 @@ export function UserFormDialog({
     password: "",
     username: initialData?.username || "",
     is_admin: initialData?.is_admin || false,
+    store_ids: initialData?.store_ids || [],
+  });
+
+  const { data: stores = [] } = useQuery({
+    queryKey: ['stores'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('stores')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      return data;
+    },
   });
 
   const handleSubmit = () => {
@@ -91,6 +109,24 @@ export function UserFormDialog({
               onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_admin: checked }))}
             />
             <Label>Administrador</Label>
+          </div>
+          <div className="space-y-2">
+            <Label>Lojas</Label>
+            <Select
+              value={formData.store_ids?.[0] || ""}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, store_ids: [value] }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione uma loja" />
+              </SelectTrigger>
+              <SelectContent>
+                {stores.map((store) => (
+                  <SelectItem key={store.id} value={store.id}>
+                    {store.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
         <DialogFooter>

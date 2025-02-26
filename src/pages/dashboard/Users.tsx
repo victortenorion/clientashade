@@ -7,10 +7,13 @@ import { UserTable } from "./components/users/UserTable";
 import { UserFormDialog } from "./components/users/UserFormDialog";
 import { DeleteUserDialog } from "./components/users/DeleteUserDialog";
 import { useUsers, UserFormData } from "./hooks/useUsers";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 
 const USER_COLUMNS = [
   { name: "username", label: "Nome" },
   { name: "email", label: "E-mail" },
+  { name: "store", label: "Loja" },
   { name: "updated_at", label: "Data Atualização" },
   { name: "last_sign_in_at", label: "Último Acesso" },
 ];
@@ -19,6 +22,7 @@ export default function Users() {
   const [visibleColumns, setVisibleColumns] = useState<string[]>([
     "username",
     "email",
+    "store",
     "updated_at",
     "last_sign_in_at",
   ]);
@@ -36,6 +40,31 @@ export default function Users() {
     updateUser,
     deleteUser,
   } = useUsers();
+
+  const { data: userStores = {} } = useQuery({
+    queryKey: ['user-stores'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_stores')
+        .select('user_id, store_id, stores(name)')
+        .order('created_at');
+
+      if (error) throw error;
+
+      // Convert to a map for easier lookup
+      const storeMap: { [key: string]: { id: string, name: string } } = {};
+      data.forEach((item) => {
+        if (item.stores) {
+          storeMap[item.user_id] = {
+            id: item.store_id,
+            name: item.stores.name,
+          };
+        }
+      });
+
+      return storeMap;
+    },
+  });
 
   const handleColumnsChange = async (columns: string[]) => {
     setVisibleColumns(columns);
@@ -69,14 +98,21 @@ export default function Users() {
 
   const handleEdit = (user: any) => {
     setSelectedUserId(user.id);
+    const userStore = userStores[user.id];
     setSelectedUser({
       email: user.email || "",
       password: "",
       username: user.username || "",
       is_admin: user.is_admin || false,
+      store_ids: userStore ? [userStore.id] : [],
     });
     setIsEditDialogOpen(true);
   };
+
+  const enrichedUsers = users.map(user => ({
+    ...user,
+    store: userStores[user.id]?.name || "Sem loja",
+  }));
 
   if (error) {
     return (
@@ -104,7 +140,7 @@ export default function Users() {
       </div>
 
       <UserTable
-        users={users}
+        users={enrichedUsers}
         visibleColumns={visibleColumns}
         onEdit={handleEdit}
         onDelete={(userId) => {

@@ -9,6 +9,7 @@ export interface UserFormData {
   password: string;
   username: string;
   is_admin?: boolean;
+  store_ids?: string[];
 }
 
 export function useUsers() {
@@ -69,11 +70,24 @@ export function useUsers() {
 
       if (roleError) throw roleError;
 
+      // Create store assignment if store_ids is provided
+      if (userData.store_ids && userData.store_ids.length > 0) {
+        const { error: storeError } = await supabase
+          .from('user_stores')
+          .insert({
+            user_id: data.id,
+            store_id: userData.store_ids[0]
+          });
+
+        if (storeError) throw storeError;
+      }
+
       toast({
         title: "Usuário criado com sucesso!",
       });
 
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['user-stores'] });
       return true;
     } catch (error: any) {
       console.error('Erro ao criar usuário:', error);
@@ -105,11 +119,33 @@ export function useUsers() {
         if (roleError) throw roleError;
       }
 
+      // Update store assignment if store_ids is provided
+      if (userData.store_ids) {
+        // First delete existing assignments
+        await supabase
+          .from('user_stores')
+          .delete()
+          .eq('user_id', userId);
+
+        // Then create new assignment if a store is selected
+        if (userData.store_ids.length > 0) {
+          const { error: storeError } = await supabase
+            .from('user_stores')
+            .insert({
+              user_id: userId,
+              store_id: userData.store_ids[0]
+            });
+
+          if (storeError) throw storeError;
+        }
+      }
+
       toast({
         title: "Usuário atualizado com sucesso!",
       });
 
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['user-stores'] });
       return true;
     } catch (error: any) {
       console.error('Erro ao atualizar usuário:', error);
@@ -135,6 +171,7 @@ export function useUsers() {
       });
 
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['user-stores'] });
       return true;
     } catch (error: any) {
       console.error('Erro ao excluir usuário:', error);
