@@ -113,36 +113,63 @@ export default function Users() {
     }
   };
 
-  const { data: users, isLoading } = useQuery({
+  const { data: users = [], isLoading, error } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      const { data: profiles, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('username');
-
-      if (error) {
-        console.error('Erro ao buscar usuários:', error);
-        throw error;
+      const { data: { users: authUsers }, error: authError } = await supabase.auth.admin.listUsers();
+      
+      if (authError) {
+        console.error('Erro ao buscar usuários:', authError);
+        throw authError;
       }
 
-      return profiles;
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*');
+
+      if (profilesError) {
+        console.error('Erro ao buscar perfis:', profilesError);
+        throw profilesError;
+      }
+
+      // Combinar os dados dos usuários com seus perfis
+      const mergedUsers = authUsers.map(user => {
+        const profile = profiles?.find(p => p.id === user.id);
+        return {
+          id: user.id,
+          email: user.email,
+          username: profile?.username || user.email?.split('@')[0],
+          updated_at: profile?.updated_at || user.updated_at,
+          last_sign_in_at: user.last_sign_in_at,
+        };
+      });
+
+      return mergedUsers;
     },
   });
 
   const createUser = async (userData: UserFormData) => {
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: userData.email,
         password: userData.password,
+        email_confirm: true,
       });
 
       if (authError) throw authError;
 
-      // O perfil será criado automaticamente pelo trigger
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: authData.user.id,
+          username: userData.username,
+          email: userData.email,
+        });
+
+      if (profileError) throw profileError;
+
       toast({
         title: "Usuário criado com sucesso!",
-        description: "Um e-mail de confirmação foi enviado.",
       });
 
       queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -160,30 +187,29 @@ export default function Users() {
 
   const updateUser = async (userId: string, userData: Partial<UserFormData>) => {
     try {
-      const updates = {
-        username: userData.username,
-      };
-
-      const { error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', userId);
-
-      if (error) throw error;
-
       if (userData.email || userData.password) {
-        const adminAuthClient = supabase.auth.admin;
         const updates: { email?: string; password?: string } = {};
-        
         if (userData.email) updates.email = userData.email;
         if (userData.password) updates.password = userData.password;
 
-        const { error: authError } = await adminAuthClient.updateUserById(
+        const { error: authError } = await supabase.auth.admin.updateUserById(
           userId,
           updates
         );
 
         if (authError) throw authError;
+      }
+
+      if (userData.username || userData.email) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: userId,
+            username: userData.username,
+            email: userData.email,
+          });
+
+        if (profileError) throw profileError;
       }
 
       toast({
@@ -245,6 +271,14 @@ export default function Users() {
     return format(new Date(date), "dd/MM/yyyy HH:mm");
   };
 
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-48">
+        <p className="text-red-500">Erro ao carregar usuários: {(error as Error).message}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -283,9 +317,7 @@ export default function Users() {
               <TableRow key={user.id}>
                 {visibleColumns.map((columnName) => (
                   <TableCell key={columnName}>
-                    {columnName === "email" 
-                      ? user.email ?? "Não disponível"
-                      : columnName.endsWith("_at")
+                    {columnName.endsWith("_at")
                       ? formatDate(user[columnName])
                       : user[columnName] ?? "Não disponível"}
                   </TableCell>
