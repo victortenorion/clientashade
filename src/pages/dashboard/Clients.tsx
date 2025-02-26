@@ -486,22 +486,32 @@ export const Clients = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return;
 
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from('client_field_settings')
-        .upsert({
-          user_id: session.user.id,
-          visible_columns: columns,
-        }, {
-          onConflict: 'user_id'
-        });
+        .update({ 
+          field_name: 'visible_columns',
+          visible: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', session.user.id);
 
-      if (error) {
-        console.error('Erro ao salvar preferências:', error);
-        toast({
-          variant: "destructive",
-          title: "Erro ao salvar preferências",
-          description: "Suas preferências não puderam ser salvas. Tente novamente."
-        });
+      if (updateError) {
+        const { error: insertError } = await supabase
+          .from('client_field_settings')
+          .insert([{ 
+            field_name: 'visible_columns',
+            visible: true,
+            id: session.user.id
+          }]);
+
+        if (insertError) {
+          console.error('Erro ao salvar preferências:', insertError);
+          toast({
+            variant: "destructive",
+            title: "Erro ao salvar preferências",
+            description: "Suas preferências não puderam ser salvas. Tente novamente."
+          });
+        }
       }
     } catch (error) {
       console.error('Erro ao salvar preferências:', error);
@@ -527,8 +537,8 @@ export const Clients = () => {
 
         const { data, error } = await supabase
           .from('client_field_settings')
-          .select('visible_columns')
-          .eq('user_id', session.user.id)
+          .select('field_name,visible')
+          .eq('id', session.user.id)
           .maybeSingle();
 
         if (error) {
@@ -536,8 +546,8 @@ export const Clients = () => {
           return;
         }
 
-        if (data?.visible_columns) {
-          setVisibleColumns(data.visible_columns);
+        if (data) {
+          setVisibleColumns(data.visible ? ['name', 'document', 'email', 'phone', 'city', 'state'] : []);
         }
       } catch (error) {
         console.error('Erro ao carregar preferências:', error);
