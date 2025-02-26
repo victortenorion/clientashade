@@ -58,17 +58,6 @@ export function LoginForm() {
     try {
       console.log("Tentando fazer login com:", { email });
       
-      // Primeiro, verifica se o usuário existe
-      const { data: existingUser, error: userCheckError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', email)
-        .single();
-
-      if (userCheckError) {
-        console.error("Erro ao verificar usuário:", userCheckError);
-      }
-
       // Tenta fazer login
       const { error: signInError, data } = await supabase.auth.signInWithPassword({
         email,
