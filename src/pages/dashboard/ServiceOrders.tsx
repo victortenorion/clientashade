@@ -74,6 +74,7 @@ export default function ServiceOrders() {
   const { data: serviceOrders, isLoading } = useQuery({
     queryKey: ['serviceOrders'],
     queryFn: async () => {
+      console.log('Fetching service orders...'); // Debug log
       const { data, error } = await supabase
         .from('service_orders')
         .select(`
@@ -110,6 +111,7 @@ export default function ServiceOrders() {
         throw error;
       }
 
+      console.log('Service orders data:', data); // Debug log
       return data || [];
     }
   });
@@ -302,125 +304,129 @@ export default function ServiceOrders() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {serviceOrders?.map((order) => (
-              <TableRow
-                key={order.id}
-                className="hover:bg-muted/50 cursor-pointer"
-                onClick={() => handleViewDetails(order.id)}
-              >
-                {visibleColumns.map((columnName) => (
-                  <TableCell key={columnName}>
-                    {columnName === "created_at" ? (
-                      format(new Date(order.created_at), 'dd/MM/yyyy HH:mm')
-                    ) : columnName === "client" ? (
-                      order.client?.name || 'N/A'
-                    ) : columnName === "equipment" ? (
-                      order.equipment || 'N/A'
-                    ) : columnName === "equipment_serial_number" ? (
-                      order.equipment_serial_number || 'N/A'
-                    ) : columnName === "problem" ? (
-                      order.problem || 'N/A'
-                    ) : columnName === "iss_retido" ? (
-                      <span className={order.iss_retido ? "text-yellow-600" : "text-green-600"}>
-                        {order.iss_retido ? 'Retido' : 'Normal'}
-                      </span>
-                    ) : columnName === "status" ? (
-                      order.status ? (
-                        <span
-                          className="px-2 py-1 rounded-full text-xs"
-                          style={{
-                            backgroundColor: order.status.color + '20',
-                            color: order.status.color
-                          }}
-                        >
-                          {order.status.name}
+            {serviceOrders?.map((order) => {
+              console.log('Order being rendered:', order); // Debug log per order
+              return (
+                <TableRow
+                  key={order.id}
+                  className="hover:bg-muted/50 cursor-pointer"
+                  onClick={() => handleViewDetails(order.id)}
+                >
+                  {visibleColumns.map((columnName) => (
+                    <TableCell key={columnName}>
+                      {columnName === "created_at" ? (
+                        format(new Date(order.created_at), 'dd/MM/yyyy HH:mm')
+                      ) : columnName === "client" ? (
+                        order.client?.name || 'N/A'
+                      ) : columnName === "equipment" ? (
+                        order.equipment || 'N/A'
+                      ) : columnName === "equipment_serial_number" ? (
+                        order.equipment_serial_number || 'N/A'
+                      ) : columnName === "problem" ? (
+                        order.problem || 'N/A'
+                      ) : columnName === "iss_retido" ? (
+                        <span className={order.iss_retido ? "text-yellow-600" : "text-green-600"}>
+                          {order.iss_retido ? 'Retido' : 'Normal'}
                         </span>
+                      ) : columnName === "status" ? (
+                        order.status ? (
+                          <span
+                            className="px-2 py-1 rounded-full text-xs"
+                            style={{
+                              backgroundColor: order.status.color + '20',
+                              color: order.status.color
+                            }}
+                          >
+                            {order.status.name}
+                          </span>
+                        ) : (
+                          'Sem Status'
+                        )
+                      ) : columnName === "base_calculo" ? (
+                        new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL'
+                        }).format(order.base_calculo || 0)
+                      ) : columnName === "total_price" ? (
+                        new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL'
+                        }).format(order.total_price)
                       ) : (
-                        'Sem Status'
-                      )
-                    ) : columnName === "base_calculo" ? (
-                      new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL'
-                      }).format(order.base_calculo || 0)
-                    ) : columnName === "total_price" ? (
-                      new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL'
-                      }).format(order.total_price)
-                    ) : (
-                      order[columnName]
-                    )}
+                        order[columnName as keyof ServiceOrder]
+                      )}
+                    </TableCell>
+                  ))}
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewDetails(order.id);
+                        }}
+                        title="Visualizar"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => handleEdit(e, order.id)}
+                        title="Editar"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => handlePrint(e, order.id)}
+                        title="Imprimir OS"
+                      >
+                        <Printer className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => handleGenerateNFSe(e, order.id)}
+                        title="Gerar NFS-e"
+                      >
+                        <Receipt className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => handleGenerateNFCe(e, order.id)}
+                        title="Gerar NFC-e"
+                      >
+                        <FileSpreadsheet className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => handleDownloadNFSe(e, order.id)}
+                        title="Download NFS-e"
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => handleDelete(e, order.id)}
+                        title="Excluir"
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
-                ))}
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleViewDetails(order.id);
-                      }}
-                      title="Visualizar"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => handleEdit(e, order.id)}
-                      title="Editar"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => handlePrint(e, order.id)}
-                      title="Imprimir OS"
-                    >
-                      <Printer className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => handleGenerateNFSe(e, order.id)}
-                      title="Gerar NFS-e"
-                    >
-                      <Receipt className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => handleGenerateNFCe(e, order.id)}
-                      title="Gerar NFC-e"
-                    >
-                      <FileSpreadsheet className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => handleDownloadNFSe(e, order.id)}
-                      title="Download NFS-e"
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => handleDelete(e, order.id)}
-                      title="Excluir"
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       )}
     </div>
   );
 }
+
