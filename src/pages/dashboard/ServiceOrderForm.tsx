@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Client } from "./types/client.types";
+import { Upload } from "lucide-react";
 
 export default function ServiceOrderForm() {
   const navigate = useNavigate();
@@ -24,7 +25,9 @@ export default function ServiceOrderForm() {
   const [clients, setClients] = useState<Client[]>([]);
   const [loadingCompanyInfo, setLoadingCompanyInfo] = useState(true);
   const [initialStatusId, setInitialStatusId] = useState<string | null>(null);
-  
+  const [attachments, setAttachments] = useState<FileAttachment[]>([]);
+  const [uploadingFiles, setUploadingFiles] = useState(false);
+
   const [formData, setFormData] = useState({
     client_id: "",
     description: "",
@@ -32,10 +35,9 @@ export default function ServiceOrderForm() {
     equipment_serial_number: "",
     problem: "",
     priority: "normal",
-    // Campos NFS-e
     codigo_servico: "",
     discriminacao_servico: "",
-    regime_tributario: "1", // Simples Nacional
+    regime_tributario: "1",
     regime_especial: "",
     iss_retido: false,
     inss_retido: false,
@@ -143,9 +145,21 @@ export default function ServiceOrderForm() {
     }));
   };
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length) return;
+    
+    const newFiles = Array.from(e.target.files).map(file => ({
+      file,
+      preview: URL.createObjectURL(file)
+    }));
+    
+    setAttachments(prev => [...prev, ...newFiles]);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setUploadingFiles(true);
 
     try {
       if (!initialStatusId) {
@@ -156,7 +170,6 @@ export default function ServiceOrderForm() {
         throw new Error("Por favor, selecione um cliente");
       }
 
-      // Primeiro, buscar a loja do usuário
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
 
@@ -169,8 +182,7 @@ export default function ServiceOrderForm() {
       if (storeError) throw storeError;
       if (!storeData?.store_id) throw new Error("Usuário não está associado a uma loja");
 
-      // Criar a ordem com os dados do formulário
-      const { error } = await supabase
+      const { data: orderData, error } = await supabase
         .from("service_orders")
         .insert([
           {
@@ -179,16 +191,38 @@ export default function ServiceOrderForm() {
             total_price: 0,
             ...formData
           }
-        ]);
+        ])
+        .select()
+        .single();
 
       if (error) throw error;
+
+      if (attachments.length > 0) {
+        for (const attachment of attachments) {
+          const formData = new FormData();
+          formData.append('file', attachment.file);
+          formData.append('serviceOrderId', orderData.id);
+
+          const { error: uploadError } = await supabase.functions.invoke('upload-attachment', {
+            body: formData
+          });
+
+          if (uploadError) {
+            console.error('Error uploading file:', uploadError);
+            toast({
+              variant: "destructive",
+              title: "Erro ao enviar arquivo",
+              description: uploadError.message
+            });
+          }
+        }
+      }
 
       toast({
         title: "Ordem de serviço criada",
         description: "Redirecionando para lista de ordens..."
       });
 
-      // Redirecionar para a lista de ordens
       navigate("/dashboard/service-orders");
     } catch (error: any) {
       toast({
@@ -198,6 +232,7 @@ export default function ServiceOrderForm() {
       });
     } finally {
       setLoading(false);
+      setUploadingFiles(false);
     }
   };
 
@@ -216,7 +251,6 @@ export default function ServiceOrderForm() {
 
       <form onSubmit={handleSubmit} className="space-y-6 max-w-xl">
         <div className="space-y-4">
-          {/* Seleção de Cliente */}
           <div className="space-y-2">
             <Label htmlFor="client_id">Cliente</Label>
             <Select
@@ -236,7 +270,6 @@ export default function ServiceOrderForm() {
             </Select>
           </div>
 
-          {/* Informações do Equipamento */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Informações do Equipamento</h3>
             
@@ -275,7 +308,6 @@ export default function ServiceOrderForm() {
             </div>
           </div>
 
-          {/* Informações para NFS-e */}
           <div className="space-y-4 pt-4">
             <h3 className="text-lg font-semibold">Informações para NFS-e</h3>
             
@@ -372,8 +404,65 @@ export default function ServiceOrderForm() {
           </div>
         </div>
 
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Criando..." : "Criar Ordem de Serviço"}
+        <div className="space-y-4">
+          <Label>Anexos</Label>
+          <div className="grid grid-cols-2 gap-4">
+            {attachments.map((attachment, index) => (
+              <div key={index} className="relative group">
+                {attachment.file.type.startsWith('image/') ? (
+                  <img
+                    src={attachment.preview}
+                    alt={`Anexo ${index + 1}`}
+                    className="w-full h-32 object-cover rounded-md"
+                  />
+                ) : (
+                  <div className="w-full h-32 bg-muted rounded-md flex items-center justify-center">
+                    <span className="text-sm text-muted-foreground">
+                      {attachment.file.name}
+                    </span>
+                  </div>
+                )}
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => {
+                    URL.revokeObjectURL(attachment.preview);
+                    setAttachments(prev => prev.filter((_, i) => i !== index));
+                  }}
+                >
+                  Remover
+                </Button>
+              </div>
+            ))}
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <Input
+              type="file"
+              onChange={handleFileChange}
+              accept="image/*,video/*"
+              multiple
+              className="hidden"
+              id="file-upload"
+            />
+            <Label
+              htmlFor="file-upload"
+              className="cursor-pointer flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Upload className="h-4 w-4" />
+              Adicionar arquivos
+            </Label>
+          </div>
+        </div>
+
+        <Button 
+          type="submit" 
+          className="w-full" 
+          disabled={loading || uploadingFiles}
+        >
+          {loading || uploadingFiles ? "Criando..." : "Criar Ordem de Serviço"}
         </Button>
       </form>
     </div>
