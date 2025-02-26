@@ -53,7 +53,7 @@ export default function Users() {
 
       // Convert to a map for easier lookup
       const storeMap: { [key: string]: { id: string, name: string } } = {};
-      data.forEach((item) => {
+      data.forEach((item: any) => {
         if (item.stores) {
           storeMap[item.user_id] = {
             id: item.store_id,
