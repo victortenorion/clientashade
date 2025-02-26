@@ -479,11 +479,73 @@ export const Clients = () => {
     }
   };
 
+  const handleColumnsChange = async (columns: string[]) => {
+    try {
+      setVisibleColumns(columns);
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      const { error } = await supabase
+        .from('client_field_settings')
+        .upsert({
+          user_id: session.user.id,
+          visible_columns: columns,
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (error) {
+        console.error('Erro ao salvar preferências:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao salvar preferências",
+          description: "Suas preferências não puderam ser salvas. Tente novamente."
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao salvar preferências:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar preferências",
+        description: "Suas preferências não puderam ser salvas. Tente novamente."
+      });
+    }
+  };
+
   useEffect(() => {
     fetchClients();
     fetchStores();
     fetchVisibleFields();
   }, [searchTerm]);
+
+  useEffect(() => {
+    const loadUserPreferences = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return;
+
+        const { data, error } = await supabase
+          .from('client_field_settings')
+          .select('visible_columns')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Erro ao carregar preferências:', error);
+          return;
+        }
+
+        if (data?.visible_columns) {
+          setVisibleColumns(data.visible_columns);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar preferências:', error);
+      }
+    };
+
+    loadUserPreferences();
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -499,7 +561,7 @@ export const Clients = () => {
           <ColumnSelect
             columns={CLIENT_COLUMNS}
             selectedColumns={visibleColumns}
-            onChange={setVisibleColumns}
+            onChange={handleColumnsChange}
           />
           <Button onClick={() => {
             setFormData(defaultFormData);
