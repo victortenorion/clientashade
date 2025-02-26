@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -83,8 +84,7 @@ export default function ServiceOrders() {
     navigate("/dashboard/service-orders/new");
   };
 
-  const handleViewDetails = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
+  const handleViewDetails = (id: string) => {
     navigate(`/dashboard/service-orders/${id}`);
   };
 
@@ -266,7 +266,8 @@ export default function ServiceOrders() {
             {serviceOrders?.map((order) => (
               <TableRow
                 key={order.id}
-                className="hover:bg-muted/50"
+                className="hover:bg-muted/50 cursor-pointer"
+                onClick={() => handleViewDetails(order.id)}
               >
                 <TableCell>{order.order_number}</TableCell>
                 <TableCell>
@@ -311,7 +312,10 @@ export default function ServiceOrders() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={(e) => handleViewDetails(e, order.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleViewDetails(order.id);
+                      }}
                       title="Visualizar"
                     >
                       <Eye className="h-4 w-4" />
@@ -374,3 +378,4 @@ export default function ServiceOrders() {
     </div>
   );
 }
+
