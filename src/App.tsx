@@ -9,6 +9,7 @@ import ServiceOrders from "@/pages/dashboard/ServiceOrders";
 import ServiceOrderSettings from "@/pages/dashboard/ServiceOrderSettings";
 import ServiceOrderForm from "@/pages/dashboard/ServiceOrderForm";
 import ServiceOrderEdit from "@/pages/dashboard/ServiceOrderEdit";
+import ServiceOrderView from "@/pages/dashboard/ServiceOrderView";
 import NFCe from "@/pages/dashboard/NFCe";
 import NFCeForm from "@/pages/dashboard/NFCeForm";
 import NFSe from "@/pages/dashboard/NFSe";
@@ -35,6 +36,7 @@ function App() {
           <Route path="products" element={<Products />} />
           <Route path="service-orders" element={<ServiceOrders />} />
           <Route path="service-orders/new" element={<ServiceOrderForm />} />
+          <Route path="service-orders/:id" element={<ServiceOrderView />} />
           <Route path="service-orders/edit/:id" element={<ServiceOrderEdit />} />
           <Route path="service-order-settings/*" element={<ServiceOrderSettings />} />
           <Route path="nfce" element={<NFCe />} />
@@ -72,3 +74,4 @@ function App() {
 }
 
 export default App;
+
