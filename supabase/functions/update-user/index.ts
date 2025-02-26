@@ -14,17 +14,32 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
 
 serve(async (req) => {
   try {
-    const { userId } = await req.json()
+    const { userId, email, password, username } = await req.json()
 
-    const { error: authError } = await supabase.auth.admin.deleteUser(userId)
-    if (authError) throw authError
+    if (email || password) {
+      const updates: { email?: string; password?: string } = {}
+      if (email) updates.email = email
+      if (password) updates.password = password
 
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .delete()
-      .eq('id', userId)
+      const { error: authError } = await supabase.auth.admin.updateUserById(
+        userId,
+        updates
+      )
 
-    if (profileError) throw profileError
+      if (authError) throw authError
+    }
+
+    if (username || email) {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: userId,
+          username,
+          email,
+        })
+
+      if (profileError) throw profileError
+    }
 
     return new Response(
       JSON.stringify({ success: true }),

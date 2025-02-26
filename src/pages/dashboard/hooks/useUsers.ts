@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase, supabaseAdmin } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
 
 export interface UserFormData {
@@ -21,58 +21,26 @@ export function useUsers() {
   } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('username');
-
-      if (profilesError) {
-        console.error('Erro ao buscar perfis:', profilesError);
-        throw profilesError;
-      }
-
-      // Usar o cliente admin para buscar usuários
-      const { data: { users: authUsers }, error: authError } = await supabaseAdmin.auth.admin.listUsers();
-      
-      if (authError) {
-        console.error('Erro ao buscar usuários:', authError);
-        throw authError;
-      }
-
-      const mergedUsers = authUsers.map(user => {
-        const profile = profiles?.find(p => p.id === user.id);
-        return {
-          id: user.id,
-          email: user.email,
-          username: profile?.username || user.email?.split('@')[0],
-          updated_at: profile?.updated_at || user.updated_at,
-          last_sign_in_at: user.last_sign_in_at,
-        };
+      const { data, error } = await supabase.functions.invoke('list-users', {
+        method: 'GET'
       });
 
-      return mergedUsers;
+      if (error) {
+        console.error('Erro ao buscar usuários:', error);
+        throw error;
+      }
+
+      return data;
     },
   });
 
   const createUser = async (userData: UserFormData) => {
     try {
-      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-        email: userData.email,
-        password: userData.password,
-        email_confirm: true,
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: userData
       });
 
-      if (authError) throw authError;
-
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: authData.user.id,
-          username: userData.username,
-          email: userData.email,
-        });
-
-      if (profileError) throw profileError;
+      if (error) throw error;
 
       toast({
         title: "Usuário criado com sucesso!",
@@ -93,30 +61,11 @@ export function useUsers() {
 
   const updateUser = async (userId: string, userData: Partial<UserFormData>) => {
     try {
-      if (userData.email || userData.password) {
-        const updates: { email?: string; password?: string } = {};
-        if (userData.email) updates.email = userData.email;
-        if (userData.password) updates.password = userData.password;
+      const { data, error } = await supabase.functions.invoke('update-user', {
+        body: { userId, ...userData }
+      });
 
-        const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
-          userId,
-          updates
-        );
-
-        if (authError) throw authError;
-      }
-
-      if (userData.username || userData.email) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: userId,
-            username: userData.username,
-            email: userData.email,
-          });
-
-        if (profileError) throw profileError;
-      }
+      if (error) throw error;
 
       toast({
         title: "Usuário atualizado com sucesso!",
@@ -137,8 +86,9 @@ export function useUsers() {
 
   const deleteUser = async (userId: string) => {
     try {
-      const { error } = await supabase
-        .rpc('delete_user', { user_id: userId });
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId }
+      });
 
       if (error) throw error;
 
