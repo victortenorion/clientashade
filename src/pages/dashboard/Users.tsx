@@ -12,16 +12,16 @@ import { useToast } from "@/components/ui/use-toast";
 const USER_COLUMNS = [
   { name: "username", label: "Nome" },
   { name: "email", label: "E-mail" },
-  { name: "created_at", label: "Data Cadastro" },
-  { name: "last_sign_in", label: "Último Acesso" },
+  { name: "updated_at", label: "Data Atualização" },
+  { name: "last_sign_in_at", label: "Último Acesso" },
 ];
 
 export default function Users() {
   const [visibleColumns, setVisibleColumns] = useState<string[]>([
     "username",
     "email",
-    "created_at",
-    "last_sign_in",
+    "updated_at",
+    "last_sign_in_at",
   ]);
   const { toast } = useToast();
 
@@ -96,11 +96,11 @@ export default function Users() {
           id,
           username,
           email,
-          created_at,
+          updated_at,
           last_sign_in_at
         `);
 
-      console.log('Dados dos usuários:', data); // Para debug
+      console.log('Dados dos usuários:', data);
 
       if (error) {
         console.error('Erro ao buscar usuários:', error);
@@ -155,9 +155,7 @@ export default function Users() {
                   <TableCell key={columnName}>
                     {columnName === "email" 
                       ? user.email ?? "Não disponível"
-                      : columnName === "last_sign_in"
-                      ? formatDate(user.last_sign_in_at)
-                      : columnName === "created_at"
+                      : columnName.endsWith("_at")
                       ? formatDate(user[columnName])
                       : user[columnName] ?? "Não disponível"}
                   </TableCell>
