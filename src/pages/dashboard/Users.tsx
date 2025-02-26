@@ -32,11 +32,11 @@ export default function Users() {
           id,
           username,
           created_at,
-          auth_user:id(
+          auth_user:users (
             email,
             last_sign_in_at
           )
-        `);
+        `, { count: 'exact' });
 
       if (error) throw error;
       return data;
