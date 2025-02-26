@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Pencil, Trash2, Plus } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import {
   Dialog,
   DialogContent,
@@ -23,6 +23,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { ColumnSelect } from "@/components/ui/column-select";
 
 interface Product {
   id: string;
@@ -73,6 +74,22 @@ const defaultFormData: ProductFormData = {
   codigo_municipio_prestacao: "",
 };
 
+const PRODUCT_COLUMNS = [
+  { name: "name", label: "Nome" },
+  { name: "description", label: "Descrição" },
+  { name: "price", label: "Preço" },
+  { name: "stock", label: "Estoque" },
+  { name: "codigo_servico_sp", label: "Código Serviço SP" },
+  { name: "codigo_cnae", label: "Código CNAE" },
+  { name: "aliquota_iss", label: "Alíquota ISS" },
+  { name: "item_lista_servico", label: "Item Lista Serviço" },
+  { name: "discriminacao_padrao", label: "Discriminação Padrão" },
+  { name: "iss_retido", label: "ISS Retido" },
+  { name: "exigibilidade_iss", label: "Exigibilidade ISS" },
+  { name: "codigo_tributacao_municipio", label: "Cód. Tributação Municipal" },
+  { name: "codigo_municipio_prestacao", label: "Cód. Município Prestação" },
+];
+
 const Products = () => {
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
@@ -80,6 +97,15 @@ const Products = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState<ProductFormData>(defaultFormData);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [visibleColumns, setVisibleColumns] = useState<string[]>([
+    "name",
+    "description",
+    "price",
+    "stock",
+    "codigo_servico_sp",
+    "aliquota_iss",
+    "iss_retido",
+  ]);
   const { toast } = useToast();
 
   const fetchProducts = async () => {
@@ -216,10 +242,17 @@ const Products = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold">Produtos</h2>
-        <Button onClick={handleNewProduct}>
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Produto
-        </Button>
+        <div className="flex items-center gap-2">
+          <ColumnSelect
+            columns={PRODUCT_COLUMNS}
+            selectedColumns={visibleColumns}
+            onChange={setVisibleColumns}
+          />
+          <Button onClick={handleNewProduct}>
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Produto
+          </Button>
+        </div>
       </div>
       <div className="flex gap-2">
         <Input
@@ -233,44 +266,44 @@ const Products = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Descrição</TableHead>
-              <TableHead>Preço</TableHead>
-              <TableHead>Estoque</TableHead>
-              <TableHead>Cód. Serviço SP</TableHead>
-              <TableHead>ISS %</TableHead>
-              <TableHead>ISS Retido</TableHead>
+              {PRODUCT_COLUMNS.filter(col => visibleColumns.includes(col.name)).map((column) => (
+                <TableHead key={column.name}>{column.label}</TableHead>
+              ))}
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center">
+                <TableCell colSpan={visibleColumns.length + 1} className="text-center">
                   Carregando...
                 </TableCell>
               </TableRow>
             ) : products.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center">
+                <TableCell colSpan={visibleColumns.length + 1} className="text-center">
                   Nenhum produto encontrado
                 </TableCell>
               </TableRow>
             ) : (
               products.map((product) => (
                 <TableRow key={product.id}>
-                  <TableCell>{product.name}</TableCell>
-                  <TableCell>{product.description}</TableCell>
-                  <TableCell>
-                    {product.price.toLocaleString('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL'
-                    })}
-                  </TableCell>
-                  <TableCell>{product.stock}</TableCell>
-                  <TableCell>{product.codigo_servico_sp}</TableCell>
-                  <TableCell>{product.aliquota_iss}%</TableCell>
-                  <TableCell>{product.iss_retido ? "Sim" : "Não"}</TableCell>
+                  {visibleColumns.map((columnName) => (
+                    <TableCell key={columnName}>
+                      {columnName === "price" ? (
+                        product[columnName].toLocaleString('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL'
+                        })
+                      ) : columnName === "iss_retido" ? (
+                        product[columnName] ? "Sim" : "Não"
+                      ) : columnName === "aliquota_iss" ? (
+                        `${product[columnName]}%`
+                      ) : (
+                        product[columnName]
+                      )}
+                    </TableCell>
+                  ))}
                   <TableCell className="text-right space-x-2">
                     <Button
                       variant="outline"
