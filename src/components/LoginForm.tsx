@@ -38,11 +38,11 @@ export function LoginForm() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state changed:", event, session);
+      console.log("Estado da autenticação alterado:", event, session);
       if (event === 'SIGNED_IN' && session) {
         navigate("/dashboard");
-      } else if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
-        console.log("Token refreshed or signed out");
+      } else if (event === 'SIGNED_OUT') {
+        console.log("Usuário desconectado");
       }
     });
 
@@ -57,6 +57,19 @@ export function LoginForm() {
 
     try {
       console.log("Tentando fazer login com:", { email });
+      
+      // Primeiro, verifica se o usuário existe
+      const { data: existingUser, error: userCheckError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .single();
+
+      if (userCheckError) {
+        console.error("Erro ao verificar usuário:", userCheckError);
+      }
+
+      // Tenta fazer login
       const { error: signInError, data } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -64,10 +77,15 @@ export function LoginForm() {
 
       if (signInError) {
         console.error("Erro de login:", signInError);
+        let errorMessage = "Ocorreu um erro ao fazer login. Tente novamente.";
+        
         if (signInError.message.includes("Invalid login credentials")) {
-          throw new Error("Email ou senha incorretos");
+          errorMessage = "Email ou senha incorretos";
+        } else if (signInError.message.includes("Email not confirmed")) {
+          errorMessage = "Por favor, confirme seu email antes de fazer login";
         }
-        throw signInError;
+        
+        throw new Error(errorMessage);
       }
 
       if (data.session) {
@@ -79,7 +97,6 @@ export function LoginForm() {
         }
 
         if (session) {
-          // Armazenar o refresh token
           localStorage.setItem('supabase.refresh-token', session.refresh_token || '');
           
           toast({
@@ -159,4 +176,3 @@ export function LoginForm() {
     </div>
   );
 }
-
