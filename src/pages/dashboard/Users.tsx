@@ -18,6 +18,14 @@ const USER_COLUMNS = [
   { name: "last_sign_in_at", label: "Último Acesso" },
 ];
 
+interface UserStore {
+  user_id: string;
+  store_id: string;
+  stores: {
+    name: string;
+  };
+}
+
 export default function Users() {
   const [visibleColumns, setVisibleColumns] = useState<string[]>([
     "username",
@@ -53,7 +61,7 @@ export default function Users() {
 
       // Convert to a map for easier lookup
       const storeMap: { [key: string]: { id: string, name: string } } = {};
-      data.forEach((item: any) => {
+      data.forEach((item: UserStore) => {
         if (item.stores) {
           storeMap[item.user_id] = {
             id: item.store_id,
