@@ -39,6 +39,7 @@ export default function Users() {
     "last_sign_in_at",
   ]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [formData, setFormData] = useState<UserFormData>({
@@ -115,27 +116,21 @@ export default function Users() {
   const { data: users, isLoading } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: profiles, error } = await supabase
         .from('profiles')
-        .select(`
-          id,
-          username,
-          email,
-          updated_at,
-          last_sign_in_at
-        `);
+        .select('*');
 
       if (error) {
         console.error('Erro ao buscar usuários:', error);
         throw error;
       }
-      return data;
+
+      return profiles;
     },
   });
 
   const createUser = async (userData: UserFormData) => {
     try {
-      // Criar usuário na auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: userData.email,
         password: userData.password,
@@ -158,6 +153,52 @@ export default function Users() {
         variant: "destructive",
         title: "Erro ao criar usuário",
         description: error.message || "Ocorreu um erro ao criar o usuário.",
+      });
+    }
+  };
+
+  const updateUser = async (userId: string, userData: Partial<UserFormData>) => {
+    try {
+      const updates = {
+        username: userData.username,
+      };
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      if (userData.email || userData.password) {
+        const adminAuthClient = supabase.auth.admin;
+        const updates: { email?: string; password?: string } = {};
+        
+        if (userData.email) updates.email = userData.email;
+        if (userData.password) updates.password = userData.password;
+
+        const { error: authError } = await adminAuthClient.updateUserById(
+          userId,
+          updates
+        );
+
+        if (authError) throw authError;
+      }
+
+      toast({
+        title: "Usuário atualizado com sucesso!",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      setIsEditDialogOpen(false);
+      setSelectedUserId(null);
+      setFormData({ email: "", password: "", username: "" });
+    } catch (error: any) {
+      console.error('Erro ao atualizar usuário:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao atualizar usuário",
+        description: error.message || "Ocorreu um erro ao atualizar o usuário.",
       });
     }
   };
@@ -186,6 +227,16 @@ export default function Users() {
         description: error.message || "Ocorreu um erro ao excluir o usuário.",
       });
     }
+  };
+
+  const handleEdit = (user: any) => {
+    setSelectedUserId(user.id);
+    setFormData({
+      email: user.email || "",
+      password: "",
+      username: user.username || "",
+    });
+    setIsEditDialogOpen(true);
   };
 
   const formatDate = (date: string | null) => {
@@ -243,12 +294,7 @@ export default function Users() {
                     <Button 
                       variant="ghost" 
                       size="sm"
-                      onClick={() => {
-                        toast({
-                          title: "Em desenvolvimento",
-                          description: "A edição de usuários será implementada em breve.",
-                        });
-                      }}
+                      onClick={() => handleEdit(user)}
                     >
                       Editar
                     </Button>
@@ -311,6 +357,52 @@ export default function Users() {
             </Button>
             <Button onClick={() => createUser(formData)}>
               Criar Usuário
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Edição de Usuário */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Usuário</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-email">E-mail</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-username">Nome de Usuário</Label>
+              <Input
+                id="edit-username"
+                value={formData.username}
+                onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-password">Nova Senha (opcional)</Label>
+              <Input
+                id="edit-password"
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                placeholder="Deixe em branco para manter a senha atual"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={() => selectedUserId && updateUser(selectedUserId, formData)}>
+              Salvar Alterações
             </Button>
           </DialogFooter>
         </DialogContent>
