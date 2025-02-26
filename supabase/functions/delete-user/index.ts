@@ -13,19 +13,26 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseClient = createClient(
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { userId } = await req.json()
+    const { user_id } = await req.json()
 
-    const { error } = await supabaseClient.auth.admin.deleteUser(userId)
+    if (!user_id) {
+      throw new Error('ID do usuário não fornecido')
+    }
 
-    if (error) throw error
+    // Deletar o usuário da autenticação
+    const { error: deleteAuthError } = await supabaseAdmin.auth.admin.deleteUser(user_id)
+    
+    if (deleteAuthError) {
+      throw deleteAuthError
+    }
 
     return new Response(
-      JSON.stringify({ message: 'User deleted successfully' }),
+      JSON.stringify({ message: 'Usuário excluído com sucesso' }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
