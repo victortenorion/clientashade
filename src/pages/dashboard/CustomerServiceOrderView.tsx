@@ -17,6 +17,7 @@ interface Attachment {
   filename: string;
   file_path: string;
   content_type: string;
+  url?: string;
 }
 
 export default function CustomerServiceOrderView() {
@@ -77,7 +78,13 @@ export default function CustomerServiceOrderView() {
       if (error) throw error;
 
       if (data) {
-        setAttachments(data);
+        const attachmentsWithUrls = await Promise.all(
+          data.map(async (attachment) => ({
+            ...attachment,
+            url: await getFileUrl(attachment.file_path)
+          }))
+        );
+        setAttachments(attachmentsWithUrls);
       }
     } catch (error) {
       console.error('Error fetching attachments:', error);
@@ -231,7 +238,7 @@ export default function CustomerServiceOrderView() {
                   <div key={attachment.id} className="relative">
                     {attachment.content_type.startsWith('image/') ? (
                       <img
-                        src={getFileUrl(attachment.file_path)}
+                        src={attachment.url}
                         alt={attachment.filename}
                         className="w-full h-40 object-cover rounded-lg"
                       />
