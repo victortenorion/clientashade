@@ -26,6 +26,9 @@ interface ServiceOrder {
   };
   total_price: number;
   description: string;
+  equipment: string;
+  equipment_serial_number: string;
+  problem: string;
   status: {
     name: string;
     color: string;
@@ -40,6 +43,9 @@ const SERVICE_ORDER_COLUMNS = [
   { name: "order_number", label: "Número" },
   { name: "created_at", label: "Data" },
   { name: "client", label: "Cliente" },
+  { name: "equipment", label: "Equipamento" },
+  { name: "equipment_serial_number", label: "Número de Série" },
+  { name: "problem", label: "Problema Relatado" },
   { name: "codigo_servico", label: "Cód. Serviço" },
   { name: "iss_retido", label: "ISS" },
   { name: "status", label: "Status" },
@@ -55,6 +61,9 @@ export default function ServiceOrders() {
     "order_number",
     "created_at",
     "client",
+    "equipment",
+    "equipment_serial_number",
+    "problem",
     "codigo_servico",
     "iss_retido",
     "status",
@@ -76,6 +85,9 @@ export default function ServiceOrders() {
           ),
           total_price,
           description,
+          equipment,
+          equipment_serial_number,
+          problem,
           status:status_id (
             name,
             color
@@ -302,6 +314,12 @@ export default function ServiceOrders() {
                       format(new Date(order.created_at), 'dd/MM/yyyy HH:mm')
                     ) : columnName === "client" ? (
                       order.client?.name || 'N/A'
+                    ) : columnName === "equipment" ? (
+                      order.equipment || 'N/A'
+                    ) : columnName === "equipment_serial_number" ? (
+                      order.equipment_serial_number || 'N/A'
+                    ) : columnName === "problem" ? (
+                      order.problem || 'N/A'
                     ) : columnName === "iss_retido" ? (
                       <span className={order.iss_retido ? "text-yellow-600" : "text-green-600"}>
                         {order.iss_retido ? 'Retido' : 'Normal'}
