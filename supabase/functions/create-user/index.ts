@@ -24,53 +24,83 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Received create user request')
+    
     const { email, password, username, is_admin, store_ids } = await req.json()
-    console.log('Creating new user with data:', { email, username, is_admin, store_ids })
+    
+    console.log('Request payload:', { email, username, is_admin, store_ids, hasPassword: !!password })
 
     // Validate required fields
     if (!email || !password) {
-      throw new Error('Email and password are required')
+      console.error('Missing required fields')
+      return new Response(
+        JSON.stringify({ error: 'Email and password are required' }), 
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
     }
 
     // Create the user in auth.users
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    const { data: userData, error: createError } = await supabase.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
       user_metadata: { username }
     })
 
-    if (authError) {
-      console.error('Auth creation error:', authError)
-      throw authError
+    if (createError) {
+      console.error('Error creating user:', createError)
+      return new Response(
+        JSON.stringify({ error: createError.message }), 
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
     }
+
+    console.log('User created successfully:', userData.user.id)
 
     // Update the profile with username
     const { error: profileError } = await supabase
       .from('profiles')
       .upsert({
-        id: authData.user.id,
+        id: userData.user.id,
         username,
         email,
         updated_at: new Date().toISOString()
       })
 
     if (profileError) {
-      console.error('Profile creation error:', profileError)
-      throw profileError
+      console.error('Error updating profile:', profileError)
+      return new Response(
+        JSON.stringify({ error: profileError.message }), 
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
     }
 
     // Create user role entry
     const { error: roleError } = await supabase
       .from('user_roles')
       .insert({
-        user_id: authData.user.id,
+        user_id: userData.user.id,
         is_admin: is_admin || false
       })
 
     if (roleError) {
-      console.error('Role creation error:', roleError)
-      throw roleError
+      console.error('Error creating user role:', roleError)
+      return new Response(
+        JSON.stringify({ error: roleError.message }), 
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
     }
 
     // Create store assignment if store_ids is provided
@@ -78,32 +108,37 @@ serve(async (req) => {
       const { error: storeError } = await supabase
         .from('user_stores')
         .insert({
-          user_id: authData.user.id,
+          user_id: userData.user.id,
           store_id: store_ids[0]
         })
 
       if (storeError) {
-        console.error('Store assignment error:', storeError)
-        throw storeError
+        console.error('Error creating store assignment:', storeError)
+        return new Response(
+          JSON.stringify({ error: storeError.message }), 
+          { 
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
       }
     }
 
     return new Response(
-      JSON.stringify({ id: authData.user.id }),
+      JSON.stringify({ id: userData.user.id }), 
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200 
       }
     )
   } catch (error) {
-    console.error('Error in create-user function:', error)
+    console.error('Unexpected error in create-user function:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message }), 
       { 
-        status: 400, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
   }
 })
-
