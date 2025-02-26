@@ -1,22 +1,12 @@
 
-import { useState, useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { ColumnSelect } from "@/components/ui/column-select";
-import { format } from "date-fns";
-import { useToast } from "@/components/ui/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { UserTable } from "./components/users/UserTable";
+import { UserFormDialog } from "./components/users/UserFormDialog";
+import { DeleteUserDialog } from "./components/users/DeleteUserDialog";
+import { useUsers, UserFormData } from "./hooks/useUsers";
 
 const USER_COLUMNS = [
   { name: "username", label: "Nome" },
@@ -24,12 +14,6 @@ const USER_COLUMNS = [
   { name: "updated_at", label: "Data Atualização" },
   { name: "last_sign_in_at", label: "Último Acesso" },
 ];
-
-interface UserFormData {
-  email: string;
-  password: string;
-  username: string;
-}
 
 export default function Users() {
   const [visibleColumns, setVisibleColumns] = useState<string[]>([
@@ -42,233 +26,55 @@ export default function Users() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [formData, setFormData] = useState<UserFormData>({
-    email: "",
-    password: "",
-    username: "",
-  });
+  const [selectedUser, setSelectedUser] = useState<UserFormData | null>(null);
 
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    const loadUserPreferences = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user) return;
-
-        const { data, error } = await supabase
-          .from('user_field_settings')
-          .select('visible_columns')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-
-        if (error) {
-          console.error('Erro ao carregar preferências:', error);
-          return;
-        }
-
-        if (data?.visible_columns) {
-          setVisibleColumns(data.visible_columns);
-        }
-      } catch (error) {
-        console.error('Erro ao carregar preferências:', error);
-      }
-    };
-
-    loadUserPreferences();
-  }, []);
+  const {
+    users,
+    isLoading,
+    error,
+    createUser,
+    updateUser,
+    deleteUser,
+  } = useUsers();
 
   const handleColumnsChange = async (columns: string[]) => {
-    try {
-      setVisibleColumns(columns);
-
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) return;
-
-      const { error } = await supabase
-        .from('user_field_settings')
-        .upsert({
-          user_id: session.user.id,
-          visible_columns: columns,
-        }, {
-          onConflict: 'user_id'
-        });
-
-      if (error) {
-        console.error('Erro ao salvar preferências:', error);
-        toast({
-          variant: "destructive",
-          title: "Erro ao salvar preferências",
-          description: "Suas preferências não puderam ser salvas. Tente novamente."
-        });
-      }
-    } catch (error) {
-      console.error('Erro ao salvar preferências:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao salvar preferências",
-        description: "Suas preferências não puderam ser salvas. Tente novamente."
-      });
-    }
+    setVisibleColumns(columns);
   };
 
-  const { data: users = [], isLoading, error } = useQuery({
-    queryKey: ['users'],
-    queryFn: async () => {
-      const { data: { users: authUsers }, error: authError } = await supabase.auth.admin.listUsers();
-      
-      if (authError) {
-        console.error('Erro ao buscar usuários:', authError);
-        throw authError;
-      }
-
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*');
-
-      if (profilesError) {
-        console.error('Erro ao buscar perfis:', profilesError);
-        throw profilesError;
-      }
-
-      // Combinar os dados dos usuários com seus perfis
-      const mergedUsers = authUsers.map(user => {
-        const profile = profiles?.find(p => p.id === user.id);
-        return {
-          id: user.id,
-          email: user.email,
-          username: profile?.username || user.email?.split('@')[0],
-          updated_at: profile?.updated_at || user.updated_at,
-          last_sign_in_at: user.last_sign_in_at,
-        };
-      });
-
-      return mergedUsers;
-    },
-  });
-
-  const createUser = async (userData: UserFormData) => {
-    try {
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: userData.email,
-        password: userData.password,
-        email_confirm: true,
-      });
-
-      if (authError) throw authError;
-
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: authData.user.id,
-          username: userData.username,
-          email: userData.email,
-        });
-
-      if (profileError) throw profileError;
-
-      toast({
-        title: "Usuário criado com sucesso!",
-      });
-
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+  const handleCreateUser = async (userData: UserFormData) => {
+    const success = await createUser(userData);
+    if (success) {
       setIsCreateDialogOpen(false);
-      setFormData({ email: "", password: "", username: "" });
-    } catch (error: any) {
-      console.error('Erro ao criar usuário:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao criar usuário",
-        description: error.message || "Ocorreu um erro ao criar o usuário.",
-      });
     }
   };
 
-  const updateUser = async (userId: string, userData: Partial<UserFormData>) => {
-    try {
-      if (userData.email || userData.password) {
-        const updates: { email?: string; password?: string } = {};
-        if (userData.email) updates.email = userData.email;
-        if (userData.password) updates.password = userData.password;
-
-        const { error: authError } = await supabase.auth.admin.updateUserById(
-          userId,
-          updates
-        );
-
-        if (authError) throw authError;
-      }
-
-      if (userData.username || userData.email) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: userId,
-            username: userData.username,
-            email: userData.email,
-          });
-
-        if (profileError) throw profileError;
-      }
-
-      toast({
-        title: "Usuário atualizado com sucesso!",
-      });
-
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+  const handleUpdateUser = async (userData: UserFormData) => {
+    if (!selectedUserId) return;
+    const success = await updateUser(selectedUserId, userData);
+    if (success) {
       setIsEditDialogOpen(false);
       setSelectedUserId(null);
-      setFormData({ email: "", password: "", username: "" });
-    } catch (error: any) {
-      console.error('Erro ao atualizar usuário:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao atualizar usuário",
-        description: error.message || "Ocorreu um erro ao atualizar o usuário.",
-      });
+      setSelectedUser(null);
     }
   };
 
-  const deleteUser = async () => {
+  const handleDeleteUser = async () => {
     if (!selectedUserId) return;
-
-    try {
-      const { error } = await supabase
-        .rpc('delete_user', { user_id: selectedUserId });
-
-      if (error) throw error;
-
-      toast({
-        title: "Usuário excluído com sucesso!",
-      });
-
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+    const success = await deleteUser(selectedUserId);
+    if (success) {
       setIsDeleteDialogOpen(false);
       setSelectedUserId(null);
-    } catch (error: any) {
-      console.error('Erro ao excluir usuário:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao excluir usuário",
-        description: error.message || "Ocorreu um erro ao excluir o usuário.",
-      });
     }
   };
 
   const handleEdit = (user: any) => {
     setSelectedUserId(user.id);
-    setFormData({
+    setSelectedUser({
       email: user.email || "",
       password: "",
       username: user.username || "",
     });
     setIsEditDialogOpen(true);
-  };
-
-  const formatDate = (date: string | null) => {
-    if (!date) return "Não disponível";
-    return format(new Date(date), "dd/MM/yyyy HH:mm");
   };
 
   if (error) {
@@ -296,168 +102,41 @@ export default function Users() {
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center">
-          <span>Carregando...</span>
-        </div>
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {USER_COLUMNS
-                .filter(col => visibleColumns.includes(col.name))
-                .map((column) => (
-                  <TableHead key={column.name}>{column.label}</TableHead>
-                ))}
-              <TableHead className="text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users?.map((user) => (
-              <TableRow key={user.id}>
-                {visibleColumns.map((columnName) => (
-                  <TableCell key={columnName}>
-                    {columnName.endsWith("_at")
-                      ? formatDate(user[columnName])
-                      : user[columnName] ?? "Não disponível"}
-                  </TableCell>
-                ))}
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleEdit(user)}
-                    >
-                      Editar
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-red-600"
-                      onClick={() => {
-                        setSelectedUserId(user.id);
-                        setIsDeleteDialogOpen(true);
-                      }}
-                    >
-                      Excluir
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
+      <UserTable
+        users={users}
+        visibleColumns={visibleColumns}
+        onEdit={handleEdit}
+        onDelete={(userId) => {
+          setSelectedUserId(userId);
+          setIsDeleteDialogOpen(true);
+        }}
+        isLoading={isLoading}
+      />
 
-      {/* Dialog de Criação de Usuário */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Criar Novo Usuário</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">E-mail</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="username">Nome de Usuário</Label>
-              <Input
-                id="username"
-                value={formData.username}
-                onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={() => createUser(formData)}>
-              Criar Usuário
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <UserFormDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onSubmit={handleCreateUser}
+        title="Criar Novo Usuário"
+        submitLabel="Criar Usuário"
+        showPassword={true}
+      />
 
-      {/* Dialog de Edição de Usuário */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Editar Usuário</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-email">E-mail</Label>
-              <Input
-                id="edit-email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-username">Nome de Usuário</Label>
-              <Input
-                id="edit-username"
-                value={formData.username}
-                onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-password">Nova Senha (opcional)</Label>
-              <Input
-                id="edit-password"
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                placeholder="Deixe em branco para manter a senha atual"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={() => selectedUserId && updateUser(selectedUserId, formData)}>
-              Salvar Alterações
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <UserFormDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        onSubmit={handleUpdateUser}
+        title="Editar Usuário"
+        submitLabel="Salvar Alterações"
+        initialData={selectedUser || undefined}
+        showPassword={false}
+      />
 
-      {/* Dialog de Confirmação de Exclusão */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmar Exclusão</DialogTitle>
-          </DialogHeader>
-          <p>Tem certeza que deseja excluir este usuário?</p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button variant="destructive" onClick={deleteUser}>
-              Excluir
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteUserDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={handleDeleteUser}
+      />
     </div>
   );
 }
