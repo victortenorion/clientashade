@@ -1,3 +1,3 @@
 
 project_id = "eroqgxpjiqmftkgqyunj"
-postgres_connection_string = "postgresql://postgres:postgres@localhost:5432/postgres"
+database_url = "postgresql://postgres:postgres@localhost:5432/postgres"
