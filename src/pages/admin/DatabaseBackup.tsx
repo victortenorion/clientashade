@@ -6,6 +6,7 @@ import { Loader2, Download, Database, AlertTriangle, ShieldAlert } from "lucide-
 import { generateDatabaseBackup, downloadSqlBackup } from "@/utils/databaseBackup";
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function DatabaseBackup() {
   const { toast } = useToast();
@@ -69,13 +70,13 @@ export default function DatabaseBackup() {
             Backup Local do Banco de Dados
           </CardTitle>
           <CardDescription>
-            Gere um backup dos seus dados principais em formato SQL
+            Gere um backup dos seus dados e estruturas em formato SQL
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Esta ferramenta irá gerar um arquivo SQL contendo suas principais tabelas e dados.
+              Esta ferramenta irá gerar um arquivo SQL contendo as estruturas e dados das suas principais tabelas.
               Este backup local funciona apenas com os dados que você tem acesso através do cliente
               autenticado e pode ser usado para referência ou importação em outro sistema.
             </p>
@@ -108,12 +109,26 @@ export default function DatabaseBackup() {
             </Alert>
             
             {backupSql && (
-              <div className="mt-4">
-                <h3 className="text-sm font-medium mb-2">Prévia do backup:</h3>
-                <div className="bg-muted p-3 rounded-md max-h-60 overflow-auto">
-                  <pre className="text-xs">{backupSql.slice(0, 1000)}...</pre>
-                </div>
-              </div>
+              <Tabs defaultValue="structure" className="mt-4">
+                <TabsList className="mb-2">
+                  <TabsTrigger value="structure">Estruturas</TabsTrigger>
+                  <TabsTrigger value="data">Dados</TabsTrigger>
+                </TabsList>
+                <TabsContent value="structure">
+                  <h3 className="text-sm font-medium mb-2">Estruturas das tabelas:</h3>
+                  <div className="bg-muted p-3 rounded-md max-h-60 overflow-auto">
+                    <pre className="text-xs">{backupSql.split("-- ESTRUTURAS DAS TABELAS")[1].split("-- Dados para tabela")[0]}</pre>
+                  </div>
+                </TabsContent>
+                <TabsContent value="data">
+                  <h3 className="text-sm font-medium mb-2">Prévia dos dados:</h3>
+                  <div className="bg-muted p-3 rounded-md max-h-60 overflow-auto">
+                    <pre className="text-xs">{backupSql.includes("-- Dados para tabela") ? 
+                      backupSql.split("-- Dados para tabela")[1].slice(0, 1000) + "..." : 
+                      "Nenhum dado disponível"}</pre>
+                  </div>
+                </TabsContent>
+              </Tabs>
             )}
           </div>
         </CardContent>
@@ -139,7 +154,7 @@ export default function DatabaseBackup() {
             >
               <a 
                 href={downloadUrl} 
-                download={`db_backup_local_${new Date().toISOString().slice(0, 10)}.sql`}
+                download={`db_backup_estruturas_e_dados_${new Date().toISOString().slice(0, 10)}.sql`}
               >
                 <Download className="h-4 w-4 mr-2" />
                 Baixar SQL

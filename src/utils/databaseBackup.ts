@@ -53,17 +53,21 @@ export async function generateDatabaseBackup(): Promise<string> {
     console.log(`Gerando backup para ${availableTables.length} tabelas`);
     
     let sqlQueries = "-- Backup gerado em " + new Date().toISOString() + "\n\n";
+    let tableStructures = "-- ESTRUTURAS DAS TABELAS\n\n";
     
     // Para cada tabela, obter seus dados
     for (const tableName of availableTables) {
       try {
         console.log(`Processando tabela: ${tableName}`);
         
-        // Obter os 1000 primeiros registros de cada tabela
+        // Tipo para a tabela suportada pelo Supabase
+        type TableName = Parameters<typeof supabase.from>[0];
+        
+        // Obter os primeiros registros de cada tabela
         const { data: tableData, error: dataError } = await supabase
-          .from(tableName)
+          .from(tableName as TableName)
           .select('*')
-          .limit(1000);
+          .limit(5); // Reduzido para 5 para focar na estrutura
         
         if (dataError) {
           console.error(`Erro ao obter dados da tabela ${tableName}:`, dataError);
@@ -73,13 +77,12 @@ export async function generateDatabaseBackup(): Promise<string> {
         }
         
         if (tableData && tableData.length > 0) {
-          sqlQueries += `-- Dados para tabela: ${tableName}\n`;
-          
           // Adicionar estrutura da tabela baseada no primeiro objeto
           const firstObject = tableData[0];
           const columns = Object.keys(firstObject);
           
-          sqlQueries += `CREATE TABLE IF NOT EXISTS ${tableName} (\n`;
+          tableStructures += `-- Estrutura para tabela: ${tableName}\n`;
+          tableStructures += `CREATE TABLE IF NOT EXISTS ${tableName} (\n`;
           columns.forEach((column, index) => {
             const value = firstObject[column];
             let sqlType = "";
@@ -94,11 +97,12 @@ export async function generateDatabaseBackup(): Promise<string> {
               sqlType = "TEXT";
             }
             
-            sqlQueries += `  ${column} ${sqlType}${index < columns.length - 1 ? ',' : ''}\n`;
+            tableStructures += `  ${column} ${sqlType}${index < columns.length - 1 ? ',' : ''}\n`;
           });
-          sqlQueries += `);\n\n`;
+          tableStructures += `);\n\n`;
           
           // Adicionar dados
+          sqlQueries += `-- Dados para tabela: ${tableName}\n`;
           for (const row of tableData) {
             const columns = Object.keys(row).join(', ');
             const values = Object.values(row).map(formatValue).join(', ');
@@ -118,7 +122,8 @@ export async function generateDatabaseBackup(): Promise<string> {
     }
     
     console.log("Backup local do banco de dados concluído com sucesso!");
-    return sqlQueries;
+    // Combinar estruturas e dados
+    return tableStructures + "\n" + sqlQueries;
     
   } catch (error) {
     console.error("Erro durante o backup do banco de dados:", error);
