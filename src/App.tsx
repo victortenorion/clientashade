@@ -1,4 +1,3 @@
-
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import Dashboard from "@/pages/Dashboard";
@@ -22,6 +21,7 @@ import CustomerArea from "@/pages/dashboard/CustomerArea";
 import CustomerServiceOrderView from "@/pages/dashboard/CustomerServiceOrderView";
 import { ClientProtectedRoute } from "@/components/ClientProtectedRoute";
 import ClientLogin from "@/pages/ClientLogin";
+import DatabaseBackup from "./pages/admin/DatabaseBackup";
 
 function App() {
   return (
@@ -47,6 +47,7 @@ function App() {
           <Route path="users" element={<Users />} />
           <Route path="clients" element={<Clients />} />
           <Route path="stores" element={<Stores />} />
+          <Route path="/admin/database-backup" element={<DatabaseBackup />} />
         </Route>
 
         <Route path="/client-login" element={<ClientLogin />} />
@@ -74,4 +75,3 @@ function App() {
 }
 
 export default App;
-

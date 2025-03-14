@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -250,6 +249,18 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
                     <span>Área Restrita do Cliente</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                
+                {hasPermission('all') && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      onClick={() => navigate("/admin/database-backup")}
+                      isActive={location.pathname === "/admin/database-backup"}
+                    >
+                      <Database className="h-4 w-4" />
+                      <span>Backup do Banco</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           )}

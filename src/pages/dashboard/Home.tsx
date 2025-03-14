@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { MessageSquare, Send, MessageCircleReply, Eye, Trash2 } from "lucide-react";
+import { MessageSquare, Send, MessageCircleReply, Eye, Trash2, Database } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -16,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useNavigate } from "react-router-dom";
 
 interface Message {
   id: string;
@@ -35,13 +35,14 @@ interface Client {
 }
 
 const Home = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
-  const { toast } = useToast();
 
   useEffect(() => {
     fetchRecentMessages();
@@ -159,7 +160,6 @@ const Home = () => {
         description: "A mensagem foi excluída com sucesso.",
       });
 
-      // Atualiza a lista de mensagens após excluir
       setMessages(messages.filter(msg => msg.id !== messageId));
     } catch (error) {
       console.error('Erro ao excluir mensagem:', error);
@@ -185,7 +185,6 @@ const Home = () => {
         description: "A mensagem foi marcada como lida com sucesso.",
       });
 
-      // Atualiza o estado local da mensagem
       setMessages(messages.map(msg => 
         msg.id === messageId ? { ...msg, read: true } : msg
       ));
@@ -213,7 +212,17 @@ const Home = () => {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl">Bem-vindo ao Dashboard!</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl">Bem-vindo ao Dashboard!</h2>
+        <Button 
+          variant="outline" 
+          onClick={() => navigate("/admin/database-backup")}
+          className="flex items-center gap-2"
+        >
+          <Database className="h-4 w-4" />
+          Backup do Banco
+        </Button>
+      </div>
       <p className="mt-2 text-gray-600">
         Este é o seu painel de controle. Aqui você poderá acessar todas as funcionalidades do sistema.
       </p>
@@ -354,4 +363,3 @@ const Home = () => {
 };
 
 export default Home;
-
