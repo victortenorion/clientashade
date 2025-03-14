@@ -253,8 +253,8 @@ export const SidebarGroups = ({ userPermissions }: SidebarGroupsProps) => {
                 {hasPermission('all') && (
                   <SidebarMenuItem>
                     <SidebarMenuButton
-                      onClick={() => navigate("/admin/database-backup")}
-                      isActive={location.pathname === "/admin/database-backup"}
+                      onClick={() => navigate("/dashboard/admin/database-backup")}
+                      isActive={location.pathname === "/dashboard/admin/database-backup"}
                     >
                       <Database className="h-4 w-4" />
                       <span>Backup do Banco</span>

@@ -1,3 +1,4 @@
+
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import Dashboard from "@/pages/Dashboard";
@@ -47,7 +48,7 @@ function App() {
           <Route path="users" element={<Users />} />
           <Route path="clients" element={<Clients />} />
           <Route path="stores" element={<Stores />} />
-          <Route path="/admin/database-backup" element={<DatabaseBackup />} />
+          <Route path="admin/database-backup" element={<DatabaseBackup />} />
         </Route>
 
         <Route path="/client-login" element={<ClientLogin />} />

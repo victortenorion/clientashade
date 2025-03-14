@@ -216,7 +216,7 @@ const Home = () => {
         <h2 className="text-xl">Bem-vindo ao Dashboard!</h2>
         <Button 
           variant="outline" 
-          onClick={() => navigate("/admin/database-backup")}
+          onClick={() => navigate("/dashboard/admin/database-backup")}
           className="flex items-center gap-2"
         >
           <Database className="h-4 w-4" />
