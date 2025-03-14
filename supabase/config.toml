@@ -1,3 +1,5 @@
 
 project_id = "eroqgxpjiqmftkgqyunj"
-database_url = "postgresql://postgres:postgres@localhost:5432/postgres"
+
+[api]
+db_url = "postgresql://postgres:postgres@localhost:5432/postgres"
