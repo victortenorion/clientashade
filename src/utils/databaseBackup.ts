@@ -35,42 +35,62 @@ export async function generateDatabaseBackup(): Promise<string> {
       
       console.log(`Processando tabela: ${tableName}`);
       
-      // Obter estrutura da tabela
-      const { data: tableSchema, error: schemaError } = await supabaseAdmin.rpc(
-        'get_table_ddl',
-        { table_name: tableName }
-      );
-      
-      if (schemaError) {
-        console.error(`Erro ao obter schema da tabela ${tableName}:`, schemaError);
-        continue;
-      }
-      
-      sqlQueries += `-- Estrutura para tabela: ${tableName}\n`;
-      sqlQueries += tableSchema + ";\n\n";
-      
-      // Obter dados da tabela
-      const { data: tableData, error: dataError } = await supabaseAdmin
-        .from(tableName)
-        .select('*')
-        .limit(1000); // Limitar para evitar problemas com tabelas muito grandes
-      
-      if (dataError) {
-        console.error(`Erro ao obter dados da tabela ${tableName}:`, dataError);
-        continue;
-      }
-      
-      if (tableData && tableData.length > 0) {
-        sqlQueries += `-- Dados para tabela: ${tableName}\n`;
+      // Obter estrutura da tabela (usando uma abordagem alternativa para contornar permissões)
+      try {
+        // Primeiro tentaremos obter a definição da tabela
+        const { data: tableSchema, error: schemaError } = await supabaseAdmin.rpc(
+          'get_table_ddl',
+          { table_name: tableName }
+        );
         
-        for (const row of tableData) {
-          const columns = Object.keys(row).join(', ');
-          const values = Object.values(row).map(formatValue).join(', ');
-          
-          sqlQueries += `INSERT INTO ${tableName} (${columns}) VALUES (${values});\n`;
+        if (schemaError) {
+          console.error(`Erro ao obter schema da tabela ${tableName}:`, schemaError);
+          sqlQueries += `-- Não foi possível obter a definição da tabela: ${tableName}\n`;
+          sqlQueries += `-- Erro: ${schemaError.message}\n\n`;
+          continue;
         }
         
-        sqlQueries += "\n";
+        sqlQueries += `-- Estrutura para tabela: ${tableName}\n`;
+        sqlQueries += tableSchema + ";\n\n";
+      } catch (err) {
+        console.error(`Erro ao obter schema da tabela ${tableName}:`, err);
+        sqlQueries += `-- Não foi possível obter a definição da tabela: ${tableName}\n`;
+        sqlQueries += `-- Erro: ${err instanceof Error ? err.message : String(err)}\n\n`;
+        continue;
+      }
+      
+      // Obter dados da tabela
+      try {
+        const { data: tableData, error: dataError } = await supabaseAdmin
+          .from(tableName)
+          .select('*')
+          .limit(1000); // Limitar para evitar problemas com tabelas muito grandes
+        
+        if (dataError) {
+          console.error(`Erro ao obter dados da tabela ${tableName}:`, dataError);
+          sqlQueries += `-- Não foi possível obter os dados da tabela: ${tableName}\n`;
+          sqlQueries += `-- Erro: ${dataError.message}\n\n`;
+          continue;
+        }
+        
+        if (tableData && tableData.length > 0) {
+          sqlQueries += `-- Dados para tabela: ${tableName}\n`;
+          
+          for (const row of tableData) {
+            const columns = Object.keys(row).join(', ');
+            const values = Object.values(row).map(formatValue).join(', ');
+            
+            sqlQueries += `INSERT INTO ${tableName} (${columns}) VALUES (${values});\n`;
+          }
+          
+          sqlQueries += "\n";
+        } else {
+          sqlQueries += `-- Nenhum dado encontrado na tabela: ${tableName}\n\n`;
+        }
+      } catch (err) {
+        console.error(`Erro ao obter dados da tabela ${tableName}:`, err);
+        sqlQueries += `-- Não foi possível obter os dados da tabela: ${tableName}\n`;
+        sqlQueries += `-- Erro: ${err instanceof Error ? err.message : String(err)}\n\n`;
       }
     }
     

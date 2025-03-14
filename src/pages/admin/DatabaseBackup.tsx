@@ -2,21 +2,24 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Download, Database } from "lucide-react";
+import { Loader2, Download, Database, AlertTriangle } from "lucide-react";
 import { generateDatabaseBackup, downloadSqlBackup } from "@/utils/databaseBackup";
 import { useToast } from "@/components/ui/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function DatabaseBackup() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [backupSql, setBackupSql] = useState<string | null>(null);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleGenerateBackup = async () => {
     try {
       setIsLoading(true);
       setBackupSql(null);
       setDownloadUrl(null);
+      setError(null);
       
       toast({
         title: "Backup iniciado",
@@ -24,6 +27,11 @@ export default function DatabaseBackup() {
       });
       
       const sql = await generateDatabaseBackup();
+      
+      if (!sql || sql.trim() === '') {
+        throw new Error("Não foi possível gerar o backup. Verifique as permissões do banco de dados.");
+      }
+      
       setBackupSql(sql);
       
       const url = downloadSqlBackup(sql);
@@ -35,10 +43,17 @@ export default function DatabaseBackup() {
       });
     } catch (error) {
       console.error("Erro ao gerar backup:", error);
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : (typeof error === 'object' && error !== null && 'message' in error)
+          ? String((error as any).message)
+          : String(error);
+          
+      setError(errorMessage);
       toast({
         variant: "destructive",
         title: "Erro no backup",
-        description: `Ocorreu um erro ao gerar o backup: ${error instanceof Error ? error.message : String(error)}`,
+        description: `Ocorreu um erro ao gerar o backup: ${errorMessage}`,
       });
     } finally {
       setIsLoading(false);
@@ -64,6 +79,24 @@ export default function DatabaseBackup() {
               do seu banco de dados junto com seus dados. Esse backup pode ser importado em qualquer
               sistema compatível com PostgreSQL.
             </p>
+            
+            {error && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Erro ao gerar backup</AlertTitle>
+                <AlertDescription>
+                  {error}
+                  <br />
+                  <br />
+                  <span className="font-semibold">Possíveis soluções:</span>
+                  <ul className="list-disc pl-5 mt-2">
+                    <li>Verifique se a chave de API do Supabase está correta</li>
+                    <li>Certifique-se de que você está usando uma chave de serviço com permissões adequadas</li>
+                    <li>Verifique a conexão com o banco de dados</li>
+                  </ul>
+                </AlertDescription>
+              </Alert>
+            )}
             
             {backupSql && (
               <div className="mt-4">
