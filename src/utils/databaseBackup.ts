@@ -15,29 +15,37 @@ export async function generateDatabaseBackup(): Promise<string> {
       throw new Error("Usuário não autenticado. Faça login novamente.");
     }
     
-    // Lista de tabelas principais para fazer backup
-    const mainTables = [
-      'clients',
-      'service_orders',
-      'service_order_items',
-      'products',
-      'stores',
-      'nfse',
-      'nfce'
-    ];
+    // Obter lista de tabelas dinamicamente
+    const { data: tablesData, error: tablesError } = await supabase
+      .from('pg_tables')
+      .select('tablename')
+      .eq('schemaname', 'public');
     
-    console.log(`Gerando backup para ${mainTables.length} tabelas principais`);
+    if (tablesError) {
+      console.error("Erro ao obter lista de tabelas:", tablesError);
+      throw tablesError;
+    }
+    
+    if (!tablesData || tablesData.length === 0) {
+      throw new Error("Não foi possível obter a lista de tabelas do banco de dados.");
+    }
+    
+    // Extrair nomes das tabelas
+    const tables = tablesData.map(t => t.tablename);
+    
+    console.log(`Gerando backup para ${tables.length} tabelas`);
     
     let sqlQueries = "-- Backup gerado em " + new Date().toISOString() + "\n\n";
     
     // Para cada tabela, obter seus dados
-    for (const tableName of mainTables) {
+    for (const tableName of tables) {
       try {
         console.log(`Processando tabela: ${tableName}`);
         
         // Obter os 1000 primeiros registros de cada tabela
+        // Usando type assertion para evitar erros de tipo
         const { data: tableData, error: dataError } = await supabase
-          .from(tableName)
+          .from(tableName as any)
           .select('*')
           .limit(1000);
         
@@ -58,23 +66,19 @@ export async function generateDatabaseBackup(): Promise<string> {
           sqlQueries += `CREATE TABLE IF NOT EXISTS ${tableName} (\n`;
           columns.forEach((column, index) => {
             const value = firstObject[column];
-            let type = typeof value;
+            let sqlType = "";
             
-            switch (type) {
-              case 'number':
-                type = Number.isInteger(value) ? 'INTEGER' : 'NUMERIC';
-                break;
-              case 'boolean':
-                type = 'BOOLEAN';
-                break;
-              case 'object':
-                type = value === null ? 'TEXT' : (value instanceof Date ? 'TIMESTAMP WITH TIME ZONE' : 'JSONB');
-                break;
-              default:
-                type = 'TEXT';
+            if (typeof value === 'number') {
+              sqlType = Number.isInteger(value) ? "INTEGER" : "NUMERIC";
+            } else if (typeof value === 'boolean') {
+              sqlType = "BOOLEAN";
+            } else if (typeof value === 'object') {
+              sqlType = value === null ? "TEXT" : (value instanceof Date ? "TIMESTAMP WITH TIME ZONE" : "JSONB");
+            } else {
+              sqlType = "TEXT";
             }
             
-            sqlQueries += `  ${column} ${type}${index < columns.length - 1 ? ',' : ''}\n`;
+            sqlQueries += `  ${column} ${sqlType}${index < columns.length - 1 ? ',' : ''}\n`;
           });
           sqlQueries += `);\n\n`;
           
