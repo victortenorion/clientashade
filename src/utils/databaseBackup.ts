@@ -60,12 +60,9 @@ export async function generateDatabaseBackup(): Promise<string> {
       try {
         console.log(`Processando tabela: ${tableName}`);
         
-        // Tipo para a tabela suportada pelo Supabase
-        type TableName = Parameters<typeof supabase.from>[0];
-        
         // Obter os primeiros registros de cada tabela
         const { data: tableData, error: dataError } = await supabase
-          .from(tableName as TableName)
+          .from(tableName as any)
           .select('*')
           .limit(5); // Reduzido para 5 para focar na estrutura
         
@@ -92,7 +89,7 @@ export async function generateDatabaseBackup(): Promise<string> {
             } else if (typeof value === 'boolean') {
               sqlType = "BOOLEAN";
             } else if (typeof value === 'object') {
-              sqlType = value === null ? "TEXT" : (value instanceof Date ? "TIMESTAMP WITH TIME ZONE" : "JSONB");
+              sqlType = value === null ? "TEXT" : (value && typeof value.getMonth === 'function' ? "TIMESTAMP WITH TIME ZONE" : "JSONB");
             } else {
               sqlType = "TEXT";
             }
@@ -139,7 +136,7 @@ function formatValue(value: any): string {
     return 'NULL';
   } else if (typeof value === 'string') {
     return `'${value.replace(/'/g, "''")}'`;
-  } else if (typeof value === 'object' && value instanceof Date) {
+  } else if (typeof value === 'object' && value && typeof value.getMonth === 'function') {
     return `'${value.toISOString()}'`;
   } else if (typeof value === 'object') {
     return `'${JSON.stringify(value).replace(/'/g, "''")}'`;
