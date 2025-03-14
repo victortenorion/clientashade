@@ -15,4 +15,3 @@ export const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KE
     persistSession: false
   }
 });
-

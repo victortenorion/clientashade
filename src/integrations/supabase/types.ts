@@ -2728,6 +2728,14 @@ export type Database = {
         }
         Returns: string
       }
+      create_storage_policy: {
+        Args: {
+          bucket_name: string
+          policy_name: string
+          definition: string
+        }
+        Returns: undefined
+      }
       delete_user: {
         Args: {
           user_id: string
