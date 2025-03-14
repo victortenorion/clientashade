@@ -15,37 +15,53 @@ export async function generateDatabaseBackup(): Promise<string> {
       throw new Error("Usuário não autenticado. Faça login novamente.");
     }
     
-    // Obter lista de tabelas dinamicamente
-    const { data: tablesData, error: tablesError } = await supabase
-      .from('pg_tables')
-      .select('tablename')
-      .eq('schemaname', 'public');
+    // Lista abrangente de tabelas disponíveis para fazer backup
+    const availableTables = [
+      'clients',
+      'service_orders',
+      'service_order_items',
+      'products',
+      'stores',
+      'nfse',
+      'nfce',
+      'fiscal_config',
+      'certificates',
+      'company_info',
+      'service_order_statuses',
+      'user_roles',
+      'user_permissions',
+      'profiles',
+      'service_codes',
+      'service_tax_codes',
+      'nfce_items',
+      'nfce_eventos',
+      'nfce_config',
+      'nfse_eventos',
+      'nfse_config',
+      'nfse_service_codes',
+      'nfse_servicos',
+      'nfse_sp_settings',
+      'nfse_sp_config',
+      'nfse_sp_lotes',
+      'nfse_sefaz_logs',
+      'service_order_attachments',
+      'client_messages',
+      'customer_area_settings',
+      'licenses'
+    ];
     
-    if (tablesError) {
-      console.error("Erro ao obter lista de tabelas:", tablesError);
-      throw tablesError;
-    }
-    
-    if (!tablesData || tablesData.length === 0) {
-      throw new Error("Não foi possível obter a lista de tabelas do banco de dados.");
-    }
-    
-    // Extrair nomes das tabelas
-    const tables = tablesData.map(t => t.tablename);
-    
-    console.log(`Gerando backup para ${tables.length} tabelas`);
+    console.log(`Gerando backup para ${availableTables.length} tabelas`);
     
     let sqlQueries = "-- Backup gerado em " + new Date().toISOString() + "\n\n";
     
     // Para cada tabela, obter seus dados
-    for (const tableName of tables) {
+    for (const tableName of availableTables) {
       try {
         console.log(`Processando tabela: ${tableName}`);
         
         // Obter os 1000 primeiros registros de cada tabela
-        // Usando type assertion para evitar erros de tipo
         const { data: tableData, error: dataError } = await supabase
-          .from(tableName as any)
+          .from(tableName)
           .select('*')
           .limit(1000);
         
