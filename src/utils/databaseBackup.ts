@@ -1,5 +1,6 @@
 
 import { supabaseAdmin } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Função para obter um backup das tabelas do banco de dados em formato SQL
@@ -8,6 +9,12 @@ import { supabaseAdmin } from "@/lib/supabase";
 export async function generateDatabaseBackup(): Promise<string> {
   try {
     console.log("Iniciando backup do banco de dados...");
+    
+    // Verificar se o cliente está autenticado
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      throw new Error("Usuário não autenticado. Faça login novamente.");
+    }
     
     // Obter lista de tabelas no esquema public
     const { data: tables, error: tablesError } = await supabaseAdmin

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Download, Database, AlertTriangle } from "lucide-react";
+import { Loader2, Download, Database, AlertTriangle, ShieldAlert } from "lucide-react";
 import { generateDatabaseBackup, downloadSqlBackup } from "@/utils/databaseBackup";
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -93,10 +93,20 @@ export default function DatabaseBackup() {
                     <li>Verifique se a chave de API do Supabase está correta</li>
                     <li>Certifique-se de que você está usando uma chave de serviço com permissões adequadas</li>
                     <li>Verifique a conexão com o banco de dados</li>
+                    <li>Certifique-se de que você está logado como administrador</li>
                   </ul>
                 </AlertDescription>
               </Alert>
             )}
+            
+            <Alert variant="default" className="bg-muted">
+              <ShieldAlert className="h-4 w-4" />
+              <AlertTitle>Permissões necessárias</AlertTitle>
+              <AlertDescription>
+                Esta funcionalidade requer uma chave de serviço do Supabase com permissões completas ao banco de dados.
+                Acesse seu dashboard do Supabase e verifique se a configuração está correta.
+              </AlertDescription>
+            </Alert>
             
             {backupSql && (
               <div className="mt-4">
