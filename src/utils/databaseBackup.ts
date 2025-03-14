@@ -1,5 +1,4 @@
 
-import { supabaseAdmin } from "@/lib/supabase";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -8,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
  */
 export async function generateDatabaseBackup(): Promise<string> {
   try {
-    console.log("Iniciando backup do banco de dados...");
+    console.log("Iniciando backup local do banco de dados...");
     
     // Verificar se o cliente está autenticado
     const { data: sessionData } = await supabase.auth.getSession();
@@ -16,62 +15,31 @@ export async function generateDatabaseBackup(): Promise<string> {
       throw new Error("Usuário não autenticado. Faça login novamente.");
     }
     
-    // Obter lista de tabelas no esquema public
-    const { data: tables, error: tablesError } = await supabaseAdmin
-      .from('pg_tables')
-      .select('tablename')
-      .eq('schemaname', 'public');
+    // Lista de tabelas principais para fazer backup
+    const mainTables = [
+      'clients',
+      'service_orders',
+      'service_order_items',
+      'products',
+      'stores',
+      'nfse',
+      'nfce'
+    ];
     
-    if (tablesError) {
-      console.error("Erro ao obter lista de tabelas:", tablesError);
-      throw tablesError;
-    }
-    
-    console.log(`Encontradas ${tables?.length || 0} tabelas para backup`);
+    console.log(`Gerando backup para ${mainTables.length} tabelas principais`);
     
     let sqlQueries = "-- Backup gerado em " + new Date().toISOString() + "\n\n";
     
-    // Para cada tabela, obter seu schema e dados
-    for (const table of tables || []) {
-      const tableName = table.tablename;
-      
-      // Pular tabelas do sistema
-      if (tableName.startsWith('pg_') || tableName.startsWith('_')) {
-        continue;
-      }
-      
-      console.log(`Processando tabela: ${tableName}`);
-      
-      // Obter estrutura da tabela (usando uma abordagem alternativa para contornar permissões)
+    // Para cada tabela, obter seus dados
+    for (const tableName of mainTables) {
       try {
-        // Primeiro tentaremos obter a definição da tabela
-        const { data: tableSchema, error: schemaError } = await supabaseAdmin.rpc(
-          'get_table_ddl',
-          { table_name: tableName }
-        );
+        console.log(`Processando tabela: ${tableName}`);
         
-        if (schemaError) {
-          console.error(`Erro ao obter schema da tabela ${tableName}:`, schemaError);
-          sqlQueries += `-- Não foi possível obter a definição da tabela: ${tableName}\n`;
-          sqlQueries += `-- Erro: ${schemaError.message}\n\n`;
-          continue;
-        }
-        
-        sqlQueries += `-- Estrutura para tabela: ${tableName}\n`;
-        sqlQueries += tableSchema + ";\n\n";
-      } catch (err) {
-        console.error(`Erro ao obter schema da tabela ${tableName}:`, err);
-        sqlQueries += `-- Não foi possível obter a definição da tabela: ${tableName}\n`;
-        sqlQueries += `-- Erro: ${err instanceof Error ? err.message : String(err)}\n\n`;
-        continue;
-      }
-      
-      // Obter dados da tabela
-      try {
-        const { data: tableData, error: dataError } = await supabaseAdmin
+        // Obter os 1000 primeiros registros de cada tabela
+        const { data: tableData, error: dataError } = await supabase
           .from(tableName)
           .select('*')
-          .limit(1000); // Limitar para evitar problemas com tabelas muito grandes
+          .limit(1000);
         
         if (dataError) {
           console.error(`Erro ao obter dados da tabela ${tableName}:`, dataError);
@@ -83,6 +51,34 @@ export async function generateDatabaseBackup(): Promise<string> {
         if (tableData && tableData.length > 0) {
           sqlQueries += `-- Dados para tabela: ${tableName}\n`;
           
+          // Adicionar estrutura da tabela baseada no primeiro objeto
+          const firstObject = tableData[0];
+          const columns = Object.keys(firstObject);
+          
+          sqlQueries += `CREATE TABLE IF NOT EXISTS ${tableName} (\n`;
+          columns.forEach((column, index) => {
+            const value = firstObject[column];
+            let type = typeof value;
+            
+            switch (type) {
+              case 'number':
+                type = Number.isInteger(value) ? 'INTEGER' : 'NUMERIC';
+                break;
+              case 'boolean':
+                type = 'BOOLEAN';
+                break;
+              case 'object':
+                type = value === null ? 'TEXT' : (value instanceof Date ? 'TIMESTAMP WITH TIME ZONE' : 'JSONB');
+                break;
+              default:
+                type = 'TEXT';
+            }
+            
+            sqlQueries += `  ${column} ${type}${index < columns.length - 1 ? ',' : ''}\n`;
+          });
+          sqlQueries += `);\n\n`;
+          
+          // Adicionar dados
           for (const row of tableData) {
             const columns = Object.keys(row).join(', ');
             const values = Object.values(row).map(formatValue).join(', ');
@@ -95,13 +91,13 @@ export async function generateDatabaseBackup(): Promise<string> {
           sqlQueries += `-- Nenhum dado encontrado na tabela: ${tableName}\n\n`;
         }
       } catch (err) {
-        console.error(`Erro ao obter dados da tabela ${tableName}:`, err);
-        sqlQueries += `-- Não foi possível obter os dados da tabela: ${tableName}\n`;
+        console.error(`Erro ao processar tabela ${tableName}:`, err);
+        sqlQueries += `-- Não foi possível processar a tabela: ${tableName}\n`;
         sqlQueries += `-- Erro: ${err instanceof Error ? err.message : String(err)}\n\n`;
       }
     }
     
-    console.log("Backup do banco de dados concluído com sucesso!");
+    console.log("Backup local do banco de dados concluído com sucesso!");
     return sqlQueries;
     
   } catch (error) {

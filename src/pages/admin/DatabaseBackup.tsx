@@ -23,13 +23,13 @@ export default function DatabaseBackup() {
       
       toast({
         title: "Backup iniciado",
-        description: "Gerando backup do banco de dados...",
+        description: "Gerando backup local do banco de dados...",
       });
       
       const sql = await generateDatabaseBackup();
       
       if (!sql || sql.trim() === '') {
-        throw new Error("Não foi possível gerar o backup. Verifique as permissões do banco de dados.");
+        throw new Error("Não foi possível gerar o backup. Não foram encontrados dados para exportar.");
       }
       
       setBackupSql(sql);
@@ -39,7 +39,7 @@ export default function DatabaseBackup() {
       
       toast({
         title: "Backup concluído",
-        description: "O backup do banco de dados foi gerado com sucesso!",
+        description: "O backup local do banco de dados foi gerado com sucesso!",
       });
     } catch (error) {
       console.error("Erro ao gerar backup:", error);
@@ -66,18 +66,18 @@ export default function DatabaseBackup() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Database className="h-6 w-6" />
-            Backup do Banco de Dados
+            Backup Local do Banco de Dados
           </CardTitle>
           <CardDescription>
-            Gere um backup completo do seu banco de dados em formato SQL
+            Gere um backup dos seus dados principais em formato SQL
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Esta ferramenta irá gerar um arquivo SQL contendo instruções para recriar todas as tabelas
-              do seu banco de dados junto com seus dados. Esse backup pode ser importado em qualquer
-              sistema compatível com PostgreSQL.
+              Esta ferramenta irá gerar um arquivo SQL contendo suas principais tabelas e dados.
+              Este backup local funciona apenas com os dados que você tem acesso através do cliente
+              autenticado e pode ser usado para referência ou importação em outro sistema.
             </p>
             
             {error && (
@@ -90,10 +90,9 @@ export default function DatabaseBackup() {
                   <br />
                   <span className="font-semibold">Possíveis soluções:</span>
                   <ul className="list-disc pl-5 mt-2">
-                    <li>Verifique se a chave de API do Supabase está correta</li>
-                    <li>Certifique-se de que você está usando uma chave de serviço com permissões adequadas</li>
-                    <li>Verifique a conexão com o banco de dados</li>
                     <li>Certifique-se de que você está logado como administrador</li>
+                    <li>Verifique se sua conexão com a internet está estável</li>
+                    <li>Tente novamente mais tarde</li>
                   </ul>
                 </AlertDescription>
               </Alert>
@@ -101,10 +100,10 @@ export default function DatabaseBackup() {
             
             <Alert variant="default" className="bg-muted">
               <ShieldAlert className="h-4 w-4" />
-              <AlertTitle>Permissões necessárias</AlertTitle>
+              <AlertTitle>Informação importante</AlertTitle>
               <AlertDescription>
-                Esta funcionalidade requer uma chave de serviço do Supabase com permissões completas ao banco de dados.
-                Acesse seu dashboard do Supabase e verifique se a configuração está correta.
+                Este é um backup local que contém apenas os dados que seu usuário pode acessar.
+                Para um backup completo, recomendamos usar as ferramentas nativas do Supabase no dashboard.
               </AlertDescription>
             </Alert>
             
@@ -140,7 +139,7 @@ export default function DatabaseBackup() {
             >
               <a 
                 href={downloadUrl} 
-                download={`db_backup_${new Date().toISOString().slice(0, 10)}.sql`}
+                download={`db_backup_local_${new Date().toISOString().slice(0, 10)}.sql`}
               >
                 <Download className="h-4 w-4 mr-2" />
                 Baixar SQL
